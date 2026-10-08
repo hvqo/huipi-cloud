@@ -20,16 +20,48 @@ class ParsingInput:
     attempt_count: int
 
 
-class ParserExecutor(Protocol):
-    """Run cooperative async parsing within the worker cancellation contract.
+@dataclass(frozen=True)
+class ParsedArtifactResult:
+    """Validated immutable object locations returned by a parser executor."""
 
-    Do not detach background work, block the event loop, or treat ``to_thread``
-    cancellation as thread termination. Blocking/native parsers need a supervised
-    child-process adapter before they can run in this worker.
+    artifact_id: UUID
+    task_id: UUID
+    submission_id: UUID
+    bucket: str
+    original_sha256: str
+    parser_name: str
+    parser_version: str
+    tier: str
+    schema_name: str
+    schema_version: str
+    page_count: int
+    archive_key: str
+    archive_sha256: str
+    archive_size_bytes: int
+    markdown_key: str
+    markdown_sha256: str
+    markdown_size_bytes: int
+    middle_json_key: str
+    middle_json_sha256: str
+    middle_json_size_bytes: int
+    structured_content_key: str
+    structured_content_sha256: str
+    structured_content_size_bytes: int
+    assets_manifest_key: str
+    assets_manifest_sha256: str
+    assets_manifest_size_bytes: int
+    asset_count: int
+
+
+class ParserExecutor(Protocol):
+    """Run parsing behind an async cancellation-aware execution boundary.
+
+    Heavy or native parsers must use a supervised subprocess. A successful parser
+    returns a validated artifact descriptor; ``None`` can never mark a task done.
     """
 
-    async def execute(self, task: ParsingInput) -> None:
-        """Parse one submission; raise a typed error to control retry policy."""
+    async def execute(self, task: ParsingInput) -> ParsedArtifactResult:
+        """Parse and persist one submission; raise a typed error on failure."""
 
 
 ParserExecutorFactory = Callable[[], ParserExecutor]

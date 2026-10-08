@@ -36,6 +36,11 @@ dist/
 /parsed/
 /intermediate/
 /mineru-output/
+/mineru-home/
+/modelscope_cache/
+/modelscope-cache/
+/model-cache/
+.cache/
 /test-results/
 
 # Model checkpoints and inference artifacts

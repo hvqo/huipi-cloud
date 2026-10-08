@@ -4,6 +4,7 @@ import asyncio
 import os
 import subprocess
 import sys
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import UUID, uuid4
@@ -31,7 +32,8 @@ from huipi_cloud.modules.parsing.errors import (
     RetryableParsingError,
     classify_failure,
 )
-from huipi_cloud.modules.parsing.executor import ParsingInput
+from huipi_cloud.modules.parsing.executor import ParsedArtifactResult, ParsingInput
+from huipi_cloud.modules.parsing.models import ParsedArtifact
 from huipi_cloud.modules.parsing.service import retry_delay_seconds
 from huipi_cloud.modules.submissions.models import ParsingTask, Submission, SubmissionFile
 from huipi_cloud.workers.parsing import ParsingWorker
@@ -54,8 +56,9 @@ class SuccessfulTestParser:
     def __init__(self) -> None:
         self.seen: list[ParsingInput] = []
 
-    async def execute(self, task: ParsingInput) -> None:
+    async def execute(self, task: ParsingInput) -> ParsedArtifactResult:
         self.seen.append(task)
+        return _test_artifact(task)
 
 
 class WaitingTestParser:
@@ -111,13 +114,13 @@ class ControlledTestParser:
         self.release = asyncio.Event()
         self.finished = asyncio.Event()
 
-    async def execute(self, task: ParsingInput) -> None:
-        del task
+    async def execute(self, task: ParsingInput) -> ParsedArtifactResult:
         self.started.set()
         try:
             await self.release.wait()
         finally:
             self.finished.set()
+        return _test_artifact(task)
 
 
 class TimeoutAwareTestParser:
@@ -132,6 +135,42 @@ class TimeoutAwareTestParser:
             await asyncio.Future()
         except asyncio.CancelledError:
             self.cancelled.set()
+
+
+def _test_artifact(task: ParsingInput) -> ParsedArtifactResult:
+    """Return a test-only result descriptor for worker and transaction tests."""
+    artifact_id = uuid4()
+    prefix = f"tests/{task.submission_id}/{artifact_id}"
+    digest = "a" * 64
+    return ParsedArtifactResult(
+        artifact_id=artifact_id,
+        task_id=task.task_id,
+        submission_id=task.submission_id,
+        bucket=task.bucket,
+        original_sha256=task.sha256,
+        parser_name="test-only",
+        parser_version="4.0.0",
+        tier="basic",
+        schema_name="docvortex.middle",
+        schema_version="2.0",
+        page_count=1,
+        archive_key=f"{prefix}/result.zip",
+        archive_sha256=digest,
+        archive_size_bytes=1,
+        markdown_key=f"{prefix}/markdown.md",
+        markdown_sha256=digest,
+        markdown_size_bytes=1,
+        middle_json_key=f"{prefix}/middle_json.json",
+        middle_json_sha256=digest,
+        middle_json_size_bytes=1,
+        structured_content_key=f"{prefix}/structured_content.json",
+        structured_content_sha256=digest,
+        structured_content_size_bytes=1,
+        assets_manifest_key=f"{prefix}/assets/manifest.json",
+        assets_manifest_sha256=digest,
+        assets_manifest_size_bytes=1,
+        asset_count=0,
+    )
 
 
 def _runtime_settings(**overrides: object) -> Settings:
@@ -357,6 +396,39 @@ async def test_successful_test_executor_marks_task_succeeded(
     assert snapshot["lease_token"] is None
     assert parser.seen[0].task_id == task_id
 
+    async with parsing_factory() as session:
+        artifact = await session.scalar(
+            select(ParsedArtifact).where(ParsedArtifact.parsing_task_id == task_id)
+        )
+    assert artifact is not None
+    assert artifact.schema_name == "docvortex.middle"
+
+
+@pytest.mark.anyio
+async def test_parsed_artifact_insert_failure_rolls_back_success_transition(
+    parsing_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    task_id, submission_id = await _create_task(parsing_factory)
+    claimed = await repository.claim_next_task(parsing_factory, lease_seconds=30)
+    assert claimed is not None
+    invalid_artifact = replace(_test_artifact(claimed.task), archive_size_bytes=-1)
+
+    with pytest.raises(IntegrityError):
+        await repository.complete_task_with_artifact(
+            parsing_factory,
+            artifact=invalid_artifact,
+            lease_token=claimed.lease_token,
+        )
+
+    snapshot = await _task_snapshot(parsing_factory, task_id)
+    assert snapshot["status"] == ParsingTaskStatus.RUNNING.value
+    assert snapshot["lease_token"] == claimed.lease_token
+    async with parsing_factory() as session:
+        artifact = await session.scalar(
+            select(ParsedArtifact).where(ParsedArtifact.submission_id == submission_id)
+        )
+    assert artifact is None
+
 
 @pytest.mark.anyio
 async def test_retryable_failure_waits_until_persisted_due_time(
@@ -472,9 +544,9 @@ async def test_expired_lease_is_reclaimed_with_new_token_and_old_worker_is_fence
     assert new is not None
     assert new.lease_token != old.lease_token
     assert new.task.attempt_count == 2
-    assert not await repository.complete_task(
+    assert not await repository.complete_task_with_artifact(
         parsing_factory,
-        task_id=task_id,
+        artifact=_test_artifact(old.task),
         lease_token=old.lease_token,
         now=now + timedelta(seconds=7),
     )
@@ -542,9 +614,9 @@ async def test_lease_operation_rejects_worker_after_expiry_while_waiting_for_row
             lease_seconds=30,
         )
     elif operation == "complete":
-        blocked_operation = repository.complete_task(
+        blocked_operation = repository.complete_task_with_artifact(
             parsing_factory,
-            task_id=task_id,
+            artifact=_test_artifact(claimed.task),
             lease_token=claimed.lease_token,
         )
     else:

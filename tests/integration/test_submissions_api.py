@@ -242,6 +242,34 @@ async def test_missing_submission_returns_404(
 
 
 @pytest.mark.anyio
+async def test_parsed_document_endpoints_report_pending_state(
+    submission_client: httpx.AsyncClient,
+) -> None:
+    assignment_id = await _create_published_assignment(submission_client)
+    created = await _upload(
+        submission_client,
+        assignment_id,
+        filename="answer.pdf",
+        content=PDF_DATA,
+        content_type="application/pdf",
+    )
+    submission_id = created.json()["id"]
+
+    summary = await submission_client.get(
+        f"/api/v1/submissions/{submission_id}/parsed-document"
+    )
+    markdown = await submission_client.get(
+        f"/api/v1/submissions/{submission_id}/parsed-document/markdown"
+    )
+
+    assert summary.status_code == 200
+    assert summary.json()["status"] == "pending"
+    assert summary.json()["parsed_document"] is None
+    assert markdown.status_code == 409
+    assert "数据库" not in markdown.text
+
+
+@pytest.mark.anyio
 async def test_submission_object_key_is_server_generated_and_test_prefixed(
     submission_client: httpx.AsyncClient,
     recording_minio_storage,

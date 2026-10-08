@@ -9,7 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from huipi_cloud.modules.parsing.enums import ParsingTaskStatus, can_transition
 from huipi_cloud.modules.parsing.errors import FailureSummary
-from huipi_cloud.modules.parsing.executor import ParsingInput
+from huipi_cloud.modules.parsing.executor import ParsedArtifactResult, ParsingInput
+from huipi_cloud.modules.parsing.models import ParsedArtifact
 from huipi_cloud.modules.submissions.models import ParsingTask, SubmissionFile
 
 SessionFactory = async_sessionmaker[AsyncSession]
@@ -137,20 +138,20 @@ async def heartbeat(
         return result.scalar_one_or_none()
 
 
-async def complete_task(
+async def complete_task_with_artifact(
     session_factory: SessionFactory,
     *,
-    task_id: UUID,
+    artifact: ParsedArtifactResult,
     lease_token: UUID,
     now: datetime | None = None,
 ) -> bool:
-    """Finish a task only if this worker still owns a valid lease."""
+    """Index a validated result and finish its task in one lease-fenced transaction."""
     async with session_factory() as session, session.begin():
         completed_at = _time_expression(now)
         result = await session.execute(
             update(ParsingTask)
             .where(
-                ParsingTask.id == task_id,
+                ParsingTask.id == artifact.task_id,
                 ParsingTask.status == ParsingTaskStatus.RUNNING.value,
                 ParsingTask.lease_token == lease_token,
                 ParsingTask.lease_expires_at > completed_at,
@@ -165,9 +166,47 @@ async def complete_task(
                 last_error_message=None,
                 updated_at=completed_at,
             )
-            .returning(ParsingTask.id)
+            .returning(ParsingTask.submission_id)
         )
-        return result.scalar_one_or_none() is not None
+        submission_id = result.scalar_one_or_none()
+        if submission_id is None:
+            return False
+        if submission_id != artifact.submission_id:
+            raise ValueError("parser artifact does not belong to the claimed task")
+
+        session.add(
+            ParsedArtifact(
+                id=artifact.artifact_id,
+                parsing_task_id=artifact.task_id,
+                submission_id=artifact.submission_id,
+                bucket=artifact.bucket,
+                original_sha256=artifact.original_sha256,
+                parser_name=artifact.parser_name,
+                parser_version=artifact.parser_version,
+                tier=artifact.tier,
+                schema_name=artifact.schema_name,
+                schema_version=artifact.schema_version,
+                page_count=artifact.page_count,
+                asset_count=artifact.asset_count,
+                archive_key=artifact.archive_key,
+                archive_sha256=artifact.archive_sha256,
+                archive_size_bytes=artifact.archive_size_bytes,
+                markdown_key=artifact.markdown_key,
+                markdown_sha256=artifact.markdown_sha256,
+                markdown_size_bytes=artifact.markdown_size_bytes,
+                middle_json_key=artifact.middle_json_key,
+                middle_json_sha256=artifact.middle_json_sha256,
+                middle_json_size_bytes=artifact.middle_json_size_bytes,
+                structured_content_key=artifact.structured_content_key,
+                structured_content_sha256=artifact.structured_content_sha256,
+                structured_content_size_bytes=artifact.structured_content_size_bytes,
+                assets_manifest_key=artifact.assets_manifest_key,
+                assets_manifest_sha256=artifact.assets_manifest_sha256,
+                assets_manifest_size_bytes=artifact.assets_manifest_size_bytes,
+            )
+        )
+        await session.flush()
+        return True
 
 
 async def record_failure(
@@ -228,6 +267,33 @@ async def get_task_by_submission(
     return await session.scalar(
         select(ParsingTask).where(ParsingTask.submission_id == submission_id)
     )
+
+
+async def get_artifact_by_submission(
+    session: AsyncSession,
+    submission_id: UUID,
+) -> ParsedArtifact | None:
+    """Find the sole indexed successful parser output for a submission."""
+    return await session.scalar(
+        select(ParsedArtifact).where(ParsedArtifact.submission_id == submission_id)
+    )
+
+
+async def get_task_with_artifact_by_submission(
+    session: AsyncSession,
+    submission_id: UUID,
+) -> tuple[ParsingTask, ParsedArtifact | None] | None:
+    """Read task state and artifact index from one PostgreSQL statement snapshot."""
+    row = (
+        await session.execute(
+            select(ParsingTask, ParsedArtifact)
+            .outerjoin(ParsedArtifact, ParsedArtifact.parsing_task_id == ParsingTask.id)
+            .where(ParsingTask.submission_id == submission_id)
+        )
+    ).one_or_none()
+    if row is None:
+        return None
+    return row[0], row[1]
 
 
 async def _fail_exhausted_expired_leases(session: AsyncSession, now: datetime) -> None:

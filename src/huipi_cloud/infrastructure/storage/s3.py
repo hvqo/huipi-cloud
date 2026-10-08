@@ -15,6 +15,10 @@ class StorageUnavailableError(Exception):
     """Raised when the configured object storage cannot complete an operation."""
 
 
+class StorageObjectNotFoundError(StorageUnavailableError):
+    """Raised when a specific object does not exist in the configured bucket."""
+
+
 @dataclass
 class DownloadedObject:
     """Streaming response body returned by S3-compatible storage."""
@@ -84,9 +88,35 @@ class S3ObjectStorage:
                 Bucket=self.bucket,
                 Key=object_key,
             )
-        except (BotoCoreError, ClientError, OSError) as error:
+        except ClientError as error:
+            code = error.response.get("Error", {}).get("Code")
+            if code in {"404", "NoSuchKey", "NotFound"}:
+                raise StorageObjectNotFoundError from error
+            raise StorageUnavailableError from error
+        except (BotoCoreError, OSError) as error:
             raise StorageUnavailableError from error
         return DownloadedObject(body=response["Body"])
+
+    async def head_object(self, object_key: str) -> dict[str, object]:
+        """Return safe object metadata without reading the object body."""
+        try:
+            response = await asyncio.to_thread(
+                self._client.head_object,
+                Bucket=self.bucket,
+                Key=object_key,
+            )
+        except ClientError as error:
+            code = error.response.get("Error", {}).get("Code")
+            if code in {"404", "NoSuchKey", "NotFound"}:
+                raise StorageObjectNotFoundError from error
+            raise StorageUnavailableError from error
+        except (BotoCoreError, OSError) as error:
+            raise StorageUnavailableError from error
+        return {
+            "content_length": response.get("ContentLength"),
+            "content_type": response.get("ContentType"),
+            "etag": response.get("ETag"),
+        }
 
     async def delete(self, object_key: str) -> None:
         try:

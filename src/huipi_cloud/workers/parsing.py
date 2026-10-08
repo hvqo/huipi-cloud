@@ -13,8 +13,13 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from huipi_cloud.core.config import Settings
 from huipi_cloud.modules.parsing import repository
-from huipi_cloud.modules.parsing.errors import RetryableParsingError, classify_failure
-from huipi_cloud.modules.parsing.executor import ParserExecutor
+from huipi_cloud.modules.parsing.errors import (
+    PermanentParsingError,
+    RetryableParsingError,
+    WorkerFatalParsingError,
+    classify_failure,
+)
+from huipi_cloud.modules.parsing.executor import ParsedArtifactResult, ParserExecutor
 from huipi_cloud.modules.parsing.service import retry_delay_seconds
 
 logger = logging.getLogger(__name__)
@@ -149,8 +154,10 @@ class ParsingWorker:
                 )
                 if execution in done:
                     try:
-                        await execution
+                        artifact = await execution
                     except asyncio.CancelledError:
+                        raise
+                    except WorkerFatalParsingError:
                         raise
                     except Exception as error:
                         try:
@@ -164,10 +171,22 @@ class ParsingWorker:
                                 claimed.task.task_id,
                             )
                         return
+                    if (
+                        not isinstance(artifact, ParsedArtifactResult)
+                        or artifact.task_id != claimed.task.task_id
+                        or artifact.submission_id != claimed.task.submission_id
+                        or artifact.original_sha256 != claimed.task.sha256
+                        or artifact.bucket != claimed.task.bucket
+                    ):
+                        await self._record_error(
+                            claimed,
+                            PermanentParsingError("invalid_result"),
+                        )
+                        return
                     try:
-                        completed = await repository.complete_task(
+                        completed = await repository.complete_task_with_artifact(
                             self.session_factory,
-                            task_id=claimed.task.task_id,
+                            artifact=artifact,
                             lease_token=claimed.lease_token,
                         )
                     except (DBAPIError, SATimeoutError) as error:

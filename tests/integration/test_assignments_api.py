@@ -569,7 +569,7 @@ async def test_migration_is_applied_to_postgres(
             ).all()
         )
 
-    assert version == "8b2c0f7d1a43"
+    assert version == "339018f72219"
     assert {
         "assignments",
         "questions",
@@ -578,6 +578,7 @@ async def test_migration_is_applied_to_postgres(
         "submissions",
         "submission_files",
         "parsing_tasks",
+        "parsed_artifacts",
     }.issubset(tables)
     assert {
         "uq_questions_assignment_number",
@@ -595,6 +596,15 @@ async def test_migration_is_applied_to_postgres(
         "submissions_assignment_id_fkey",
         "submission_files_submission_id_fkey",
         "parsing_tasks_submission_id_fkey",
+        "parsed_artifacts_parsing_task_id_fkey",
+        "parsed_artifacts_submission_id_fkey",
+        "parsed_artifacts_parsing_task_id_key",
+        "parsed_artifacts_submission_id_key",
+        "ck_parsed_artifacts_page_count",
+        "ck_parsed_artifacts_asset_count",
+        "ck_parsed_artifacts_sizes",
+        "ck_parsed_artifacts_sha256_lengths",
+        "ck_parsed_artifacts_middle_schema",
     }.issubset(constraints)
     assert {
         "ix_assignments_status_created_at",
@@ -604,6 +614,7 @@ async def test_migration_is_applied_to_postgres(
         "ix_parsing_tasks_status_next_run_created_at",
         "ix_parsing_tasks_status_lease_expires_at",
         "ix_submission_files_created_at",
+        "ix_parsed_artifacts_created_at",
     }.issubset(indexes)
 
 

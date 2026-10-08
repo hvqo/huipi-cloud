@@ -122,6 +122,9 @@ class RecordingS3Storage:
     async def download(self, object_key: str):
         return await self.storage.download(object_key)
 
+    async def head_object(self, object_key: str):
+        return await self.storage.head_object(object_key)
+
     async def delete(self, object_key: str) -> None:
         await self.storage.delete(object_key)
 

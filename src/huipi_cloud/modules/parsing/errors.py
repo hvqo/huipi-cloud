@@ -31,6 +31,9 @@ class RetryableParsingError(ParsingExecutionError):
             "execution_timeout": FailureSummary(
                 "execution_timeout", "解析超过单次执行时限", True
             ),
+            "parser_unavailable": FailureSummary(
+                "parser_unavailable", "本地解析资源暂时不可用", True
+            ),
             "temporary_error": FailureSummary("temporary_error", "解析暂时失败，请稍后重试", True),
         }
         self.summary = summaries.get(code, summaries["temporary_error"])
@@ -47,6 +50,11 @@ class PermanentParsingError(ParsingExecutionError):
             ),
             "corrupt_input": FailureSummary("corrupt_input", "文件内容无法解析", False),
             "invalid_input": FailureSummary("invalid_input", "文件内容无效", False),
+            "invalid_result": FailureSummary("invalid_result", "解析结果不完整或格式无效", False),
+            "missing_source": FailureSummary("missing_source", "原始文件不存在", False),
+            "page_limit_exceeded": FailureSummary(
+                "page_limit_exceeded", "PDF页数超过处理上限", False
+            ),
         }
         self.summary = summaries.get(code, summaries["invalid_input"])
         super().__init__(self.summary.code)
@@ -57,3 +65,15 @@ def classify_failure(error: BaseException) -> FailureSummary:
     if isinstance(error, ParsingExecutionError):
         return error.summary
     return FailureSummary("unexpected_error", "解析暂时失败，请稍后重试", True)
+
+
+class ParsingResultNotReadyError(Exception):
+    """Raised when parsed content is requested before a successful result exists."""
+
+    def __init__(self, status: str) -> None:
+        self.status = status
+        super().__init__(status)
+
+
+class WorkerFatalParsingError(RuntimeError):
+    """Raised when a parser child cannot be safely reaped and this worker must stop."""
