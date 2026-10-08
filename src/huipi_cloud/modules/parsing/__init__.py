@@ -1,1 +1,1 @@
-"""Document and image parsing domain."""
+"""Parsing task domain and executor contracts."""

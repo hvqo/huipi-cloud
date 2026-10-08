@@ -40,7 +40,7 @@ def migrated_test_database_url() -> str:
     settings = Settings()
     database_url = settings.test_database_url
     if not database_url:
-        pytest.skip("设置 TEST_DATABASE_URL 并启动 PostgreSQL 后才运行数据库集成测试")
+        raise RuntimeError("集成测试必须设置 TEST_DATABASE_URL 并使用真实 PostgreSQL")
 
     test_database = make_url(database_url)
     if not settings.database_url:
@@ -139,7 +139,7 @@ async def recording_minio_storage(anyio_backend: str) -> AsyncIterator[Recording
         and settings.minio_access_key
         and settings.minio_secret_key
     ):
-        pytest.skip("设置本地 MinIO 兼容服务的 MINIO_ENDPOINT_URL 和测试凭据后才运行集成测试")
+        raise RuntimeError("对象存储集成测试必须设置本地 S3 兼容服务环境变量")
     endpoint = urlparse(settings.minio_endpoint_url)
     if endpoint.hostname not in {"127.0.0.1", "localhost", "minio"}:
         raise RuntimeError("MinIO 集成测试只允许连接本地端点")

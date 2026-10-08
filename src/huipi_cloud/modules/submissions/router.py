@@ -60,6 +60,7 @@ async def create_submission(
         student_ref=student_ref,
         upload=file,
         max_size_bytes=settings.max_upload_size_bytes,
+        max_parsing_attempts=settings.parsing_max_attempts,
     )
 
 

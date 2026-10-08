@@ -30,6 +30,7 @@ async def create_submission(
     student_ref: str,
     upload: UploadFile,
     max_size_bytes: int,
+    max_parsing_attempts: int = 3,
 ) -> Submission:
     assignment_status = await repository.get_assignment_status(session, assignment_id)
     if assignment_status is None:
@@ -76,7 +77,10 @@ async def create_submission(
             size_bytes=staged.size_bytes,
             sha256=staged.sha256,
         )
-        submission.parsing_task = ParsingTask(status="pending")
+        submission.parsing_task = ParsingTask(
+            status="pending",
+            max_attempts=max_parsing_attempts,
+        )
         session.add(submission)
         await session.flush()
 
