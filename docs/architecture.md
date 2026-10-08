@@ -4,7 +4,7 @@
 
 ## 分层职责
 
-- api/v1：HTTP 路由、请求与响应边界。应用入口注册领域错误到 HTTP 状态码的转换。
+- api/v1：HTTP 路由、请求与响应边界。应用入口注册领域错误和数据库异常到安全、稳定的 HTTP 响应。
 - core：应用配置、日志和跨模块基础能力；不包含教学领域规则。
 - modules/assignments：作业、题目、人工标准答案、评分细则和草稿发布规则。
 - modules/parsing、grading、copilot、review：后续领域位置，当前没有实际业务代码。
@@ -36,11 +36,17 @@
 
 读取作业详情通过显式关系预加载，避免 AsyncSession 序列化时触发隐式懒加载。所有时间列使用带时区的时间类型，应用生成时间使用 UTC。
 
+AsyncSession 工厂可以是进程级共享对象，但每次调用依赖都会创建并关闭一个新的 Session；Session 本身不会跨请求共享。写操作在事务内构造好响应对象，并在事务提交后才返回，避免提交后再读到其他并发请求的新值。PostgreSQL 的 `SELECT FOR UPDATE` 保护同一作业的状态转换和编辑。
+
+跨行规则由 Service 校验：例如 Rubric 总分必须等于题目满分。数据库约束负责外键、唯一值、单列范围和非空等可由数据库直接保证的条件。SQLAlchemy 数据库异常不会原样返回客户端：已知唯一约束映射为 409，数据库不可用映射为 503，其他数据库错误返回通用 500 响应。写事务由 `session.begin()` 在异常时回滚，请求结束时 Session 关闭。
+
+`GET /api/v1/health` 当前是存活探针，不查询 PostgreSQL；它只能说明应用进程能够响应请求，不能证明数据库已就绪。
+
 ## 数据库与配置
 
 数据库连接串从 DATABASE_URL 环境变量读取。Docker Compose 只定义本地 PostgreSQL 服务，绑定到回环地址；应用数据库与名称以 _test 结尾的测试数据库分开。测试不得将 TEST_DATABASE_URL 指向开发数据库。
 
-ORM 类型和迁移脚本是两份需要检查的一致性定义。开发者通过 Alembic upgrade head 应用迁移，通过 Alembic check 检查模型是否存在未迁移变更。不会使用 SQLAlchemy create_all 自动建表。
+ORM 类型和迁移脚本是两份需要检查的一致性定义。开发者通过 Alembic upgrade head 应用迁移，通过 Alembic check 检查模型是否存在未迁移变更。不会使用 SQLAlchemy create_all 自动建表。GitHub Actions 在 Pull Request 和 main 推送时运行 Ruff、PostgreSQL 迁移、Alembic 一致性检查和 pytest。
 
 ## 安全边界与限制
 

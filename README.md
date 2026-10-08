@@ -33,6 +33,8 @@ PostgreSQL 仅绑定到本机 127.0.0.1:55432。Compose 首次初始化数据卷
 - API 文档：http://127.0.0.1:8000/docs
 - 健康检查：http://127.0.0.1:8000/api/v1/health
 
+健康检查是存活探针，不会验证 PostgreSQL 是否可用。
+
 停止本轮数据库服务并保留数据卷：
 
 ~~~bash
@@ -60,6 +62,8 @@ uv run alembic check
 ~~~
 
 集成测试使用 TEST_DATABASE_URL 指向名称以 _test 结尾的 PostgreSQL 数据库，并在测试前运行 Alembic。未设置测试数据库 URL 时，PostgreSQL 集成测试会明确跳过；不要把该配置指向开发数据库。
+
+GitHub Actions 在 Pull Request 和 main 分支推送时运行 Ruff、PostgreSQL 16 迁移、Alembic 一致性检查和 pytest。
 
 ## 项目结构
 

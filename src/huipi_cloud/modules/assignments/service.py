@@ -41,11 +41,9 @@ async def create_assignment(
         assignment = Assignment(**payload.model_dump())
         session.add(assignment)
         await session.flush()
-        assignment_id = assignment.id
-
-    result = await repository.get_assignment(session, assignment_id)
-    assert result is not None
-    return result
+        result = await repository.get_assignment(session, assignment.id)
+        assert result is not None
+        return result
 
 
 async def list_assignments(
@@ -91,11 +89,9 @@ async def add_question(
         assignment.updated_at = utc_now()
         session.add(question)
         await session.flush()
-        question_id = question.id
-
-    result = await repository.get_question(session, question_id)
-    assert result is not None
-    return result
+        result = await repository.get_question(session, question.id)
+        assert result is not None
+        return result
 
 
 async def replace_answer_key(
@@ -130,11 +126,7 @@ async def replace_answer_key(
 
         assignment.updated_at = utc_now()
         await session.flush()
-        answer_key_id = answer_key.id
-
-    result = await session.get(AnswerKey, answer_key_id)
-    assert result is not None
-    return result
+        return answer_key
 
 
 async def replace_rubric(
@@ -177,13 +169,7 @@ async def replace_rubric(
         session.add_all(criteria)
         assignment.updated_at = utc_now()
         await session.flush()
-        criterion_ids = [criterion.id for criterion in criteria]
-
-    return [
-        criterion
-        for criterion_id in criterion_ids
-        if (criterion := await session.get(RubricCriterion, criterion_id)) is not None
-    ]
+        return criteria
 
 
 async def publish_assignment(
@@ -218,7 +204,6 @@ async def publish_assignment(
         assignment.status = AssignmentStatus.PUBLISHED.value
         assignment.updated_at = utc_now()
         await session.flush()
-
-    result = await repository.get_assignment(session, assignment_id)
-    assert result is not None
-    return result
+        result = await repository.get_assignment(session, assignment_id)
+        assert result is not None
+        return result

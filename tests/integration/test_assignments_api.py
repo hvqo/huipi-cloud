@@ -1,15 +1,19 @@
 """Assignment API integration tests backed by a dedicated PostgreSQL database."""
 
+import asyncio
 from collections.abc import AsyncIterator
 from decimal import Decimal
+from uuid import UUID
 
 import httpx
 import pytest
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from huipi_cloud.infrastructure.database.session import get_db_session
 from huipi_cloud.main import app
+from huipi_cloud.modules.assignments import service as assignment_service
 
 
 @pytest.fixture
@@ -82,6 +86,24 @@ async def test_add_question(client: httpx.AsyncClient) -> None:
 
 
 @pytest.mark.anyio
+async def test_reject_non_positive_question_number(client: httpx.AsyncClient) -> None:
+    assignment_id = await _create_assignment(client)
+    response = await client.post(
+        f"/api/v1/assignments/{assignment_id}/questions",
+        json={
+            "question_number": 0,
+            "question_type": "short_answer",
+            "stem": "题号必须为正数",
+            "max_score": "10.00",
+        },
+    )
+
+    assert response.status_code == 422
+    detail = await client.get(f"/api/v1/assignments/{assignment_id}")
+    assert detail.json()["questions"] == []
+
+
+@pytest.mark.anyio
 async def test_set_answer_key(client: httpx.AsyncClient) -> None:
     question_id = await _create_question(client)
 
@@ -119,6 +141,39 @@ async def test_set_rubric(client: httpx.AsyncClient) -> None:
 
 
 @pytest.mark.anyio
+async def test_rubric_put_replaces_the_entire_list(client: httpx.AsyncClient) -> None:
+    question_id = await _create_question(client)
+    first = await client.put(
+        f"/api/v1/questions/{question_id}/rubric",
+        json={
+            "criteria": [
+                {"description": "过程", "points": "4.00", "sort_order": 1},
+                {"description": "结果", "points": "6.00", "sort_order": 2},
+            ]
+        },
+    )
+    replacement_payload = {
+        "criteria": [{"description": "新评分标准", "points": "10.00", "sort_order": 1}]
+    }
+    replacement = await client.put(
+        f"/api/v1/questions/{question_id}/rubric",
+        json=replacement_payload,
+    )
+    repeated = await client.put(
+        f"/api/v1/questions/{question_id}/rubric",
+        json=replacement_payload,
+    )
+
+    assert first.status_code == 200
+    assert replacement.status_code == repeated.status_code == 200
+    for response in (replacement, repeated):
+        assert [
+            (item["description"], Decimal(item["points"]), item["sort_order"])
+            for item in response.json()["criteria"]
+        ] == [("新评分标准", Decimal("10.00"), 1)]
+
+
+@pytest.mark.anyio
 async def test_reject_invalid_rubric_points(client: httpx.AsyncClient) -> None:
     question_id = await _create_question(client)
 
@@ -133,6 +188,32 @@ async def test_reject_invalid_rubric_points(client: httpx.AsyncClient) -> None:
 
     assert non_positive.status_code == 422
     assert exceeds_maximum.status_code == 422
+
+
+@pytest.mark.anyio
+async def test_reject_empty_and_duplicate_rubric_orders(client: httpx.AsyncClient) -> None:
+    assignment_id = await _create_assignment(client)
+    question_id = await _create_question(client, assignment_id=assignment_id)
+
+    empty = await client.put(
+        f"/api/v1/questions/{question_id}/rubric",
+        json={"criteria": []},
+    )
+    duplicate_order = await client.put(
+        f"/api/v1/questions/{question_id}/rubric",
+        json={
+            "criteria": [
+                {"description": "第一项", "points": "5.00", "sort_order": 1},
+                {"description": "第二项", "points": "5.00", "sort_order": 1},
+            ]
+        },
+    )
+
+    assert empty.status_code == 422
+    assert duplicate_order.status_code == 422
+    assignment = await client.get(f"/api/v1/assignments/{assignment_id}")
+    assert assignment.status_code == 200
+    assert assignment.json()["questions"][0]["rubric_criteria"] == []
 
 
 @pytest.mark.anyio
@@ -209,6 +290,227 @@ async def test_publish_complete_assignment(client: httpx.AsyncClient) -> None:
 
 
 @pytest.mark.anyio
+async def test_published_assignment_rejects_all_content_updates(
+    client: httpx.AsyncClient,
+) -> None:
+    assignment_id, question_id = await _create_complete_assignment(client)
+    published = await client.post(f"/api/v1/assignments/{assignment_id}/publish")
+    assert published.status_code == 200
+
+    add_question = await client.post(
+        f"/api/v1/assignments/{assignment_id}/questions",
+        json={
+            "question_number": 2,
+            "question_type": "short_answer",
+            "stem": "第二题",
+            "max_score": "5.00",
+        },
+    )
+    replace_answer = await client.put(
+        f"/api/v1/questions/{question_id}/answer-key",
+        json={"answer_content": "修改后的答案"},
+    )
+    replace_rubric = await client.put(
+        f"/api/v1/questions/{question_id}/rubric",
+        json={"criteria": [{"description": "修改后的规则", "points": "10.00", "sort_order": 1}]},
+    )
+
+    assert [add_question.status_code, replace_answer.status_code, replace_rubric.status_code] == [
+        409,
+        409,
+        409,
+    ]
+    detail = await client.get(f"/api/v1/assignments/{assignment_id}")
+    question = detail.json()["questions"][0]
+    assert detail.json()["status"] == "published"
+    assert len(detail.json()["questions"]) == 1
+    assert question["answer_key"]["answer_content"] == "原标准答案"
+    assert question["rubric_criteria"][0]["description"] == "原评分规则"
+
+
+@pytest.mark.anyio
+async def test_concurrent_duplicate_question_numbers_are_conflict_safe(
+    client: httpx.AsyncClient,
+) -> None:
+    assignment_id = await _create_assignment(client)
+    gate = asyncio.Barrier(3)
+
+    async def add_duplicate() -> httpx.Response:
+        await gate.wait()
+        return await client.post(
+            f"/api/v1/assignments/{assignment_id}/questions",
+            json={
+                "question_number": 1,
+                "question_type": "short_answer",
+                "stem": "相同题号并发测试",
+                "max_score": "10.00",
+            },
+        )
+
+    requests = [asyncio.create_task(add_duplicate()) for _ in range(2)]
+    await gate.wait()
+    responses = await asyncio.gather(*requests)
+
+    assert sorted(response.status_code for response in responses) == [201, 409]
+    conflict = next(response for response in responses if response.status_code == 409)
+    assert conflict.json() == {"detail": "该作业已存在相同题号"}
+    detail = await client.get(f"/api/v1/assignments/{assignment_id}")
+    assert [question["question_number"] for question in detail.json()["questions"]] == [1]
+
+
+@pytest.mark.anyio
+async def test_publish_and_answer_update_are_serialized(
+    client: httpx.AsyncClient,
+) -> None:
+    assignment_id, question_id = await _create_complete_assignment(client)
+    gate = asyncio.Barrier(3)
+
+    async def publish() -> httpx.Response:
+        await gate.wait()
+        return await client.post(f"/api/v1/assignments/{assignment_id}/publish")
+
+    async def update_answer() -> httpx.Response:
+        await gate.wait()
+        return await client.put(
+            f"/api/v1/questions/{question_id}/answer-key",
+            json={"answer_content": "并发更新后的答案"},
+        )
+
+    publish_task = asyncio.create_task(publish())
+    update_task = asyncio.create_task(update_answer())
+    await gate.wait()
+    publish_response, update_response = await asyncio.gather(publish_task, update_task)
+
+    assert publish_response.status_code == 200
+    assert update_response.status_code in {200, 409}
+    detail = await client.get(f"/api/v1/assignments/{assignment_id}")
+    assert detail.json()["status"] == "published"
+    answer = detail.json()["questions"][0]["answer_key"]["answer_content"]
+    if update_response.status_code == 200:
+        assert answer == "并发更新后的答案"
+    else:
+        assert answer == "原标准答案"
+
+
+@pytest.mark.anyio
+async def test_duplicate_number_integrity_error_is_safely_mapped(
+    client: httpx.AsyncClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    assignment_id = await _create_assignment(client)
+    await _create_question(client, assignment_id=assignment_id)
+
+    async def stale_precheck(
+        _session: AsyncSession,
+        _assignment_id: UUID,
+        _question_number: int,
+    ) -> bool:
+        return False
+
+    monkeypatch.setattr(assignment_service.repository, "question_number_exists", stale_precheck)
+    response = await client.post(
+        f"/api/v1/assignments/{assignment_id}/questions",
+        json={
+            "question_number": 1,
+            "question_type": "short_answer",
+            "stem": "触发数据库唯一约束",
+            "max_score": "10.00",
+        },
+    )
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "该作业已存在相同题号"}
+    assert "uq_questions_assignment_number" not in response.text
+    detail = await client.get(f"/api/v1/assignments/{assignment_id}")
+    assert len(detail.json()["questions"]) == 1
+
+
+@pytest.mark.anyio
+async def test_failed_rubric_replacement_rolls_back_all_changes(
+    client: httpx.AsyncClient,
+    postgres_engine: AsyncEngine,
+) -> None:
+    assignment_id, question_id = await _create_complete_assignment(client)
+    await client.put(
+        f"/api/v1/questions/{question_id}/rubric",
+        json={"criteria": [{"description": "原评分规则", "points": "10.00", "sort_order": 1}]},
+    )
+    async with postgres_engine.begin() as connection:
+        await connection.execute(
+            text(
+                "CREATE OR REPLACE FUNCTION reject_test_rubric_insert() "
+                "RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN "
+                "IF NEW.description = '数据库故障注入' THEN "
+                "RAISE EXCEPTION 'internal trigger secret marker'; END IF; "
+                "RETURN NEW; END; $$"
+            )
+        )
+        await connection.execute(
+            text(
+                "CREATE TRIGGER reject_test_rubric_insert BEFORE INSERT "
+                "ON rubric_criteria FOR EACH ROW "
+                "EXECUTE FUNCTION reject_test_rubric_insert()"
+            )
+        )
+
+    try:
+        response = await client.put(
+            f"/api/v1/questions/{question_id}/rubric",
+            json={
+                "criteria": [
+                    {"description": "新评分规则", "points": "4.00", "sort_order": 1},
+                    {"description": "数据库故障注入", "points": "6.00", "sort_order": 2},
+                ]
+            },
+        )
+        assert response.status_code == 500
+        assert response.json() == {"detail": "数据库操作失败，请稍后重试"}
+        assert "internal trigger secret marker" not in response.text
+
+        detail = await client.get(f"/api/v1/assignments/{assignment_id}")
+        criteria = detail.json()["questions"][0]["rubric_criteria"]
+        assert [(item["description"], Decimal(item["points"])) for item in criteria] == [
+            ("原评分规则", Decimal("10.00"))
+        ]
+    finally:
+        async with postgres_engine.begin() as connection:
+            await connection.execute(
+                text("DROP TRIGGER IF EXISTS reject_test_rubric_insert ON rubric_criteria")
+            )
+            await connection.execute(text("DROP FUNCTION IF EXISTS reject_test_rubric_insert()"))
+
+
+@pytest.mark.anyio
+async def test_database_unavailable_returns_safe_503(client: httpx.AsyncClient) -> None:
+    async def unavailable_session() -> None:
+        raise OperationalError(
+            "SELECT 1",
+            {},
+            RuntimeError("connection secret marker"),
+        )
+
+    app.dependency_overrides[get_db_session] = unavailable_session
+    response = await client.get("/api/v1/assignments")
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "数据库暂时不可用，请稍后重试"}
+    assert "connection secret marker" not in response.text
+
+
+@pytest.mark.anyio
+async def test_openapi_documents_domain_and_database_errors() -> None:
+    responses = app.openapi()["paths"]["/api/v1/assignments/{assignment_id}/publish"]["post"][
+        "responses"
+    ]
+
+    assert {"200", "404", "409", "422", "500", "503"}.issubset(responses)
+    assert responses["409"]["content"]["application/json"]["schema"]["$ref"].endswith(
+        "/ErrorResponse"
+    )
+    assert responses["503"]["description"] == "数据库暂时不可用"
+
+
+@pytest.mark.anyio
 async def test_get_assignment_includes_its_question_answer_and_rubric(
     client: httpx.AsyncClient,
 ) -> None:
@@ -277,6 +579,26 @@ async def test_migration_is_applied_to_postgres(
                 )
             ).all()
         )
+        constraints = set(
+            (
+                await connection.scalars(
+                    text(
+                        "SELECT conname FROM pg_constraint "
+                        "WHERE connamespace = current_schema()::regnamespace"
+                    )
+                )
+            ).all()
+        )
+        indexes = set(
+            (
+                await connection.scalars(
+                    text(
+                        "SELECT indexname FROM pg_indexes "
+                        "WHERE schemaname = current_schema()"
+                    )
+                )
+            ).all()
+        )
 
     assert version == "14cbab704b41"
     assert {
@@ -285,6 +607,18 @@ async def test_migration_is_applied_to_postgres(
         "answer_keys",
         "rubric_criteria",
     }.issubset(tables)
+    assert {
+        "uq_questions_assignment_number",
+        "uq_answer_keys_question_id",
+        "uq_rubric_criteria_question_order",
+        "ck_questions_number_positive",
+        "ck_rubric_criteria_points_positive",
+    }.issubset(constraints)
+    assert {
+        "ix_assignments_status_created_at",
+        "ix_questions_assignment_id",
+        "ix_rubric_criteria_question_id",
+    }.issubset(indexes)
 
 
 async def _create_assignment(client: httpx.AsyncClient) -> str:
@@ -294,6 +628,22 @@ async def _create_assignment(client: httpx.AsyncClient) -> str:
     )
     assert response.status_code == 201
     return response.json()["id"]
+
+
+async def _create_complete_assignment(client: httpx.AsyncClient) -> tuple[str, str]:
+    assignment_id = await _create_assignment(client)
+    question_id = await _create_question(client, assignment_id=assignment_id)
+    answer_response = await client.put(
+        f"/api/v1/questions/{question_id}/answer-key",
+        json={"answer_content": "原标准答案"},
+    )
+    rubric_response = await client.put(
+        f"/api/v1/questions/{question_id}/rubric",
+        json={"criteria": [{"description": "原评分规则", "points": "10.00", "sort_order": 1}]},
+    )
+    assert answer_response.status_code == 200
+    assert rubric_response.status_code == 200
+    return assignment_id, question_id
 
 
 async def _create_question(

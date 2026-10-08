@@ -193,3 +193,104 @@ PostgreSQL 继续保存作业关系和评分结果。MinIO 保存原始文件。
 ### 现场演示
 
 运行 uv tree --depth 1 查看实际依赖。MongoDB、MinIO 和模型框架不在依赖树中；storage 与 llm 目录目前没有适配器实现。
+
+## 并发与一致性补充
+
+### 10. AsyncSession 如何保证请求隔离？
+
+#### 简明解释（ASD-STE100 风格）
+
+应用共享 Session 工厂。每个请求从工厂取得一个新的 AsyncSession。请求结束时，应用关闭这个 Session。并发请求不共享同一个 Session。
+
+#### 面试口头回答
+
+`session_factory` 是进程级对象，它负责创建 Session。`get_db_session` 每次被请求依赖调用时，都会进入一次 `factory()` 上下文并创建独立的 AsyncSession。Service 收到该请求自己的 Session。依赖退出时，上下文关闭 Session。如果 Service 中的事务失败，`session.begin()` 会回滚；请求结束后不会把这个有状态对象留给下一个请求。并发任务如果需要并行数据库操作，也不能共同使用一个 AsyncSession。
+
+#### 真实代码
+
+- `src/huipi_cloud/infrastructure/database/session.py`：`session_factory`、`get_db_session`
+- `src/huipi_cloud/modules/assignments/router.py`：`DbSession` 路由依赖
+
+#### 现场演示
+
+在 `get_db_session` 设置断点，并发请求两次查看得到的是不同 AsyncSession 实例；检查依赖退出时执行的上下文关闭。
+
+### 11. PostgreSQL 事务如何处理发布与修改并发？
+
+#### 简明解释（ASD-STE100 风格）
+
+每次写操作使用一个事务。写操作先锁定所属作业行。相同作业的编辑和发布按顺序执行。拿到锁后，操作会重新读取作业状态。
+
+#### 面试口头回答
+
+创建题目、替换答案、替换 Rubric 和发布都会先在一个事务中锁定 Assignment 行。PostgreSQL 的 `SELECT FOR UPDATE` 会让同一作业的写操作等待锁。等待结束后，后一个操作再检查草稿状态，所以如果发布先提交，编辑会得到 409；如果编辑先提交，发布会基于编辑后的数据做完整性检查。锁的范围是单个作业行，不需要分布式锁。测试用 `asyncio.Barrier` 同步启动真实 PostgreSQL API 请求，并检查最终答案与成功操作一致。
+
+#### 真实代码
+
+- `src/huipi_cloud/modules/assignments/repository.py`：`get_assignment_for_update`
+- `src/huipi_cloud/modules/assignments/service.py`：`add_question`、`replace_answer_key`、`replace_rubric`、`publish_assignment`
+- `tests/integration/test_assignments_api.py`：`test_publish_and_answer_update_are_serialized`
+
+#### 现场演示
+
+运行 `uv run pytest -q tests/integration/test_assignments_api.py -k serialized`，检查发布和答案更新的并发结果。
+
+### 12. 数据库约束与 Service 校验分别负责什么？
+
+#### 简明解释（ASD-STE100 风格）
+
+数据库约束保护每一行和表之间的关系。Service 校验需要读取多行或检查业务状态的规则。两层检查不能互相替代。
+
+#### 面试口头回答
+
+外键、作业内题号唯一、答案唯一、评分顺序唯一、分值正数等规则可以直接由 PostgreSQL 约束保证。请求 Schema 会尽早拒绝格式错误，Service 再检查当前业务状态和跨行规则。比如 Rubric 总分要和 Question 满分比较，这需要读取多个评分项和题目分值，不适合仅靠普通行级 CHECK 约束实现。Service 校验给出清楚的业务错误，数据库约束则防止其他写入路径或并发边界破坏数据。已知数据库约束异常也映射为安全的 409 或 422。
+
+#### 真实代码
+
+- `src/huipi_cloud/modules/assignments/models.py`：唯一和检查约束
+- `src/huipi_cloud/modules/assignments/schemas.py`：字段、Decimal 和顺序校验
+- `src/huipi_cloud/modules/assignments/service.py`：总分和发布规则
+- `src/huipi_cloud/main.py`：数据库异常映射
+
+#### 现场演示
+
+用重复题号验证数据库唯一约束兜底；用空评分列表和重复顺序验证请求校验；用评分总分不等于满分的作业验证发布业务校验。
+
+### 13. 为什么 Rubric 总分相等属于业务规则？
+
+#### 简明解释（ASD-STE100 风格）
+
+Rubric 有多行。它的总分要与另一张表中的题目满分比较。发布前必须执行这项规则。
+
+#### 面试口头回答
+
+评分项总分不是单个评分项的属性，而是同一道题的一组评分项之和，并且要和 Question 的 max_score 比较。普通 CHECK 约束只能可靠检查当前行，不能安全地聚合其他行并读取另一张表。因此 Service 在替换 Rubric 时拒绝超过题目满分的总分，并在发布事务中要求总分严格等于满分。这样草稿可以先保存部分评分细则，但不完整的评分方案不能发布。
+
+#### 真实代码
+
+- `src/huipi_cloud/modules/assignments/service.py`：`replace_rubric`、`publish_assignment`
+- `src/huipi_cloud/modules/assignments/schemas.py`：`RubricReplace` 非空与排序约束
+
+#### 现场演示
+
+设置总分低于满分的评分细则可以保存为草稿，但发布会返回 409；总分高于满分则在替换时返回 422。
+
+### 14. Rubric 整体替换失败时如何避免部分写入？
+
+#### 简明解释（ASD-STE100 风格）
+
+Service 在同一个数据库事务中删除旧评分项并写入新评分项。如果新数据写入失败，事务会回滚。旧评分项会保留。
+
+#### 面试口头回答
+
+Rubric PUT 定义为整体替换。Service 先取得作业行锁并验证新评分项，再在 `session.begin()` 事务里删除旧项、添加整组新项并 flush。如果任何插入触发数据库异常，事务上下文会回滚删除和已执行的插入，因此数据库不会只留下半组新规则。API 层将数据库异常转换为不暴露 SQL 或数据库消息的通用响应。集成测试用 PostgreSQL 触发器在插入中途注入失败，然后读取作业详情确认原评分项完整保留。
+
+#### 真实代码
+
+- `src/huipi_cloud/modules/assignments/service.py`：`replace_rubric`
+- `src/huipi_cloud/main.py`：`database_error_handler`
+- `tests/integration/test_assignments_api.py`：`test_failed_rubric_replacement_rolls_back_all_changes`
+
+#### 现场演示
+
+运行 `uv run pytest -q tests/integration/test_assignments_api.py -k rolls_back`。测试会建立短期 PostgreSQL 触发器，检查错误响应不泄露数据库消息，并确认旧 Rubric 仍然存在。

@@ -3,7 +3,7 @@
 ## P0：工程骨架与基础设施
 
 - 已有：Python 3.12 与 uv 工程、src 包、FastAPI、基础配置和日志、健康检查、pytest 与 Ruff。
-- 本轮补充：PostgreSQL Async 持久化、Docker Compose 本地数据库和 Alembic 迁移。
+- 本轮补充：PostgreSQL Async 持久化、Docker Compose 本地数据库、Alembic 迁移和 GitHub Actions 基础检查。
 - 后续计划：结构化日志、统一错误规范、生产环境配置校验、监控与部署流程。
 
 ## P1：作业提交、原始文件存储、任务管理

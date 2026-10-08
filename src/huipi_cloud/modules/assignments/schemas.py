@@ -121,5 +121,9 @@ class AssignmentDetail(AssignmentSummary):
     questions: list[QuestionRead]
 
 
+class ErrorResponse(BaseModel):
+    detail: str
+
+
 class RubricRead(BaseModel):
     criteria: list[RubricCriterionRead]
