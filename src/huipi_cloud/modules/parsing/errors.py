@@ -28,6 +28,9 @@ class RetryableParsingError(ParsingExecutionError):
             "resource_unavailable": FailureSummary(
                 "resource_unavailable", "解析资源暂时不足", True
             ),
+            "execution_timeout": FailureSummary(
+                "execution_timeout", "解析超过单次执行时限", True
+            ),
             "temporary_error": FailureSummary("temporary_error", "解析暂时失败，请稍后重试", True),
         }
         self.summary = summaries.get(code, summaries["temporary_error"])

@@ -74,6 +74,66 @@ class WaitingTestParser:
             self.cancelled.set()
 
 
+class PermanentFailureTestParser:
+    """Test-only executor that reports a permanent input failure."""
+
+    async def execute(self, task: ParsingInput) -> None:
+        del task
+        raise PermanentParsingError("invalid_document")
+
+
+class CancellationResistantTestParser:
+    """Test executor that catches cancellation until the worker abort hook fires."""
+
+    def __init__(self) -> None:
+        self.started = asyncio.Event()
+        self.cancelled = asyncio.Event()
+        self.release = asyncio.Event()
+        self.finished = asyncio.Event()
+
+    async def execute(self, task: ParsingInput) -> None:
+        del task
+        self.started.set()
+        try:
+            await asyncio.Future()
+        except asyncio.CancelledError:
+            self.cancelled.set()
+            await self.release.wait()
+        finally:
+            self.finished.set()
+
+
+class ControlledTestParser:
+    """Test executor that completes only after the test releases it."""
+
+    def __init__(self) -> None:
+        self.started = asyncio.Event()
+        self.release = asyncio.Event()
+        self.finished = asyncio.Event()
+
+    async def execute(self, task: ParsingInput) -> None:
+        del task
+        self.started.set()
+        try:
+            await self.release.wait()
+        finally:
+            self.finished.set()
+
+
+class TimeoutAwareTestParser:
+    """Test executor that reports and accepts a cooperative execution timeout."""
+
+    def __init__(self) -> None:
+        self.cancelled = asyncio.Event()
+
+    async def execute(self, task: ParsingInput) -> None:
+        del task
+        try:
+            await asyncio.Future()
+        except asyncio.CancelledError:
+            self.cancelled.set()
+
+
 def _runtime_settings(**overrides: object) -> Settings:
     values: dict[str, object] = {
         "parsing_lease_seconds": 6,
@@ -81,6 +141,7 @@ def _runtime_settings(**overrides: object) -> Settings:
         "parsing_retry_base_seconds": 1,
         "parsing_retry_max_seconds": 8,
         "parsing_shutdown_grace_seconds": 1,
+        "parsing_cancel_grace_seconds": 0.2,
         "parsing_poll_seconds": 0.1,
     }
     values.update(overrides)
@@ -155,7 +216,39 @@ async def _task_snapshot(
             "finished_at": task.finished_at,
             "last_error_code": task.last_error_code,
             "last_error_message": task.last_error_message,
-        }
+    }
+
+
+async def _wait_for_task_lock_wait(engine: AsyncEngine) -> None:
+    """Wait until PostgreSQL confirms a parsing_tasks operation is blocked on the row lock."""
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + 3
+    diagnostics = []
+    async with engine.connect() as monitor:
+        while loop.time() < deadline:
+            blocked = await monitor.scalar(
+                text(
+                    "SELECT EXISTS (SELECT 1 FROM pg_stat_activity "
+                    "WHERE wait_event_type = 'Lock' AND state = 'active' "
+                    "AND query ILIKE '%parsing_tasks%' AND pid <> pg_backend_pid())"
+                )
+            )
+            if blocked:
+                return
+            diagnostics = (
+                await monitor.execute(
+                    text(
+                        "SELECT state, wait_event_type, wait_event, query "
+                        "FROM pg_stat_activity WHERE datname = current_database() "
+                        "AND pid <> pg_backend_pid()"
+                    )
+                )
+            ).all()
+            await asyncio.sleep(0.01)
+    pytest.fail(
+        "PostgreSQL did not report the parsing_tasks operation waiting on the row lock: "
+        f"{diagnostics}"
+    )
 
 
 @pytest.mark.anyio
@@ -416,6 +509,343 @@ async def test_heartbeat_extends_only_the_current_unexpired_lease(
         lease_seconds=5,
         now=now + timedelta(seconds=8),
     ) is None
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("operation", ["heartbeat", "complete", "failure"])
+async def test_lease_operation_rejects_worker_after_expiry_while_waiting_for_row_lock(
+    operation: str,
+    postgres_engine: AsyncEngine,
+    parsing_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    task_id, _ = await _create_task(parsing_factory)
+    claimed = await repository.claim_next_task(parsing_factory, lease_seconds=60)
+    assert claimed is not None
+    lock_connection = await postgres_engine.connect()
+    transaction = await lock_connection.begin()
+    await lock_connection.execute(
+        select(ParsingTask.id)
+        .where(ParsingTask.id == task_id)
+        .with_for_update()
+    )
+
+    if operation == "heartbeat":
+        blocked_operation = repository.heartbeat(
+            parsing_factory,
+            task_id=task_id,
+            lease_token=claimed.lease_token,
+            lease_seconds=30,
+        )
+    elif operation == "complete":
+        blocked_operation = repository.complete_task(
+            parsing_factory,
+            task_id=task_id,
+            lease_token=claimed.lease_token,
+        )
+    else:
+        blocked_operation = repository.record_failure(
+            parsing_factory,
+            task_id=task_id,
+            lease_token=claimed.lease_token,
+            failure=classify_failure(RetryableParsingError()),
+            retry_delay_seconds=5,
+        )
+    operation_task = asyncio.create_task(blocked_operation)
+
+    try:
+        await _wait_for_task_lock_wait(postgres_engine)
+        await lock_connection.execute(
+            text(
+                "UPDATE parsing_tasks SET lease_expires_at = "
+                "clock_timestamp() + INTERVAL '0.1 seconds' WHERE id = :task_id"
+            ),
+            {"task_id": task_id},
+        )
+        await lock_connection.execute(text("SELECT pg_sleep(0.2)"))
+        await transaction.commit()
+        result = await asyncio.wait_for(operation_task, timeout=3)
+    finally:
+        if transaction.is_active:
+            await transaction.rollback()
+        await lock_connection.close()
+
+    if operation == "complete":
+        assert result is False
+    else:
+        assert result is None
+    snapshot = await _task_snapshot(parsing_factory, task_id)
+    assert snapshot["status"] == "running"
+    assert snapshot["lease_token"] == claimed.lease_token
+    async with parsing_factory() as session:
+        lease_expired = await session.scalar(
+            text(
+                "SELECT lease_expires_at <= clock_timestamp() "
+                "FROM parsing_tasks WHERE id = :task_id"
+            ),
+            {"task_id": task_id},
+        )
+    assert lease_expired is True
+
+
+@pytest.mark.anyio
+async def test_heartbeat_database_error_cancels_parser_and_leaves_lease_recoverable(
+    parsing_factory: async_sessionmaker[AsyncSession],
+    postgres_engine: AsyncEngine,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    task_id, _ = await _create_task(parsing_factory)
+    parser = WaitingTestParser()
+
+    original_execute = AsyncSession.execute
+
+    async def fail_heartbeat_update(session, statement, *args, **kwargs):
+        if "UPDATE parsing_tasks SET lease_expires_at" in str(statement):
+            raise OperationalError("UPDATE parsing_tasks", {}, RuntimeError("private endpoint"))
+        return await original_execute(session, statement, *args, **kwargs)
+
+    monkeypatch.setattr(AsyncSession, "execute", fail_heartbeat_update)
+    worker = ParsingWorker(
+        parsing_factory,
+        parser,
+        _runtime_settings(parsing_heartbeat_seconds=1),
+    )
+    stop_event = asyncio.Event()
+    worker_task = asyncio.create_task(worker.run(stop_event))
+
+    await asyncio.wait_for(parser.cancelled.wait(), timeout=3)
+    stop_event.set()
+    await asyncio.wait_for(worker_task, timeout=3)
+    monkeypatch.setattr(AsyncSession, "execute", original_execute)
+
+    assert parser.started.is_set()
+    assert parser.cancelled.is_set()
+    snapshot = await _task_snapshot(parsing_factory, task_id)
+    assert snapshot["status"] == "running"
+    old_token = snapshot["lease_token"]
+    assert "private endpoint" not in caplog.text
+    assert postgres_engine.sync_engine.pool.checkedout() == 0
+
+    async with parsing_factory() as session, session.begin():
+        await session.execute(
+            text(
+                "UPDATE parsing_tasks SET lease_expires_at = clock_timestamp() "
+                "WHERE id = :task_id"
+            ),
+            {"task_id": task_id},
+        )
+    recovered = await repository.claim_next_task(parsing_factory, lease_seconds=30)
+    assert recovered is not None
+    assert recovered.task.task_id == task_id
+    assert recovered.lease_token != old_token
+    assert recovered.task.attempt_count == 2
+
+
+@pytest.mark.anyio
+async def test_lost_lease_cancels_parser_without_completing_task(
+    parsing_factory: async_sessionmaker[AsyncSession],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    task_id, _ = await _create_task(parsing_factory)
+    claimed = await repository.claim_next_task(parsing_factory, lease_seconds=30)
+    assert claimed is not None
+    parser = WaitingTestParser()
+
+    async def lost_heartbeat(*args, **kwargs):
+        del args, kwargs
+        return None
+
+    monkeypatch.setattr(repository, "heartbeat", lost_heartbeat)
+    worker = ParsingWorker(
+        parsing_factory,
+        parser,
+        _runtime_settings(parsing_heartbeat_seconds=1),
+    )
+
+    await worker._execute_claim(claimed)
+
+    snapshot = await _task_snapshot(parsing_factory, task_id)
+    assert parser.cancelled.is_set()
+    assert snapshot["status"] == "running"
+    assert snapshot["lease_token"] == claimed.lease_token
+
+
+@pytest.mark.anyio
+async def test_non_transient_database_error_cancels_parser_and_propagates(
+    parsing_factory: async_sessionmaker[AsyncSession],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    await _create_task(parsing_factory)
+    claimed = await repository.claim_next_task(parsing_factory, lease_seconds=30)
+    assert claimed is not None
+    parser = WaitingTestParser()
+
+    async def invalid_database_state(*args, **kwargs):
+        del args, kwargs
+        raise IntegrityError("UPDATE parsing_tasks", {}, RuntimeError("constraint failure"))
+
+    monkeypatch.setattr(repository, "heartbeat", invalid_database_state)
+    worker = ParsingWorker(
+        parsing_factory,
+        parser,
+        _runtime_settings(parsing_heartbeat_seconds=1),
+    )
+
+    with pytest.raises(IntegrityError, match="constraint failure"):
+        await worker._execute_claim(claimed)
+
+    assert parser.cancelled.is_set()
+
+
+@pytest.mark.anyio
+async def test_claim_lease_duration_starts_at_database_update_not_before_claim_scan(
+    parsing_factory: async_sessionmaker[AsyncSession],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    await _create_task(parsing_factory)
+    original_sweep = repository._fail_exhausted_expired_leases
+
+    async def delayed_sweep(session: AsyncSession, now: datetime) -> None:
+        await session.execute(text("SELECT pg_sleep(1.0)"))
+        await original_sweep(session, now)
+
+    monkeypatch.setattr(repository, "_fail_exhausted_expired_leases", delayed_sweep)
+    claimed = await repository.claim_next_task(parsing_factory, lease_seconds=5)
+    assert claimed is not None
+
+    async with parsing_factory() as session:
+        remaining_seconds = await session.scalar(
+            text(
+                "SELECT EXTRACT(EPOCH FROM (lease_expires_at - clock_timestamp())) "
+                "FROM parsing_tasks WHERE id = :task_id"
+            ),
+            {"task_id": claimed.task.task_id},
+        )
+    assert remaining_seconds is not None
+    assert remaining_seconds > 4.5
+
+
+@pytest.mark.anyio
+async def test_permanent_parser_error_is_recorded_as_failed(
+    parsing_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    task_id, _ = await _create_task(parsing_factory)
+    claimed = await repository.claim_next_task(parsing_factory, lease_seconds=30)
+    assert claimed is not None
+    worker = ParsingWorker(
+        parsing_factory,
+        PermanentFailureTestParser(),
+        _runtime_settings(),
+    )
+
+    await worker._execute_claim(claimed)
+
+    snapshot = await _task_snapshot(parsing_factory, task_id)
+    assert snapshot["status"] == "failed"
+    assert snapshot["last_error_code"] == "invalid_input"
+    assert snapshot["finished_at"] is not None
+
+
+@pytest.mark.anyio
+async def test_non_cooperative_parser_triggers_bounded_worker_shutdown(
+    parsing_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    task_id, _ = await _create_task(parsing_factory)
+    parser = CancellationResistantTestParser()
+    aborted: list[UUID] = []
+
+    def record_hard_exit(failed_task_id: UUID) -> None:
+        aborted.append(failed_task_id)
+        parser.release.set()
+
+    worker = ParsingWorker(
+        parsing_factory,
+        parser,
+        _runtime_settings(
+            parsing_shutdown_grace_seconds=0,
+            parsing_cancel_grace_seconds=0.05,
+        ),
+        abort_process=record_hard_exit,
+    )
+    stop_event = asyncio.Event()
+    worker_task = asyncio.create_task(worker.run(stop_event))
+
+    await asyncio.wait_for(parser.started.wait(), timeout=3)
+    stop_event.set()
+    with pytest.raises(RuntimeError, match="parser did not stop"):
+        await asyncio.wait_for(worker_task, timeout=1)
+
+    assert parser.cancelled.is_set()
+    await asyncio.wait_for(parser.finished.wait(), timeout=1)
+    assert aborted == [task_id]
+    assert (await _task_snapshot(parsing_factory, task_id))["status"] == "running"
+
+
+@pytest.mark.anyio
+async def test_execution_timeout_cancels_cooperative_parser_and_records_retryable_failure(
+    parsing_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    task_id, _ = await _create_task(parsing_factory)
+    claimed = await repository.claim_next_task(parsing_factory, lease_seconds=30)
+    assert claimed is not None
+    parser = TimeoutAwareTestParser()
+    worker = ParsingWorker(
+        parsing_factory,
+        parser,
+        _runtime_settings(parsing_execution_timeout_seconds=0.05),
+    )
+
+    await worker._execute_claim(claimed)
+
+    snapshot = await _task_snapshot(parsing_factory, task_id)
+    assert parser.cancelled.is_set()
+    assert snapshot["status"] == "retry_wait"
+    assert snapshot["last_error_code"] == "execution_timeout"
+    assert snapshot["lease_token"] is None
+
+
+@pytest.mark.anyio
+async def test_worker_renews_lease_across_multiple_heartbeats_and_blocks_second_claim(
+    parsing_factory: async_sessionmaker[AsyncSession],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    task_id, _ = await _create_task(parsing_factory)
+    parser = ControlledTestParser()
+    renewed_expiries: list[datetime] = []
+    renewed_twice = asyncio.Event()
+    original_heartbeat = repository.heartbeat
+
+    async def capture_heartbeat(*args, **kwargs):
+        expiry = await original_heartbeat(*args, **kwargs)
+        assert expiry is not None
+        renewed_expiries.append(expiry)
+        if len(renewed_expiries) >= 2:
+            renewed_twice.set()
+        return expiry
+
+    monkeypatch.setattr(repository, "heartbeat", capture_heartbeat)
+    worker = ParsingWorker(
+        parsing_factory,
+        parser,
+        _runtime_settings(parsing_heartbeat_seconds=1, parsing_lease_seconds=6),
+    )
+    stop_event = asyncio.Event()
+    worker_task = asyncio.create_task(worker.run(stop_event))
+
+    await asyncio.wait_for(parser.started.wait(), timeout=3)
+    await asyncio.wait_for(renewed_twice.wait(), timeout=5)
+    assert renewed_expiries[1] > renewed_expiries[0]
+    assert await repository.claim_next_task(parsing_factory, lease_seconds=30) is None
+    assert (await _task_snapshot(parsing_factory, task_id))["status"] == "running"
+
+    stop_event.set()
+    parser.release.set()
+    await asyncio.wait_for(worker_task, timeout=3)
+
+    snapshot = await _task_snapshot(parsing_factory, task_id)
+    assert snapshot["status"] == "succeeded"
+    assert snapshot["finished_at"] is not None
+    assert snapshot["lease_token"] is None
 
 
 @pytest.mark.anyio

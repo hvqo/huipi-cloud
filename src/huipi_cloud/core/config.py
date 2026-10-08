@@ -35,6 +35,8 @@ class Settings(BaseSettings):
     parsing_retry_base_seconds: int = Field(default=5, ge=1, le=3600)
     parsing_retry_max_seconds: int = Field(default=300, ge=1, le=86400)
     parsing_shutdown_grace_seconds: int = Field(default=30, ge=0, le=3600)
+    parsing_cancel_grace_seconds: float = Field(default=5.0, ge=0, le=60)
+    parsing_execution_timeout_seconds: float = Field(default=1800.0, gt=0, le=86400)
     parsing_executor: str | None = None
 
     @model_validator(mode="after")

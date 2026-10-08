@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
-from sqlalchemy import and_, func, or_, select, update
+from sqlalchemy import and_, case, func, literal, or_, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from huipi_cloud.modules.parsing.enums import ParsingTaskStatus, can_transition
@@ -31,7 +31,6 @@ async def claim_next_task(
     """Claim the oldest eligible task with SKIP LOCKED in a short transaction."""
     async with session_factory() as session, session.begin():
         claimed_at = await _operation_time(session, now)
-        lease_expires_at = claimed_at + timedelta(seconds=lease_seconds)
         await _fail_exhausted_expired_leases(session, claimed_at)
         eligible = or_(
             and_(
@@ -75,14 +74,25 @@ async def claim_next_task(
         task.attempt_count += 1
         task.next_run_at = None
         task.lease_token = lease_token
-        task.lease_expires_at = lease_expires_at
-        task.started_at = task.started_at or claimed_at
+        if now is None:
+            database_now = func.clock_timestamp()
+            task.lease_expires_at = _database_time_after(lease_seconds)
+            task.started_at = task.started_at or database_now
+            task.updated_at = database_now
+        else:
+            task.lease_expires_at = claimed_at + timedelta(seconds=lease_seconds)
+            task.started_at = task.started_at or claimed_at
+            task.updated_at = claimed_at
         task.finished_at = None
-        task.updated_at = claimed_at
         if previous_status is ParsingTaskStatus.RUNNING:
             task.last_error_code = "lease_expired"
             task.last_error_message = "上一次执行租约到期，任务已重新领取"
         await session.flush()
+        if now is None:
+            await session.refresh(task, attribute_names=["lease_expires_at"])
+        lease_expires_at = task.lease_expires_at
+        if lease_expires_at is None:
+            raise RuntimeError("PostgreSQL did not return the new task lease")
         return ClaimedTask(
             task=ParsingInput(
                 task_id=task.id,
@@ -109,8 +119,10 @@ async def heartbeat(
 ) -> datetime | None:
     """Extend a lease only while its token is current and its lease is unexpired."""
     async with session_factory() as session, session.begin():
-        checked_at = await _operation_time(session, now)
-        new_expiry = checked_at + timedelta(seconds=lease_seconds)
+        checked_at = _time_expression(now)
+        new_expiry = _database_time_after(lease_seconds) if now is None else (
+            checked_at + timedelta(seconds=lease_seconds)
+        )
         result = await session.execute(
             update(ParsingTask)
             .where(
@@ -134,7 +146,7 @@ async def complete_task(
 ) -> bool:
     """Finish a task only if this worker still owns a valid lease."""
     async with session_factory() as session, session.begin():
-        completed_at = await _operation_time(session, now)
+        completed_at = _time_expression(now)
         result = await session.execute(
             update(ParsingTask)
             .where(
@@ -169,37 +181,43 @@ async def record_failure(
 ) -> ParsingTaskStatus | None:
     """Record a bounded failure summary or schedule a due-time retry."""
     async with session_factory() as session, session.begin():
-        failed_at = await _operation_time(session, now)
-        task = await session.scalar(
-            select(ParsingTask)
+        failed_at = _time_expression(now)
+        retry_allowed = and_(
+            literal(failure.retryable),
+            ParsingTask.attempt_count < ParsingTask.max_attempts,
+        )
+        retry_due = (
+            failed_at + timedelta(seconds=retry_delay_seconds)
+            if now is not None
+            else _database_time_after(retry_delay_seconds)
+        )
+        result = await session.execute(
+            update(ParsingTask)
             .where(
                 ParsingTask.id == task_id,
                 ParsingTask.status == ParsingTaskStatus.RUNNING.value,
                 ParsingTask.lease_token == lease_token,
                 ParsingTask.lease_expires_at > failed_at,
             )
-            .with_for_update()
+            .values(
+                status=case(
+                    (retry_allowed, ParsingTaskStatus.RETRY_WAIT.value),
+                    else_=ParsingTaskStatus.FAILED.value,
+                ),
+                next_run_at=case((retry_allowed, retry_due), else_=None),
+                lease_token=None,
+                lease_expires_at=None,
+                finished_at=case((retry_allowed, None), else_=failed_at),
+                last_error_code=failure.code[:64],
+                last_error_message=failure.message[:240],
+                updated_at=failed_at,
+            )
+            .returning(ParsingTask.status)
         )
-        if task is None:
+        status_value = result.scalar_one_or_none()
+        if status_value is None:
             return None
-        retry = failure.retryable and task.attempt_count < task.max_attempts
-        new_status = (
-            ParsingTaskStatus.RETRY_WAIT.value if retry else ParsingTaskStatus.FAILED.value
-        )
-        if not can_transition(ParsingTaskStatus.RUNNING, ParsingTaskStatus(new_status)):
-            return None
-        task.status = new_status
-        task.next_run_at = (
-            failed_at + timedelta(seconds=retry_delay_seconds) if retry else None
-        )
-        task.lease_token = None
-        task.lease_expires_at = None
-        task.finished_at = None if retry else failed_at
-        task.last_error_code = failure.code[:64]
-        task.last_error_message = failure.message[:240]
-        task.updated_at = failed_at
-        await session.flush()
-        return ParsingTaskStatus(task.status)
+        return ParsingTaskStatus(status_value)
 
 
 async def get_task_by_submission(
@@ -241,6 +259,24 @@ async def _operation_time(session: AsyncSession, value: datetime | None) -> date
         value = await session.scalar(select(func.clock_timestamp()))
         if value is None:
             raise RuntimeError("PostgreSQL did not return its current time")
+    return _normalize_time(value)
+
+
+def _time_expression(value: datetime | None):
+    """Use PostgreSQL wall time in write predicates, after any row-lock wait."""
+    if value is None:
+        return func.clock_timestamp()
+    return _normalize_time(value)
+
+
+def _normalize_time(value: datetime) -> datetime:
     if value.tzinfo is None:
         raise ValueError("task runtime timestamps must be timezone-aware")
     return value.astimezone(UTC)
+
+
+def _database_time_after(seconds: int):
+    """Compute a deadline from PostgreSQL wall time in the write statement."""
+    if seconds <= 0:
+        raise ValueError("lease duration must be positive")
+    return func.clock_timestamp() + literal(seconds) * text("INTERVAL '1 second'")

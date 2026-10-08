@@ -21,7 +21,12 @@ class ParsingInput:
 
 
 class ParserExecutor(Protocol):
-    """Execute a real parser and return only after parsing has truly completed."""
+    """Run cooperative async parsing within the worker cancellation contract.
+
+    Do not detach background work, block the event loop, or treat ``to_thread``
+    cancellation as thread termination. Blocking/native parsers need a supervised
+    child-process adapter before they can run in this worker.
+    """
 
     async def execute(self, task: ParsingInput) -> None:
         """Parse one submission; raise a typed error to control retry policy."""
