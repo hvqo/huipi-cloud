@@ -1,0 +1,43 @@
+# Local environments and secrets
+.venv/
+.idea/
+.env
+.env.*
+!.env.example
+
+# Python tooling and build output
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+build/
+dist/
+*.log
+*.tmp
+
+# Local student submissions and generated processing data
+/data/
+/uploads/
+/storage/
+/artifacts/
+/outputs/
+/parsed/
+/intermediate/
+/test-results/
+
+# Model checkpoints and inference artifacts
+/models/
+*.pt
+*.pth
+*.onnx
+*.safetensors
+*.gguf
+*.engine
+*.ckpt
