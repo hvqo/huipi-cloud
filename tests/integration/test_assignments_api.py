@@ -1,7 +1,6 @@
 """Assignment API integration tests backed by a dedicated PostgreSQL database."""
 
 import asyncio
-from collections.abc import AsyncIterator
 from decimal import Decimal
 from uuid import UUID
 
@@ -9,41 +8,11 @@ import httpx
 import pytest
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 from huipi_cloud.infrastructure.database.session import get_db_session
 from huipi_cloud.main import app
 from huipi_cloud.modules.assignments import service as assignment_service
-
-
-@pytest.fixture
-async def client(
-    anyio_backend: str,
-    postgres_engine: AsyncEngine,
-) -> AsyncIterator[httpx.AsyncClient]:
-    async with postgres_engine.begin() as connection:
-        await connection.execute(text("TRUNCATE TABLE assignments CASCADE"))
-
-    session_factory = async_sessionmaker(postgres_engine, expire_on_commit=False)
-
-    async def override_session():
-        async with session_factory() as session:
-            yield session
-
-    previous_overrides = app.dependency_overrides.copy()
-    app.dependency_overrides[get_db_session] = override_session
-    try:
-        transport = httpx.ASGITransport(app=app)
-        async with httpx.AsyncClient(
-            transport=transport,
-            base_url="http://test",
-        ) as test_client:
-            yield test_client
-    finally:
-        app.dependency_overrides.clear()
-        app.dependency_overrides.update(previous_overrides)
-        async with postgres_engine.begin() as connection:
-            await connection.execute(text("TRUNCATE TABLE assignments CASCADE"))
 
 
 @pytest.mark.anyio
@@ -600,24 +569,38 @@ async def test_migration_is_applied_to_postgres(
             ).all()
         )
 
-    assert version == "14cbab704b41"
+    assert version == "fd1e8d651902"
     assert {
         "assignments",
         "questions",
         "answer_keys",
         "rubric_criteria",
+        "submissions",
+        "submission_files",
+        "parsing_tasks",
     }.issubset(tables)
     assert {
         "uq_questions_assignment_number",
         "uq_answer_keys_question_id",
         "uq_rubric_criteria_question_order",
+        "uq_submissions_assignment_student_ref",
+        "uq_submission_files_bucket_object_key",
+        "uq_parsing_tasks_submission_id",
         "ck_questions_number_positive",
         "ck_rubric_criteria_points_positive",
+        "ck_submission_files_size_positive",
+        "ck_parsing_tasks_status",
+        "submissions_assignment_id_fkey",
+        "submission_files_submission_id_fkey",
+        "parsing_tasks_submission_id_fkey",
     }.issubset(constraints)
     assert {
         "ix_assignments_status_created_at",
         "ix_questions_assignment_id",
         "ix_rubric_criteria_question_id",
+        "ix_submissions_assignment_created_at",
+        "ix_parsing_tasks_status_created_at",
+        "ix_submission_files_created_at",
     }.issubset(indexes)
 
 

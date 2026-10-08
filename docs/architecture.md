@@ -1,53 +1,72 @@
 # 架构与模块边界
 
-慧批云端采用 src 布局的模块化单体。当前实现包含教师侧作业管理和 PostgreSQL 持久化；不连接 MongoDB、MinIO、消息队列或模型服务。
+慧批云端采用 src 布局的模块化单体。当前已实现教师作业管理和学生作业提交闭环；OCR、AI 批改、队列 Worker 和用户权限仍未实现。
 
 ## 分层职责
 
-- api/v1：HTTP 路由、请求与响应边界。应用入口注册领域错误和数据库异常到安全、稳定的 HTTP 响应。
-- core：应用配置、日志和跨模块基础能力；不包含教学领域规则。
-- modules/assignments：作业、题目、人工标准答案、评分细则和草稿发布规则。
-- modules/parsing、grading、copilot、review：后续领域位置，当前没有实际业务代码。
-- infrastructure/database：Async Engine、请求级 AsyncSession 和 SQLAlchemy Base。
-- infrastructure/storage、llm、messaging、retrieval：后续适配器位置，当前没有实现。
-- workers：后续异步任务入口，当前没有队列或后台执行代码。
-- migrations：Alembic 数据库版本管理。FastAPI 启动时不创建表。
+- `api/v1`：HTTP 路由、请求校验、响应结构和错误码。
+- `core`：环境配置、日志及跨模块基础能力，不包含教学业务规则。
+- `modules/assignments`：作业、题目、人工答案、评分细则和作业发布校验。
+- `modules/submissions`：模拟学生标识校验、文件检查、提交编排、提交查询和待解析任务登记。
+- `infrastructure/database`：SQLAlchemy Async Engine、请求级 AsyncSession 和 ORM Base。
+- `infrastructure/storage`：boto3 S3 兼容适配器。同步对象存储 I/O 在工作线程中运行，不阻塞 FastAPI 事件循环。本地 Compose 使用 PGSTY SILO 社区分支，兼容 MinIO S3 API。
+- `modules/parsing`、`grading`、`copilot`、`review`、`infrastructure/llm`、`messaging`、`retrieval`、`workers`：未来模块边界，目前没有相关业务实现。
+- `migrations`：Alembic 版本迁移。应用启动时不会调用 `create_all`。
 
-## 核心数据关系
+路由负责 HTTP 输入输出；领域服务组织用例和事务边界；Repository 执行本模块所需的数据库查询；ORM 模型定义可由数据库直接保证的约束。当前没有通用 Repository 框架或微服务拆分。
 
-一个 Assignment 有多道 Question；一道 Question 最多有一个 AnswerKey，并可以有多条 RubricCriterion。删除作业时，题目、答案和评分细则通过外键级联删除。
+## 数据关系
 
-题号在同一作业内唯一。每道题的答案键唯一。评分细则顺序在同一道题内唯一。作业只有在至少包含一道题、每道题都有答案与评分细则、且该题评分细则总分等于满分时才能发布。
+```mermaid
+erDiagram
+    ASSIGNMENT ||--o{ QUESTION : contains
+    QUESTION ||--o| ANSWER_KEY : has
+    QUESTION ||--o{ RUBRIC_CRITERION : scored_by
+    ASSIGNMENT ||--o{ SUBMISSION : receives
+    SUBMISSION ||--|| SUBMISSION_FILE : stores
+    SUBMISSION ||--|| PARSING_TASK : registers
+```
 
-## 字段与约束选择
+一份作业可以接收多份提交。唯一约束 `(assignment_id, student_ref)` 限定一个模拟学生对同一作业只成功提交一次。每份提交恰好关联一份原始文件元数据和一条解析任务记录。外键使用级联删除，使删除提交或作业时数据库元数据保持完整。
 
-- 主键使用 UUID，便于 API 和后续对象存储、任务消息引用同一记录；UUID 不代表调用方已获授权。
-- 作业标题、学科、年级为必填字段，说明文字可选，避免创建草稿时要求教师先写完全部说明。
-- 题型使用当前支持的有限枚举，并有数据库检查约束；新增题型需要同时更新 Pydantic 校验与迁移约束。
-- 标准答案保存 source。当前教师接口固定写入 teacher，数据库允许 model_generated 作为未来来源；本轮没有模型生成路径。
-- 分值使用 Numeric(8, 2) 与 Decimal，限制两位小数。评分项总分与题目满分的跨行关系由发布事务检查。
-- 时间列使用带时区类型；应用侧默认值来自 UTC。RubricCriterion 暂无时间戳，因为当前接口整体替换规则且没有版本历史。
+`SubmissionFile` 保存 bucket、由服务端生成的 `object_key`、安全处理后的文件名、MIME 类型、字节数和 SHA-256。文件二进制只存 MinIO，不存 PostgreSQL。解析任务当前只写 `pending`；没有 Worker，因此不表示它已排队或正在执行。
 
-## API 与事务边界
+## 上传校验与数据流
 
-统一 API 前缀为 /api/v1。Router 负责输入输出与状态码；Service 执行业务规则并定义事务；Repository 封装本模块所需的 SQLAlchemy 查询；ORM 模型声明外键、唯一约束和检查约束。
+上传端点要求 multipart 字段 `student_ref` 和一个 `file`。学生标识只接受有限 ASCII 字符格式，不承载认证或授权含义。文件上限由 `MAX_UPLOAD_SIZE_BYTES` 控制，默认 20 MiB。文件扩展名、声明的 MIME 类型和 PDF/JPEG/PNG 签名必须一致；文件名只作为元数据保存，路径部分会被剥离。
 
-每个写操作使用一个数据库事务。修改题目内容前先对所属 Assignment 行加锁；同一作业的题目、答案、评分细则修改及发布按作业行串行化。数据库约束作为业务校验之外的最终完整性边界。评分细则 PUT 是整体替换，多个并发修改按数据库锁释放顺序串行执行，后完成的替换生效；当前没有客户端版本号或冲突合并。
+ASGI 中间件先检查上传请求的 `Content-Length`，并在无长度头时限制实际 multipart 请求体总量为文件配置上限加 64 KiB 表单开销，避免 Starlette 解析阶段先无界落盘。应用再以 64 KiB 块读取上传文件，写入最大 1 MiB 内存阈值的临时文件，超出部分由临时文件落盘。读取过程累计文件字节数并计算 SHA-256。boto3 的上传、下载和删除操作通过 `asyncio.to_thread` 执行。文件下载端点从 MinIO 取出流，再以 64 KiB 块返回；它不会返回永久公开对象 URL。
 
-读取作业详情通过显式关系预加载，避免 AsyncSession 序列化时触发隐式懒加载。所有时间列使用带时区的时间类型，应用生成时间使用 UTC。
+上传的执行顺序如下：
 
-AsyncSession 工厂可以是进程级共享对象，但每次调用依赖都会创建并关闭一个新的 Session；Session 本身不会跨请求共享。写操作在事务内构造好响应对象，并在事务提交后才返回，避免提交后再读到其他并发请求的新值。PostgreSQL 的 `SELECT FOR UPDATE` 保护同一作业的状态转换和编辑。
+1. 检查作业存在且已发布，并验证文件名、大小、声明类型和文件签名。
+2. 生成提交 UUID、文件 UUID 和对象 Key。
+3. 将原始文件写入 MinIO。
+4. 在一个 PostgreSQL 事务内锁定并复核作业状态，写入 `Submission`、`SubmissionFile` 和 `ParsingTask(pending)`。
+5. 事务提交后返回记录。
 
-跨行规则由 Service 校验：例如 Rubric 总分必须等于题目满分。数据库约束负责外键、唯一值、单列范围和非空等可由数据库直接保证的条件。SQLAlchemy 数据库异常不会原样返回客户端：已知唯一约束映射为 409，数据库不可用映射为 503，其他数据库错误返回通用 500 响应。写事务由 `session.begin()` 在异常时回滚，请求结束时 Session 关闭。
+对象 Key 的生产格式是 `assignments/{assignment_id}/submissions/{submission_id}/{file_id}`。路径完全由服务端 UUID 生成，不含用户文件名。集成测试使用独立测试存储桶和 `tests/{随机值}/` 前缀。
 
-`GET /api/v1/health` 当前是存活探针，不查询 PostgreSQL；它只能说明应用进程能够响应请求，不能证明数据库已就绪。
+对象存储与 PostgreSQL 不共享事务。如果对象上传失败，不会写入提交记录。若数据库失败发生在 COMMIT 开始前，服务回滚并尝试删除对象；如果 COMMIT 结果不确定，服务保留对象，避免数据库实际已提交时文件却被删除。两种情况下都可能留下孤立对象：进程在两步间崩溃，或不确定的 COMMIT 实际回滚。未来需要按数据库元数据与存储清单定期对账和清理；当前没有分布式事务或自动清理器。
 
-## 数据库与配置
+## 并发与完整性
 
-数据库连接串从 DATABASE_URL 环境变量读取。Docker Compose 只定义本地 PostgreSQL 服务，绑定到回环地址；应用数据库与名称以 _test 结尾的测试数据库分开。测试不得将 TEST_DATABASE_URL 指向开发数据库。
+每个 HTTP 请求通过 AsyncSession 工厂创建独立 Session；进程级 Engine 和 Session 工厂共享，Session 实例不跨请求共享。提交记录、文件元数据和任务使用 `session.begin()` 处于同一数据库事务，失败时整体回滚。
 
-ORM 类型和迁移脚本是两份需要检查的一致性定义。开发者通过 Alembic upgrade head 应用迁移，通过 Alembic check 检查模型是否存在未迁移变更。不会使用 SQLAlchemy create_all 自动建表。GitHub Actions 在 Pull Request 和 main 推送时运行 Ruff、PostgreSQL 迁移、Alembic 一致性检查和 pytest。
+业务层负责“作业已发布”“大小不超过配置”“文件类型与签名匹配”等跨字段或外部系统规则。数据库负责外键、唯一键、非空、正字节数、状态取值和基础格式长度等最终约束。同一学生的并发上传可能都先完成对象上传，但唯一约束只允许一条提交元数据；失败请求会尝试删除自己的唯一 Key。
 
-## 安全边界与限制
+对作业行使用 PostgreSQL 锁，避免上传对象期间作业状态改变后仍写入提交。文件校验与对象上传发生在锁事务之外，避免把慢 I/O 放在数据库事务里；最终写记录前仍会在事务内重新读取并锁定作业行。
 
-本轮没有登录、RBAC、教师归属字段或租户隔离。作业 API 仅供本地开发和受控环境验收，不能作为生产安全接口。后续需先设计身份、资源归属和授权，再对外提供教师作业管理能力。
+## API、安全与可用性边界
+
+提交与文件查询 API 没有登录、RBAC、学生身份认证、作业归属检查或租户隔离。`student_ref` 可以由调用方任意填写，只用于本地测试唯一性。这些 API 只能在本地或受控环境运行，不能直接作为公网安全接口。
+
+作业与提交 ID 使用 UUID，但 UUID 不代表授权。数据库故障映射为不泄露内部细节的 500/503；MinIO 故障返回通用 503。`GET /api/v1/health` 仍是存活探针，不检查 PostgreSQL 或 MinIO 是否就绪。
+
+存储桶默认私有，`scripts/init_minio_bucket.py` 会创建缺失的本地 bucket 并设置 private ACL。凭据经环境变量读取，`.env.example` 中的值只是本地示例。原始文件和对象存储凭据不会写入日志。下载响应提供内容类型、附件文件名、长度和 `no-store` 缓存控制。下载前复制数据库元数据并关闭只读事务，再从对象存储取流，避免网络传输期间占用 PostgreSQL 连接。若对象流在 HTTP 响应开始后中断，服务不能再改写状态码；客户端会收到失败或不完整的流，本轮没有实现断点续传。
+
+## 本地与 CI 数据隔离
+
+Compose 的 PostgreSQL 服务和已有 `postgres_data` 卷不变。本轮只增加独立 `minio_data` 卷，并把 MinIO 管理端口绑定到回环地址。集成测试需要名称以 `_test` 结尾的 PostgreSQL 数据库；测试拒绝连接远端 MinIO，只使用单独的 `MINIO_TEST_BUCKET` 和随机对象 Key 前缀，并逐一删除自己生成的对象，不删除测试桶或开发数据卷。
+
+CI 使用 PostgreSQL 16 和单独启动的 PGSTY SILO 容器，按真实 S3 API 执行对象读写集成测试。检查包括 Ruff、空数据库迁移、Alembic 模型一致性和 pytest。外部依赖不可达或对象存储未配置时，相关集成测试不能报告为通过。

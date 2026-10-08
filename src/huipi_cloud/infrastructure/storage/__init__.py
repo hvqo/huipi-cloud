@@ -1,1 +1,1 @@
-"""File storage adapters, to be added in a later phase."""
+"""S3-compatible object storage adapters."""
