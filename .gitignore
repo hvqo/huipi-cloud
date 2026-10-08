@@ -21,6 +21,9 @@ build/
 dist/
 *.log
 *.tmp
+*.db
+*.sqlite
+*.sqlite3
 
 # Local student submissions and generated processing data
 /data/

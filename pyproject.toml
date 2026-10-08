@@ -9,8 +9,11 @@ description = "慧批云端：面向高中教学的 AI 教学辅助平台"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "alembic>=1.13",
+    "asyncpg>=0.29",
     "fastapi>=0.142.4",
     "pydantic-settings>=2.15.0",
+    "sqlalchemy[asyncio]>=2.0,<3",
     "uvicorn[standard]>=0.54.0",
 ]
 
