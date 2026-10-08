@@ -219,8 +219,8 @@ async def _task_snapshot(
     }
 
 
-async def _wait_for_task_lock_wait(engine: AsyncEngine) -> None:
-    """Wait until PostgreSQL confirms a parsing_tasks operation is blocked on the row lock."""
+async def _wait_for_task_lock_wait(engine: AsyncEngine, blocker_pid: int) -> None:
+    """Wait until PostgreSQL confirms another session is blocked by our lock holder."""
     loop = asyncio.get_running_loop()
     deadline = loop.time() + 3
     diagnostics = []
@@ -228,17 +228,20 @@ async def _wait_for_task_lock_wait(engine: AsyncEngine) -> None:
         while loop.time() < deadline:
             blocked = await monitor.scalar(
                 text(
-                    "SELECT EXISTS (SELECT 1 FROM pg_stat_activity "
+                    "SELECT EXISTS (SELECT 1 FROM pg_stat_activity AS activity "
                     "WHERE wait_event_type = 'Lock' AND state = 'active' "
-                    "AND query ILIKE '%parsing_tasks%' AND pid <> pg_backend_pid())"
-                )
+                    "AND :blocker_pid = ANY(pg_blocking_pids(activity.pid)) "
+                    "AND pid <> pg_backend_pid())"
+                ),
+                {"blocker_pid": blocker_pid},
             )
             if blocked:
                 return
             diagnostics = (
                 await monitor.execute(
                     text(
-                        "SELECT state, wait_event_type, wait_event, query "
+                        "SELECT pid, state, wait_event_type, wait_event, "
+                        "pg_blocking_pids(pid), query "
                         "FROM pg_stat_activity WHERE datname = current_database() "
                         "AND pid <> pg_backend_pid()"
                     )
@@ -528,6 +531,8 @@ async def test_lease_operation_rejects_worker_after_expiry_while_waiting_for_row
         .where(ParsingTask.id == task_id)
         .with_for_update()
     )
+    blocker_pid = await lock_connection.scalar(text("SELECT pg_backend_pid()"))
+    assert blocker_pid is not None
 
     if operation == "heartbeat":
         blocked_operation = repository.heartbeat(
@@ -553,7 +558,7 @@ async def test_lease_operation_rejects_worker_after_expiry_while_waiting_for_row
     operation_task = asyncio.create_task(blocked_operation)
 
     try:
-        await _wait_for_task_lock_wait(postgres_engine)
+        await _wait_for_task_lock_wait(postgres_engine, blocker_pid)
         await lock_connection.execute(
             text(
                 "UPDATE parsing_tasks SET lease_expires_at = "
