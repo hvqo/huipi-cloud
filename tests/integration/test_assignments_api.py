@@ -569,7 +569,7 @@ async def test_migration_is_applied_to_postgres(
             ).all()
         )
 
-    assert version == "fd1e8d651902"
+    assert version == "8b2c0f7d1a43"
     assert {
         "assignments",
         "questions",
@@ -590,6 +590,8 @@ async def test_migration_is_applied_to_postgres(
         "ck_rubric_criteria_points_positive",
         "ck_submission_files_size_positive",
         "ck_parsing_tasks_status",
+        "ck_parsing_tasks_lease",
+        "ck_parsing_tasks_max_attempts",
         "submissions_assignment_id_fkey",
         "submission_files_submission_id_fkey",
         "parsing_tasks_submission_id_fkey",
@@ -599,7 +601,8 @@ async def test_migration_is_applied_to_postgres(
         "ix_questions_assignment_id",
         "ix_rubric_criteria_question_id",
         "ix_submissions_assignment_created_at",
-        "ix_parsing_tasks_status_created_at",
+        "ix_parsing_tasks_status_next_run_created_at",
+        "ix_parsing_tasks_status_lease_expires_at",
         "ix_submission_files_created_at",
     }.issubset(indexes)
 

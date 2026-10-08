@@ -1,6 +1,8 @@
 """Application settings loaded from environment variables or a local .env file."""
 
-from pydantic import Field
+from typing import Self
+
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -26,6 +28,22 @@ class Settings(BaseSettings):
     minio_test_bucket: str = "huipi-cloud-test"
     minio_object_key_prefix: str = ""
     max_upload_size_bytes: int = Field(default=20 * 1024 * 1024, gt=0)
+    parsing_max_attempts: int = Field(default=3, ge=1, le=20)
+    parsing_lease_seconds: int = Field(default=60, ge=3, le=3600)
+    parsing_heartbeat_seconds: int = Field(default=15, ge=1, le=120)
+    parsing_poll_seconds: float = Field(default=1.0, gt=0, le=60)
+    parsing_retry_base_seconds: int = Field(default=5, ge=1, le=3600)
+    parsing_retry_max_seconds: int = Field(default=300, ge=1, le=86400)
+    parsing_shutdown_grace_seconds: int = Field(default=30, ge=0, le=3600)
+    parsing_executor: str | None = None
+
+    @model_validator(mode="after")
+    def validate_parsing_timing(self) -> Self:
+        if self.parsing_heartbeat_seconds >= self.parsing_lease_seconds:
+            raise ValueError("PARSING_HEARTBEAT_SECONDS must be less than PARSING_LEASE_SECONDS")
+        if self.parsing_retry_base_seconds > self.parsing_retry_max_seconds:
+            raise ValueError("PARSING_RETRY_BASE_SECONDS cannot exceed PARSING_RETRY_MAX_SECONDS")
+        return self
 
 
 settings = Settings()

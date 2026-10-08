@@ -1,4 +1,4 @@
-"""Database models for original submission files and pending parsing records."""
+"""Database models for original submission files and parsing task execution state."""
 
 from datetime import datetime
 from uuid import UUID, uuid4
@@ -123,8 +123,32 @@ class ParsingTask(Base):
     __tablename__ = "parsing_tasks"
     __table_args__ = (
         UniqueConstraint("submission_id", name="uq_parsing_tasks_submission_id"),
-        CheckConstraint("status = 'pending'", name="ck_parsing_tasks_status"),
-        Index("ix_parsing_tasks_status_created_at", "status", "created_at"),
+        CheckConstraint(
+            "status IN ('pending', 'running', 'retry_wait', 'succeeded', 'failed')",
+            name="ck_parsing_tasks_status",
+        ),
+        CheckConstraint("attempt_count >= 0", name="ck_parsing_tasks_attempt_count"),
+        CheckConstraint(
+            "max_attempts > 0 AND attempt_count <= max_attempts",
+            name="ck_parsing_tasks_max_attempts",
+        ),
+        CheckConstraint(
+            "(status = 'running' AND lease_token IS NOT NULL AND lease_expires_at IS NOT NULL) "
+            "OR (status <> 'running' AND lease_token IS NULL AND lease_expires_at IS NULL)",
+            name="ck_parsing_tasks_lease",
+        ),
+        CheckConstraint(
+            "(status = 'retry_wait' AND next_run_at IS NOT NULL) "
+            "OR (status <> 'retry_wait' AND next_run_at IS NULL)",
+            name="ck_parsing_tasks_next_run",
+        ),
+        CheckConstraint(
+            "(status IN ('succeeded', 'failed') AND finished_at IS NOT NULL) "
+            "OR (status NOT IN ('succeeded', 'failed') AND finished_at IS NULL)",
+            name="ck_parsing_tasks_finished_at",
+        ),
+        Index("ix_parsing_tasks_status_next_run_created_at", "status", "next_run_at", "created_at"),
+        Index("ix_parsing_tasks_status_lease_expires_at", "status", "lease_expires_at"),
     )
 
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
@@ -139,6 +163,27 @@ class ParsingTask(Base):
         default="pending",
         server_default="pending",
     )
+    attempt_count: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+        server_default="0",
+    )
+    max_attempts: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=3,
+        server_default="3",
+    )
+    next_run_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    lease_token: Mapped[UUID | None] = mapped_column(Uuid(as_uuid=True), nullable=True)
+    lease_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_error_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    last_error_message: Mapped[str | None] = mapped_column(String(240), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
