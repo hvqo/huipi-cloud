@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     app_env: str = "development"
     api_v1_prefix: str = "/api/v1"
     log_level: str = "INFO"
+    database_url: str | None = None
+    test_database_url: str | None = None
 
 
 settings = Settings()
