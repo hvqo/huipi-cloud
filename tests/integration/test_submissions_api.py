@@ -8,7 +8,8 @@ import httpx
 import pytest
 from botocore.exceptions import ClientError
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncEngine
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 from huipi_cloud.core.config import Settings, settings
 from huipi_cloud.infrastructure.storage.dependencies import get_object_storage
@@ -354,10 +355,11 @@ async def test_concurrent_duplicate_submissions_keep_one_record_and_object(
     recording_minio_storage,
 ) -> None:
     assignment_id = await _create_published_assignment(submission_client)
-    gate = asyncio.Barrier(3)
+    request_gate = asyncio.Barrier(3)
+    recording_minio_storage.after_upload_barrier = asyncio.Barrier(2)
 
     async def upload_once(content: bytes) -> httpx.Response:
-        await gate.wait()
+        await request_gate.wait()
         return await _upload(
             submission_client,
             assignment_id,
@@ -370,7 +372,7 @@ async def test_concurrent_duplicate_submissions_keep_one_record_and_object(
         asyncio.create_task(upload_once(PDF_DATA + b" one")),
         asyncio.create_task(upload_once(PDF_DATA + b" two")),
     ]
-    await gate.wait()
+    await request_gate.wait()
     responses = await asyncio.gather(*requests)
 
     assert sorted(response.status_code for response in responses) == [201, 409]
@@ -391,6 +393,44 @@ async def test_concurrent_duplicate_submissions_keep_one_record_and_object(
         else:
             existing_objects += 1
     assert existing_objects == 1
+
+
+@pytest.mark.anyio
+async def test_uncertain_commit_keeps_object_for_possible_committed_submission(
+    submission_client: httpx.AsyncClient,
+    postgres_engine: AsyncEngine,
+    recording_minio_storage,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    assignment_id = await _create_published_assignment(submission_client)
+    original_commit = AsyncSession.commit
+
+    async def commit_then_lose_acknowledgement(session: AsyncSession) -> None:
+        await original_commit(session)
+        raise OperationalError("COMMIT", {}, RuntimeError("simulated lost acknowledgement"))
+
+    monkeypatch.setattr(AsyncSession, "commit", commit_then_lose_acknowledgement)
+    response = await _upload(
+        submission_client,
+        assignment_id,
+        filename="answer.pdf",
+        content=PDF_DATA,
+        content_type="application/pdf",
+    )
+
+    assert response.status_code == 503
+    assert "simulated lost acknowledgement" not in response.text
+    assert len(recording_minio_storage.uploaded_keys) == 1
+    object_key = next(iter(recording_minio_storage.uploaded_keys))
+    stored_object = recording_minio_storage.storage._client.head_object(
+        Bucket=recording_minio_storage.bucket,
+        Key=object_key,
+    )
+    assert stored_object["ContentLength"] == len(PDF_DATA)
+    async with postgres_engine.connect() as connection:
+        submissions = await connection.scalar(text("SELECT count(*) FROM submissions"))
+        parsing_tasks = await connection.scalar(text("SELECT count(*) FROM parsing_tasks"))
+    assert submissions == parsing_tasks == 1
 
 
 @pytest.mark.anyio

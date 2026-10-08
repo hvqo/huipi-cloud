@@ -34,11 +34,11 @@
 
 ## 4. 文件上传成功但数据库写入失败怎么办？
 
-**简明技术说明（短句）**：数据库事务回滚。应用尝试删除刚写入的对象。补偿失败会记录安全日志。
+**简明技术说明（短句）**：提交前失败时回滚并尝试删除对象。COMMIT 结果未知时保留对象，避免已提交记录丢失文件。
 
-**面试口语回答**：当前流程先上传对象，再开启 PostgreSQL 写事务。提交、文件元数据和解析任务一起提交。如果事务失败，服务会尝试删除刚上传的唯一对象，并重新抛出数据库错误。若删除也失败，只记录对象 Key 和异常类型，不记录凭据或文件内容。进程若在两个系统操作之间崩溃，补偿代码不会运行，所以仍可能有孤立对象；未来需要对账清理。
+**面试口语回答**：当前流程先上传对象，再开启 PostgreSQL 写事务。提交、文件元数据和解析任务一起提交。若失败发生在发出 COMMIT 之前，服务回滚并尝试删除刚上传的唯一对象。发出 COMMIT 后，数据库可能已经提交但确认包丢失，因此服务保留对象，避免已提交的记录指向丢失文件。这个选择可能留下孤立对象；进程崩溃也会造成相同风险。未来需要对账清理。
 
-**代码位置**：`modules/submissions/service.py::create_submission` 的 `session.begin()` 和异常补偿；`tests/integration/test_submissions_api.py::test_database_failure_rolls_back_and_compensates_uploaded_object`。
+**代码位置**：`modules/submissions/service.py::create_submission` 的显式 flush/commit 边界和异常补偿；`tests/integration/test_submissions_api.py::test_database_failure_rolls_back_and_compensates_uploaded_object`、`test_uncertain_commit_keeps_object_for_possible_committed_submission`。
 
 **现场演示**：测试通过 PostgreSQL 触发器让 ParsingTask 插入失败，然后验证 API 没有提交记录且 MinIO 对象已删除。
 
@@ -46,7 +46,7 @@
 
 **简明技术说明（短句）**：它们是两个独立服务。PostgreSQL 事务不包含 S3 请求。当前使用补偿，不是分布式原子提交。
 
-**面试口语回答**：数据库事务管理器只控制 PostgreSQL 中的 SQL 操作，不能让 MinIO 的对象写入自动随 PostgreSQL 回滚。当前选择一个简单的顺序：先上传对象，再在数据库事务中写记录；事务失败后尽力删除对象。这个方案覆盖常规异常，但不覆盖进程崩溃或网络分区造成的未知结果。当前没有引入分布式事务协议。
+**面试口语回答**：数据库事务管理器只控制 PostgreSQL 中的 SQL 操作，不能让 MinIO 的对象写入自动随 PostgreSQL 回滚。当前先上传对象，再在数据库事务中写记录。发 COMMIT 前失败会尽力删对象；COMMIT 确认丢失时保留对象，因为数据库可能已经提交。该流程不提供跨系统原子性，进程崩溃和网络故障仍需通过后续对账处理。当前没有引入分布式事务协议。
 
 **代码位置**：`modules/submissions/service.py::create_submission`；`infrastructure/storage/s3.py`。
 

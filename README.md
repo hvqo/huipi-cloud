@@ -81,7 +81,7 @@ CI 在 Ubuntu、Python 3.12、PostgreSQL 16 和真实 S3 兼容对象存储容�
 
 ## 数据流与限制
 
-上传时，应用分块校验并计算 SHA-256，先写私有 MinIO，再在一个 PostgreSQL 事务里写入 `Submission`、`SubmissionFile` 和 `ParsingTask(pending)`。数据库提交失败时会尝试删除刚写入的对象；数据库和对象存储没有共同事务，进程在两步之间崩溃仍可能留下孤立对象。未来应增加定期对账清理。
+上传时，应用分块校验并计算 SHA-256，先写私有 MinIO，再在一个 PostgreSQL 事务里写入 `Submission`、`SubmissionFile` 和 `ParsingTask(pending)`。确认事务尚未进入 COMMIT 时失败，会尝试删除刚写入的对象；COMMIT 请求的结果不确定时保留对象，避免已提交的数据库记录指向被删除的文件。进程崩溃和不确定的 COMMIT 仍可能留下孤立对象；未来应增加定期对账清理。
 
 MinIO 社区版上游已停止发布官方容器镜像。本地 Compose 固定使用 PGSTY SILO 的 MinIO 兼容分支版本，它保留 S3 API 和 `MINIO_*` 配置，但不是 MinIO 官方产品。部署前应检查该分支的更新、兼容性和 AGPL 许可证要求；不能把本地演示配置作为生产存储方案。
 

@@ -1,5 +1,6 @@
 """Shared real-PostgreSQL integration-test fixtures."""
 
+import asyncio
 import os
 import subprocess
 import sys
@@ -110,10 +111,13 @@ class RecordingS3Storage:
         self.bucket = storage.bucket
         self.object_key_prefix = storage.object_key_prefix
         self.uploaded_keys: set[str] = set()
+        self.after_upload_barrier: asyncio.Barrier | None = None
 
     async def upload_fileobj(self, fileobj, object_key: str, content_type: str) -> None:
         await self.storage.upload_fileobj(fileobj, object_key, content_type)
         self.uploaded_keys.add(object_key)
+        if self.after_upload_barrier is not None:
+            await asyncio.wait_for(self.after_upload_barrier.wait(), timeout=10)
 
     async def download(self, object_key: str):
         return await self.storage.download(object_key)

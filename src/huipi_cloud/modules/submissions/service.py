@@ -45,51 +45,73 @@ async def create_submission(
     prefix = storage.object_key_prefix
     object_key = f"{prefix}/{key_path}" if prefix else key_path
     upload_attempted = False
+    commit_started = False
     try:
         upload_attempted = True
         await storage.upload_fileobj(staged.fileobj, object_key, staged.content_type)
 
-        async with session.begin():
-            assignment = await session.scalar(
-                select(Assignment)
-                .where(Assignment.id == assignment_id)
-                .with_for_update(read=True)
-            )
-            if assignment is None:
-                raise AssignmentNotFoundError("作业不存在")
-            if assignment.status != "published":
-                raise AssignmentConflictError("只有已发布的作业可以提交")
+        await session.begin()
+        assignment = await session.scalar(
+            select(Assignment)
+            .where(Assignment.id == assignment_id)
+            .with_for_update(read=True)
+        )
+        if assignment is None:
+            raise AssignmentNotFoundError("作业不存在")
+        if assignment.status != "published":
+            raise AssignmentConflictError("只有已发布的作业可以提交")
 
-            submission = Submission(
-                id=submission_id,
-                assignment_id=assignment_id,
-                student_ref=student_ref,
-                status="submitted",
-            )
-            submission.file = SubmissionFile(
-                id=file_id,
-                bucket=storage.bucket,
-                object_key=object_key,
-                original_filename=staged.filename,
-                content_type=staged.content_type,
-                size_bytes=staged.size_bytes,
-                sha256=staged.sha256,
-            )
-            submission.parsing_task = ParsingTask(status="pending")
-            session.add(submission)
-            await session.flush()
+        submission = Submission(
+            id=submission_id,
+            assignment_id=assignment_id,
+            student_ref=student_ref,
+            status="submitted",
+        )
+        submission.file = SubmissionFile(
+            id=file_id,
+            bucket=storage.bucket,
+            object_key=object_key,
+            original_filename=staged.filename,
+            content_type=staged.content_type,
+            size_bytes=staged.size_bytes,
+            sha256=staged.sha256,
+        )
+        submission.parsing_task = ParsingTask(status="pending")
+        session.add(submission)
+        await session.flush()
+
+        # COMMIT can succeed on PostgreSQL while its acknowledgement is lost.
+        # Once attempted, keep the object to avoid committed metadata pointing
+        # at a deleted object; an uncertain rollback may instead leave an orphan.
+        commit_started = True
+        await session.commit()
         return submission
     except BaseException:
+        try:
+            await session.rollback()
+        except Exception as rollback_error:
+            logger.warning(
+                "Submission database rollback failed key=%s error_type=%s",
+                object_key,
+                type(rollback_error).__name__,
+            )
+
         if upload_attempted:
-            try:
-                await storage.delete(object_key)
-                logger.info("Submission object compensation completed key=%s", object_key)
-            except Exception as error:
+            if commit_started:
                 logger.warning(
-                    "Submission object compensation failed key=%s error_type=%s",
+                    "Submission commit outcome uncertain; retaining object key=%s",
                     object_key,
-                    type(error).__name__,
                 )
+            else:
+                try:
+                    await storage.delete(object_key)
+                    logger.info("Submission object compensation completed key=%s", object_key)
+                except Exception as error:
+                    logger.warning(
+                        "Submission object compensation failed key=%s error_type=%s",
+                        object_key,
+                        type(error).__name__,
+                    )
         raise
     finally:
         await asyncio.to_thread(staged.fileobj.close)
