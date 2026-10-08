@@ -28,6 +28,11 @@ jobs:
     env:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/huipi_cloud_ci
       TEST_DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/huipi_cloud_test
+      MINIO_ENDPOINT_URL: http://127.0.0.1:9000
+      MINIO_ACCESS_KEY: huipi-ci
+      MINIO_SECRET_KEY: local-ci-only-change-me
+      MINIO_BUCKET: huipi-cloud-ci
+      MINIO_TEST_BUCKET: huipi-cloud-ci-test
 
     steps:
       - uses: actions/checkout@v4
@@ -40,6 +45,22 @@ jobs:
           cache-dependency-glob: uv.lock
       - name: Install dependencies
         run: uv sync --locked
+      - name: Start private MinIO test service
+        run: |
+          docker run -d --name huipi-ci-minio \
+            -p 127.0.0.1:9000:9000 \
+            -e MINIO_ROOT_USER=huipi-ci \
+            -e MINIO_ROOT_PASSWORD=local-ci-only-change-me \
+            docker.io/pgsty/silo:RELEASE.2026-09-16T00-00-00Z-distroless \
+            server /data --console-address ':9001'
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:9000/minio/health/ready >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs huipi-ci-minio
+          exit 1
       - name: Ruff
         run: uv run ruff check .
       - name: Apply migration to empty database
@@ -52,3 +73,6 @@ jobs:
           PGPASSWORD: postgres
       - name: Pytest
         run: uv run pytest
+      - name: Stop MinIO test service
+        if: always()
+        run: docker rm -f huipi-ci-minio 2>/dev/null || true

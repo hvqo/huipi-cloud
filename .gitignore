@@ -28,11 +28,14 @@ dist/
 # Local student submissions and generated processing data
 /data/
 /uploads/
+/raw-submissions/
+/submission-files/
 /storage/
 /artifacts/
 /outputs/
 /parsed/
 /intermediate/
+/mineru-output/
 /test-results/
 
 # Model checkpoints and inference artifacts
