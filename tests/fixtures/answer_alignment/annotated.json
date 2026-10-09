@@ -1,6 +1,6 @@
 {
-  "dataset_name": "huipi-p2d1-synthetic-v2",
-  "annotation_note": "人工标注的合成 Canonical 样本；标签独立于规则输出，不代表真实学生作业分布。",
+  "dataset_name": "huipi-p2d1-synthetic-v3",
+  "annotation_note": "人工标注的合成 Canonical 样本；原12个案例标签保持不变，另增加题干-only负样本；不代表真实学生作业分布。",
   "cases": [
     {
       "case_id": "two-labels-one-block",
@@ -190,6 +190,21 @@
       "confounder_markers": [],
       "answer_labels": [
         {"question_number": 1, "answer_regions": [{"page_index": 0, "block_index": 0, "start": 0, "end": 16}], "expected_status": "not_observed", "expected_answer_present": true, "expected_auto_accept": false}
+      ],
+      "asset_expectations": [],
+      "expected_source_types": []
+    },
+    {
+      "case_id": "printed-question-stem-without-student-response",
+      "expected_behavior": "存在明确题号和打印题干，但没有可确认的学生作答；aligned只表示题号来源关联，不判断是否作答。",
+      "pages": [[{"source_type": "text", "text": "第1题 题干：求方程 x+1=2 的解。"}]],
+      "question_numbers": [1],
+      "candidate_labels": [
+        {"question_number": 1, "page_index": 0, "block_index": 0, "marker_start": 0, "marker_end": 3, "expected_question_number": 1}
+      ],
+      "confounder_markers": [],
+      "answer_labels": [
+        {"question_number": 1, "answer_regions": [], "expected_status": "aligned", "expected_answer_present": false, "expected_auto_accept": true}
       ],
       "asset_expectations": [],
       "expected_source_types": []

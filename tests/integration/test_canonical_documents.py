@@ -433,6 +433,53 @@ async def test_explicit_question_answer_completes_synthetic_canonical_to_api_pat
 
 
 @pytest.mark.anyio
+async def test_review_required_source_is_not_returned_as_confirmed_answer(
+    submission_client: httpx.AsyncClient,
+    recording_minio_storage,
+    postgres_engine: AsyncEngine,
+) -> None:
+    submission_id, _ = await _seed_parsed_source(
+        submission_client,
+        recording_minio_storage,
+        postgres_engine,
+        middle_content="第1题 部分来源\n第99题 未分配续写",
+    )
+    session_factory = async_sessionmaker(postgres_engine, expire_on_commit=False)
+    await service.normalize_submission(session_factory, recording_minio_storage, submission_id)
+    record = await answer_alignment_service.align_submission(
+        session_factory,
+        recording_minio_storage,
+        submission_id,
+    )
+    downloaded = await recording_minio_storage.download(record.object_key)
+    document = AnswerAlignmentDocument.model_validate_json(
+        b"".join([chunk async for chunk in downloaded.chunks()])
+    )
+    async with session_factory() as session:
+        question = await session.scalar(
+            select(Question).where(Question.assignment_id == record.assignment_id)
+        )
+
+    assert question is not None
+    assert record.status == "review_required"
+    assert document.answers[0].matching_status == "review_required"
+    assert any(
+        "未分配续写" in region.text_projection for region in document.unassigned_regions
+    )
+
+    response = await submission_client.get(
+        f"/api/v1/submissions/{submission_id}/answer-alignment/questions/{question.id}"
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["answer"]["matching_status"] == "review_required"
+    assert "部分来源" in body["answer"]["text_projection"]
+    assert "未分配续写" not in response.text
+    assert "unassigned_regions" not in body
+    assert "object_key" not in response.text
+
+
+@pytest.mark.anyio
 async def test_concurrent_answer_alignment_has_one_effective_index_and_object(
     submission_client: httpx.AsyncClient,
     recording_minio_storage,

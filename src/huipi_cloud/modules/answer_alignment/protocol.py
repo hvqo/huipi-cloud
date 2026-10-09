@@ -77,22 +77,37 @@ class QuestionEvidence(BaseModel):
             "遵循 Python 字符串切片语义。"
         ),
     )
-    matching_status: Literal["aligned", "review_required", "unmatched"]
+    matching_status: Literal["aligned", "review_required", "unmatched"] = Field(
+        description=(
+            "题号候选与 Question 的关联状态；aligned 只表示候选映射被接受，"
+            "不表示学生作答存在或来源可评分。"
+        )
+    )
     reason_codes: list[str] = Field(default_factory=list)
 
 
 class AlignedAnswer(BaseModel):
-    """Student answer candidate for one real Assignment Question."""
+    """Question-mapped source regions; the type name does not confirm a response."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     question_id: UUID
     question_number: int = Field(gt=0)
     question_type: str = Field(min_length=1, max_length=30)
-    matching_status: QuestionMatchStatus
+    matching_status: QuestionMatchStatus = Field(
+        description=(
+            "来源区域与作业 Question 的关联状态。aligned 只表示该映射有足够证据；"
+            "它不表示学生已作答，也不表示区域内部没有其他题目内容、来源不是印刷题干、"
+            "OCR/公式/图像识别完整或内容可用于评分。"
+            "not_observed 表示未找到可安全关联的题号，不表示学生未作答。"
+        )
+    )
     evidence: list[QuestionEvidence] = Field(default_factory=list)
     source_regions: list[SourceRegion] = Field(default_factory=list)
-    text_projection: str = ""
+    text_projection: str = Field(
+        default="",
+        description="来源区域的文本投影；可能含题干或其他印刷内容，不保证是学生答案。",
+    )
     asset_refs: list[CanonicalAssetReference] = Field(default_factory=list)
 
 
@@ -121,7 +136,12 @@ class AnswerAlignmentDocument(BaseModel):
     canonical_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     aligner_version: str = Field(min_length=1, max_length=32)
     assignment_questions_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
-    status: AlignmentResultStatus
+    status: AlignmentResultStatus = Field(
+        description=(
+            "文档对齐过程状态。complete 表示本轮对齐没有待复核或未分配区域；"
+            "不表示学生已作答、区域内部没有其他题目内容、OCR 完整或结果可直接批改。"
+        )
+    )
     candidates: list[QuestionEvidence] = Field(default_factory=list)
     answers: list[AlignedAnswer] = Field(default_factory=list)
     unassigned_regions: list[UnassignedRegion] = Field(default_factory=list)
@@ -134,26 +154,44 @@ class AlignmentSummaryRead(BaseModel):
 
     submission_id: UUID
     assignment_id: UUID
-    status: Literal["not_generated", "complete", "review_required"]
+    status: Literal["not_generated", "complete", "review_required"] = Field(
+        description=(
+            "答案来源对齐索引状态；complete 不是作答确认，也不是 grading-ready 状态。"
+        )
+    )
     canonical_document_id: UUID | None = None
     aligner_version: str | None = None
     assignment_questions_digest: str | None = None
     question_count: int = Field(ge=0)
-    aligned_count: int = Field(ge=0)
+    aligned_count: int = Field(
+        ge=0,
+        description=(
+            "当前结果中 matching_status 为 aligned 的 Question 项数量；"
+            "不是已确认学生作答数量，也不是可批改数量。"
+        ),
+    )
     review_required_count: int = Field(ge=0)
     unmatched_count: int = Field(ge=0)
-    not_observed_count: int = Field(ge=0)
+    not_observed_count: int = Field(
+        ge=0,
+        description="未找到可安全关联来源的 Question 数量；不表示学生未作答。",
+    )
 
 
 class QuestionAlignmentRead(BaseModel):
-    """One question's answer candidate and traceable source slices."""
+    """One Question's mapped source slices and their alignment evidence."""
 
     model_config = ConfigDict(extra="forbid")
 
     submission_id: UUID
     assignment_id: UUID
     canonical_document_id: UUID
-    answer: AlignedAnswer
+    answer: AlignedAnswer = Field(
+        description=(
+            "历史响应字段名。内容是 Question 对齐项与来源片段，不是已确认的学生答案；"
+            "请按 matching_status 和 source_regions 读取。"
+        )
+    )
 
 
 class AlignmentErrorResponse(BaseModel):

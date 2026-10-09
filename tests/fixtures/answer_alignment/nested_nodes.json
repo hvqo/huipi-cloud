@@ -1,0 +1,69 @@
+{
+  "dataset_name": "huipi-p2d1-nested-content-nodes-v1",
+  "annotation_note": "单独验证嵌套 Canonical ContentNode 的节点级来源身份；不是原13案例评测的一部分。",
+  "cases": [
+    {
+      "case_id": "same-local-offsets-in-two-child-nodes",
+      "expected_behavior": "同一Block的两个子节点具有相同题号、候选偏移和答案偏移，统计时仍分别计数。",
+      "pages": [
+        [
+          {
+            "source_type": "text",
+            "children": [
+              {"source_type": "text", "text": "第1题AAAA"},
+              {"source_type": "text", "text": "第1题BBBB"}
+            ]
+          }
+        ]
+      ],
+      "question_numbers": [1],
+      "candidate_labels": [
+        {
+          "question_number": 1,
+          "page_index": 0,
+          "block_index": 0,
+          "content_pointer": "/pages/0/blocks/0/content/children/0",
+          "marker_start": 0,
+          "marker_end": 3,
+          "expected_question_number": 1
+        },
+        {
+          "question_number": 1,
+          "page_index": 0,
+          "block_index": 0,
+          "content_pointer": "/pages/0/blocks/0/content/children/1",
+          "marker_start": 0,
+          "marker_end": 3,
+          "expected_question_number": 1
+        }
+      ],
+      "confounder_markers": [],
+      "answer_labels": [
+        {
+          "question_number": 1,
+          "answer_regions": [
+            {
+              "page_index": 0,
+              "block_index": 0,
+              "content_pointer": "/pages/0/blocks/0/content/children/0",
+              "start": 3,
+              "end": 7
+            },
+            {
+              "page_index": 0,
+              "block_index": 0,
+              "content_pointer": "/pages/0/blocks/0/content/children/1",
+              "start": 3,
+              "end": 7
+            }
+          ],
+          "expected_status": "review_required",
+          "expected_answer_present": true,
+          "expected_auto_accept": false
+        }
+      ],
+      "asset_expectations": [],
+      "expected_source_types": []
+    }
+  ]
+}

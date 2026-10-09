@@ -49,7 +49,7 @@ async def get_answer_alignment_summary(
     session: DbSession,
     storage: Storage,
 ) -> AlignmentSummaryRead:
-    """Return alignment status and counts without object keys or answer keys."""
+    """Return source-to-Question mapping counts, not answer-presence or grading readiness."""
 
     return await service.get_summary(session, submission_id, storage=storage)
 
@@ -65,7 +65,7 @@ async def get_question_answer_alignment(
     session: DbSession,
     storage: Storage,
 ) -> QuestionAlignmentRead:
-    """Return one question's candidate and trace without standard-answer data."""
+    """Return mapped source regions and trace, not a confirmed response or grade-ready answer."""
 
     return await service.get_question_alignment(
         session,

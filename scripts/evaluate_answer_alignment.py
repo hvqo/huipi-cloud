@@ -19,7 +19,7 @@ from huipi_cloud.modules.canonical_documents.protocol import (
     CanonicalPage,
 )
 
-_POINTER = re.compile(r"^/pages/(\d+)/blocks/(\d+)/content(?:/|$)")
+_POINTER = re.compile(r"^/pages/(\d+)/blocks/(\d+)/content(?:/children/\d+)*$")
 
 
 def main() -> int:
@@ -27,28 +27,57 @@ def main() -> int:
         "tests/fixtures/answer_alignment/annotated.json"
     )
     dataset = json.loads(dataset_path.read_text(encoding="utf-8"))
+    case_ids = [case["case_id"] for case in dataset["cases"]]
+    if len(case_ids) != len(set(case_ids)):
+        raise ValueError("evaluation case_id values must be unique")
     expected_candidates = predicted_candidates = correct_candidates = 0
     expected_question_links = predicted_question_links = correct_question_links = 0
-    expected_answer_ranges: set[tuple[int, int, int, int, int]] = set()
-    predicted_answer_ranges: set[tuple[int, int, int, int, int]] = set()
+    expected_answer_ranges: set[tuple[str, int, str, int, int]] = set()
+    predicted_answer_ranges: set[tuple[str, int, str, int, int]] = set()
     question_status_count = question_status_correct = 0
     candidate_review_count = candidate_total = 0
     expected_assets = preserved_assets = 0
     case_results: list[dict[str, object]] = []
     case_failures: list[str] = []
+    boundary_deviation_cases: list[dict[str, object]] = []
+    answer_presence_limitations: list[dict[str, object]] = []
 
     for case in dataset["cases"]:
+        case_expected_ranges: set[tuple[str, int, str, int, int]] = set()
+        case_predicted_ranges: set[tuple[str, int, str, int, int]] = set()
         document, questions, assignment_id, asset_ids = _build_case(case)
         atoms, candidates = detect_question_candidates(document)
+        text_by_pointer = {
+            atom.content_pointer: atom.text for atom in atoms if atom.text is not None
+        }
+        candidate_labels = [
+            _label_with_content_pointer(
+                label,
+                document,
+                text_by_pointer,
+                start_key="marker_start",
+                end_key="marker_end",
+            )
+            for label in case["candidate_labels"]
+        ]
+        confounder_labels = [
+            _label_with_content_pointer(
+                label,
+                document,
+                text_by_pointer,
+                start_key="marker_start",
+                end_key="marker_end",
+            )
+            for label in case["confounder_markers"]
+        ]
         expected_marker_locations = {
-            _candidate_key(label) for label in case["candidate_labels"]
+            _candidate_key(label) for label in candidate_labels
         }
         predicted_marker_locations = {
             _candidate_key(
                 {
                     "question_number": candidate.question_number,
-                    "page_index": atoms[candidate.atom_index].block.page_index,
-                    "block_index": atoms[candidate.atom_index].block.source_block_index,
+                    "content_pointer": atoms[candidate.atom_index].content_pointer,
                     "marker_start": candidate.text_start,
                     "marker_end": candidate.text_end,
                 }
@@ -56,7 +85,7 @@ def main() -> int:
             for candidate in candidates
         }
         expected_confounder_locations = {
-            _candidate_key(marker) for marker in case["confounder_markers"]
+            _candidate_key(marker) for marker in confounder_labels
         }
         expected_candidates += len(expected_marker_locations)
         predicted_candidates += len(predicted_marker_locations)
@@ -75,11 +104,14 @@ def main() -> int:
         candidate_total += len(result.candidates)
         question_ids = {question.question_number: question.id for question in questions}
         expected_links = set()
-        for label in case["candidate_labels"]:
+        for label in candidate_labels:
             expected_question_number = label.get("expected_question_number")
             if expected_question_number in question_ids:
                 expected_links.add(
-                    (*_candidate_key(label), str(question_ids[expected_question_number]))
+                    _candidate_question_link_key(
+                        label,
+                        str(question_ids[expected_question_number]),
+                    )
                 )
         predicted_links = set()
         for candidate, evidence in zip(candidates, result.candidates, strict=True):
@@ -87,12 +119,13 @@ def main() -> int:
                 continue
             atom = atoms[candidate.atom_index]
             predicted_links.add(
-                (
-                    candidate.question_number,
-                    atom.block.page_index,
-                    atom.block.source_block_index,
-                    candidate.text_start,
-                    candidate.text_end,
+                _candidate_question_link_key(
+                    {
+                        "question_number": candidate.question_number,
+                        "content_pointer": atom.content_pointer,
+                        "marker_start": candidate.text_start,
+                        "marker_end": candidate.text_end,
+                    },
                     str(evidence.question_id),
                 )
             )
@@ -114,26 +147,59 @@ def main() -> int:
                     f"{case['case_id']}: Question {number} expected "
                     f"{label['expected_status']}, received {actual}"
                 )
-            expected_answer_ranges.update(
-                (
+            if not label["expected_answer_present"] and actual == "aligned":
+                answer_presence_limitations.append(
+                    {
+                        "case_id": case["case_id"],
+                        "question_number": number,
+                        "expected_answer_present": False,
+                        "observed_alignment_status": actual,
+                        "mapped_source_text": answers_by_number[number].text_projection,
+                        "reason": (
+                            "当前协议只表示来源区域与 Question 的关联；"
+                            "不检测学生是否作答。"
+                        ),
+                    }
+                )
+            for region in label["answer_regions"]:
+                pointer = _label_content_pointer(
+                    region,
+                    document,
+                    text_by_pointer,
+                    start_key="start",
+                    end_key="end",
+                )
+                answer_range = (
+                    case["case_id"],
                     number,
-                    region["page_index"],
-                    region["block_index"],
+                    pointer,
                     region["start"],
                     region["end"],
                 )
-                for region in label["answer_regions"]
-            )
+                expected_answer_ranges.add(answer_range)
+                case_expected_ranges.add(answer_range)
         for answer in result.answers:
             for region in answer.source_regions:
-                if region.text_start is None or region.text_end is None:
+                if (
+                    region.text_start is None
+                    or region.text_end is None
+                    or region.text_end <= region.text_start
+                ):
                     continue
-                page_index, block_index = _pointer_location(region.content_pointer)
                 predicted_answer_ranges.add(
                     (
+                        case["case_id"],
                         answer.question_number,
-                        page_index,
-                        block_index,
+                        region.content_pointer,
+                        region.text_start,
+                        region.text_end,
+                    )
+                )
+                case_predicted_ranges.add(
+                    (
+                        case["case_id"],
+                        answer.question_number,
+                        region.content_pointer,
                         region.text_start,
                         region.text_end,
                     )
@@ -207,6 +273,44 @@ def main() -> int:
                 f"{case['case_id']}: missing source types {', '.join(missing_source_types)}"
             )
 
+        (
+            case_intersection,
+            case_expected_characters,
+            case_predicted_characters,
+            case_union_characters,
+        ) = _answer_interval_counts(case_expected_ranges, case_predicted_ranges)
+        merged_case_expected_ranges = _merged_range_keys(case_expected_ranges)
+        merged_case_predicted_ranges = _merged_range_keys(case_predicted_ranges)
+        case_exact_ranges = len(merged_case_expected_ranges & merged_case_predicted_ranges)
+        case_boundary_matches = merged_case_expected_ranges == merged_case_predicted_ranges
+        if not case_boundary_matches:
+            if not case_expected_ranges and case_predicted_ranges:
+                boundary_reason = (
+                    "人工标签未确认学生作答，但系统仍输出映射来源片段；"
+                    "当前算法不判断答案存在性。"
+                )
+            elif case_expected_ranges and not case_predicted_ranges:
+                boundary_reason = "人工标签有答案区间，但系统没有输出已关联到 Question 的文本区间。"
+            else:
+                boundary_reason = "预测答案范围与人工标注范围存在差异；检查截断、漏分或多分配。"
+            boundary_deviation_cases.append(
+                {
+                    "case_id": case["case_id"],
+                    "reason": boundary_reason,
+                    "expected_ranges": [
+                        list(answer_range[1:])
+                        for answer_range in sorted(merged_case_expected_ranges)
+                    ],
+                    "predicted_ranges": [
+                        list(answer_range[1:])
+                        for answer_range in sorted(merged_case_predicted_ranges)
+                    ],
+                    "overlapping_characters": case_intersection,
+                    "expected_characters": case_expected_characters,
+                    "predicted_characters": case_predicted_characters,
+                }
+            )
+
         case_results.append(
             {
                 "case_id": case["case_id"],
@@ -221,6 +325,41 @@ def main() -> int:
                     for number, answer in answers_by_number.items()
                 },
                 "question_status_expectations_met": status_matches,
+                "expected_answer_presence": {
+                    str(number): label["expected_answer_present"]
+                    for number, label in answer_labels.items()
+                },
+                "answer_presence_assessed": False,
+                "answer_boundary": {
+                    "exact_ranges_match": case_boundary_matches,
+                    "expected_range_count": len(merged_case_expected_ranges),
+                    "predicted_range_count": len(merged_case_predicted_ranges),
+                    "character_precision": _metric(
+                        case_intersection,
+                        case_predicted_characters,
+                        "本案例按 Question 和完整 content_pointer 计算的重叠字符 / 预测字符。",
+                    ),
+                    "character_recall": _metric(
+                        case_intersection,
+                        case_expected_characters,
+                        "本案例按 Question 和完整 content_pointer 计算的重叠字符 / 人工标注字符。",
+                    ),
+                    "character_iou": _metric(
+                        case_intersection,
+                        case_union_characters,
+                        "本案例按 Question 和完整 content_pointer 计算的重叠字符 / 并集字符。",
+                    ),
+                    "exact_range_precision": _metric(
+                        case_exact_ranges,
+                        len(merged_case_predicted_ranges),
+                        "本案例完全一致的节点级归并区间数 / 预测区间数。",
+                    ),
+                    "exact_range_recall": _metric(
+                        case_exact_ranges,
+                        len(merged_case_expected_ranges),
+                        "本案例完全一致的节点级归并区间数 / 人工标注区间数。",
+                    ),
+                },
                 "candidate_count": {
                     "expected_true_markers": len(expected_marker_locations),
                     "detected_markers": len(predicted_marker_locations),
@@ -271,47 +410,60 @@ def main() -> int:
         answered_auto_tp += len(answered & expected & actual)
         answered_total += len(answered)
 
-    exact_ranges = len(expected_answer_ranges & predicted_answer_ranges)
+    merged_expected_answer_ranges = _merged_range_keys(expected_answer_ranges)
+    merged_predicted_answer_ranges = _merged_range_keys(predicted_answer_ranges)
+    exact_ranges = len(merged_expected_answer_ranges & merged_predicted_answer_ranges)
     interval_intersection, expected_characters, predicted_characters, union_characters = (
         _answer_interval_counts(expected_answer_ranges, predicted_answer_ranges)
     )
     report = {
         "dataset_name": dataset["dataset_name"],
+        "metric_definition_version": "2.1",
+        "metric_definition_note": (
+            "来源身份按 case_id、Question 和完整 Canonical ContentNode content_pointer 隔离；"
+            "字符偏移是相对该节点文本的 Python Unicode 码点半开区间 [start, end)。"
+            "只合并同一节点内重叠或相邻的区间，不同节点的相同偏移不匹配；"
+            "其他既有报告字段保持兼容。`aligned` 只表示来源到 Question 的映射被接受，"
+            "不表示学生作答存在或结果可以进入批改。"
+        ),
         "case_count": len(dataset["cases"]),
         "annotation_note": dataset["annotation_note"],
         "metrics": {
             "candidate_detection_precision": _metric(
                 correct_candidates,
                 predicted_candidates,
-                "精确匹配人工标注的真实题号候选 / 系统输出的全部候选；"
+                "精确匹配案例内题号、完整 content_pointer 和节点本地字符范围的候选 / "
+                "系统输出的全部候选；"
                 "误识别列表项和未知伪题号计为误报。",
             ),
             "candidate_detection_recall": _metric(
                 correct_candidates,
                 expected_candidates,
-                "精确匹配人工标注的真实题号候选 / 人工标注的真实题号候选总数。",
+                "精确匹配案例内题号、完整 content_pointer 和节点本地字符范围的候选 / "
+                "人工标注候选总数。",
             ),
             "candidate_question_link_precision": _metric(
                 correct_question_links,
                 predicted_question_links,
-                "正确的候选到 Question 关联 / 系统产生的全部 Question 关联；"
+                "案例内候选来源节点与目标 Question 都正确的关联 / 系统产生的全部 Question 关联；"
                 "复核候选仍在此候选级指标内。",
             ),
             "candidate_question_link_recall": _metric(
                 correct_question_links,
                 expected_question_links,
-                "正确的候选到 Question 关联 / 人工标注应关联到 Question 的候选数。",
+                "案例内候选来源节点与目标 Question 都正确的关联 / 人工标注应关联候选数。",
             ),
             "automatic_accept_precision": _metric(
                 auto_tp,
                 auto_predicted,
-                "人工确认可自动接受且系统标记 aligned 的题目数 / 系统标记 aligned 的题目数；"
-                "没有预测时为 null。",
+                "人工确认可自动接受来源到 Question 映射且系统标记 aligned 的题目数 / "
+                "系统标记 aligned 的题目数；不评价学生是否作答或是否可批改；没有预测时为 null。",
             ),
             "automatic_accept_recall": _metric(
                 auto_tp,
                 auto_expected,
-                "人工确认可自动接受且系统标记 aligned 的题目数 / 人工确认可自动接受的题目数。",
+                "人工确认可自动接受来源到 Question 映射且系统标记 aligned 的题目数 / "
+                "人工确认可自动接受的映射数；不评价学生是否作答或是否可批改。",
             ),
             "automatic_alignment_coverage_of_answered_questions": _metric(
                 answered_auto_tp,
@@ -322,29 +474,33 @@ def main() -> int:
             "answer_boundary_character_precision": _metric(
                 interval_intersection,
                 predicted_characters,
-                "按题目、页面和源块计算的重叠字符数 / 系统归属给 Question 的字符数；"
-                "错归题目计为不重叠。",
+                "逐案例按 Question 和完整 content_pointer 计算的重叠字符数 / 系统归属字符数；"
+                "错归题目、跨案例或跨节点坐标相同都不构成交集。",
             ),
             "answer_boundary_character_recall": _metric(
                 interval_intersection,
                 expected_characters,
-                "按题目、页面和源块计算的重叠字符数 / 人工标注答案字符数；遗漏内容降低召回。",
+                "逐案例按 Question 和完整 content_pointer 计算的重叠字符数 / "
+                "人工标注字符数；遗漏内容降低召回。",
             ),
             "answer_boundary_character_iou": _metric(
                 interval_intersection,
                 union_characters,
-                "按题目、页面和源块计算的重叠字符数 / 预测与人工范围的并集字符数；"
+                "逐案例按 Question 和完整 content_pointer 计算的重叠字符数 / "
+                "预测与人工范围并集字符数；"
                 "同时惩罚遗漏和多分配内容。",
             ),
             "answer_boundary_exact_range_precision": _metric(
                 exact_ranges,
-                len(predicted_answer_ranges),
-                "完全相同的题号/页面/源块/半开区间数 / 系统输出的文本区间数。",
+                len(merged_predicted_answer_ranges),
+                "完全相同的案例/题号/ContentNode content_pointer/归并半开区间数 / "
+                "系统输出的归并文本区间数。",
             ),
             "answer_boundary_exact_range_recall": _metric(
                 exact_ranges,
-                len(expected_answer_ranges),
-                "完全相同的题号/页面/源块/半开区间数 / 人工标注的文本区间数。",
+                len(merged_expected_answer_ranges),
+                "完全相同的案例/题号/ContentNode content_pointer/归并半开区间数 / "
+                "人工标注的归并文本区间数。",
             ),
             "question_status_exact_accuracy": _metric(
                 question_status_correct,
@@ -372,8 +528,8 @@ def main() -> int:
             "expected_auto_accept_questions": auto_expected,
             "predicted_aligned_questions": auto_predicted,
             "correct_auto_accept_questions": auto_tp,
-            "expected_answer_ranges": len(expected_answer_ranges),
-            "predicted_answer_ranges": len(predicted_answer_ranges),
+                "expected_answer_ranges": len(merged_expected_answer_ranges),
+                "predicted_answer_ranges": len(merged_predicted_answer_ranges),
             "exact_answer_ranges": exact_ranges,
             "expected_answer_characters": expected_characters,
             "predicted_answer_characters": predicted_characters,
@@ -384,21 +540,127 @@ def main() -> int:
             "expected_asset_references": expected_assets,
             "preserved_asset_references": preserved_assets,
         },
+        "confusion_counts": {
+            "candidate_detection": {
+                "tp": correct_candidates,
+                "fp": predicted_candidates - correct_candidates,
+                "fn": expected_candidates - correct_candidates,
+            },
+            "candidate_question_link": {
+                "tp": correct_question_links,
+                "fp": predicted_question_links - correct_question_links,
+                "fn": expected_question_links - correct_question_links,
+            },
+            "automatic_accept": {
+                "tp": auto_tp,
+                "fp": auto_predicted - auto_tp,
+                "fn": auto_expected - auto_tp,
+            },
+            "answer_boundary_characters": {
+                "tp": interval_intersection,
+                "fp": predicted_characters - interval_intersection,
+                "fn": expected_characters - interval_intersection,
+            },
+            "answer_boundary_exact_ranges": {
+                "tp": exact_ranges,
+                "fp": len(merged_predicted_answer_ranges) - exact_ranges,
+                "fn": len(merged_expected_answer_ranges) - exact_ranges,
+            },
+        },
         "case_results": case_results,
+        "boundary_deviation_cases": boundary_deviation_cases,
+        "answer_presence_limitations": answer_presence_limitations,
         "case_failures": case_failures,
     }
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return 1 if case_failures else 0
 
 
-def _candidate_key(label: dict) -> tuple[int, int, int, int, int]:
+def _candidate_key(label: dict) -> tuple[int, str, int, int]:
+    content_pointer = label["content_pointer"]
+    _pointer_location(content_pointer)
     return (
         label["question_number"],
-        label["page_index"],
-        label["block_index"],
+        content_pointer,
         label["marker_start"],
         label["marker_end"],
     )
+
+
+def _candidate_question_link_key(label: dict, question_id: str) -> tuple[int, str, int, int, str]:
+    return (*_candidate_key(label), question_id)
+
+
+def _label_with_content_pointer(
+    label: dict,
+    document: CanonicalDocument,
+    text_by_pointer: dict[str, str],
+    *,
+    start_key: str,
+    end_key: str,
+) -> dict:
+    normalized = dict(label)
+    normalized["content_pointer"] = _label_content_pointer(
+        label,
+        document,
+        text_by_pointer,
+        start_key=start_key,
+        end_key=end_key,
+    )
+    return normalized
+
+
+def _label_content_pointer(
+    label: dict,
+    document: CanonicalDocument,
+    text_by_pointer: dict[str, str],
+    *,
+    start_key: str,
+    end_key: str,
+) -> str:
+    page_index = label.get("page_index")
+    block_index = label.get("block_index")
+    if (
+        isinstance(page_index, bool)
+        or not isinstance(page_index, int)
+        or isinstance(block_index, bool)
+        or not isinstance(block_index, int)
+        or page_index < 0
+        or page_index >= len(document.pages)
+        or block_index < 0
+        or block_index >= len(document.pages[page_index].blocks)
+    ):
+        raise ValueError("annotation page_index/block_index must resolve to a Canonical block")
+
+    block = document.pages[page_index].blocks[block_index]
+    if "content_pointer" in label:
+        pointer = label["content_pointer"]
+        if not isinstance(pointer, str):
+            raise ValueError("annotation content_pointer must be a string")
+    else:
+        if block.content.content_kind != "scalar" or block.content.children:
+            raise ValueError("nested ContentNode annotations require an explicit content_pointer")
+        pointer = f"/pages/{page_index}/blocks/{block_index}/content"
+
+    if _pointer_location(pointer) != (page_index, block_index):
+        raise ValueError("annotation content_pointer does not match its page/block location")
+    text = text_by_pointer.get(pointer)
+    if text is None:
+        raise ValueError("annotation content_pointer does not identify a text ContentNode")
+
+    start = label.get(start_key)
+    end = label.get(end_key)
+    if (
+        isinstance(start, bool)
+        or not isinstance(start, int)
+        or isinstance(end, bool)
+        or not isinstance(end, int)
+        or start < 0
+        or end < start
+        or end > len(text)
+    ):
+        raise ValueError("annotation offsets must be valid Unicode code-point half-open ranges")
+    return pointer
 
 
 def _metric(numerator: int, denominator: int, definition: str) -> dict[str, object]:
@@ -432,12 +694,13 @@ def _answer_interval_counts(expected_ranges, predicted_ranges) -> tuple[int, int
 
 
 def _merge_by_source(answer_ranges):
-    grouped: dict[tuple[int, int, int], list[tuple[int, int]]] = defaultdict(list)
-    for question_number, page_index, block_index, start, end in answer_ranges:
+    grouped: dict[tuple[str, int, str], list[tuple[int, int]]] = defaultdict(list)
+    for case_id, question_number, content_pointer, start, end in answer_ranges:
+        _pointer_location(content_pointer)
         if end < start:
             raise ValueError("answer range end must not precede start")
         if end > start:
-            grouped[(question_number, page_index, block_index)].append((start, end))
+            grouped[(case_id, question_number, content_pointer)].append((start, end))
     merged = {}
     for key, intervals in grouped.items():
         intervals.sort()
@@ -449,6 +712,16 @@ def _merge_by_source(answer_ranges):
                 result.append([start, end])
         merged[key] = [(start, end) for start, end in result]
     return merged
+
+
+def _merged_range_keys(answer_ranges) -> set[tuple[str, int, str, int, int]]:
+    return {
+        (case_id, question_number, content_pointer, start, end)
+        for (case_id, question_number, content_pointer), intervals in _merge_by_source(
+            answer_ranges
+        ).items()
+        for start, end in intervals
+    }
 
 
 def _build_case(case: dict):
@@ -492,14 +765,7 @@ def _build_case(case: dict):
                         content_type="image/png",
                     ),
                 )
-            content = CanonicalContentNode(
-                normalized_type=normalized_type,
-                source_type=source_type,
-                content_kind="scalar",
-                value=spec["text"],
-                asset_refs=references,
-                source_fields={},
-            )
+            content = _build_content_node(spec, asset_refs=references)
             blocks.append(
                 CanonicalBlock(
                     block_id=uuid5(
@@ -545,6 +811,37 @@ def _build_case(case: dict):
     return document, questions, assignment_id, asset_ids
 
 
+def _build_content_node(
+    spec: dict,
+    *,
+    asset_refs: list[CanonicalAssetReference] | None = None,
+) -> CanonicalContentNode:
+    source_type = spec.get("source_type", "text")
+    normalized_type = spec.get("normalized_type", _normalized_for_source(source_type))
+    references = asset_refs or []
+    if "children" in spec:
+        if "text" in spec:
+            raise ValueError("a children ContentNode cannot also define text")
+        return CanonicalContentNode(
+            normalized_type=normalized_type,
+            source_type=source_type,
+            content_kind="children",
+            children=[_build_content_node(child) for child in spec["children"]],
+            asset_refs=references,
+            source_fields={},
+        )
+    if "text" not in spec or not isinstance(spec["text"], str):
+        raise ValueError("each scalar ContentNode annotation requires string text")
+    return CanonicalContentNode(
+        normalized_type=normalized_type,
+        source_type=source_type,
+        content_kind="scalar",
+        value=spec["text"],
+        asset_refs=references,
+        source_fields={},
+    )
+
+
 def _normalized_for_source(source_type: str) -> str:
     return {
         "equation": "formula",
@@ -560,7 +857,7 @@ def _normalized_for_source(source_type: str) -> str:
 
 
 def _pointer_location(pointer: str) -> tuple[int, int]:
-    match = _POINTER.match(pointer)
+    match = _POINTER.fullmatch(pointer)
     if match is None:
         raise ValueError("Canonical source pointer has an unexpected shape")
     return int(match.group(1)), int(match.group(2))
