@@ -18,6 +18,13 @@ from huipi_cloud.modules.assignments.errors import (
     AssignmentNotFoundError,
     AssignmentValidationError,
 )
+from huipi_cloud.modules.canonical_documents.errors import (
+    CanonicalArtifactCorruptError,
+    CanonicalDocumentFailedError,
+    CanonicalDocumentNotFoundError,
+    CanonicalDocumentNotReadyError,
+    CanonicalPageNotFoundError,
+)
 from huipi_cloud.modules.parsing.errors import ParsingResultNotReadyError
 from huipi_cloud.modules.submissions.errors import (
     InvalidUploadError,
@@ -159,6 +166,53 @@ async def parsing_result_not_ready_handler(
     return JSONResponse(
         status_code=status.HTTP_409_CONFLICT,
         content={"detail": f"解析尚未完成，目前状态：{error.status}"},
+    )
+
+
+@app.exception_handler(CanonicalDocumentNotFoundError)
+async def canonical_document_not_found_handler(
+    _: Request,
+    error: CanonicalDocumentNotFoundError,
+) -> JSONResponse:
+    return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"detail": str(error)})
+
+
+@app.exception_handler(CanonicalDocumentNotReadyError)
+async def canonical_document_not_ready_handler(
+    _: Request,
+    error: CanonicalDocumentNotReadyError,
+) -> JSONResponse:
+    return JSONResponse(status_code=status.HTTP_409_CONFLICT, content={"detail": str(error)})
+
+
+@app.exception_handler(CanonicalDocumentFailedError)
+async def canonical_document_failed_handler(
+    _: Request,
+    error: CanonicalDocumentFailedError,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content={"detail": "规范化失败", "failure_code": error.code},
+    )
+
+
+@app.exception_handler(CanonicalPageNotFoundError)
+async def canonical_page_not_found_handler(
+    _: Request,
+    error: CanonicalPageNotFoundError,
+) -> JSONResponse:
+    return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"detail": str(error)})
+
+
+@app.exception_handler(CanonicalArtifactCorruptError)
+async def canonical_artifact_corrupt_handler(
+    _: Request,
+    __: CanonicalArtifactCorruptError,
+) -> JSONResponse:
+    logger.error("Indexed canonical document failed integrity validation")
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        content={"detail": "规范化产物暂时不可用"},
     )
 
 

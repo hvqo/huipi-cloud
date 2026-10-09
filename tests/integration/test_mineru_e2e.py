@@ -14,6 +14,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 
 from huipi_cloud.core.config import Settings
 from huipi_cloud.infrastructure.parsing.mineru import MinerUParserExecutor
+from huipi_cloud.modules.canonical_documents import service as canonical_service
+from huipi_cloud.modules.canonical_documents.models import CanonicalArtifact
 from huipi_cloud.modules.parsing.enums import ParsingTaskStatus
 from huipi_cloud.modules.parsing.models import ParsedArtifact
 from huipi_cloud.modules.submissions.models import ParsingTask
@@ -148,6 +150,50 @@ async def test_real_mineru_worker_persists_and_serves_parsed_outputs(
                         asset["sha256"],
                         asset["size_bytes"],
                     )
+
+        canonical = await canonical_service.normalize_submission(
+            session_factory,
+            recording_minio_storage,
+            submission_id,
+        )
+        assert canonical.status == "available"
+        assert canonical.parsed_artifact_id == artifact.id
+        assert canonical.page_count == artifact.page_count
+        canonical_payload = await _read_object(
+            recording_minio_storage,
+            canonical.canonical_object_key,
+        )
+        assert canonical_payload[0] == canonical.canonical_sha256
+        assert canonical_payload[1] == canonical.canonical_size_bytes
+
+        canonical_summary = await submission_client.get(
+            f"/api/v1/submissions/{submission_id}/canonical-document"
+        )
+        assert canonical_summary.status_code == 200, canonical_summary.text
+        summary = canonical_summary.json()
+        assert summary["status"] == "available"
+        assert summary["canonical_document"]["source_artifact_id"] == str(artifact.id)
+        assert canonical.canonical_object_key not in canonical_summary.text
+
+        canonical_page = await submission_client.get(
+            f"/api/v1/submissions/{submission_id}/canonical-document/pages/1"
+        )
+        assert canonical_page.status_code == 200, canonical_page.text
+        page_text = " ".join(_canonical_text_values(canonical_page.json()["page"]["blocks"]))
+        assert expected_text in page_text.upper()
+
+        async with session_factory() as session:
+            indexed_canonical = await session.scalar(
+                select(CanonicalArtifact).where(
+                    CanonicalArtifact.parsed_artifact_id == artifact.id
+                )
+            )
+            task_after_normalization = await session.scalar(
+                select(ParsingTask).where(ParsingTask.submission_id == submission_id)
+            )
+        assert indexed_canonical is not None and indexed_canonical.status == "available"
+        assert task_after_normalization is not None
+        assert task_after_normalization.status == ParsingTaskStatus.SUCCEEDED.value
     finally:
         stop_event.set()
         await asyncio.wait_for(worker_task, timeout=10)
@@ -214,3 +260,21 @@ async def _read_object(storage, key: str) -> tuple[str, int, bytes]:
         size += len(chunk)
         chunks.append(chunk)
     return digest.hexdigest(), size, b"".join(chunks)
+
+
+def _canonical_text_values(value: object) -> list[str]:
+    if isinstance(value, dict):
+        result = []
+        if isinstance(value.get("value"), str) and value.get("normalized_type") in {
+            "text",
+            "layout",
+            "formula",
+        }:
+            result.append(value["value"])
+        for key, item in value.items():
+            if key not in {"value", "source_fields"}:
+                result.extend(_canonical_text_values(item))
+        return result
+    if isinstance(value, list):
+        return [text for item in value for text in _canonical_text_values(item)]
+    return []
