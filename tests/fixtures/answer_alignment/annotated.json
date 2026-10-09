@@ -1,0 +1,198 @@
+{
+  "dataset_name": "huipi-p2d1-synthetic-v2",
+  "annotation_note": "人工标注的合成 Canonical 样本；标签独立于规则输出，不代表真实学生作业分布。",
+  "cases": [
+    {
+      "case_id": "two-labels-one-block",
+      "expected_behavior": "两个显式题号在同一文本块中准确切分，两个答案都可自动接受。",
+      "pages": [[{"source_type": "text", "text": "第1题 甲答案\n第2题 乙答案"}]],
+      "question_numbers": [1, 2],
+      "candidate_labels": [
+        {"question_number": 1, "page_index": 0, "block_index": 0, "marker_start": 0, "marker_end": 3, "expected_question_number": 1},
+        {"question_number": 2, "page_index": 0, "block_index": 0, "marker_start": 8, "marker_end": 11, "expected_question_number": 2}
+      ],
+      "confounder_markers": [],
+      "answer_labels": [
+        {"question_number": 1, "answer_regions": [{"page_index": 0, "block_index": 0, "start": 3, "end": 8}], "expected_status": "aligned", "expected_answer_present": true, "expected_auto_accept": true},
+        {"question_number": 2, "answer_regions": [{"page_index": 0, "block_index": 0, "start": 11, "end": 15}], "expected_status": "aligned", "expected_answer_present": true, "expected_auto_accept": true}
+      ],
+      "asset_expectations": [],
+      "expected_source_types": []
+    },
+    {
+      "case_id": "answer-crosses-page-boundary",
+      "expected_behavior": "答案跨页延续，页和块来源都保留，单个显式题号可自动接受。",
+      "pages": [[{"source_type": "text", "text": "第1题 第一步"}], [{"source_type": "text", "text": "继续推导"}]],
+      "question_numbers": [1],
+      "candidate_labels": [
+        {"question_number": 1, "page_index": 0, "block_index": 0, "marker_start": 0, "marker_end": 3, "expected_question_number": 1}
+      ],
+      "confounder_markers": [],
+      "answer_labels": [
+        {"question_number": 1, "answer_regions": [{"page_index": 0, "block_index": 0, "start": 3, "end": 7}, {"page_index": 1, "block_index": 0, "start": 0, "end": 4}], "expected_status": "aligned", "expected_answer_present": true, "expected_auto_accept": true}
+      ],
+      "asset_expectations": [],
+      "expected_source_types": []
+    },
+    {
+      "case_id": "parenthesized-subquestion-ambiguous",
+      "expected_behavior": "括号题号可能是子题，保留关联证据并要求复核。",
+      "pages": [[{"source_type": "text", "text": "（1）局部步骤"}]],
+      "question_numbers": [1],
+      "candidate_labels": [
+        {"question_number": 1, "page_index": 0, "block_index": 0, "marker_start": 0, "marker_end": 3, "expected_question_number": 1}
+      ],
+      "confounder_markers": [],
+      "answer_labels": [
+        {"question_number": 1, "answer_regions": [{"page_index": 0, "block_index": 0, "start": 3, "end": 7}], "expected_status": "review_required", "expected_answer_present": true, "expected_auto_accept": false}
+      ],
+      "asset_expectations": [],
+      "expected_source_types": []
+    },
+    {
+      "case_id": "answer-without-question-number",
+      "expected_behavior": "没有可识别的题号时，保留文档来源内容但不猜测 Question 归属。",
+      "pages": [[{"source_type": "text", "text": "只写了解题过程，没有题号"}]],
+      "question_numbers": [1],
+      "candidate_labels": [],
+      "confounder_markers": [],
+      "answer_labels": [
+        {"question_number": 1, "answer_regions": [{"page_index": 0, "block_index": 0, "start": 0, "end": 12}], "expected_status": "not_observed", "expected_answer_present": true, "expected_auto_accept": false}
+      ],
+      "asset_expectations": [],
+      "expected_source_types": []
+    },
+    {
+      "case_id": "unknown-number-between-known-questions",
+      "expected_behavior": "中间的未知编号截断前题的可证明范围；前题复核、未知内容未分配、后续显式题保持对齐。",
+      "pages": [[{"source_type": "text", "text": "第1题 先列等式\n第99题 可能续写\n第2题 独立答案"}]],
+      "question_numbers": [1, 2],
+      "candidate_labels": [
+        {"question_number": 1, "page_index": 0, "block_index": 0, "marker_start": 0, "marker_end": 3, "expected_question_number": 1},
+        {"question_number": 2, "page_index": 0, "block_index": 0, "marker_start": 19, "marker_end": 22, "expected_question_number": 2}
+      ],
+      "confounder_markers": [
+        {"question_number": 99, "page_index": 0, "block_index": 0, "marker_start": 9, "marker_end": 13, "kind": "unknown_number"}
+      ],
+      "answer_labels": [
+        {"question_number": 1, "answer_regions": [{"page_index": 0, "block_index": 0, "start": 3, "end": 19}], "expected_status": "review_required", "expected_answer_present": true, "expected_auto_accept": false},
+        {"question_number": 2, "answer_regions": [{"page_index": 0, "block_index": 0, "start": 22, "end": 27}], "expected_status": "aligned", "expected_answer_present": true, "expected_auto_accept": true}
+      ],
+      "asset_expectations": [],
+      "expected_source_types": []
+    },
+    {
+      "case_id": "numbered-list-inside-solution",
+      "expected_behavior": "通用数字列表项不能证明答案边界；候选保留但题目答案要求复核。",
+      "pages": [[{"source_type": "text", "text": "第1题 计算过程\n1. 先整理同类项\n得到 x=2"}]],
+      "question_numbers": [1],
+      "candidate_labels": [
+        {"question_number": 1, "page_index": 0, "block_index": 0, "marker_start": 0, "marker_end": 3, "expected_question_number": 1}
+      ],
+      "confounder_markers": [
+        {"question_number": 1, "page_index": 0, "block_index": 0, "marker_start": 9, "marker_end": 11, "kind": "numbered_list"}
+      ],
+      "answer_labels": [
+        {"question_number": 1, "answer_regions": [{"page_index": 0, "block_index": 0, "start": 3, "end": 25}], "expected_status": "review_required", "expected_answer_present": true, "expected_auto_accept": false}
+      ],
+      "asset_expectations": [],
+      "expected_source_types": []
+    },
+    {
+      "case_id": "subquestion-marker-after-main-question",
+      "expected_behavior": "大题下的括号子题候选不能把同一 Question 的完整答案自动判定为可靠。",
+      "pages": [[{"source_type": "text", "text": "第1题 主问题解答\n（1）小题步骤\n最终结果"}]],
+      "question_numbers": [1],
+      "candidate_labels": [
+        {"question_number": 1, "page_index": 0, "block_index": 0, "marker_start": 0, "marker_end": 3, "expected_question_number": 1},
+        {"question_number": 1, "page_index": 0, "block_index": 0, "marker_start": 10, "marker_end": 13, "expected_question_number": 1}
+      ],
+      "confounder_markers": [],
+      "answer_labels": [
+        {"question_number": 1, "answer_regions": [{"page_index": 0, "block_index": 0, "start": 3, "end": 22}], "expected_status": "review_required", "expected_answer_present": true, "expected_auto_accept": false}
+      ],
+      "asset_expectations": [],
+      "expected_source_types": []
+    },
+    {
+      "case_id": "duplicate-question-marker",
+      "expected_behavior": "重复出现同一题号时保留两段来源，但不自动选择其中一段或合并为确定答案。",
+      "pages": [[{"source_type": "text", "text": "第1题 第一次作答\n第1题 补充作答"}]],
+      "question_numbers": [1],
+      "candidate_labels": [
+        {"question_number": 1, "page_index": 0, "block_index": 0, "marker_start": 0, "marker_end": 3, "expected_question_number": 1},
+        {"question_number": 1, "page_index": 0, "block_index": 0, "marker_start": 10, "marker_end": 13, "expected_question_number": 1}
+      ],
+      "confounder_markers": [],
+      "answer_labels": [
+        {"question_number": 1, "answer_regions": [{"page_index": 0, "block_index": 0, "start": 3, "end": 10}, {"page_index": 0, "block_index": 0, "start": 13, "end": 18}], "expected_status": "review_required", "expected_answer_present": true, "expected_auto_accept": false}
+      ],
+      "asset_expectations": [],
+      "expected_source_types": []
+    },
+    {
+      "case_id": "two-markers-one-atom-shared-image",
+      "expected_behavior": "同一文本原子附图并包含两个题号时，保留共享逻辑图片引用，两个答案均要求复核归属。",
+      "pages": [[{"source_type": "text", "text": "第1题 图示解答\n第2题 续写", "asset_names": ["shared-diagram"]}]],
+      "question_numbers": [1, 2],
+      "candidate_labels": [
+        {"question_number": 1, "page_index": 0, "block_index": 0, "marker_start": 0, "marker_end": 3, "expected_question_number": 1},
+        {"question_number": 2, "page_index": 0, "block_index": 0, "marker_start": 9, "marker_end": 12, "expected_question_number": 2}
+      ],
+      "confounder_markers": [],
+      "answer_labels": [
+        {"question_number": 1, "answer_regions": [{"page_index": 0, "block_index": 0, "start": 3, "end": 9}], "expected_status": "review_required", "expected_answer_present": true, "expected_auto_accept": false},
+        {"question_number": 2, "answer_regions": [{"page_index": 0, "block_index": 0, "start": 12, "end": 15}], "expected_status": "review_required", "expected_answer_present": true, "expected_auto_accept": false}
+      ],
+      "asset_expectations": [
+        {"asset_name": "shared-diagram", "expected_answer_questions": [1, 2], "review_required_questions": [1, 2]}
+      ],
+      "expected_source_types": []
+    },
+    {
+      "case_id": "cross-page-formula-answer",
+      "expected_behavior": "跨页公式仍作为有来源指针的答案区域，而非只保留文本投影。",
+      "pages": [[{"source_type": "text", "text": "第1题 建立方程"}], [{"source_type": "equation_inline", "text": "x^2 + 1 = 0"}]],
+      "question_numbers": [1],
+      "candidate_labels": [
+        {"question_number": 1, "page_index": 0, "block_index": 0, "marker_start": 0, "marker_end": 3, "expected_question_number": 1}
+      ],
+      "confounder_markers": [],
+      "answer_labels": [
+        {"question_number": 1, "answer_regions": [{"page_index": 0, "block_index": 0, "start": 3, "end": 8}, {"page_index": 1, "block_index": 0, "start": 0, "end": 11}], "expected_status": "aligned", "expected_answer_present": true, "expected_auto_accept": true}
+      ],
+      "asset_expectations": [],
+      "expected_source_types": ["formula"]
+    },
+    {
+      "case_id": "table-and-image-answer",
+      "expected_behavior": "表格文本和图片素材都应留在答案来源中；素材引用不依赖文本投影。",
+      "pages": [[{"source_type": "text", "text": "第1题 观察数据"}, {"source_type": "table_body", "text": "<table><tr><td>2</td></tr></table>"}, {"source_type": "image", "text": "", "asset_names": ["table-figure"]}]],
+      "question_numbers": [1],
+      "candidate_labels": [
+        {"question_number": 1, "page_index": 0, "block_index": 0, "marker_start": 0, "marker_end": 3, "expected_question_number": 1}
+      ],
+      "confounder_markers": [],
+      "answer_labels": [
+        {"question_number": 1, "answer_regions": [{"page_index": 0, "block_index": 0, "start": 3, "end": 8}, {"page_index": 0, "block_index": 1, "start": 0, "end": 34}], "expected_status": "aligned", "expected_answer_present": true, "expected_auto_accept": true}
+      ],
+      "asset_expectations": [
+        {"asset_name": "table-figure", "expected_answer_questions": [1], "review_required_questions": []}
+      ],
+      "expected_source_types": ["table", "image"]
+    },
+    {
+      "case_id": "handwritten-work-without-number-simulation",
+      "expected_behavior": "模拟没有题号的手写解题文本；保留在未分配来源，不将 not_observed解释成未作答。",
+      "pages": [[{"source_type": "text", "text": "草稿：先化简，再代入，得到答案。"}]],
+      "question_numbers": [1],
+      "candidate_labels": [],
+      "confounder_markers": [],
+      "answer_labels": [
+        {"question_number": 1, "answer_regions": [{"page_index": 0, "block_index": 0, "start": 0, "end": 16}], "expected_status": "not_observed", "expected_answer_present": true, "expected_auto_accept": false}
+      ],
+      "asset_expectations": [],
+      "expected_source_types": []
+    }
+  ]
+}

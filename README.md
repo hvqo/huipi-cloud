@@ -8,7 +8,8 @@
 - 已合并 P1-B：学生模拟身份提交、PDF/JPG/PNG 原始文件存储、提交查询、文件读取和初始 `pending` 任务记录。
 - 已合并 P2-A：PostgreSQL 解析任务状态机、租约领取和续租、过期恢复、有限重试、独立 Worker 框架及安全状态查询。
 - P2-B：MinerU 4.x Basic/ONNX 本地解析子进程、PDF/图片输入、私有 S3 解析产物、PostgreSQL 产物索引、解析结果查询 API。PR #5 记录最终验收和真实 MinerU 样本证据。
-- P2-C：当前功能分支实现中。新增与 MinerU 解耦的 Canonical Document v1、MiddleJson 转换、完整合法素材清单、来源元数据保留、S3 JSON 产物与 PostgreSQL 轻量索引、规范化 CLI 和按页查询 API；仍待本分支 CI/PR 验收，不能视为已合并功能。
+- 已合并 P2-C：Canonical Document v1、MiddleJson 转换、完整合法素材清单、来源元数据保留、S3 JSON 产物与 PostgreSQL 轻量索引、规范化 CLI 和按页查询 API。
+- P2-D1 当前功能分支实现中：规则式题号候选识别、学生答案区域切分、来源追踪、与真实 Assignment Question 对齐、S3 不可变结果和 PostgreSQL 幂等索引，以及只读查询 API。它不包含 OCR、自动评分、LLM 或教师复核工作流；仍待本分支验收与 PR 审查，不能视为已合并功能。
 - P2-B 不包含题目切分、批改、MongoDB、Celery、RabbitMQ、Redis、Copilot 或身份认证。真实解析要求单独安装 MinerU 和模型；未配置执行器或模型时 Worker 拒绝启动。
 
 `student_ref` 和当前提交、任务、解析结果 API 没有认证或权限控制，只能用于本地或其他受控环境，不能直接暴露到公网。
@@ -38,7 +39,9 @@ API 文档：http://127.0.0.1:8000/docs。存活检查：`GET /api/v1/health`。
 
 P2-A 提供 `GET /api/v1/submissions/{submission_id}/parsing-task`。P2-B 另提供解析产物摘要和 Markdown 流式读取接口。
 
-当前 P2-C 分支新增 `python -m huipi_cloud.workers.normalize_document --submission-id UUID`，只处理已有 `succeeded` 的 P2-B 解析结果，不会重置或重新执行 MinerU。状态摘要为 `GET /api/v1/submissions/{submission_id}/canonical-document`；页面读取为 `GET /api/v1/submissions/{submission_id}/canonical-document/pages/{page_number}`。Canonical JSON 存在私有 S3；API 摘要不返回整份文档或私有对象 Key，页面接口先检查索引大小，再分块读取、校验 SHA-256 和完整结构后只返回指定页。页面 API 的文档上限默认 32 MiB、硬上限 64 MiB；Pydantic 会把 JSON 解码成对象，因此实际峰值内存高于文件大小，并随并发请求增加。该接口仍只适用于受控环境。
+`python -m huipi_cloud.workers.normalize_document --submission-id UUID` 只处理已有 `succeeded` 的 P2-B 解析结果，不会重置或重新执行 MinerU。状态摘要为 `GET /api/v1/submissions/{submission_id}/canonical-document`；页面读取为 `GET /api/v1/submissions/{submission_id}/canonical-document/pages/{page_number}`。Canonical JSON 存在私有 S3；页面接口先检查索引大小，再分块读取、校验 SHA-256 和完整结构后只返回指定页。页面 API 默认上限 32 MiB、硬上限 64 MiB；Pydantic 解码会增加峰值内存，并随并发请求增加。
+
+当前 P2-D1 功能分支提供 `python -m huipi_cloud.workers.align_answers --submission-id UUID`，只处理可用 Canonical 文档和所属 Assignment 的真实 Question。查询接口为 `GET /api/v1/submissions/{submission_id}/answer-alignment` 与 `GET /api/v1/submissions/{submission_id}/answer-alignment/questions/{question_id}`。对齐 JSON 存在私有 S3，PostgreSQL 保存版本、题目集合摘要和安全查询索引。`ANSWER_ALIGNMENT_MAX_DOCUMENT_BYTES` 默认 32 MiB、硬上限 64 MiB；`ANSWER_ALIGNMENT_MAX_QUESTION_RESPONSE_BYTES` 默认 2 MiB、硬上限 8 MiB。读取会加载并解析整份对齐 JSON，结构解码和并发请求会增加内存。通用数字标签及括号子题号默认待复核；未标号内容保持未观察/未分配，不推断学生未作答。当前 API 无认证和 RBAC，只能用于受控环境。
 
 ## 配置和启动真实解析
 
@@ -68,7 +71,7 @@ uv run python -m huipi_cloud.workers.parsing_worker
 
 ## 验证
 
-完整集成测试要求本地 PostgreSQL `_test` 数据库和本地 S3 兼容服务。它们缺失时测试会失败，不会静默跳过 PostgreSQL/S3 覆盖。P2-C 的数据库、S3 和转换测试使用合成 MiddleJson；真实 MinerU 测试默认跳过。设置独立 CLI 和模型目录后可以执行合成样例，并验证 MinerU → Canonical → S3/PG → 页面 API：
+完整集成测试要求本地 PostgreSQL `_test` 数据库和本地 S3 兼容服务。它们缺失时测试会失败，不会静默跳过 PostgreSQL/S3 覆盖。P2-D1 的数据库、S3 集成测试从合成 MiddleJson 开始，验证 Canonical → 答案对齐 → API；这不是实际 MinerU E2E。单独的 MinerU E2E 测试默认跳过，覆盖真实 MinerU Worker 和 Canonical 页面 API，不包含 D1 对齐。本地当前没有 MinerU CLI 和模型，因此这 4 项无法执行。
 
 ~~~bash
 docker compose up -d postgres minio
@@ -77,6 +80,7 @@ uv sync --locked
 uv run ruff check .
 uv run pytest -q
 uv run alembic check
+uv run python scripts/evaluate_answer_alignment.py
 ~~~
 
 ~~~bash
@@ -86,6 +90,8 @@ MINERU_E2E=1 MINERU_EXECUTABLE=/绝对路径/mineru-venv/bin/mineru-kit MINERU_H
 P2-A 任务采用 PostgreSQL 持久队列和 At Least Once 执行。P2-B 的解析产物以每次执行独立的不可变 run Key 保存；PostgreSQL 产物索引与 `succeeded` 状态在同一租约校验事务中提交。这不构成 MinIO 和 PostgreSQL 的跨系统原子事务，也没有实现运行去重或孤立对象清理。解析执行设置输入字节、PDF 页数、归档展开字节、文本大小和归档成员数上限；这些设置不是 MinerU 子进程的硬内存上限。
 
 P2-C 复核使用 MinerU 4.0.10 Basic/ONNX CPU 环境，4 个合成样本（文字 PDF、扫描 PDF、PNG、含公式/表格/图片的结构 PDF）通过真实 Worker + PostgreSQL + S3 E2E。结构 PDF 检查真实 MinerU MiddleJson 与素材清单；这验证数据流和样本内容断言，不代表真实学生作业准确率；GitHub CI 不下载模型。Canonical 会保留全部合法素材清单项，包括当前 Block 未引用的素材。内嵌图片不会写入 Canonical JSON；Canonical 保存 MiddleJson 来源指针、编码、媒体类型、解码后大小和 SHA-256，可在取得对应不可变 MiddleJson 并通过来源校验后恢复。
+
+P2-D1 的人工标注离线集是 4 个合成案例，不代表真实学生作业分布。当前规则只允许明确的“第 n 题”标记在无冲突且顺序一致时自动对齐；`n.`、`n、`、`n)` 和括号题号作为候选但要求复核。它不读取 AnswerKey，也不推断未观察到的答案等于未作答。结果由 CLI 生成并写入私有 S3 与 PostgreSQL；API 不返回 S3 Key。模块当前未实现认证、人工纠正、真实手写样本评测、OCR 或评分。
 
 ## 项目结构
 
@@ -97,10 +103,11 @@ src/huipi_cloud/
   infrastructure/storage/        S3 兼容对象存储
   infrastructure/parsing/        MinerU 子进程和解析结果合同校验
   modules/canonical_documents/    Canonical 协议、转换、轻量索引和查询 API
+  modules/answer_alignment/       题号候选、答案区域、Question 匹配和结果查询
   modules/assignments/            作业领域
   modules/submissions/            提交、原始文件和任务登记
   modules/parsing/                解析状态、产物索引、执行器协议和查询
-  workers/                        独立解析 Worker 与规范化 CLI
+  workers/                        独立解析 Worker、规范化和对齐 CLI
 migrations/                        Alembic 迁移
 tests/unit/                        单元测试
 tests/integration/                 PostgreSQL、S3 和可选 MinerU 集成测试

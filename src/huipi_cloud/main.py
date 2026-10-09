@@ -13,6 +13,14 @@ from huipi_cloud.core.config import settings
 from huipi_cloud.core.logging import configure_logging
 from huipi_cloud.infrastructure.database.session import dispose_database_engine
 from huipi_cloud.infrastructure.storage.s3 import StorageUnavailableError
+from huipi_cloud.modules.answer_alignment.errors import (
+    AnswerAlignmentArtifactCorruptError,
+    AnswerAlignmentLimitError,
+    AnswerAlignmentNotFoundError,
+    AnswerAlignmentNotReadyError,
+    AnswerAlignmentResponseTooLargeError,
+    AnswerAlignmentResultNotFoundError,
+)
 from huipi_cloud.modules.assignments.errors import (
     AssignmentConflictError,
     AssignmentNotFoundError,
@@ -50,6 +58,47 @@ app.add_middleware(
     api_v1_prefix=settings.api_v1_prefix,
 )
 logger = logging.getLogger(__name__)
+
+
+@app.exception_handler(AnswerAlignmentNotFoundError)
+async def answer_alignment_not_found_handler(
+    _: Request,
+    error: AnswerAlignmentNotFoundError,
+) -> JSONResponse:
+    return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"detail": str(error)})
+
+
+@app.exception_handler(AnswerAlignmentNotReadyError)
+@app.exception_handler(AnswerAlignmentResultNotFoundError)
+async def answer_alignment_not_ready_handler(
+    _: Request,
+    error: AnswerAlignmentNotReadyError | AnswerAlignmentResultNotFoundError,
+) -> JSONResponse:
+    return JSONResponse(status_code=status.HTTP_409_CONFLICT, content={"detail": str(error)})
+
+
+@app.exception_handler(AnswerAlignmentResponseTooLargeError)
+@app.exception_handler(AnswerAlignmentLimitError)
+async def answer_alignment_too_large_handler(
+    _: Request,
+    error: AnswerAlignmentResponseTooLargeError | AnswerAlignmentLimitError,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+        content={"detail": str(error)},
+    )
+
+
+@app.exception_handler(AnswerAlignmentArtifactCorruptError)
+async def answer_alignment_corrupt_handler(
+    _: Request,
+    __: AnswerAlignmentArtifactCorruptError,
+) -> JSONResponse:
+    logger.error("Indexed answer-alignment document failed integrity validation")
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        content={"detail": "答案对齐产物暂时不可用"},
+    )
 
 
 @app.exception_handler(AssignmentNotFoundError)
