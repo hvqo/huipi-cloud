@@ -1,5 +1,7 @@
 """Pure, bounded conversion from the MinerU 4.x MiddleJson wire format."""
 
+import base64
+import binascii
 import hashlib
 import json
 import math
@@ -8,7 +10,7 @@ from dataclasses import dataclass
 from html.parser import HTMLParser
 from pathlib import PurePosixPath, PureWindowsPath
 from typing import Any
-from urllib.parse import unquote, urlsplit
+from urllib.parse import unquote, unquote_to_bytes, urlsplit
 from uuid import UUID, uuid5
 
 from pydantic import ValidationError
@@ -70,6 +72,7 @@ _IMAGE_CONTENT_TYPES = {
     "image/tiff",
     "image/webp",
 }
+_MAX_INLINE_IMAGE_BYTES = 16 * 1024 * 1024
 _SOURCE_FIELD_REDACTIONS = {
     "access_key",
     "secret_key",
@@ -100,8 +103,8 @@ class NormalizationSource:
 
 
 def normalize_middle_json(
-    middle_json: bytes | dict[str, Any],
-    assets_manifest: bytes | dict[str, Any],
+    middle_json: bytes | bytearray | dict[str, Any],
+    assets_manifest: bytes | bytearray | dict[str, Any],
     source: NormalizationSource,
     *,
     max_nodes: int = 50_000,
@@ -142,7 +145,7 @@ def normalize_middle_json(
 
         blocks: list[CanonicalBlock] = []
         previous_source_index = -1
-        for raw_block in raw_blocks:
+        for block_position, raw_block in enumerate(raw_blocks):
             if not isinstance(raw_block, dict):
                 raise CanonicalNormalizationError("invalid_source_structure")
             source_type = raw_block.get("type")
@@ -161,6 +164,7 @@ def normalize_middle_json(
                 raw_block,
                 resolver,
                 node_counter,
+                source_pointer=f"/pages/{expected_page_index}/blocks/{block_position}",
                 max_nodes=max_nodes,
                 max_depth=max_nesting_depth,
                 depth=0,
@@ -191,6 +195,11 @@ def normalize_middle_json(
                 page_number=expected_page_index + 1,
                 source_page_idx=expected_page_index,
                 blocks=blocks,
+                source_fields={
+                    key: _safe_source_value(item, parent_key=key)
+                    for key, item in raw_page.items()
+                    if key not in {"page_idx", "blocks"}
+                },
             )
         )
 
@@ -211,21 +220,21 @@ def normalize_middle_json(
             bbox_coordinate_space=BBOX_COORDINATE_SPACE,
             page_count=len(pages),
             pages=pages,
-            assets=sorted(resolver.assets.values(), key=lambda item: item.source_path),
+            assets=manifest_assets,
             source_metadata={
-                "metadata": _safe_source_value(middle["metadata"]),
-                "extensions": _safe_source_value(middle["extensions"]),
-                "is_full_document": middle["is_full_document"],
+                key: _safe_source_value(value, parent_key=key)
+                for key, value in middle.items()
+                if key != "pages"
             },
         )
     except ValidationError as error:
         raise CanonicalNormalizationError("invalid_source_structure") from error
 
 
-def _load_json(value: bytes | dict[str, Any]) -> object:
+def _load_json(value: bytes | bytearray | dict[str, Any]) -> object:
     if isinstance(value, dict):
         return value
-    if not isinstance(value, bytes):
+    if not isinstance(value, (bytes, bytearray)):
         raise CanonicalNormalizationError("invalid_source_structure")
     try:
         return json.loads(value, object_pairs_hook=_unique_object, parse_constant=_reject_constant)
@@ -370,6 +379,7 @@ def _build_content_node(
     resolver: "_AssetResolver",
     node_counter: list[int],
     *,
+    source_pointer: str,
     max_nodes: int,
     max_depth: int,
     depth: int,
@@ -409,13 +419,45 @@ def _build_content_node(
             continue
         if not isinstance(reference, str):
             raise CanonicalNormalizationError("invalid_asset_reference")
-        references.append(resolver.resolve(reference))
+        references.append(
+            resolver.resolve(
+                reference,
+                source_pointer=_json_pointer_child(source_pointer, key),
+            )
+        )
+    inline_base64 = value.get("image_base64")
+    if inline_base64 is not None:
+        if not isinstance(inline_base64, str):
+            raise CanonicalNormalizationError("invalid_asset_reference")
+        references.append(
+            resolver.resolve_inline(
+                inline_base64,
+                source_pointer=_json_pointer_child(source_pointer, "image_base64"),
+            )
+        )
+    if (
+        source_type in {"image", "image_body"}
+        and isinstance(raw_content, str)
+        and raw_content.casefold().startswith("data:image/")
+    ):
+        references.append(
+            resolver.resolve(
+                raw_content,
+                source_pointer=_json_pointer_child(source_pointer, "content"),
+            )
+        )
     if source_type in _VISUAL_HTML_TYPES and isinstance(raw_content, str):
-        for reference in _html_image_references(raw_content):
-            references.append(resolver.resolve(reference))
+        for occurrence_index, reference in enumerate(_html_image_references(raw_content)):
+            references.append(
+                resolver.resolve(
+                    reference,
+                    source_pointer=_json_pointer_child(source_pointer, "content"),
+                    source_occurrence_index=occurrence_index,
+                )
+            )
 
     children: list[CanonicalContentNode] = []
-    for child in raw_children:
+    for child_index, child in enumerate(raw_children):
         if not isinstance(child, dict):
             raise CanonicalNormalizationError("invalid_source_structure")
         children.append(
@@ -423,6 +465,10 @@ def _build_content_node(
                 child,
                 resolver,
                 node_counter,
+                source_pointer=_json_pointer_child(
+                    _json_pointer_child(source_pointer, "content"),
+                    str(child_index),
+                ),
                 max_nodes=max_nodes,
                 max_depth=max_depth,
                 depth=depth + 1,
@@ -481,12 +527,20 @@ def _html_image_references(value: str) -> list[str]:
 class _AssetResolver:
     def __init__(self, assets: list[CanonicalAsset]) -> None:
         self.by_path = {asset.source_path: asset for asset in assets}
-        self.assets: dict[str, CanonicalAsset] = {}
 
-    def resolve(self, reference: str) -> CanonicalAssetReference:
+    def resolve(
+        self,
+        reference: str,
+        *,
+        source_pointer: str | None = None,
+        source_occurrence_index: int | None = None,
+    ) -> CanonicalAssetReference:
         if (
             not reference
-            or len(reference.encode("utf-8")) > 4096
+            or (
+                len(reference.encode("utf-8")) > 4096
+                and not reference.casefold().startswith("data:image/")
+            )
             or any(ord(character) < 0x20 or ord(character) == 0x7F for character in reference)
         ):
             raise CanonicalNormalizationError("invalid_asset_reference")
@@ -504,13 +558,15 @@ class _AssetResolver:
                 raise CanonicalNormalizationError("invalid_asset_reference") from error
             return CanonicalAssetReference(kind="external", uri=reference)
         if scheme == "data":
-            if not reference.casefold().startswith("data:image/") or "," not in reference:
-                raise CanonicalNormalizationError("invalid_asset_reference")
-            encoded = reference.encode("utf-8")
-            return CanonicalAssetReference(
-                kind="inline_redacted",
-                sha256=hashlib.sha256(encoded).hexdigest(),
-                size_bytes=len(encoded),
+            content_type, image_bytes = _decode_data_uri(reference)
+            return _inline_reference(
+                content_type,
+                image_bytes,
+                source_pointer=source_pointer,
+                source_encoding=(
+                    "html_data_uri" if source_occurrence_index is not None else "data_uri"
+                ),
+                source_occurrence_index=source_occurrence_index,
             )
         if scheme or parsed.netloc or re.search(r"%(?![0-9a-fA-F]{2})", parsed.path):
             raise CanonicalNormalizationError("invalid_asset_reference")
@@ -527,8 +583,164 @@ class _AssetResolver:
         asset = next((self.by_path[path] for path in candidates if path in self.by_path), None)
         if asset is None:
             raise CanonicalNormalizationError("missing_asset_reference")
-        self.assets[asset.source_path] = asset
         return CanonicalAssetReference(kind="stored", asset_id=asset.asset_id)
+
+    def resolve_inline(
+        self,
+        value: str,
+        *,
+        source_pointer: str,
+    ) -> CanonicalAssetReference:
+        if value.casefold().startswith("data:"):
+            return self.resolve(value, source_pointer=source_pointer)
+        content_type, image_bytes = _decode_base64_image(value)
+        return _inline_reference(
+            content_type,
+            image_bytes,
+            source_pointer=source_pointer,
+            source_encoding="base64",
+        )
+
+
+def _inline_reference(
+    content_type: str,
+    image_bytes: bytes,
+    *,
+    source_pointer: str | None,
+    source_encoding: str,
+    source_occurrence_index: int | None = None,
+) -> CanonicalAssetReference:
+    if source_pointer is None:
+        raise CanonicalNormalizationError("invalid_asset_reference")
+    return CanonicalAssetReference(
+        kind="inline_redacted",
+        sha256=hashlib.sha256(image_bytes).hexdigest(),
+        size_bytes=len(image_bytes),
+        content_type=content_type,
+        source_pointer=source_pointer,
+        source_encoding=source_encoding,
+        source_occurrence_index=source_occurrence_index,
+    )
+
+
+def _decode_data_uri(value: str) -> tuple[str, bytes]:
+    header, separator, payload = value.partition(",")
+    parts = header[5:].split(";") if header[:5].casefold() == "data:" else []
+    content_type = parts[0].casefold() if parts else ""
+    if not separator or content_type not in _IMAGE_CONTENT_TYPES:
+        raise CanonicalNormalizationError("invalid_asset_reference")
+    try:
+        if any(part.casefold() == "base64" for part in parts[1:]):
+            if len(payload) > ((_MAX_INLINE_IMAGE_BYTES + 2) // 3) * 4:
+                raise CanonicalNormalizationError("inline_asset_size_limit_exceeded")
+            image_bytes = base64.b64decode(payload, validate=True)
+        else:
+            if len(payload) > _MAX_INLINE_IMAGE_BYTES * 3:
+                raise CanonicalNormalizationError("inline_asset_size_limit_exceeded")
+            image_bytes = unquote_to_bytes(payload)
+    except (binascii.Error, UnicodeEncodeError, ValueError) as error:
+        raise CanonicalNormalizationError("invalid_asset_reference") from error
+    if not image_bytes:
+        raise CanonicalNormalizationError("invalid_asset_reference")
+    if len(image_bytes) > _MAX_INLINE_IMAGE_BYTES:
+        raise CanonicalNormalizationError("inline_asset_size_limit_exceeded")
+    if _sniff_image_content_type(image_bytes) != content_type:
+        raise CanonicalNormalizationError("invalid_asset_reference")
+    return content_type, image_bytes
+
+
+def _decode_base64_image(value: str) -> tuple[str, bytes]:
+    try:
+        if len(value) > ((_MAX_INLINE_IMAGE_BYTES + 2) // 3) * 4:
+            raise CanonicalNormalizationError("inline_asset_size_limit_exceeded")
+        image_bytes = base64.b64decode(value, validate=True)
+    except (binascii.Error, UnicodeEncodeError, ValueError) as error:
+        raise CanonicalNormalizationError("invalid_asset_reference") from error
+    if len(image_bytes) > _MAX_INLINE_IMAGE_BYTES:
+        raise CanonicalNormalizationError("inline_asset_size_limit_exceeded")
+    content_type = _sniff_image_content_type(image_bytes)
+    if content_type is None:
+        raise CanonicalNormalizationError("invalid_asset_reference")
+    return content_type, image_bytes
+
+
+def _sniff_image_content_type(image_bytes: bytes) -> str | None:
+    if image_bytes.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if image_bytes.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if image_bytes.startswith((b"GIF87a", b"GIF89a")):
+        return "image/gif"
+    if image_bytes.startswith(b"BM"):
+        return "image/bmp"
+    if image_bytes.startswith((b"II*\x00", b"MM\x00*")):
+        return "image/tiff"
+    if len(image_bytes) >= 12 and image_bytes[:4] == b"RIFF" and image_bytes[8:12] == b"WEBP":
+        return "image/webp"
+    svg_prefix = image_bytes[:512].lstrip().lower()
+    if b"<svg" in svg_prefix:
+        return "image/svg+xml"
+    return None
+
+
+def _json_pointer_child(pointer: str, part: str) -> str:
+    escaped = part.replace("~", "~0").replace("/", "~1")
+    return f"{pointer}/{escaped}"
+
+
+def restore_inline_asset(
+    middle_json: bytes,
+    document: CanonicalDocument,
+    reference: CanonicalAssetReference,
+    *,
+    max_middle_json_bytes: int = 64 * 1024 * 1024,
+) -> bytes:
+    """Recover and verify an inline image through its original MiddleJson pointer."""
+    if (
+        reference.kind != "inline_redacted"
+        or reference.source_pointer is None
+        or reference.source_encoding is None
+    ):
+        raise CanonicalNormalizationError("invalid_inline_asset_reference")
+    if len(middle_json) > max_middle_json_bytes:
+        raise CanonicalNormalizationError("source_size_limit_exceeded")
+    if hashlib.sha256(middle_json).hexdigest() != document.source_middle_json_sha256:
+        raise CanonicalNormalizationError("source_checksum_mismatch")
+    middle = _load_json(middle_json)
+    _validate_json_tree(middle, max_nodes=50_000, max_depth=64)
+    raw_value: object = middle
+    for encoded_part in reference.source_pointer.lstrip("/").split("/"):
+        part = encoded_part.replace("~1", "/").replace("~0", "~")
+        if isinstance(raw_value, list) and part.isdigit():
+            index = int(part)
+            if index >= len(raw_value):
+                raise CanonicalNormalizationError("invalid_inline_asset_reference")
+            raw_value = raw_value[index]
+        elif isinstance(raw_value, dict) and part in raw_value:
+            raw_value = raw_value[part]
+        else:
+            raise CanonicalNormalizationError("invalid_inline_asset_reference")
+
+    if not isinstance(raw_value, str):
+        raise CanonicalNormalizationError("invalid_inline_asset_reference")
+    if reference.source_encoding == "html_data_uri":
+        html_references = _html_image_references(raw_value)
+        occurrence = reference.source_occurrence_index
+        if occurrence is None or occurrence >= len(html_references):
+            raise CanonicalNormalizationError("invalid_inline_asset_reference")
+        raw_value = html_references[occurrence]
+        content_type, image_bytes = _decode_data_uri(raw_value)
+    elif reference.source_encoding == "data_uri":
+        content_type, image_bytes = _decode_data_uri(raw_value)
+    else:
+        content_type, image_bytes = _decode_base64_image(raw_value)
+    if (
+        content_type != reference.content_type
+        or len(image_bytes) != reference.size_bytes
+        or hashlib.sha256(image_bytes).hexdigest() != reference.sha256
+    ):
+        raise CanonicalNormalizationError("inline_asset_checksum_mismatch")
+    return image_bytes
 
 
 def _normalize_relative_path(value: object, *, reject_percent: bool) -> str | None:
@@ -603,11 +815,15 @@ def _safe_source_value(value: object, *, parent_key: str = "") -> Any:
     if parent_key.casefold() == "image_base64":
         if not isinstance(value, str):
             raise CanonicalNormalizationError("invalid_source_structure")
-        encoded = value.encode("utf-8")
+        if value.casefold().startswith("data:"):
+            content_type, image_bytes = _decode_data_uri(value)
+        else:
+            content_type, image_bytes = _decode_base64_image(value)
         return {
             "_canonical_omitted": "inline_binary_asset",
-            "sha256": hashlib.sha256(encoded).hexdigest(),
-            "size_bytes": len(encoded),
+            "content_type": content_type,
+            "sha256": hashlib.sha256(image_bytes).hexdigest(),
+            "size_bytes": len(image_bytes),
         }
     if parent_key.casefold() in _SOURCE_FIELD_REDACTIONS:
         return {"_canonical_omitted": "private_storage_location"}
@@ -628,9 +844,9 @@ _INLINE_DATA_URL = re.compile(r"data:image/[^\s\"'<>)]*", flags=re.IGNORECASE)
 
 def _redact_inline_data_urls(value: str) -> str:
     def replace(match: re.Match[str]) -> str:
-        encoded = match.group(0).encode("utf-8")
-        digest = hashlib.sha256(encoded).hexdigest()
-        return f"canonical-inline-image:{digest}:{len(encoded)}"
+        content_type, image_bytes = _decode_data_uri(match.group(0))
+        digest = hashlib.sha256(image_bytes).hexdigest()
+        return f"canonical-inline-image:{content_type}:{digest}:{len(image_bytes)}"
 
     return _INLINE_DATA_URL.sub(replace, value)
 

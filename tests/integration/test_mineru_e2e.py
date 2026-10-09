@@ -37,6 +37,11 @@ _ENABLED = os.environ.get("MINERU_E2E") == "1"
         ("synthetic-text.pdf", "application/pdf", "HUIPI CLOUD TEXT PDF SAMPLE"),
         ("synthetic-scan.pdf", "application/pdf", "HUIPI CLOUD SCANNED SAMPLE"),
         ("synthetic-image.png", "image/png", "HUIPI CLOUD SCANNED SAMPLE"),
+        (
+            "synthetic-structured.pdf",
+            "application/pdf",
+            "CANONICAL STRUCTURE VERIFICATION",
+        ),
     ],
 )
 async def test_real_mineru_worker_persists_and_serves_parsed_outputs(
@@ -52,7 +57,12 @@ async def test_real_mineru_worker_persists_and_serves_parsed_outputs(
     model_home = os.environ.get("MINERU_HOME")
     assert cli_path and model_home, "MINERU_EXECUTABLE and MINERU_HOME are required"
 
-    source = (FIXTURES / filename).read_bytes()
+    source_path = (
+        FIXTURES / "canonical-structure" / "source.pdf"
+        if filename == "synthetic-structured.pdf"
+        else FIXTURES / filename
+    )
+    source = source_path.read_bytes()
     assignment_id = await _create_published_assignment(submission_client)
     upload = await submission_client.post(
         f"/api/v1/assignments/{assignment_id}/submissions",
@@ -179,8 +189,38 @@ async def test_real_mineru_worker_persists_and_serves_parsed_outputs(
             f"/api/v1/submissions/{submission_id}/canonical-document/pages/1"
         )
         assert canonical_page.status_code == 200, canonical_page.text
-        page_text = " ".join(_canonical_text_values(canonical_page.json()["page"]["blocks"]))
+        canonical_page_body = canonical_page.json()
+        assert canonical_page_body["source_artifact_id"] == str(artifact.id)
+        page_blocks = canonical_page_body["page"]["blocks"]
+        page_text = " ".join(_canonical_text_values(page_blocks))
         assert expected_text in page_text.upper()
+
+        if filename == "synthetic-structured.pdf":
+            nodes = [node for block in page_blocks for node in _canonical_nodes(block)]
+            node_types = {node["normalized_type"] for node in nodes}
+            assert {"formula", "table", "image"} <= node_types
+            assert any(
+                node.get("value") and "<table>" in node["value"]
+                for node in nodes
+                if node["normalized_type"] == "table"
+            )
+            assert any(
+                reference["kind"] == "stored"
+                for node in nodes
+                for reference in node.get("asset_refs", [])
+            )
+            canonical_document = json.loads(canonical_payload[2])
+            assert len(canonical_document["assets"]) == artifact.asset_count
+            assert canonical_document["source_metadata"]["metadata"]["producer"][
+                "version"
+            ] == "4.0.10"
+            assert canonical_document["pages"][0]["source_fields"] == {}
+            title = next(
+                block
+                for block in page_blocks
+                if block["source_type"] in {"doc_title", "paragraph_title"}
+            )
+            assert title["content"]["source_fields"]["level"] == 2
 
         async with session_factory() as session:
             indexed_canonical = await session.scalar(
@@ -277,4 +317,16 @@ def _canonical_text_values(value: object) -> list[str]:
         return result
     if isinstance(value, list):
         return [text for item in value for text in _canonical_text_values(item)]
+    return []
+
+
+def _canonical_nodes(value: object) -> list[dict[str, object]]:
+    if isinstance(value, dict):
+        result = [value] if isinstance(value.get("normalized_type"), str) else []
+        for key, item in value.items():
+            if key not in {"source_fields"}:
+                result.extend(_canonical_nodes(item))
+        return result
+    if isinstance(value, list):
+        return [node for item in value for node in _canonical_nodes(item)]
     return []

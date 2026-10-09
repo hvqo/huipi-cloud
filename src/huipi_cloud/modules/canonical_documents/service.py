@@ -45,7 +45,7 @@ _READ_CHUNK_SIZE = 64 * 1024
 
 @dataclass(frozen=True)
 class _Payload:
-    data: bytes
+    data: bytearray
     sha256: str
 
 
@@ -252,7 +252,7 @@ async def get_page(
         ) from error
     try:
         document = CanonicalDocument.model_validate_json(payload.data)
-    except (ValueError, TypeError) as error:
+    except (ValueError, TypeError, RecursionError) as error:
         raise CanonicalArtifactCorruptError("canonical document cannot be decoded") from error
     if (
         document.document_id != canonical.id
@@ -271,6 +271,7 @@ async def get_page(
     return CanonicalPageRead(
         document_id=document.document_id,
         submission_id=document.submission_id,
+        source_artifact_id=document.source_artifact_id,
         schema_version=document.schema_version,
         bbox_coordinate_space=document.bbox_coordinate_space,
         page=page,
@@ -303,7 +304,7 @@ async def _read_checked_object(
         raise CanonicalNormalizationError("source_size_mismatch")
     if actual_digest != expected_sha256:
         raise CanonicalNormalizationError("source_checksum_mismatch")
-    return _Payload(bytes(data), actual_digest)
+    return _Payload(data, actual_digest)
 
 
 async def _verify_referenced_assets(

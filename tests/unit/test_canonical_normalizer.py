@@ -1,16 +1,24 @@
 """Canonical Document v1 conversion, fidelity, determinism, and limit tests."""
 
+import base64
 import hashlib
 import json
+from dataclasses import replace
+from pathlib import Path
 from uuid import uuid4, uuid5
 
 import pytest
+from pydantic import ValidationError
 
+from huipi_cloud.core.config import Settings
 from huipi_cloud.modules.canonical_documents.errors import CanonicalNormalizationError
 from huipi_cloud.modules.canonical_documents.normalizer import (
     NormalizationSource,
     normalize_middle_json,
+    restore_inline_asset,
 )
+
+FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "mineru"
 
 
 def _source(*, pages: int = 1, assets: int = 0) -> NormalizationSource:
@@ -230,6 +238,87 @@ def test_image_asset_uses_stable_logical_id_and_never_serializes_private_key() -
     assert b"private/parsed/run" not in body
 
 
+def test_real_mineru_4010_structure_preserves_formula_table_image_and_full_manifest() -> None:
+    fixture = FIXTURES / "canonical-structure"
+    middle_bytes = (fixture / "middle_json.json").read_bytes()
+    assets = []
+    for asset_path in sorted((fixture / "images").glob("*.jpg")):
+        image_bytes = asset_path.read_bytes()
+        relative_path = asset_path.relative_to(fixture).as_posix()
+        assets.append(
+            {
+                "path": relative_path,
+                "object_key": f"private/source/{relative_path}",
+                "sha256": hashlib.sha256(image_bytes).hexdigest(),
+                "size_bytes": len(image_bytes),
+                "content_type": "image/jpeg",
+            }
+        )
+    unused_bytes = b"valid but not referenced by a MinerU block"
+    assets.append(
+        {
+            "path": "images/legal-unreferenced.jpg",
+            "object_key": "private/source/images/legal-unreferenced.jpg",
+            "sha256": hashlib.sha256(unused_bytes).hexdigest(),
+            "size_bytes": len(unused_bytes),
+            "content_type": "image/jpeg",
+        }
+    )
+    manifest = _manifest(assets)
+    source = replace(
+        _source(pages=1, assets=len(assets)),
+        source_middle_json_sha256=hashlib.sha256(middle_bytes).hexdigest(),
+        source_sha256=hashlib.sha256((fixture / "source.pdf").read_bytes()).hexdigest(),
+    )
+
+    document = normalize_middle_json(middle_bytes, manifest, source)
+    blocks = document.pages[0].blocks
+    nested_nodes = [node for block in blocks for node in _walk_nodes(block.content)]
+    stored_references = [
+        reference
+        for block in blocks
+        for node in _walk_nodes(block.content)
+        for reference in node.asset_refs
+        if reference.kind == "stored"
+    ]
+
+    assert {node.normalized_type for node in nested_nodes} >= {"formula", "table", "image"}
+    assert any(
+        node.normalized_type == "table"
+        and node.value is not None
+        and "<table>" in node.value
+        for node in nested_nodes
+    )
+    assert any(block.normalized_type == "image" for block in blocks)
+    assert len(document.assets) == len(assets)
+    assert {asset.source_path for asset in document.assets} == {item["path"] for item in assets}
+    assert len(stored_references) == 2
+    assert document.source_metadata["metadata"]["producer"]["version"] == "4.0.10"
+    assert document.source_metadata["metadata"]["document"]["producer_application"] == (
+        "ReportLab PDF Library - (opensource)"
+    )
+    title = next(block for block in blocks if block.source_type in {"doc_title", "paragraph_title"})
+    assert title.content.source_fields["level"] == 2
+    assert document.pages[0].source_page_idx == 0
+
+
+def test_page_source_fields_preserve_mineru_page_metadata() -> None:
+    middle = _middle()
+    middle["pages"][0]["rotation"] = 90
+    middle["pages"][0]["media_box"] = [0.0, 0.0, 1.0, 1.0]
+
+    page = _convert(middle).pages[0]
+
+    assert page.source_fields == {"rotation": 90, "media_box": [0.0, 0.0, 1.0, 1.0]}
+
+
+def test_page_api_document_limit_has_a_hard_upper_bound() -> None:
+    assert Settings(canonical_max_document_bytes=32 * 1024 * 1024)
+
+    with pytest.raises(ValidationError):
+        Settings(canonical_max_document_bytes=64 * 1024 * 1024 + 1)
+
+
 @pytest.mark.parametrize("source_type", ["header", "footer", "doc_title", "page_number"])
 def test_layout_types_are_retained_as_layout_blocks(source_type: str) -> None:
     middle = _middle(
@@ -362,6 +451,8 @@ def test_external_image_is_retained_but_never_fetched() -> None:
 
 
 def test_inline_data_reference_is_redacted_not_embedded() -> None:
+    image_bytes = (FIXTURES / "canonical-structure" / "images" / "page_0_image_4.jpg").read_bytes()
+    encoded = base64.b64encode(image_bytes).decode("ascii")
     middle = _middle(
         [
             {
@@ -370,7 +461,7 @@ def test_inline_data_reference_is_redacted_not_embedded() -> None:
                     {
                         "type": "image",
                         "index": 0,
-                        "image_url": "data:image/png;base64,QUJDREVGRw==",
+                        "image_url": f"data:image/jpeg;base64,{encoded}",
                         "content": [],
                     }
                 ],
@@ -382,7 +473,51 @@ def test_inline_data_reference_is_redacted_not_embedded() -> None:
 
     reference = document.pages[0].blocks[0].asset_refs[0]
     assert reference.kind == "inline_redacted"
-    assert b"QUJDREVGRw==" not in _canonical_bytes(document)
+    assert encoded.encode() not in _canonical_bytes(document)
+
+
+@pytest.mark.parametrize("encoding", ["base64", "data_uri", "html_data_uri"])
+def test_inline_image_is_traceable_and_recoverable_from_verified_middle_json(
+    encoding: str,
+) -> None:
+    image_bytes = (FIXTURES / "canonical-structure" / "images" / "page_0_image_4.jpg").read_bytes()
+    encoded = base64.b64encode(image_bytes).decode("ascii")
+    data_uri = f"data:image/jpeg;base64,{encoded}"
+    if encoding == "base64":
+        block = {"type": "image", "index": 0, "content": [], "image_base64": encoded}
+    elif encoding == "data_uri":
+        block = {"type": "image", "index": 0, "content": [], "image_url": data_uri}
+    else:
+        block = {
+            "type": "image",
+            "index": 0,
+            "content": [{"type": "image_body", "index": 0, "content": f'<img src="{data_uri}">'}],
+        }
+    middle = _middle([{"page_idx": 0, "blocks": [block]}])
+    middle_bytes = json.dumps(middle, ensure_ascii=False, separators=(",", ":")).encode()
+    source = replace(
+        _source(),
+        source_middle_json_sha256=hashlib.sha256(middle_bytes).hexdigest(),
+    )
+
+    document = normalize_middle_json(middle_bytes, _manifest(), source)
+    reference = document.pages[0].blocks[0].asset_refs[0]
+    restored = restore_inline_asset(middle_bytes, document, reference)
+    serialized = _canonical_bytes(document)
+
+    assert reference.kind == "inline_redacted"
+    assert reference.sha256 == hashlib.sha256(image_bytes).hexdigest()
+    assert reference.size_bytes == len(image_bytes)
+    assert reference.content_type == "image/jpeg"
+    assert reference.source_pointer.startswith("/pages/0/blocks/0/")
+    assert restored == image_bytes
+    assert encoded.encode() not in serialized
+
+
+def _walk_nodes(node):
+    yield node
+    for child in node.children:
+        yield from _walk_nodes(child)
 
 
 def test_nested_depth_and_node_count_are_bounded() -> None:
@@ -411,9 +546,11 @@ def test_duplicate_json_keys_are_rejected() -> None:
 def test_private_storage_fields_and_inline_binary_are_redacted_from_source_fields() -> None:
     middle = _middle()
     middle["pages"][0]["blocks"][0]["object_key"] = "secret-private-object-key"
-    middle["pages"][0]["blocks"][0]["image_base64"] = "AAECAwQ="
+    image_bytes = (FIXTURES / "canonical-structure" / "images" / "page_0_image_4.jpg").read_bytes()
+    encoded = base64.b64encode(image_bytes).decode("ascii")
+    middle["pages"][0]["blocks"][0]["image_base64"] = encoded
 
     body = _canonical_bytes(_convert(middle))
 
     assert b"secret-private-object-key" not in body
-    assert b"AAECAwQ=" not in body
+    assert encoded.encode() not in body

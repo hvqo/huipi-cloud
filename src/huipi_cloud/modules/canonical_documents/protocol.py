@@ -35,6 +35,10 @@ class CanonicalAssetReference(BaseModel):
     uri: str | None = None
     sha256: str | None = None
     size_bytes: int | None = Field(default=None, ge=0)
+    content_type: str | None = None
+    source_pointer: str | None = Field(default=None, min_length=1, max_length=4096)
+    source_encoding: Literal["base64", "data_uri", "html_data_uri"] | None = None
+    source_occurrence_index: int | None = Field(default=None, ge=0)
 
     @model_validator(mode="after")
     def validate_reference_shape(self) -> Self:
@@ -43,9 +47,14 @@ class CanonicalAssetReference(BaseModel):
         if self.kind == "external" and (self.uri is None or self.asset_id is not None):
             raise ValueError("external asset references require a URI and no asset_id")
         if self.kind == "inline_redacted" and (
-            self.sha256 is None or self.size_bytes is None or self.uri is not None
+            self.sha256 is None
+            or self.size_bytes is None
+            or self.uri is not None
+            or self.content_type is None
+            or self.source_pointer is None
+            or self.source_encoding is None
         ):
-            raise ValueError("redacted inline references require a digest and size")
+            raise ValueError("inline references require content metadata and a source pointer")
         return self
 
 
@@ -130,6 +139,7 @@ class CanonicalPage(BaseModel):
     page_number: int = Field(ge=1)
     source_page_idx: int = Field(ge=0)
     blocks: list[CanonicalBlock]
+    source_fields: dict[str, JsonValue] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_source_location(self) -> Self:
@@ -234,6 +244,7 @@ class CanonicalPageRead(BaseModel):
 
     document_id: UUID
     submission_id: UUID
+    source_artifact_id: UUID
     schema_version: str
     bbox_coordinate_space: str
     page: CanonicalPage

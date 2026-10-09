@@ -46,11 +46,12 @@
 ### P2-C：Canonical Document 标准化与持久化（当前分支，待验收）
 
 - 本分支实现：独立的 Canonical Document v1 DTO 和纯转换器，读取已经成功并通过 P2-B 索引的 MinerU 4.x MiddleJson 2.0 与 assets manifest。此项尚未合并到 main。
-- 本分支实现：保留原始页码、顶层 Block index、文档级确定性 reading order、BBox 坐标语义、文本/公式/表格/图片/布局类型及嵌套 Block/Span 来源结构；未知源类型和损坏引用明确失败。
+- 本分支实现：保留原始页码、顶层 Block index、文档级确定性 reading order、BBox 坐标语义、文本/公式/表格/图片/布局类型及嵌套 Block/Span 来源结构；同时保留 MinerU 根级元数据、页级未知字段和完整合法素材清单，包括未被 Block 引用的素材；未知源类型和损坏引用明确失败。
 - 本分支实现：稳定 UUIDv5、键排序 JSON、字节/节点/深度上限、SHA-256 校验；Canonical JSON 放私有 S3，PostgreSQL 只保存轻量索引与确定性失败码。
-- 本分支实现：受控 CLI 单独规范化；状态摘要和按页 API 不暴露 S3 Key。规范化失败不会回写 P2-B ParsingTask 状态。
-- 本分支测试：合成合同转换测试与真实 PostgreSQL + S3 索引/并发/故障补偿集成测试。MinerU E2E 测试扩展为解析后规范化和页面 API 验收，但运行仍要求独立安装 CLI 与 Basic/ONNX 模型，默认 CI 不下载模型。
+- 本分支实现：受控 CLI 单独规范化；状态摘要和按页 API 不暴露 S3 Key。页面 API 在下载前拒绝超出配置的索引大小，默认 32 MiB、硬上限 64 MiB，并在有界分块读取后校验 SHA-256 和完整 Canonical 结构。内嵌图片只保存来源 JSON Pointer、编码类型、内容类型、解码后大小和 SHA-256，可通过已校验的原始 MiddleJson 定位及恢复；规范化失败不会回写 P2-B ParsingTask 状态。
+- 本分支测试：合成合同转换测试与真实 PostgreSQL + S3 索引/并发/故障补偿集成测试，覆盖迟到的失败登记不能覆盖成功索引。真实 MinerU E2E 增加公式、表格、图片结构 PDF，运行仍要求独立安装 CLI 与 Basic/ONNX 模型，默认 CI 不下载模型。
 - 已知边界：DB 登记失败或并发输家可能留下不可变孤立 Canonical 对象；当前无对账清理器。外部图片不联网读取，尚无图片素材读取 API；当前接口没有认证和租户权限，不可直接公开部署。
+- 页面 API 为取得单页内容仍会读取并解析整份 Canonical JSON；64 MiB 是输入字节硬上限，不是解码后的内存硬上限。Pydantic 对象会增加内存用量，且同时请求会叠加；当前没有全局并发读取配额，部署时需限制 API 并发并观察 RSS。
 
 ## P3：标准答案管理、Rubric 评分、AI 自动批改 Agent
 

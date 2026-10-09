@@ -13,7 +13,10 @@ from sqlalchemy import event, func, inspect, select, update
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 
+from huipi_cloud.core.config import Settings, settings
+from huipi_cloud.infrastructure.storage.dependencies import get_object_storage
 from huipi_cloud.infrastructure.storage.s3 import StorageUnavailableError
+from huipi_cloud.main import app
 from huipi_cloud.modules.canonical_documents import service
 from huipi_cloud.modules.canonical_documents.errors import (
     CanonicalNormalizationError,
@@ -214,6 +217,10 @@ async def test_image_manifest_reference_is_verified_and_private_key_is_not_in_ca
     assert b"private-canonical-image-object-key" not in payload
     result = json.loads(payload)
     assert result["assets"][0]["source_path"] == "figures/diagram.png"
+    assert {asset["source_path"] for asset in result["assets"]} == {
+        "figures/diagram.png",
+        "figures/unreferenced.png",
+    }
     reference = result["pages"][0]["blocks"][0]["asset_refs"][0]
     assert reference["kind"] == "stored"
     assert reference["asset_id"] == result["assets"][0]["asset_id"]
@@ -406,6 +413,145 @@ async def test_concurrent_normalization_has_one_effective_database_index(
 
 
 @pytest.mark.anyio
+async def test_late_failure_cannot_replace_a_concurrent_success(
+    submission_client: httpx.AsyncClient,
+    recording_minio_storage,
+    postgres_engine: AsyncEngine,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    submission_id, artifact_id = await _seed_parsed_source(
+        submission_client,
+        recording_minio_storage,
+        postgres_engine,
+    )
+    session_factory = async_sessionmaker(postgres_engine, expire_on_commit=False)
+    failure_ready = asyncio.Event()
+    release_failure = asyncio.Event()
+    original_register_failure = service.repository.register_failure
+
+    async def delayed_failure(session_factory, **kwargs):
+        failure_ready.set()
+        await release_failure.wait()
+        await original_register_failure(session_factory, **kwargs)
+
+    monkeypatch.setattr(service.repository, "register_failure", delayed_failure)
+    failing_call = asyncio.create_task(
+        service.normalize_submission(
+            session_factory,
+            recording_minio_storage,
+            submission_id,
+            config=Settings(canonical_max_nodes=1),
+        )
+    )
+    await asyncio.wait_for(failure_ready.wait(), timeout=10)
+
+    successful = await service.normalize_submission(
+        session_factory,
+        recording_minio_storage,
+        submission_id,
+    )
+    release_failure.set()
+    with pytest.raises(CanonicalNormalizationError, match="normalization_limit_exceeded"):
+        await failing_call
+
+    async with session_factory() as session:
+        canonical = await session.scalar(
+            select(CanonicalArtifact).where(
+                CanonicalArtifact.parsed_artifact_id == artifact_id
+            )
+        )
+    assert canonical is not None
+    assert canonical.status == "available"
+    assert canonical.id == successful.id
+    assert canonical.canonical_object_key == successful.canonical_object_key
+
+
+@pytest.mark.anyio
+async def test_page_api_rejects_oversized_index_before_downloading(
+    submission_client: httpx.AsyncClient,
+    recording_minio_storage,
+    postgres_engine: AsyncEngine,
+) -> None:
+    submission_id, artifact_id = await _seed_parsed_source(
+        submission_client,
+        recording_minio_storage,
+        postgres_engine,
+    )
+    session_factory = async_sessionmaker(postgres_engine, expire_on_commit=False)
+    await service.normalize_submission(session_factory, recording_minio_storage, submission_id)
+    async with postgres_engine.begin() as connection:
+        await connection.execute(
+            update(CanonicalArtifact)
+            .where(CanonicalArtifact.parsed_artifact_id == artifact_id)
+            .values(canonical_size_bytes=settings.canonical_max_document_bytes + 1)
+        )
+
+    class NoDownloadStorage:
+        bucket = recording_minio_storage.bucket
+
+        async def download(self, _key):
+            raise AssertionError("object over the configured cap must not be downloaded")
+
+    previous = app.dependency_overrides.get(get_object_storage)
+    app.dependency_overrides[get_object_storage] = lambda: NoDownloadStorage()
+    try:
+        response = await submission_client.get(
+            f"/api/v1/submissions/{submission_id}/canonical-document/pages/1"
+        )
+    finally:
+        if previous is None:
+            app.dependency_overrides.pop(get_object_storage, None)
+        else:
+            app.dependency_overrides[get_object_storage] = previous
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "规范化产物暂时不可用"}
+    assert recording_minio_storage.bucket not in response.text
+
+
+@pytest.mark.anyio
+async def test_page_api_maps_object_stream_failure_to_safe_503(
+    submission_client: httpx.AsyncClient,
+    recording_minio_storage,
+    postgres_engine: AsyncEngine,
+) -> None:
+    submission_id, _ = await _seed_parsed_source(
+        submission_client,
+        recording_minio_storage,
+        postgres_engine,
+    )
+    session_factory = async_sessionmaker(postgres_engine, expire_on_commit=False)
+    await service.normalize_submission(session_factory, recording_minio_storage, submission_id)
+
+    class FailedDownload:
+        async def chunks(self, _chunk_size=64 * 1024):
+            raise StorageUnavailableError("secret storage endpoint and credentials")
+            yield b""
+
+    class UnavailableStorage:
+        bucket = recording_minio_storage.bucket
+
+        async def download(self, _key):
+            return FailedDownload()
+
+    previous = app.dependency_overrides.get(get_object_storage)
+    app.dependency_overrides[get_object_storage] = lambda: UnavailableStorage()
+    try:
+        response = await submission_client.get(
+            f"/api/v1/submissions/{submission_id}/canonical-document/pages/1"
+        )
+    finally:
+        if previous is None:
+            app.dependency_overrides.pop(get_object_storage, None)
+        else:
+            app.dependency_overrides[get_object_storage] = previous
+
+    assert response.status_code == 503
+    assert "secret storage endpoint" not in response.text
+    assert "credentials" not in response.text
+
+
+@pytest.mark.anyio
 async def test_corrupted_canonical_object_is_rejected_by_page_api(
     submission_client: httpx.AsyncClient,
     recording_minio_storage,
@@ -434,6 +580,48 @@ async def test_corrupted_canonical_object_is_rejected_by_page_api(
 
     assert response.status_code == 503
     assert "canonical_object_key" not in response.text
+
+
+@pytest.mark.anyio
+async def test_malformed_canonical_json_with_matching_index_is_a_safe_503(
+    submission_client: httpx.AsyncClient,
+    recording_minio_storage,
+    postgres_engine: AsyncEngine,
+) -> None:
+    submission_id, artifact_id = await _seed_parsed_source(
+        submission_client,
+        recording_minio_storage,
+        postgres_engine,
+    )
+    session_factory = async_sessionmaker(postgres_engine, expire_on_commit=False)
+    canonical = await service.normalize_submission(
+        session_factory,
+        recording_minio_storage,
+        submission_id,
+    )
+    malformed = b'{"pages":'
+    await recording_minio_storage.upload_fileobj(
+        BytesIO(malformed),
+        canonical.canonical_object_key,
+        "application/json",
+    )
+    async with postgres_engine.begin() as connection:
+        await connection.execute(
+            update(CanonicalArtifact)
+            .where(CanonicalArtifact.parsed_artifact_id == artifact_id)
+            .values(
+                canonical_sha256=hashlib.sha256(malformed).hexdigest(),
+                canonical_size_bytes=len(malformed),
+            )
+        )
+
+    response = await submission_client.get(
+        f"/api/v1/submissions/{submission_id}/canonical-document/pages/1"
+    )
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "规范化产物暂时不可用"}
+    assert "JSONDecodeError" not in response.text
 
 
 @pytest.mark.anyio
@@ -467,7 +655,7 @@ async def _seed_parsed_source(
     )
     assert upload.status_code == 201, upload.text
     submission_id = UUID(upload.json()["id"])
-    image_bytes = b"synthetic png asset" if with_image_asset else None
+    image_bytes = (FIXTURES / "synthetic-image.png").read_bytes() if with_image_asset else None
     image_key = (
         f"{storage.object_key_prefix}/private-canonical-image-object-key"
         if with_image_asset
@@ -512,6 +700,12 @@ async def _seed_parsed_source(
         "is_full_document": True,
     }
     middle_bytes = json.dumps(middle, ensure_ascii=False, separators=(",", ":")).encode()
+    unreferenced_bytes = b"a second legal but unreferenced test image" if with_image_asset else None
+    unreferenced_key = (
+        f"{storage.object_key_prefix}/private-canonical-unreferenced-image-object-key"
+        if with_image_asset
+        else None
+    )
     manifest_records = (
         [
             {
@@ -520,7 +714,14 @@ async def _seed_parsed_source(
                 "sha256": image_digest,
                 "size_bytes": len(image_bytes),
                 "content_type": "image/png",
-            }
+            },
+            {
+                "path": "figures/unreferenced.png",
+                "object_key": unreferenced_key,
+                "sha256": hashlib.sha256(unreferenced_bytes).hexdigest(),
+                "size_bytes": len(unreferenced_bytes),
+                "content_type": "image/png",
+            },
         ]
         if image_bytes is not None
         else []
@@ -535,6 +736,8 @@ async def _seed_parsed_source(
     await storage.upload_fileobj(BytesIO(manifest_bytes), manifest_key, "application/json")
     if image_bytes is not None and image_key is not None:
         await storage.upload_fileobj(BytesIO(image_bytes), image_key, "image/png")
+    if unreferenced_bytes is not None and unreferenced_key is not None:
+        await storage.upload_fileobj(BytesIO(unreferenced_bytes), unreferenced_key, "image/png")
     task_id = UUID(upload.json()["parsing_task"]["id"])
     middle_digest = hashlib.sha256(middle_bytes).hexdigest()
     if wrong_middle_checksum:
