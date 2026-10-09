@@ -45,6 +45,15 @@ class Settings(BaseSettings):
     mineru_max_output_bytes: int = Field(default=1024 * 1024 * 1024, ge=1024 * 1024)
     mineru_max_text_bytes: int = Field(default=64 * 1024 * 1024, ge=1024 * 1024)
     mineru_max_archive_members: int = Field(default=10000, ge=1, le=100000)
+    canonical_max_middle_json_bytes: int = Field(default=64 * 1024 * 1024, ge=1024)
+    canonical_max_manifest_bytes: int = Field(default=16 * 1024 * 1024, ge=1024)
+    canonical_max_document_bytes: int = Field(
+        default=32 * 1024 * 1024,
+        ge=1024,
+        le=64 * 1024 * 1024,
+    )
+    canonical_max_nodes: int = Field(default=50000, ge=1, le=1000000)
+    canonical_max_nesting_depth: int = Field(default=64, ge=1, le=256)
 
     @model_validator(mode="after")
     def validate_parsing_timing(self) -> Self:

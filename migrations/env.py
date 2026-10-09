@@ -11,6 +11,9 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from huipi_cloud.core.config import settings
 from huipi_cloud.infrastructure.database.base import Base
 from huipi_cloud.modules.assignments import models as assignment_models  # noqa: F401
+from huipi_cloud.modules.canonical_documents import (
+    models as canonical_document_models,  # noqa: F401
+)
 from huipi_cloud.modules.parsing import models as parsing_models  # noqa: F401
 from huipi_cloud.modules.submissions import models as submission_models  # noqa: F401
 

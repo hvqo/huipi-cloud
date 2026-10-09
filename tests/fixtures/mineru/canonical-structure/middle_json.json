@@ -1,0 +1,149 @@
+{
+  "metadata": {
+    "file_suffix": "pdf",
+    "producer": {
+      "name": "mineru",
+      "version": "4.0.10"
+    },
+    "document": {
+      "title": "untitled",
+      "authors": [
+        "anonymous"
+      ],
+      "subject": "unspecified",
+      "created_at": "2026-10-09T18:45:05+08:00",
+      "modified_at": "2026-10-09T18:45:05+08:00",
+      "creator_application": "anonymous",
+      "producer_application": "ReportLab PDF Library - (opensource)",
+      "page_count": 1,
+      "page_count_kind": "physical"
+    }
+  },
+  "extensions": {
+    "mineru": {
+      "tier": "basic",
+      "parse_mode": "txt"
+    },
+    "docvortex_layout": {
+      "version": 1,
+      "pages": [
+        {
+          "page_idx": 0,
+          "width_pt": 612.0,
+          "height_pt": 792.0
+        }
+      ]
+    }
+  },
+  "pages": [
+    {
+      "page_idx": 0,
+      "blocks": [
+        {
+          "type": "paragraph_title",
+          "index": 0,
+          "bbox": [
+            0.114,
+            0.048,
+            0.517,
+            0.07
+          ],
+          "content": [
+            {
+              "type": "text",
+              "content": "Canonical Structure Verification"
+            }
+          ],
+          "level": 2
+        },
+        {
+          "type": "text",
+          "index": 1,
+          "bbox": [
+            0.114,
+            0.112,
+            0.381,
+            0.134
+          ],
+          "content": [
+            {
+              "type": "text",
+              "content": "Equation: "
+            },
+            {
+              "type": "equation_inline",
+              "content": "x ^ { \\wedge } 2 + y ^ { \\wedge } 2 = z ^ { \\wedge } 2"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "index": 2,
+          "bbox": [
+            0.115,
+            0.171,
+            0.174,
+            0.189
+          ],
+          "content": [
+            {
+              "type": "text",
+              "content": "Table:"
+            }
+          ]
+        },
+        {
+          "type": "table",
+          "index": 3,
+          "bbox": [
+            0.115,
+            0.214,
+            0.638,
+            0.292
+          ],
+          "content": [
+            {
+              "type": "table_body",
+              "index": 3,
+              "bbox": [
+                0.115,
+                0.214,
+                0.638,
+                0.292
+              ],
+              "image_path": "images/page_0_table_3.jpg",
+              "content": "<table><tbody><tr><td>Item</td><td>Score</td></tr><tr><td>Algebra</td><td>10</td></tr></tbody></table>"
+            }
+          ]
+        },
+        {
+          "type": "image",
+          "index": 4,
+          "bbox": [
+            0.141,
+            0.31,
+            0.615,
+            0.537
+          ],
+          "content": [
+            {
+              "type": "image_body",
+              "index": 4,
+              "bbox": [
+                0.141,
+                0.31,
+                0.615,
+                0.537
+              ],
+              "image_path": "images/page_0_image_4.jpg",
+              "content": ""
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "is_full_document": true,
+  "schema": "docvortex.middle",
+  "schema_version": "2.0"
+}

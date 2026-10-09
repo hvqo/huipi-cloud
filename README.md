@@ -8,6 +8,7 @@
 - 已合并 P1-B：学生模拟身份提交、PDF/JPG/PNG 原始文件存储、提交查询、文件读取和初始 `pending` 任务记录。
 - 已合并 P2-A：PostgreSQL 解析任务状态机、租约领取和续租、过期恢复、有限重试、独立 Worker 框架及安全状态查询。
 - P2-B：MinerU 4.x Basic/ONNX 本地解析子进程、PDF/图片输入、私有 S3 解析产物、PostgreSQL 产物索引、解析结果查询 API。PR #5 记录最终验收和真实 MinerU 样本证据。
+- P2-C：当前功能分支实现中。新增与 MinerU 解耦的 Canonical Document v1、MiddleJson 转换、完整合法素材清单、来源元数据保留、S3 JSON 产物与 PostgreSQL 轻量索引、规范化 CLI 和按页查询 API；仍待本分支 CI/PR 验收，不能视为已合并功能。
 - P2-B 不包含题目切分、批改、MongoDB、Celery、RabbitMQ、Redis、Copilot 或身份认证。真实解析要求单独安装 MinerU 和模型；未配置执行器或模型时 Worker 拒绝启动。
 
 `student_ref` 和当前提交、任务、解析结果 API 没有认证或权限控制，只能用于本地或其他受控环境，不能直接暴露到公网。
@@ -37,6 +38,8 @@ API 文档：http://127.0.0.1:8000/docs。存活检查：`GET /api/v1/health`。
 
 P2-A 提供 `GET /api/v1/submissions/{submission_id}/parsing-task`。P2-B 另提供解析产物摘要和 Markdown 流式读取接口。
 
+当前 P2-C 分支新增 `python -m huipi_cloud.workers.normalize_document --submission-id UUID`，只处理已有 `succeeded` 的 P2-B 解析结果，不会重置或重新执行 MinerU。状态摘要为 `GET /api/v1/submissions/{submission_id}/canonical-document`；页面读取为 `GET /api/v1/submissions/{submission_id}/canonical-document/pages/{page_number}`。Canonical JSON 存在私有 S3；API 摘要不返回整份文档或私有对象 Key，页面接口先检查索引大小，再分块读取、校验 SHA-256 和完整结构后只返回指定页。页面 API 的文档上限默认 32 MiB、硬上限 64 MiB；Pydantic 会把 JSON 解码成对象，因此实际峰值内存高于文件大小，并随并发请求增加。该接口仍只适用于受控环境。
+
 ## 配置和启动真实解析
 
 MinerU 运行时和模型目录应与应用虚拟环境隔离。按照 [MinerU 官方安装说明](https://opendatalab.github.io/MinerU/quick_start/)安装 MinerU 4.x，并下载和验证 Basic/ONNX 本地模型。然后在 `.env` 设置：
@@ -65,7 +68,7 @@ uv run python -m huipi_cloud.workers.parsing_worker
 
 ## 验证
 
-完整集成测试要求本地 PostgreSQL `_test` 数据库和本地 S3 兼容服务。它们缺失时测试会失败，不会静默跳过 PostgreSQL/S3 覆盖。真实 MinerU 测试默认跳过；设置独立 CLI 和模型目录后可以执行三个合成样例：
+完整集成测试要求本地 PostgreSQL `_test` 数据库和本地 S3 兼容服务。它们缺失时测试会失败，不会静默跳过 PostgreSQL/S3 覆盖。P2-C 的数据库、S3 和转换测试使用合成 MiddleJson；真实 MinerU 测试默认跳过。设置独立 CLI 和模型目录后可以执行合成样例，并验证 MinerU → Canonical → S3/PG → 页面 API：
 
 ~~~bash
 docker compose up -d postgres minio
@@ -82,7 +85,7 @@ MINERU_E2E=1 MINERU_EXECUTABLE=/绝对路径/mineru-venv/bin/mineru-kit MINERU_H
 
 P2-A 任务采用 PostgreSQL 持久队列和 At Least Once 执行。P2-B 的解析产物以每次执行独立的不可变 run Key 保存；PostgreSQL 产物索引与 `succeeded` 状态在同一租约校验事务中提交。这不构成 MinIO 和 PostgreSQL 的跨系统原子事务，也没有实现运行去重或孤立对象清理。解析执行设置输入字节、PDF 页数、归档展开字节、文本大小和归档成员数上限；这些设置不是 MinerU 子进程的硬内存上限。
 
-本机最终验收使用 MinerU 4.0.10 Basic/ONNX CPU 环境，三个合成样本（文字 PDF、扫描 PDF、PNG）通过真实 Worker + PostgreSQL + S3 E2E。该结果验证数据流和样本内容断言，不代表真实学生作业准确率；GitHub CI 不下载模型。
+P2-C 复核使用 MinerU 4.0.10 Basic/ONNX CPU 环境，4 个合成样本（文字 PDF、扫描 PDF、PNG、含公式/表格/图片的结构 PDF）通过真实 Worker + PostgreSQL + S3 E2E。结构 PDF 检查真实 MinerU MiddleJson 与素材清单；这验证数据流和样本内容断言，不代表真实学生作业准确率；GitHub CI 不下载模型。Canonical 会保留全部合法素材清单项，包括当前 Block 未引用的素材。内嵌图片不会写入 Canonical JSON；Canonical 保存 MiddleJson 来源指针、编码、媒体类型、解码后大小和 SHA-256，可在取得对应不可变 MiddleJson 并通过来源校验后恢复。
 
 ## 项目结构
 
@@ -93,10 +96,11 @@ src/huipi_cloud/
   infrastructure/database/       Async Engine、Session、ORM Base
   infrastructure/storage/        S3 兼容对象存储
   infrastructure/parsing/        MinerU 子进程和解析结果合同校验
+  modules/canonical_documents/    Canonical 协议、转换、轻量索引和查询 API
   modules/assignments/            作业领域
   modules/submissions/            提交、原始文件和任务登记
   modules/parsing/                解析状态、产物索引、执行器协议和查询
-  workers/                        独立解析 Worker 进程
+  workers/                        独立解析 Worker 与规范化 CLI
 migrations/                        Alembic 迁移
 tests/unit/                        单元测试
 tests/integration/                 PostgreSQL、S3 和可选 MinerU 集成测试

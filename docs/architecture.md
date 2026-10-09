@@ -9,7 +9,8 @@
 - `modules/assignments`：作业、题目、人工答案、评分细则和发布校验。
 - `modules/submissions`：模拟学生标识校验、文件检查、提交编排、提交查询和原始文件元数据。
 - `modules/parsing`：解析任务状态、状态迁移规则、PostgreSQL repository、解析产物索引、错误分类、重试时间策略、状态查询 Schema 与 ParserExecutor 协议。
-- `workers`：独立于 FastAPI 的解析任务轮询进程，管理领取、解析调用、heartbeat、结果提交和受控退出。
+- `modules/canonical_documents`：Canonical Document v1 DTO、MiddleJson 适配转换、有界内容验证、稳定标识、S3/PG 持久化、状态与页面查询。
+- `workers`：独立于 FastAPI 的解析任务轮询进程，管理领取、解析调用、heartbeat、结果提交和受控退出；另含受控规范化 CLI。
 - `infrastructure/database`：共享 Engine 工厂与按请求/操作创建的 AsyncSession；Alembic 管理结构，应用启动不会调用 `create_all`。
 - `infrastructure/storage`：boto3 S3 兼容适配器。本地对象存储使用 PGSTY SILO。
 - `infrastructure/parsing`：隔离的 MinerU 4.x 子进程启动、PDF 预检、输出归档校验和不可变解析产物上传。
@@ -28,11 +29,32 @@ erDiagram
     SUBMISSION ||--|| SUBMISSION_FILE : stores
     SUBMISSION ||--|| PARSING_TASK : registers
     PARSING_TASK ||--o| PARSED_ARTIFACT : indexes
+    PARSED_ARTIFACT ||--o{ CANONICAL_ARTIFACT : normalizes
 ```
 
 同一 `Submission` 有一份 `SubmissionFile` 元数据与唯一的 `ParsingTask`。提交、对象定位信息和初始 `pending` 任务在一个 PostgreSQL 事务内写入。原文件放在私有 S3 兼容存储，数据库只保存 bucket、服务端生成的 `object_key`、MIME、大小和 SHA-256。
 
 解析成功后，`ParsedArtifact` 在 PostgreSQL 记录解析器版本、模型档位、MiddleJson schema 版本、页数、摘要和产物对象 Key。每个 ParsingTask 和 Submission 最多有一条索引记录。Markdown、MiddleJson、StructuredContent、原始 ZIP、素材文件和素材 manifest 放在同一私有 S3 兼容存储；数据库不保存大块解析正文。成功状态与产物索引由一个带当前 lease token 的数据库事务提交。
+
+## Canonical Document 标准化
+
+P2-C 通过独立的 `huipi.canonical.document` 1.0 协议，把 P2-B 已成功并带有 SHA-256 索引的 MinerU 4.x MiddleJson 2.0 转换成 `Document → Page → Block`。Canonical DTO 不继承 MinerU 类，也不修改或覆盖 MiddleJson、StructuredContent、Markdown 或原始归档。转换器只接受已知的 P2-B MiddleJson 字段类型；未知 Block/Span 类型、错误页索引、异常 BBox、坏素材路径、重复 JSON 键、过深或过大的输入会返回固定安全错误码。
+
+页面顶层 Block 有稳定 UUIDv5、原始页索引和 Block index，以及文档级连续 `reading_order`。`page_index`、`source_page_idx` 从 0 开始，展示 `page_number` 从 1 开始。页和 Block 都按输入数组顺序保留，不按坐标重排，不对相同位置的 Block 去重。页级未识别字段保存在 `CanonicalPage.source_fields`；实际 MinerU 4.0.10 输出页只有 `page_idx` 和 `blocks`，因此该字段为空。Document 保留源 MiddleJson 的全部非页面顶层 metadata、extensions、schema 和全篇标记。嵌套 Block/Span 保存在父 Block 的递归内容树中，保留类型、可用的原始 index、字段和子元素顺序；`equation_inline` 作为 formula 节点保存原始公式字符串，不拼进普通文本。table 节点保留原始 HTML 或子节点树。header/footer、标题、页码、脚注、索引和引用文字映射为 layout，并保留原始 `source_type`。
+
+Block 的 `normalized_type` 表示业务类型，`source_type` 表示 MinerU 原始类型。非文本字段留在版本化 `source_fields`；`source_payload_schema_version` 固定说明这些来源字段的保存规则。`image_base64` 和 data URI 不复制进 Canonical JSON：转换器保留解码后二进制的 SHA-256、字节数、媒体类型、MiddleJson JSON Pointer 和编码类型，并将其表示成脱敏引用。通过 `source_artifact_id` 可定位 P2-B 的不可变 MiddleJson；恢复函数会先校验整份源文件摘要，再验证图像字节的摘要、大小和类型。单张内嵌图像上限为 16 MiB。
+
+MiddleJson BBox 只有在 P2-B 的 MinerU 4.x 合同中为四个 `[0,1]` 数值时才保存；`bbox_coordinate_space=normalized_page_ratio_0_to_1` 表明这是页比例坐标，不是 PDF 物理像素，也不会再归一化或推算缺失 BBox。坐标轴顺序沿用源 `[x0,y0,x1,y1]`。缺失 BBox 保持 `null`。
+
+Canonical `assets` 数组保留完整且通过校验的 P2-B manifest，包括未被任何 Block 引用的合法素材；Block 引用只指向对应的逻辑 asset id。Canonical DTO 不保存 S3 `object_key`、bucket 或凭据。每个逻辑 asset id 是按来源 artifact、素材路径和摘要生成的 UUIDv5。相对路径只解码一次，拒绝绝对路径、路径穿越、反斜线和非法编码；缺失 manifest 引用或对象会使标准化失败。HTTP(S) 图片链接作为外部引用原样记录但不发起网络请求。内嵌 data URI/Base64 不复制进 Canonical JSON；引用保留二进制摘要、解码后大小、媒体类型和指向 MiddleJson 的 JSON Pointer。通过 Canonical 的 `source_artifact_id` 找到原始 MiddleJson，并按该 Pointer 和 SHA-256 校验后可恢复图像字节。单个内嵌图片限制为 16 MiB。
+
+规范化有 MiddleJson、manifest 和 Canonical JSON 字节上限、最大节点数、最大嵌套深度。页面 API 的 Canonical JSON 大小默认上限为 32 MiB，并由配置强制不超过 64 MiB。API 在下载前检查 PostgreSQL 索引的字节数，再分块读入有界缓冲并验证完整 SHA-256；随后由 Pydantic 校验整份结构，再只返回请求页。它不再额外复制完整 JSON bytearray，但 Pydantic 仍会创建文档对象，所以内存峰值会高于对象字节数；并发请求会叠加内存。本接口仍只适用于本地或受控环境。对象超限、损坏、JSON 结构异常和对象存储故障都返回安全的 503，不向响应暴露 Key 或内部异常。JSON 序列化采用 UTF-8、紧凑分隔符、键排序和拒绝非有限数值。相同来源 artifact 和 normalizer 版本生成相同的文档/Block/asset ID 与 Canonical 字节；JSON 中没有每次运行变化的时间戳。Block 数只统计 Page 下的顶层 CanonicalBlock，嵌套内容节点不计入 Block 数。
+
+规范化由 `python -m huipi_cloud.workers.normalize_document --submission-id UUID` 单独执行。CLI 只读取 `succeeded` ParsingTask 对应的 ParsedArtifact，分块读取 MiddleJson 和 assets manifest，先验证数据库记录的大小与 SHA-256，再验证结构、素材引用和素材对象长度。失败只写 Canonical 的 `failed` marker，不修改 P2-B ParsingTask 的成功状态。成功时先向 S3 上传每次执行独有且不可变的 `canonical/.../runs/{uuid}/canonical.json`，然后在 PostgreSQL 以 `(parsed_artifact_id, normalizer_version)` 唯一约束登记轻量索引。并发成功最多产生一条有效索引；并发输家对象可能成为孤儿。若数据库提交错误或 COMMIT 结果不确定，不删除 Canonical 对象，避免误删可能已被引用的对象。当前没有孤儿对象清理器，未来应按保留期与 PostgreSQL 有效索引对账。
+
+`GET /api/v1/submissions/{submission_id}/canonical-document` 只返回规范化状态、来源和校验摘要。缺少成功结果返回 `not_generated`；确定性失败返回 `failed` 和安全 failure code；成功返回 `available` 和元数据。`GET /api/v1/submissions/{submission_id}/canonical-document/pages/{page_number}` 按 1 起始页码读取受限大小对象，验证整个 Canonical JSON SHA-256 和索引关系，再只返回请求页。未生成或失败返回 409，不存在的提交或页码返回 404；对象存储或 Canonical 完整性故障返回安全的 503。API 不返回 S3 Key，也不返回完整文档摘要以外的大对象。
+
+这两个接口目前没有登录、RBAC、归属验证或租户隔离，只能用于本地或受控环境。Canonical 只把文档结构稳定化；题目识别、答案对齐、自动批改和人工复核尚未实现。
 
 ## 任务状态与执行边界
 

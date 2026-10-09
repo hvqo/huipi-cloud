@@ -2,10 +2,13 @@
 
 import asyncio
 from decimal import Decimal
+from pathlib import Path
 from uuid import UUID
 
 import httpx
 import pytest
+from alembic.config import Config
+from alembic.script import ScriptDirectory
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
@@ -569,7 +572,9 @@ async def test_migration_is_applied_to_postgres(
             ).all()
         )
 
-    assert version == "339018f72219"
+    alembic_config = Config(str(Path(__file__).resolve().parents[2] / "alembic.ini"))
+    expected_head = ScriptDirectory.from_config(alembic_config).get_current_head()
+    assert version == expected_head
     assert {
         "assignments",
         "questions",
