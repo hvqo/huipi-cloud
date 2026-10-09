@@ -11,7 +11,7 @@ from huipi_cloud.modules.canonical_documents.protocol import CanonicalAssetRefer
 
 ALIGNMENT_SCHEMA_NAME = "huipi.answer.alignment"
 ALIGNMENT_SCHEMA_VERSION = "1.0"
-ALIGNER_VERSION = "1.0.0"
+ALIGNER_VERSION = "1.1.0"
 
 AlignmentResultStatus = Literal["complete", "review_required"]
 QuestionMatchStatus = Literal["aligned", "review_required", "not_observed"]

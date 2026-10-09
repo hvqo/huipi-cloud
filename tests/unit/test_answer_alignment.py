@@ -113,6 +113,7 @@ def _make_node(spec: dict) -> CanonicalContentNode:
             source_type=spec.get("source_type", "text"),
             content_kind="children",
             children=children,
+            asset_refs=spec.get("asset_refs", []),
             source_fields={},
         )
     source_type = spec.get("source_type", "text")
@@ -322,6 +323,150 @@ def test_unknown_number_is_unmatched_and_does_not_fill_a_database_question() -> 
     assert result.unassigned_regions[0].evidence.question_number == 99
     assert "未知答案" in result.unassigned_regions[0].text_projection
     assert result.candidates[0].matching_status == "unmatched"
+
+
+def test_unknown_number_after_valid_answer_makes_the_previous_boundary_uncertain() -> None:
+    assignment_id = uuid4()
+    question = make_question(1, assignment_id=assignment_id)
+    result = align(
+        make_document(
+            [[{"text": "第1题 先列等式\n第99题 继续推导\n最后得到 x=2"}]]
+        ),
+        [question],
+    )
+
+    answer = result.answers[0]
+    assert answer.matching_status == "review_required"
+    assert "answer_end_boundary_is_untrusted" in answer.evidence[0].reason_codes
+    assert "继续推导" in result.unassigned_regions[0].text_projection
+    assert "最后得到 x=2" in result.unassigned_regions[0].text_projection
+    assert result.status == "review_required"
+
+
+def test_unknown_candidate_between_questions_does_not_make_truncated_answer_aligned() -> None:
+    assignment_id = uuid4()
+    questions = [
+        make_question(1, assignment_id=assignment_id),
+        make_question(2, assignment_id=assignment_id),
+    ]
+    result = align(
+        make_document(
+            [[{"text": "第1题 第一步\n第99题 可能是续写\n第2题 独立答案"}]]
+        ),
+        questions,
+    )
+
+    first, second = result.answers
+    assert first.matching_status == "review_required"
+    assert "answer_end_boundary_is_untrusted" in first.evidence[0].reason_codes
+    assert second.matching_status == "aligned"
+    assert "可能是续写" in result.unassigned_regions[0].text_projection
+    assert first.source_regions[0].text_end <= second.source_regions[0].text_start
+
+
+def test_one_atom_shared_image_keeps_both_questions_in_review() -> None:
+    assignment_id = uuid4()
+    questions = [
+        make_question(1, assignment_id=assignment_id),
+        make_question(2, assignment_id=assignment_id),
+    ]
+    asset_id = uuid4()
+    image_reference = CanonicalAssetReference(kind="stored", asset_id=asset_id)
+    document = make_document(
+        [[
+            {
+                "text": "第1题 第一段\n第2题 第二段",
+                "asset_refs": [image_reference],
+            }
+        ]]
+    )
+
+    result = align(document, questions)
+    first, second = result.answers
+
+    assert first.matching_status == second.matching_status == "review_required"
+    assert first.asset_refs[0].asset_id == second.asset_refs[0].asset_id == asset_id
+    assert "asset_attribution_requires_review" in first.evidence[0].reason_codes
+    assert "asset_attribution_requires_review" in second.evidence[0].reason_codes
+    assert first.source_regions[0].text_end <= second.source_regions[0].text_start
+    assert result.unassigned_regions == []
+
+
+def test_nested_parent_image_is_preserved_as_unassigned_and_questions_require_review() -> None:
+    assignment_id = uuid4()
+    questions = [
+        make_question(1, assignment_id=assignment_id),
+        make_question(2, assignment_id=assignment_id),
+    ]
+    asset_id = uuid4()
+    image_reference = CanonicalAssetReference(kind="stored", asset_id=asset_id)
+    document = make_document(
+        [[
+            {
+                "children": [
+                    {"text": "第1题 第一段"},
+                    {"text": "第2题 第二段"},
+                ],
+                "asset_refs": [image_reference],
+            }
+        ]]
+    )
+
+    result = align(document, questions)
+
+    assert all(answer.matching_status == "review_required" for answer in result.answers)
+    assert all(
+        "asset_attribution_requires_review" in answer.evidence[0].reason_codes
+        for answer in result.answers
+    )
+    assert any(
+        region.asset_refs and region.asset_refs[0].asset_id == asset_id
+        for unassigned in result.unassigned_regions
+        for region in unassigned.source_regions
+    )
+
+
+def test_generic_numbered_list_inside_answer_cannot_truncate_a_trusted_answer() -> None:
+    assignment_id = uuid4()
+    questions = [make_question(1, assignment_id=assignment_id)]
+    result = align(
+        make_document([[{"text": "第1题 解题过程\n1. 第一步\n结论"}]]),
+        questions,
+    )
+
+    answer = result.answers[0]
+    assert answer.matching_status == "review_required"
+    assert any(
+        "numbered_marker_may_be_list_item" in evidence.reason_codes
+        for evidence in answer.evidence
+    )
+    assert any(
+        "answer_end_boundary_is_untrusted" in evidence.reason_codes
+        for evidence in answer.evidence
+    )
+    assert "结论" in answer.text_projection
+    assert result.status == "review_required"
+
+
+def test_leading_unassigned_text_and_trailing_unknown_candidate_are_preserved() -> None:
+    assignment_id = uuid4()
+    question = make_question(1, assignment_id=assignment_id)
+    result = align(
+        make_document(
+            [[{"text": "页首说明\n第1题 学生答案\n第88题 不确定尾段"}]]
+        ),
+        [question],
+    )
+
+    assert result.answers[0].matching_status == "review_required"
+    all_regions = [
+        *result.answers[0].source_regions,
+        *(region for item in result.unassigned_regions for region in item.source_regions),
+    ]
+    all_text = "\n".join(region.text or "" for region in all_regions)
+    assert "页首说明" in all_text
+    assert "不确定尾段" in all_text
+    assert result.unassigned_regions[0].reason_code == "content_before_first_question_candidate"
 
 
 def test_image_only_answer_region_retains_logical_asset_reference() -> None:

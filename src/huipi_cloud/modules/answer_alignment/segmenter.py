@@ -164,15 +164,27 @@ def _review_complex_splits(
     assessments: list[CandidateAssessment],
     atoms: list[SourceAtom],
 ) -> list[CandidateAssessment]:
-    by_block: dict[int, list[int]] = defaultdict(list)
+    by_block: dict[UUID, list[int]] = defaultdict(list)
     for position, assessment in enumerate(assessments):
         atom = atoms[assessment.candidate.atom_index]
-        by_block[atom.block.reading_order].append(position)
+        by_block[atom.block.block_id].append(position)
 
     result = list(assessments)
-    for positions in by_block.values():
+    asset_blocks = {
+        atom.block.block_id for atom in atoms if atom.node.asset_refs
+    }
+    for block_id, positions in by_block.items():
+        if block_id in asset_blocks:
+            # An asset attached to a nested parent or a mixed text/asset node
+            # has no character-level position. Preserve it, but do not claim
+            # that the candidate owns the image without a precise source link.
+            for position in positions:
+                result[position] = mark_review_required(
+                    result[position], "asset_attribution_requires_review"
+                )
         if len(positions) < 2:
             continue
+
         for first_position, second_position in zip(positions, positions[1:]):
             first = assessments[first_position].candidate
             second = assessments[second_position].candidate
@@ -192,6 +204,19 @@ def _review_complex_splits(
                 result[second_position] = mark_review_required(
                     result[second_position], "complex_block_split_requires_review"
                 )
+
+    # A candidate can be syntactically clear but still be an unreliable end
+    # boundary (for example, an unknown question number or a possible list
+    # item). Keep the following source content unassigned and mark the answer
+    # before that boundary for review instead of calling the truncated slice
+    # complete.
+    for position in range(len(result) - 1):
+        current = result[position]
+        following = result[position + 1]
+        if current.question_id is not None and following.matching_status != "aligned":
+            result[position] = mark_review_required(
+                current, "answer_end_boundary_is_untrusted"
+            )
     return result
 
 
@@ -217,7 +242,7 @@ def _regions_between(
             continue
         lower = min(max(lower, 0), len(atom.text))
         upper = min(max(upper, lower), len(atom.text))
-        if upper == lower and not atom.node.asset_refs:
+        if upper == lower and (not atom.node.asset_refs or atom.text):
             continue
         fragment = atom.text[lower:upper]
         if not fragment.strip() and not atom.node.asset_refs:

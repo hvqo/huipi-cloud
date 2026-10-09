@@ -1,6 +1,6 @@
 # P2-D1 面试复盘：题号候选与答案区域对齐
 
-> 当前内容描述 `feat/p2d1-answer-alignment` 功能分支实现。分支通过验收和独立代码审查前，不应称为已合并功能。当前没有 OCR、VLM、自动评分、人工纠正工作流或真实学生作业评测。
+> 本文记录 P2-D1 的协议和实现细节。PR #9 的合并及 CI 状态以 GitHub 为准。当前没有 OCR、VLM、自动评分、人工纠正工作流或真实学生作业评测。
 
 ## 1. 为什么 OCR 完成后还不能直接批改？
 
@@ -203,21 +203,21 @@ Matcher 检查数据库是否有对应题号、编号是否重复、候选顺序
 
 ### ASD-STE100 简明解释
 
-候选 Precision 是系统找到的候选中有多少符合人工标签。候选 Recall 是人工标注的候选中有多少被系统找到。脚本还分别计算 Question 映射的 Precision/Recall。所有指标都依赖清楚的标签和评测样本。
+候选 Precision 是系统找到的候选中有多少符合人工标签。候选 Recall 是人工标注的候选中有多少被系统找回。脚本还分开计算候选到 Question 的关联质量、`aligned` 自动接受质量和答案边界字符重叠。所有指标都依赖清楚的标签和评测样本。
 
 ### 底层原理
 
-离线脚本分别比较候选位置和数据库 Question 映射。候选的题号、页码、Block index 和字符区间与人工标记集合比较；映射指标还要求候选关联到预期的 Question ID。`TP / predicted` 得到 Precision，`TP / expected` 得到 Recall。当前人工标注集只有 4 个合成案例，指标只说明这个小集合，不代表真实学生作业。
+离线脚本分别比较候选位置、数据库 Question 关联和最终自动接受。候选的题号、页码、Block index 和字符区间与人工标记集合比较；候选关联指标还要求关联到预期的 Question ID，即使该候选最终需要复核。自动接受指标只把人工标注可自动接受且系统输出 `aligned` 的 Question 计为正确。答案边界按题目、页面、Block 和 Unicode 码点区间计算重叠字符，能惩罚遗漏、超出和错分。指标会输出分子、分母和定义；分母为 0 时 Precision 为 `null`。当前人工标注集有 12 个合成案例，指标只说明这些案例，不代表真实学生作业。
 
 ### 30 秒面试回答
 
-Precision 看预测候选或题目映射中有多少符合人工标签；Recall 看人工标注中有多少被系统找回或正确映射。我的脚本按题号、页面、Block、字符边界和数据库 Question ID 做精确比较。现在只有 4 个合成样例，所以我会报告样本数和计算定义，不把它解释成真实数据准确率。
+候选 Precision 看预测候选中有多少符合人工标签；Question-link Precision 看候选关联是否指向正确题目；自动接受 Precision 只评价最终 `aligned` 状态是否安全。Recall 用人工标注数量作分母。答案边界另外计算字符交集与并集，所以会同时惩罚漏掉的内容和错分到其他题的内容。现在只有 12 个合成样例，我会报告每个指标的分子、分母和定义，不把它解释成真实数据准确率。
 
 ### 2 分钟深入回答
 
 Precision = TP/(TP+FP)，Recall = TP/(TP+FN)。评测要求人工标签先规定什么算一个题号候选和它对应的 Question。当前数据集记录 marker 的题号、页、Block 和文本范围。脚本分别比较候选检测结果和对齐结果；题目映射指标检查候选关联的 Question ID 是否对应人工标注题号。
 
-同一脚本还统计自动对齐覆盖率、复核候选比例和答案边界精确命中率。这些指标代表不同问题：高候选 Recall 不等于对齐正确；自动覆盖率也不应脱离错误成本解读。当前数据集很小并且是合成文本，因此只能证明脚本和逻辑在这些案例上的行为，不可外推真实手写作业的效果。
+同一脚本还统计人工确认可自动接受的准确率、对有答案题目的覆盖率、复核候选比例、字符级边界 Precision/Recall/IoU、精确区间命中率和 Canonical 图片逻辑引用保留率。这些指标代表不同问题：候选关联正确不等于答案边界完整，答案边界有重叠也不等于适合自动批改。当前数据集只有 12 个合成案例，包含模拟的手写解题文本但没有真实手写识别；结果不能外推到真实作业。
 
 ### 连续追问
 
@@ -235,19 +235,19 @@ Precision = TP/(TP+FP)，Recall = TP/(TP+FN)。评测要求人工标签先规定
 
 ### ASD-STE100 简明解释
 
-把系统返回的源区域与人工标注的答案区间比较。检查区域是否落在正确页面和 Block，字符边界是否相同，区域是否重叠。
+把系统返回的源区域与人工标注的答案区间比较。检查区域是否落在正确题目、页面和 Block，字符范围有多少重叠，是否遗漏或错分。
 
 ### 底层原理
 
-每个 source region 提供 Canonical JSON pointer 与可选半开文本偏移 `[start, end)`。偏移单位是 Unicode 码点，和 Python 字符串切片一致。离线样例提供人工答案范围。脚本统计精确范围 Precision、Recall 和交并比形式的 set accuracy；单元测试检查同 Block 多题切分不重叠，跨页答案保留每页来源。
+每个 source region 提供 Canonical JSON pointer 与可选半开文本偏移 `[start, end)`。偏移单位是 Unicode 码点，和 Python 字符串切片一致。人工标签提供按 Question、页面和 Block 分组的范围。脚本用区间并集计算字符重叠，因此部分匹配会得到部分分数，遗漏和错分都会降低指标；同时保留精确区间 Precision/Recall。单元测试检查同 Block 多题切分不重叠，跨页答案保留每页来源。
 
 ### 30 秒面试回答
 
-我用人工标注的页面、Block 和文本区间检查答案边界是否完全一致。离线脚本报告边界精确率、召回率和精确范围集合的交并比；对于同一 Block 的多题答案，我还验证区域不重叠。跨页测试会检查每个 source region 的页码和 Block ID。当前只有少量合成样例，不能据此声称真实分割准确率。
+我按题目、页面、Block 和字符范围比较人工标签与系统结果。部分重叠会按字符计分，遗漏和错分都会降低 Precision、Recall 或 IoU；精确范围指标则检查边界完全相同。单测还检查同 Block 范围不重叠和跨页来源保留。当前只有 12 个合成样例，不能据此声称真实分割准确率。
 
 ### 2 分钟深入回答
 
-答案范围的质量不仅是文本相似度，还包括来源完整性和边界是否安全。P2-D1 的协议使用 Canonical pointer 定位节点，对可切片文本用半开区间保存偏移；一个答案可以有多个区域。离线评测把人工标注的题号、page、block、start、end 与输出做精确匹配，计算边界 Precision、Recall 和集合交并比。集合交并比会同时惩罚缺失范围和多出的范围。
+答案范围的质量不仅是文本相似度，还包括来源完整性和边界是否安全。P2-D1 的协议使用 Canonical pointer 定位节点，对可切片文本用半开区间保存偏移；一个答案可以有多个区域。离线评测把人工标注的题号、page、block、start、end 与输出比较，计算字符重叠 Precision、Recall 和 IoU，也统计完全相同的区间。字符交并比会惩罚缺失范围、多出的范围和错分到别题的内容。
 
 针对同一文本 Block 中多个题号，单测验证字符片段没有交叠；跨页单测验证按页保留多个区域。复杂嵌套结构的边界只留证据并标记复核，不作为完全自动切分成功。后续需要扩充真实标注样本、报告不同错误类别，并由教师确认复核界面的目标流程。
 
@@ -328,3 +328,86 @@ Canonical artifact id、Canonical SHA-256、Question digest、schema/aligner ver
 - `src/huipi_cloud/modules/answer_alignment/repository.py::register_success`
 - `src/huipi_cloud/modules/answer_alignment/models.py::AnswerAlignmentArtifact`
 - 集成测试：`test_concurrent_answer_alignment_has_one_effective_index_and_object`、`test_uncertain_index_commit_keeps_uploaded_immutable_object_for_reconciliation`。
+
+## 11. 为什么不可信的后续题号会让前一道题也需要复核？
+
+### ASD-STE100 简明解释
+
+一个题号只能说明可能的开始位置。它不能证明前一道答案在这里结束。如果这个位置是未知题号、列表项或其他待复核候选，前一道题可能被截短。系统把前一道答案标记为 `review_required`，并保留候选后的文字在未分配区域。
+
+### 30 秒面试回答
+
+我把题号识别和答案边界判断分开。即使前一个“第 1 题”是明确题号，如果下一个候选是未知编号或可能的列表项，切分器不能证明第一题答案就在它前面结束。此时答案范围不完整，不能称为 `aligned`。我保留未知部分并用 `answer_end_boundary_is_untrusted` 要求复核。只有边界两侧都可信时，才可能自动接受答案。
+
+### 2 分钟深入回答
+
+旧逻辑按所有候选切分，然后只根据题号匹配状态给每题定状态。这会出现一个问题：作业只有 Question 1，文本先写“第1题”，随后出现“第99题 继续推导”，最后才给出结论。第99题没有数据库映射，内容会放到未分配区域，但第1题却仍显示 `aligned`，好像答案已经完整。
+
+现在切分器在候选评估后检查相邻边界。若当前候选能关联 Question，但紧随其后的候选不是可信 `aligned` 候选，就把当前候选标为 `review_required`，并记录 `answer_end_boundary_is_untrusted`。未匹配候选和它后面的区间仍放在 `unassigned_regions`，不强行拼回前一道答案。后续明确且可信的题号仍可独立对齐。该逻辑降低覆盖率，但避免把局部切片包装成完整答案。
+
+### 连续追问
+
+- 为什么不把未知题号后的文字并入上一题？
+- 哪些候选可以作为可信边界？
+- 如果 OCR 把一个真实题号识别成未知编号，会发生什么？
+
+### 代码与演示
+
+- `src/huipi_cloud/modules/answer_alignment/segmenter.py::_review_complex_splits`
+- `src/huipi_cloud/modules/answer_alignment/matcher.py::assess_candidates`
+- 测试：`test_unknown_number_after_valid_answer_makes_the_previous_boundary_uncertain`、`test_unknown_candidate_between_questions_does_not_make_truncated_answer_aligned`、`test_generic_numbered_list_inside_answer_cannot_truncate_a_trusted_answer`。
+
+## 12. 同一 Canonical 原子带有图片并被多道题切分时怎么办？
+
+### ASD-STE100 简明解释
+
+图片引用没有字符偏移。若同一个节点被切给多个题目，系统无法证明图片只属于其中一道。系统保留同一个 asset ID，并把相关 Question 标为 `review_required`。
+
+### 30 秒面试回答
+
+文本可以按字符偏移切分，但图片只挂在 Canonical 节点上，没有精确到文本片段的位置。若这个节点里有两个题号，我不把图片复制成两份“确定归属”。结果保留原有逻辑图片 ID，并对相关答案标记复核。嵌套父节点上的图片也按同样原则处理，未确定归属时保留在未分配来源里。
+
+### 2 分钟深入回答
+
+Canonical 来源原子表示一个内容节点和它的 asset refs。文本节点可以通过 `[start, end)` 给两个题号生成不重叠片段，但节点的图片引用没有单独的 x/y 或字符位置。旧切分器在同一原子上给每个文本片段复制了完整 asset refs，两个 Question 因而都可能显示为自动对齐，却都引用同一张图。
+
+现在只要候选所在的 Canonical Block 含有无法精确定位的图片引用，相关题目就附带 `asset_attribution_requires_review` 并进入复核；逻辑 asset ID 仍保留在源区域或未分配区域，不删除素材。该策略明确表达“图片存在，但归属不确定”，不是 Exactly Once 的资产分配算法，也没有图片预览或教师纠正功能。
+
+### 连续追问
+
+- 为什么不根据图片在 JSON 中的位置推断属于哪道题？
+- 文本区域不重叠是否意味着图片也唯一归属？
+- 后续怎样由教师确认素材归属？
+
+### 代码与演示
+
+- `src/huipi_cloud/modules/answer_alignment/structure.py::canonical_atoms`
+- `src/huipi_cloud/modules/answer_alignment/segmenter.py::_review_complex_splits`、`_make_region`
+- 测试：`test_one_atom_shared_image_keeps_both_questions_in_review`、`test_nested_parent_image_is_preserved_as_unassigned_and_questions_require_review`。
+
+## 13. 为什么更改边界判定时提升 aligner 版本？
+
+### ASD-STE100 简明解释
+
+同一输入在不同算法规则下可能得到不同状态和范围。新的结果使用新版本索引，不覆盖旧结果。JSON 字段没有改变，所以结果合同版本仍为 1.0。
+
+### 30 秒面试回答
+
+这次修改了“答案边界是否可信”的业务语义，旧的 1.0.0 结果不能和新结果混为同一种算法输出。因此我把 `ALIGNER_VERSION` 从 1.0.0 提高到 1.1.0。持久化唯一键包含算法版本，所以新结果与旧结果并存，不会原地覆盖。协议字段没有变化，因此不增加 schema major 版本。
+
+### 2 分钟深入回答
+
+幂等索引由 Canonical artifact、aligner version 和 Question digest 唯一标识。更新算法后提升版本可让同一 Canonical 与同一题目集合生成新的索引 ID 和新对象 Key。旧的 1.0.0 索引与对象保留，既有数据不会被覆盖；当前 API 查询只选择代码配置中的 1.1.0 版本，因此历史版本不会自动返回给当前读接口。JSON schema 仍然是 `huipi.answer.alignment` 1.0，因为字段形状没有变化，发生变化的是处理语义。
+
+### 连续追问
+
+- 如果希望查询旧版本结果，需要增加什么能力？
+- 为什么不是直接更新旧 S3 对象？
+- schema version 和算法 version 分别解决什么问题？
+
+### 代码与演示
+
+- `src/huipi_cloud/modules/answer_alignment/protocol.py::ALIGNER_VERSION`
+- `src/huipi_cloud/modules/answer_alignment/service.py::align_submission`
+- `src/huipi_cloud/modules/answer_alignment/models.py::AnswerAlignmentArtifact`
+- 演示：核对数据库唯一键包含算法版本，并检查旧索引未被更新。

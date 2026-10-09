@@ -1,6 +1,6 @@
 # 架构与模块边界
 
-慧批云端采用 src 布局的模块化单体。P1-A、P1-B、P2-A、P2-B 和 P2-C 已合并到 `main`。当前功能分支增加 P2-D1 答案区域识别和对齐；该分支尚待验收和独立审查。自动批改、教师复核、用户权限仍未实现。
+慧批云端采用 src 布局的模块化单体。P1-A、P1-B、P2-A、P2-B 和 P2-C 已合并到 `main`。P2-D1 的代码和协议由 PR #9 跟踪；PR 当前状态与 CI 应以 GitHub 为准。自动批改、教师复核、用户权限仍未实现。
 
 ## 模块职责
 
@@ -58,21 +58,21 @@ Canonical `assets` 数组保留完整且通过校验的 P2-B manifest，包括�
 
 `GET /api/v1/submissions/{submission_id}/canonical-document` 只返回规范化状态、来源和校验摘要。缺少成功结果返回 `not_generated`；确定性失败返回 `failed` 和安全 failure code；成功返回 `available` 和元数据。`GET /api/v1/submissions/{submission_id}/canonical-document/pages/{page_number}` 按 1 起始页码读取受限大小对象，验证整个 Canonical JSON SHA-256 和索引关系，再只返回请求页。未生成或失败返回 409，不存在的提交或页码返回 404；对象存储或 Canonical 完整性故障返回安全的 503。API 不返回 S3 Key，也不返回完整文档摘要以外的大对象。
 
-这两个接口目前没有登录、RBAC、归属验证或租户隔离，只能用于本地或受控环境。P2-C 本身只把文档结构稳定化；题号识别和答案对齐由下方当前功能分支的 P2-D1 提供，自动批改和教师复核工作流仍未实现。
+这两个接口目前没有登录、RBAC、归属验证或租户隔离，只能用于本地或受控环境。P2-C 本身只把文档结构稳定化；题号识别和答案对齐由 P2-D1 模块提供，自动批改和教师复核工作流仍未实现。
 
-## P2-D1 题号候选与答案区域对齐（当前功能分支）
+## P2-D1 题号候选与答案区域对齐
 
 P2-D1 从已持久化的 Canonical Document 读取学生内容，不重新运行 OCR，也不把教师标准答案作为识别输入。`Submission.assignment_id` 确定作业；服务读取该作业现存的 `Question.id`、`question_number` 和 `question_type`。结果中的每个 `AlignedAnswer.question_id` 都来自这份 Question 列表。
 
-`detector.py` 只在普通文本节点的行首识别 `第 n 题`、`n.`、`n、`、`n)` 和 `(n)`/`（n）` 候选。公式、表格、图片、代码、列表节点和页码/布局文字不会产生题号候选。规则本身不能证明编号一定是大题：当前只有无重复、顺序一致的显式 `第 n 题` 可以自动对齐。数字点号、顿号、右括号以及圆括号标记均保留证据并要求人工复核；圆括号也可能表示子题。未知题号进入带 `question_number_not_in_assignment` 的未分配区域；重复编号和题目顺序冲突保留所有区域并要求复核，不覆盖或静默合并。
+`detector.py` 只在普通文本节点的行首识别 `第 n 题`、`n.`、`n、`、`n)` 和 `(n)`/`（n）` 候选。公式、表格、图片、代码、列表节点和页码/布局文字不会产生题号候选。规则本身不能证明编号一定是大题：当前只有无重复、顺序一致的显式 `第 n 题` 可以作为可信候选。数字点号、顿号、右括号以及圆括号标记均保留证据并要求人工复核；圆括号也可能表示子题。未知题号进入带 `question_number_not_in_assignment` 的未分配区域；如果下一个边界不是可信候选，前一题的答案区域会标记 `review_required` 和 `answer_end_boundary_is_untrusted`，不会把截断答案报告为完整对齐。重复编号和题目顺序冲突保留所有区域并要求复核，不覆盖或静默合并。
 
-答案范围按 Canonical 的页面、Block 和嵌套节点阅读顺序切分，可跨多个 Block 或页面。同一纯文本 Block 出现多个行首题号时，以 Canonical 源文本的半开区间偏移切片，区域不重叠，题号本身保存在独立的证据字段。偏移单位是 Canonical 字符串中的 Unicode 码点，起点包含、终点不包含，与 Python `str` 切片一致。公式、表格和图片节点保留类型、内容指针和逻辑 asset 引用。复杂嵌套结构跨题号边界时，保留来源片段并设置 `complex_block_split_requires_review`，不伪造独立 Block。没有识别到题号时，内容进入 `unassigned_regions`；对应 Question 为 `not_observed`，此状态不代表学生没有作答。
+答案范围按 Canonical 的页面、Block 和嵌套节点阅读顺序切分，可跨多个 Block 或页面。同一纯文本 Block 出现多个行首题号时，以 Canonical 源文本的半开区间偏移切片，区域不重叠，题号本身保存在独立的证据字段。偏移单位是 Canonical 字符串中的 Unicode 码点，起点包含、终点不包含，与 Python `str` 切片一致。公式、表格和图片节点保留类型、内容指针和逻辑 asset 引用。若题号候选所在的 Canonical Block 含有无法精确定位的图片引用，当前没有字符级证据证明图片归属；系统保留逻辑 asset 引用并将相关 Question 标为复核，不把共享图片作为已确认的专属答案素材。复杂嵌套结构跨题号边界时，保留来源片段并设置 `complex_block_split_requires_review`，不伪造独立 Block。没有识别到题号时，内容进入 `unassigned_regions`；对应 Question 为 `not_observed`，此状态不代表学生没有作答。
 
-`AnswerAlignmentDocument` 使用 `huipi.answer.alignment` 版本化合同，包含 Canonical SHA-256、Canonical ID、aligner 版本、Question 集合 digest、候选证据、每道作业题的状态、source region 和未分配区域。数据库表 `answer_alignment_artifacts` 保存轻量索引，唯一约束为 `(canonical_artifact_id, aligner_version, assignment_questions_digest)`。结果 ID 由版本化输入确定；每次执行写入 UUID run Key，避免并发覆盖。Repository 用 PostgreSQL `ON CONFLICT DO NOTHING` 覆盖所有唯一冲突后读取已提交的唯一索引。确定性提交输家可删除自身未引用对象；数据库提交结果不确定时保留对象，避免删除数据库可能已经引用的对象。跨 S3/PG 仍没有原子事务，进程退出可能留下孤立对象。
+`AnswerAlignmentDocument` 使用 `huipi.answer.alignment` 1.0 合同，当前 `ALIGNER_VERSION=1.1.0`。该算法版本增加了答案结束边界可信度和同来源图片归属检查，没有改变 JSON 字段结构；既有 1.0.0 产物保留不覆盖，当前查询只按当前 aligner 版本和 Question digest 选择索引。结果包含 Canonical SHA-256、Canonical ID、Question 集合 digest、候选证据、每道作业题的状态、source region 和未分配区域。数据库表 `answer_alignment_artifacts` 保存轻量索引，唯一约束为 `(canonical_artifact_id, aligner_version, assignment_questions_digest)`。结果 ID 由版本化输入确定；每次执行写入 UUID run Key，避免并发覆盖。Repository 用 PostgreSQL `ON CONFLICT DO NOTHING` 覆盖所有唯一冲突后读取已提交的唯一索引。确定性提交输家可删除自身未引用对象；数据库提交结果不确定时保留对象，避免删除数据库可能已经引用的对象。跨 S3/PG 仍没有原子事务，进程退出可能留下孤立对象。
 
 对齐由 `python -m huipi_cloud.workers.align_answers --submission-id UUID` 在 FastAPI 请求之外运行。两个 GET API 只查询已写入的结果，不隐式运行识别。摘要不包含 S3 Key；单题接口检查当前 Canonical 和 Question digest，并对对象大小、SHA-256 和版本合同做校验。`ANSWER_ALIGNMENT_MAX_DOCUMENT_BYTES` 默认最多 32 MiB、硬上限 64 MiB；`ANSWER_ALIGNMENT_MAX_QUESTION_RESPONSE_BYTES` 默认最多 2 MiB、硬上限 8 MiB。读取单题仍会将整份有界 JSON 解码成对象，内存峰值高于对象字节数，并随并发请求增加；当前没有全局并发读取配额。当前接口没有认证、RBAC、归属检查或租户隔离，只适用于本地或受控环境。
 
-离线人工标注集当前为 4 个合成 Canonical 案例，脚本分别输出候选检测与 Question 映射的 Precision/Recall、自动对齐覆盖率、复核候选比例和精确答案边界命中率。这些数字只描述该小型合成集，不代表真实学生手写作业质量。当前没有手写评测集、人工修订流程、概率校准、OCR、自动评分或 P2-D2。
+离线人工标注集当前为 12 个合成 Canonical 案例，覆盖未知题号截断、数字列表、括号子题、重复题号、同原子共享图片、跨页公式、表格与图片混合，以及没有题号的手写内容模拟。脚本分别输出候选检测、候选到 Question 关联、正式 `aligned` 自动接受的 Precision/Recall、字符区间重叠与并集、精确边界和素材引用保留，并给出每个案例的预期和实测状态。候选关联正确不等于自动接受正确；答案完整性需要单独评价。分子、分母和定义都会输出；没有预测时 Precision 为 `null`，不伪报为高分。这些数字只描述小型合成集，不代表真实学生手写作业质量。当前没有真实手写评测集、人工修订流程、概率校准、OCR、自动评分或 P2-D2。
 
 ## 任务状态与执行边界
 
