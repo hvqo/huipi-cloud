@@ -315,7 +315,7 @@ async def _wait_for_task_lock_wait(engine: AsyncEngine, blocker_pid: int) -> Non
             blocked = await monitor.scalar(
                 text(
                     "SELECT EXISTS (SELECT 1 FROM pg_stat_activity AS activity "
-                    "WHERE wait_event_type = 'Lock' AND state = 'active' "
+                    "WHERE wait_event_type = 'Lock' "
                     "AND :blocker_pid = ANY(pg_blocking_pids(activity.pid)) "
                     "AND pid <> pg_backend_pid())"
                 ),
