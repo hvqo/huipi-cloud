@@ -91,7 +91,7 @@ P2-A 任务采用 PostgreSQL 持久队列和 At Least Once 执行。P2-B 的解�
 
 P2-C 复核使用 MinerU 4.0.10 Basic/ONNX CPU 环境，4 个合成样本（文字 PDF、扫描 PDF、PNG、含公式/表格/图片的结构 PDF）通过真实 Worker + PostgreSQL + S3 E2E。结构 PDF 检查真实 MinerU MiddleJson 与素材清单；这验证数据流和样本内容断言，不代表真实学生作业准确率；GitHub CI 不下载模型。Canonical 会保留全部合法素材清单项，包括当前 Block 未引用的素材。内嵌图片不会写入 Canonical JSON；Canonical 保存 MiddleJson 来源指针、编码、媒体类型、解码后大小和 SHA-256，可在取得对应不可变 MiddleJson 并通过来源校验后恢复。
 
-P2-D1 的离线评测集包含 13 个合成案例，包含仅有题干的负样本，不代表真实学生作业分布。指标版本 2.0 按案例隔离答案区间，并逐案列出与人工边界的差异。当前规则只允许明确的“第 n 题”标记在无冲突且顺序一致时自动关联；`n.`、`n、`、`n)` 和括号题号作为候选但要求复核。它不读取 AnswerKey，也不推断 `not_observed` 等于未作答。结果由 CLI 生成并写入私有 S3 与 PostgreSQL；API 不返回 S3 Key。模块当前未实现认证、人工纠正、学生作答检测、真实手写样本评测、OCR 或评分。
+P2-D1 的离线评测集包含 13 个合成案例，包含仅有题干的负样本，不代表真实学生作业分布。指标版本 2.1 按案例、Question 和完整 Canonical `content_pointer` 隔离来源；字符范围是对应 ContentNode 文本中的 Unicode 码点半开区间，只归并同一节点内重叠或相邻的范围。嵌套节点专用样本单独评测，不与原 13 个顶层样本合并。当前规则只允许明确的“第 n 题”标记在无冲突且顺序一致时自动关联；`n.`、`n、`、`n)` 和括号题号作为候选但要求复核。它不读取 AnswerKey，也不推断 `not_observed` 等于未作答。结果由 CLI 生成并写入私有 S3 与 PostgreSQL；API 不返回 S3 Key。模块当前未实现认证、人工纠正、学生作答检测、真实手写样本评测、OCR 或评分。
 
 ## 项目结构
 

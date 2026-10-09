@@ -74,7 +74,7 @@ P2-D1 从已持久化的 Canonical Document 读取学生内容，不重新运行
 
 对齐由 `python -m huipi_cloud.workers.align_answers --submission-id UUID` 在 FastAPI 请求之外运行。两个 GET API 只查询已写入的结果，不隐式运行识别。摘要不包含 S3 Key；单题接口检查当前 Canonical 和 Question digest，并对对象大小、SHA-256 和版本合同做校验。`ANSWER_ALIGNMENT_MAX_DOCUMENT_BYTES` 默认最多 32 MiB、硬上限 64 MiB；`ANSWER_ALIGNMENT_MAX_QUESTION_RESPONSE_BYTES` 默认最多 2 MiB、硬上限 8 MiB。读取单题仍会将整份有界 JSON 解码成对象，内存峰值高于对象字节数，并随并发请求增加；当前没有全局并发读取配额。当前接口没有认证、RBAC、归属检查或租户隔离，只适用于本地或受控环境。
 
-离线人工标注集当前为 13 个合成 Canonical 案例，保留原 12 个案例标签，并增加“明确题号 + 仅有印刷题干、没有确认学生回应”的负样本。指标定义版本 2.0 将答案范围按 `case_id`、Question、页面和源块分别计算，避免跨案例相同坐标发生交集；还输出逐案例区间差异、未测量的作答存在性示例及失败原因。脚本分别输出候选检测、候选到 Question 关联、来源映射的自动接受 Precision/Recall、字符区间交并、精确边界和素材引用保留。`aligned` 自动接受指标只衡量来源到 Question 的映射，不衡量作答存在或批改就绪。分子、分母和定义都会输出；没有预测时 Precision 为 `null`，不伪报为高分。这些数字只描述小型合成集，不代表真实学生手写作业质量。当前没有真实手写评测集、学生作答检测、人工修订流程、概率校准、OCR、自动评分或 P2-D2。
+离线人工标注集当前为 13 个合成 Canonical 案例，保留原 12 个案例标签，并增加“明确题号 + 仅有印刷题干、没有确认学生回应”的负样本。指标定义版本 2.1 使用 `(case_id, Question, content_pointer, start, end)` 作为答案范围键。`content_pointer` 指向具体的 Canonical ContentNode；偏移相对该节点文本，使用 Python Unicode 码点和半开区间。脚本只归并同一节点内重叠或相邻范围，不让不同节点的相同偏移匹配。候选检测和候选到 Question 关联指标也包含完整节点路径。原 13 个顶层案例仍使用旧标注并推导顶层 pointer；嵌套标注必须显式给出且通过节点路径和范围验证。嵌套专项样本单独报告，不混入原 13 案例统计。脚本分别输出候选检测、候选到 Question 关联、来源映射的自动接受 Precision/Recall、字符区间交并、精确边界和素材引用保留。`aligned` 自动接受指标只衡量来源到 Question 的映射，不衡量作答存在或批改就绪。分子、分母和定义都会输出；没有预测时 Precision 为 `null`，不伪报为高分。这些数字只描述小型合成集，不代表真实学生手写作业质量。当前没有真实手写评测集、学生作答检测、人工修订流程、概率校准、OCR、自动评分或 P2-D2。
 
 ## 任务状态与执行边界
 
