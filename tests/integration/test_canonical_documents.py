@@ -392,10 +392,14 @@ async def test_concurrent_normalization_has_one_effective_database_index(
         postgres_engine,
     )
     session_factory = async_sessionmaker(postgres_engine, expire_on_commit=False)
-    first, second = await asyncio.gather(
-        service.normalize_submission(session_factory, recording_minio_storage, submission_id),
-        service.normalize_submission(session_factory, recording_minio_storage, submission_id),
-    )
+    recording_minio_storage.after_upload_barrier = asyncio.Barrier(2)
+    try:
+        first, second = await asyncio.gather(
+            service.normalize_submission(session_factory, recording_minio_storage, submission_id),
+            service.normalize_submission(session_factory, recording_minio_storage, submission_id),
+        )
+    finally:
+        recording_minio_storage.after_upload_barrier = None
 
     async with session_factory() as session:
         rows = (
