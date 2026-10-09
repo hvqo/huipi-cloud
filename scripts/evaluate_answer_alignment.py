@@ -27,17 +27,24 @@ def main() -> int:
         "tests/fixtures/answer_alignment/annotated.json"
     )
     dataset = json.loads(dataset_path.read_text(encoding="utf-8"))
+    case_ids = [case["case_id"] for case in dataset["cases"]]
+    if len(case_ids) != len(set(case_ids)):
+        raise ValueError("evaluation case_id values must be unique")
     expected_candidates = predicted_candidates = correct_candidates = 0
     expected_question_links = predicted_question_links = correct_question_links = 0
-    expected_answer_ranges: set[tuple[int, int, int, int, int]] = set()
-    predicted_answer_ranges: set[tuple[int, int, int, int, int]] = set()
+    expected_answer_ranges: set[tuple[str, int, int, int, int, int]] = set()
+    predicted_answer_ranges: set[tuple[str, int, int, int, int, int]] = set()
     question_status_count = question_status_correct = 0
     candidate_review_count = candidate_total = 0
     expected_assets = preserved_assets = 0
     case_results: list[dict[str, object]] = []
     case_failures: list[str] = []
+    boundary_deviation_cases: list[dict[str, object]] = []
+    answer_presence_limitations: list[dict[str, object]] = []
 
     for case in dataset["cases"]:
+        case_expected_ranges: set[tuple[str, int, int, int, int, int]] = set()
+        case_predicted_ranges: set[tuple[str, int, int, int, int, int]] = set()
         document, questions, assignment_id, asset_ids = _build_case(case)
         atoms, candidates = detect_question_candidates(document)
         expected_marker_locations = {
@@ -114,8 +121,34 @@ def main() -> int:
                     f"{case['case_id']}: Question {number} expected "
                     f"{label['expected_status']}, received {actual}"
                 )
+            if not label["expected_answer_present"] and actual == "aligned":
+                answer_presence_limitations.append(
+                    {
+                        "case_id": case["case_id"],
+                        "question_number": number,
+                        "expected_answer_present": False,
+                        "observed_alignment_status": actual,
+                        "mapped_source_text": answers_by_number[number].text_projection,
+                        "reason": (
+                            "当前协议只表示来源区域与 Question 的关联；"
+                            "不检测学生是否作答。"
+                        ),
+                    }
+                )
             expected_answer_ranges.update(
                 (
+                    case["case_id"],
+                    number,
+                    region["page_index"],
+                    region["block_index"],
+                    region["start"],
+                    region["end"],
+                )
+                for region in label["answer_regions"]
+            )
+            case_expected_ranges.update(
+                (
+                    case["case_id"],
                     number,
                     region["page_index"],
                     region["block_index"],
@@ -126,11 +159,26 @@ def main() -> int:
             )
         for answer in result.answers:
             for region in answer.source_regions:
-                if region.text_start is None or region.text_end is None:
+                if (
+                    region.text_start is None
+                    or region.text_end is None
+                    or region.text_end <= region.text_start
+                ):
                     continue
                 page_index, block_index = _pointer_location(region.content_pointer)
                 predicted_answer_ranges.add(
                     (
+                        case["case_id"],
+                        answer.question_number,
+                        page_index,
+                        block_index,
+                        region.text_start,
+                        region.text_end,
+                    )
+                )
+                case_predicted_ranges.add(
+                    (
+                        case["case_id"],
                         answer.question_number,
                         page_index,
                         block_index,
@@ -207,6 +255,40 @@ def main() -> int:
                 f"{case['case_id']}: missing source types {', '.join(missing_source_types)}"
             )
 
+        (
+            case_intersection,
+            case_expected_characters,
+            case_predicted_characters,
+            case_union_characters,
+        ) = _answer_interval_counts(case_expected_ranges, case_predicted_ranges)
+        case_exact_ranges = len(case_expected_ranges & case_predicted_ranges)
+        case_boundary_matches = case_expected_ranges == case_predicted_ranges
+        if not case_boundary_matches:
+            if not case_expected_ranges and case_predicted_ranges:
+                boundary_reason = (
+                    "人工标签未确认学生作答，但系统仍输出映射来源片段；"
+                    "当前算法不判断答案存在性。"
+                )
+            elif case_expected_ranges and not case_predicted_ranges:
+                boundary_reason = "人工标签有答案区间，但系统没有输出已关联到 Question 的文本区间。"
+            else:
+                boundary_reason = "预测答案范围与人工标注范围存在差异；检查截断、漏分或多分配。"
+            boundary_deviation_cases.append(
+                {
+                    "case_id": case["case_id"],
+                    "reason": boundary_reason,
+                    "expected_ranges": [
+                        list(answer_range[1:]) for answer_range in sorted(case_expected_ranges)
+                    ],
+                    "predicted_ranges": [
+                        list(answer_range[1:]) for answer_range in sorted(case_predicted_ranges)
+                    ],
+                    "overlapping_characters": case_intersection,
+                    "expected_characters": case_expected_characters,
+                    "predicted_characters": case_predicted_characters,
+                }
+            )
+
         case_results.append(
             {
                 "case_id": case["case_id"],
@@ -221,6 +303,41 @@ def main() -> int:
                     for number, answer in answers_by_number.items()
                 },
                 "question_status_expectations_met": status_matches,
+                "expected_answer_presence": {
+                    str(number): label["expected_answer_present"]
+                    for number, label in answer_labels.items()
+                },
+                "answer_presence_assessed": False,
+                "answer_boundary": {
+                    "exact_ranges_match": case_boundary_matches,
+                    "expected_range_count": len(case_expected_ranges),
+                    "predicted_range_count": len(case_predicted_ranges),
+                    "character_precision": _metric(
+                        case_intersection,
+                        case_predicted_characters,
+                        "本案例按 Question、页面和源块计算的重叠字符 / 预测字符。",
+                    ),
+                    "character_recall": _metric(
+                        case_intersection,
+                        case_expected_characters,
+                        "本案例按 Question、页面和源块计算的重叠字符 / 人工标注字符。",
+                    ),
+                    "character_iou": _metric(
+                        case_intersection,
+                        case_union_characters,
+                        "本案例按 Question、页面和源块计算的重叠字符 / 并集字符。",
+                    ),
+                    "exact_range_precision": _metric(
+                        case_exact_ranges,
+                        len(case_predicted_ranges),
+                        "本案例完全一致的区间数 / 预测区间数。",
+                    ),
+                    "exact_range_recall": _metric(
+                        case_exact_ranges,
+                        len(case_expected_ranges),
+                        "本案例完全一致的区间数 / 人工标注区间数。",
+                    ),
+                },
                 "candidate_count": {
                     "expected_true_markers": len(expected_marker_locations),
                     "detected_markers": len(predicted_marker_locations),
@@ -277,6 +394,12 @@ def main() -> int:
     )
     report = {
         "dataset_name": dataset["dataset_name"],
+        "metric_definition_version": "2.0",
+        "metric_definition_note": (
+            "答案边界区间按 case_id、Question、页面和源块隔离后计算；"
+            "其他既有报告字段保持兼容。`aligned` 只表示来源到 Question 的映射被接受，"
+            "不表示学生作答存在或结果可以进入批改。"
+        ),
         "case_count": len(dataset["cases"]),
         "annotation_note": dataset["annotation_note"],
         "metrics": {
@@ -305,13 +428,14 @@ def main() -> int:
             "automatic_accept_precision": _metric(
                 auto_tp,
                 auto_predicted,
-                "人工确认可自动接受且系统标记 aligned 的题目数 / 系统标记 aligned 的题目数；"
-                "没有预测时为 null。",
+                "人工确认可自动接受来源到 Question 映射且系统标记 aligned 的题目数 / "
+                "系统标记 aligned 的题目数；不评价学生是否作答或是否可批改；没有预测时为 null。",
             ),
             "automatic_accept_recall": _metric(
                 auto_tp,
                 auto_expected,
-                "人工确认可自动接受且系统标记 aligned 的题目数 / 人工确认可自动接受的题目数。",
+                "人工确认可自动接受来源到 Question 映射且系统标记 aligned 的题目数 / "
+                "人工确认可自动接受的映射数；不评价学生是否作答或是否可批改。",
             ),
             "automatic_alignment_coverage_of_answered_questions": _metric(
                 answered_auto_tp,
@@ -322,29 +446,29 @@ def main() -> int:
             "answer_boundary_character_precision": _metric(
                 interval_intersection,
                 predicted_characters,
-                "按题目、页面和源块计算的重叠字符数 / 系统归属给 Question 的字符数；"
-                "错归题目计为不重叠。",
+                "逐案例按题目、页面和源块计算的重叠字符数 / 系统归属给 Question 的字符数；"
+                "错归题目或跨案例坐标相同都不构成交集。",
             ),
             "answer_boundary_character_recall": _metric(
                 interval_intersection,
                 expected_characters,
-                "按题目、页面和源块计算的重叠字符数 / 人工标注答案字符数；遗漏内容降低召回。",
+                "逐案例按题目、页面和源块计算的重叠字符数 / 人工标注答案字符数；遗漏内容降低召回。",
             ),
             "answer_boundary_character_iou": _metric(
                 interval_intersection,
                 union_characters,
-                "按题目、页面和源块计算的重叠字符数 / 预测与人工范围的并集字符数；"
+                "逐案例按题目、页面和源块计算的重叠字符数 / 预测与人工范围的并集字符数；"
                 "同时惩罚遗漏和多分配内容。",
             ),
             "answer_boundary_exact_range_precision": _metric(
                 exact_ranges,
                 len(predicted_answer_ranges),
-                "完全相同的题号/页面/源块/半开区间数 / 系统输出的文本区间数。",
+                "完全相同的案例/题号/页面/源块/半开区间数 / 系统输出的文本区间数。",
             ),
             "answer_boundary_exact_range_recall": _metric(
                 exact_ranges,
                 len(expected_answer_ranges),
-                "完全相同的题号/页面/源块/半开区间数 / 人工标注的文本区间数。",
+                "完全相同的案例/题号/页面/源块/半开区间数 / 人工标注的文本区间数。",
             ),
             "question_status_exact_accuracy": _metric(
                 question_status_correct,
@@ -384,7 +508,36 @@ def main() -> int:
             "expected_asset_references": expected_assets,
             "preserved_asset_references": preserved_assets,
         },
+        "confusion_counts": {
+            "candidate_detection": {
+                "tp": correct_candidates,
+                "fp": predicted_candidates - correct_candidates,
+                "fn": expected_candidates - correct_candidates,
+            },
+            "candidate_question_link": {
+                "tp": correct_question_links,
+                "fp": predicted_question_links - correct_question_links,
+                "fn": expected_question_links - correct_question_links,
+            },
+            "automatic_accept": {
+                "tp": auto_tp,
+                "fp": auto_predicted - auto_tp,
+                "fn": auto_expected - auto_tp,
+            },
+            "answer_boundary_characters": {
+                "tp": interval_intersection,
+                "fp": predicted_characters - interval_intersection,
+                "fn": expected_characters - interval_intersection,
+            },
+            "answer_boundary_exact_ranges": {
+                "tp": exact_ranges,
+                "fp": len(predicted_answer_ranges) - exact_ranges,
+                "fn": len(expected_answer_ranges) - exact_ranges,
+            },
+        },
         "case_results": case_results,
+        "boundary_deviation_cases": boundary_deviation_cases,
+        "answer_presence_limitations": answer_presence_limitations,
         "case_failures": case_failures,
     }
     print(json.dumps(report, ensure_ascii=False, indent=2))
@@ -432,12 +585,12 @@ def _answer_interval_counts(expected_ranges, predicted_ranges) -> tuple[int, int
 
 
 def _merge_by_source(answer_ranges):
-    grouped: dict[tuple[int, int, int], list[tuple[int, int]]] = defaultdict(list)
-    for question_number, page_index, block_index, start, end in answer_ranges:
+    grouped: dict[tuple[str, int, int, int], list[tuple[int, int]]] = defaultdict(list)
+    for case_id, question_number, page_index, block_index, start, end in answer_ranges:
         if end < start:
             raise ValueError("answer range end must not precede start")
         if end > start:
-            grouped[(question_number, page_index, block_index)].append((start, end))
+            grouped[(case_id, question_number, page_index, block_index)].append((start, end))
     merged = {}
     for key, intervals in grouped.items():
         intervals.sort()

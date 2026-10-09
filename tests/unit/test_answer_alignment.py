@@ -8,7 +8,12 @@ import pytest
 
 from huipi_cloud.modules.answer_alignment.detector import detect_question_candidates
 from huipi_cloud.modules.answer_alignment.errors import AnswerAlignmentArtifactCorruptError
-from huipi_cloud.modules.answer_alignment.protocol import CanonicalAssetReference
+from huipi_cloud.modules.answer_alignment.protocol import (
+    AlignedAnswer,
+    AlignmentSummaryRead,
+    CanonicalAssetReference,
+    QuestionAlignmentRead,
+)
 from huipi_cloud.modules.answer_alignment.repository import AlignmentContext
 from huipi_cloud.modules.answer_alignment.segmenter import align_canonical_document
 from huipi_cloud.modules.answer_alignment.service import _decode_canonical_document
@@ -266,6 +271,32 @@ def test_numbers_inside_equations_fractions_and_prose_are_not_question_labels() 
     assert candidates == []
     assert result.answers[0].matching_status == "not_observed"
     assert "x_1" in result.unassigned_regions[0].text_projection
+
+
+def test_aligned_prompt_only_source_does_not_prove_a_student_response() -> None:
+    assignment_id = uuid4()
+    question = make_question(1, assignment_id=assignment_id)
+    document = make_document([[{"text": "第1题 题干：求方程 x+1=2 的解。"}]])
+
+    answer = align(document, [question]).answers[0]
+
+    # The explicit marker safely maps this source span to Question 1. The
+    # aligner does not identify whether the remaining text is printed prompt
+    # content or student handwriting.
+    assert answer.matching_status == "aligned"
+    assert answer.text_projection == "题干：求方程 x+1=2 的解。"
+    assert "answer_presence" not in answer.model_dump()
+
+
+def test_alignment_api_schema_documents_mapping_and_response_limits() -> None:
+    status_description = AlignedAnswer.model_fields["matching_status"].description or ""
+    count_description = AlignmentSummaryRead.model_fields["aligned_count"].description or ""
+    answer_description = QuestionAlignmentRead.model_fields["answer"].description or ""
+
+    assert "它不表示学生已作答" in status_description
+    assert "区域内部没有其他题目内容" in status_description
+    assert "不是已确认学生作答数量" in count_description
+    assert "不是已确认的学生答案" in answer_description
 
 
 def test_parenthesized_number_is_review_required_as_possible_subquestion() -> None:

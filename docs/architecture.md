@@ -1,6 +1,6 @@
 # 架构与模块边界
 
-慧批云端采用 src 布局的模块化单体。P1-A、P1-B、P2-A、P2-B 和 P2-C 已合并到 `main`。P2-D1 的代码和协议由 PR #9 跟踪；PR 当前状态与 CI 应以 GitHub 为准。自动批改、教师复核、用户权限仍未实现。
+慧批云端采用 src 布局的模块化单体。P1-A、P1-B、P2-A、P2-B、P2-C 和 P2-D1 已合并到 `main`。P2-D1 由 PR #9 合并。自动批改、教师复核、用户权限仍未实现。
 
 ## 模块职责
 
@@ -10,7 +10,7 @@
 - `modules/submissions`：模拟学生标识校验、文件检查、提交编排、提交查询和原始文件元数据。
 - `modules/parsing`：解析任务状态、状态迁移规则、PostgreSQL repository、解析产物索引、错误分类、重试时间策略、状态查询 Schema 与 ParserExecutor 协议。
 - `modules/canonical_documents`：Canonical Document v1 DTO、MiddleJson 适配转换、有界内容验证、稳定标识、S3/PG 持久化、状态与页面查询。
-- `modules/answer_alignment`：P2-D1 分支新增模块。按 Canonical 阅读顺序识别题号候选、切分可追溯答案区域、与 Assignment 的真实 Question 对齐，并读写版本化结果索引。该模块不读取 AnswerKey。
+- `modules/answer_alignment`：P2-D1 新增模块。按 Canonical 阅读顺序识别题号候选、切分可追溯来源区域、与 Assignment 的真实 Question 对齐，并读写版本化结果索引。该模块不读取 AnswerKey，也不判断学生作答存在性。
 - `workers`：独立于 FastAPI 的解析任务轮询进程，管理领取、解析调用、heartbeat、结果提交和受控退出；另含规范化和答案对齐 CLI。
 - `infrastructure/database`：共享 Engine 工厂与按请求/操作创建的 AsyncSession；Alembic 管理结构，应用启动不会调用 `create_all`。
 - `infrastructure/storage`：boto3 S3 兼容适配器。本地对象存储使用 PGSTY SILO。
@@ -66,13 +66,15 @@ P2-D1 从已持久化的 Canonical Document 读取学生内容，不重新运行
 
 `detector.py` 只在普通文本节点的行首识别 `第 n 题`、`n.`、`n、`、`n)` 和 `(n)`/`（n）` 候选。公式、表格、图片、代码、列表节点和页码/布局文字不会产生题号候选。规则本身不能证明编号一定是大题：当前只有无重复、顺序一致的显式 `第 n 题` 可以作为可信候选。数字点号、顿号、右括号以及圆括号标记均保留证据并要求人工复核；圆括号也可能表示子题。未知题号进入带 `question_number_not_in_assignment` 的未分配区域；如果下一个边界不是可信候选，前一题的答案区域会标记 `review_required` 和 `answer_end_boundary_is_untrusted`，不会把截断答案报告为完整对齐。重复编号和题目顺序冲突保留所有区域并要求复核，不覆盖或静默合并。
 
+`matching_status=aligned` 表示算法接受了某个来源区域到真实 `Question` 的关联。它不证明该区域是学生写的答案：Canonical 文本可能是印刷题干，OCR 也可能漏字或误识别，区域内也可能留有未识别的其他题目内容。`complete` 只表示当前对齐运行没有待复核或未分配区域，不表示学生已经作答、识别完整或结果可以交给评分。当前协议没有独立的 `answer_presence` 或 `ready_for_grading` 字段；`not_observed` 仅表示没有足够证据安全关联题目，不能解释为未作答。`review_required` 的内容和 `unassigned_regions` 都是待审来源，不是已确认答案。P2-D1 API 只提供映射和来源证据，没有评分入口。
+
 答案范围按 Canonical 的页面、Block 和嵌套节点阅读顺序切分，可跨多个 Block 或页面。同一纯文本 Block 出现多个行首题号时，以 Canonical 源文本的半开区间偏移切片，区域不重叠，题号本身保存在独立的证据字段。偏移单位是 Canonical 字符串中的 Unicode 码点，起点包含、终点不包含，与 Python `str` 切片一致。公式、表格和图片节点保留类型、内容指针和逻辑 asset 引用。若题号候选所在的 Canonical Block 含有无法精确定位的图片引用，当前没有字符级证据证明图片归属；系统保留逻辑 asset 引用并将相关 Question 标为复核，不把共享图片作为已确认的专属答案素材。复杂嵌套结构跨题号边界时，保留来源片段并设置 `complex_block_split_requires_review`，不伪造独立 Block。没有识别到题号时，内容进入 `unassigned_regions`；对应 Question 为 `not_observed`，此状态不代表学生没有作答。
 
 `AnswerAlignmentDocument` 使用 `huipi.answer.alignment` 1.0 合同，当前 `ALIGNER_VERSION=1.1.0`。该算法版本增加了答案结束边界可信度和同来源图片归属检查，没有改变 JSON 字段结构；既有 1.0.0 产物保留不覆盖，当前查询只按当前 aligner 版本和 Question digest 选择索引。结果包含 Canonical SHA-256、Canonical ID、Question 集合 digest、候选证据、每道作业题的状态、source region 和未分配区域。数据库表 `answer_alignment_artifacts` 保存轻量索引，唯一约束为 `(canonical_artifact_id, aligner_version, assignment_questions_digest)`。结果 ID 由版本化输入确定；每次执行写入 UUID run Key，避免并发覆盖。Repository 用 PostgreSQL `ON CONFLICT DO NOTHING` 覆盖所有唯一冲突后读取已提交的唯一索引。确定性提交输家可删除自身未引用对象；数据库提交结果不确定时保留对象，避免删除数据库可能已经引用的对象。跨 S3/PG 仍没有原子事务，进程退出可能留下孤立对象。
 
 对齐由 `python -m huipi_cloud.workers.align_answers --submission-id UUID` 在 FastAPI 请求之外运行。两个 GET API 只查询已写入的结果，不隐式运行识别。摘要不包含 S3 Key；单题接口检查当前 Canonical 和 Question digest，并对对象大小、SHA-256 和版本合同做校验。`ANSWER_ALIGNMENT_MAX_DOCUMENT_BYTES` 默认最多 32 MiB、硬上限 64 MiB；`ANSWER_ALIGNMENT_MAX_QUESTION_RESPONSE_BYTES` 默认最多 2 MiB、硬上限 8 MiB。读取单题仍会将整份有界 JSON 解码成对象，内存峰值高于对象字节数，并随并发请求增加；当前没有全局并发读取配额。当前接口没有认证、RBAC、归属检查或租户隔离，只适用于本地或受控环境。
 
-离线人工标注集当前为 12 个合成 Canonical 案例，覆盖未知题号截断、数字列表、括号子题、重复题号、同原子共享图片、跨页公式、表格与图片混合，以及没有题号的手写内容模拟。脚本分别输出候选检测、候选到 Question 关联、正式 `aligned` 自动接受的 Precision/Recall、字符区间重叠与并集、精确边界和素材引用保留，并给出每个案例的预期和实测状态。候选关联正确不等于自动接受正确；答案完整性需要单独评价。分子、分母和定义都会输出；没有预测时 Precision 为 `null`，不伪报为高分。这些数字只描述小型合成集，不代表真实学生手写作业质量。当前没有真实手写评测集、人工修订流程、概率校准、OCR、自动评分或 P2-D2。
+离线人工标注集当前为 13 个合成 Canonical 案例，保留原 12 个案例标签，并增加“明确题号 + 仅有印刷题干、没有确认学生回应”的负样本。指标定义版本 2.0 将答案范围按 `case_id`、Question、页面和源块分别计算，避免跨案例相同坐标发生交集；还输出逐案例区间差异、未测量的作答存在性示例及失败原因。脚本分别输出候选检测、候选到 Question 关联、来源映射的自动接受 Precision/Recall、字符区间交并、精确边界和素材引用保留。`aligned` 自动接受指标只衡量来源到 Question 的映射，不衡量作答存在或批改就绪。分子、分母和定义都会输出；没有预测时 Precision 为 `null`，不伪报为高分。这些数字只描述小型合成集，不代表真实学生手写作业质量。当前没有真实手写评测集、学生作答检测、人工修订流程、概率校准、OCR、自动评分或 P2-D2。
 
 ## 任务状态与执行边界
 
