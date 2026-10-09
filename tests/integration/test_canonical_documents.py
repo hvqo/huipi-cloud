@@ -15,8 +15,15 @@ from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 
 from huipi_cloud.core.config import Settings, settings
 from huipi_cloud.infrastructure.storage.dependencies import get_object_storage
-from huipi_cloud.infrastructure.storage.s3 import StorageUnavailableError
+from huipi_cloud.infrastructure.storage.s3 import (
+    StorageObjectNotFoundError,
+    StorageUnavailableError,
+)
 from huipi_cloud.main import app
+from huipi_cloud.modules.answer_alignment import service as answer_alignment_service
+from huipi_cloud.modules.answer_alignment.models import AnswerAlignmentArtifact
+from huipi_cloud.modules.answer_alignment.protocol import AnswerAlignmentDocument
+from huipi_cloud.modules.assignments.models import Question
 from huipi_cloud.modules.canonical_documents import service
 from huipi_cloud.modules.canonical_documents.errors import (
     CanonicalNormalizationError,
@@ -24,7 +31,7 @@ from huipi_cloud.modules.canonical_documents.errors import (
 )
 from huipi_cloud.modules.canonical_documents.models import CanonicalArtifact
 from huipi_cloud.modules.parsing.models import ParsedArtifact
-from huipi_cloud.modules.submissions.models import ParsingTask
+from huipi_cloud.modules.submissions.models import ParsingTask, Submission
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "mineru"
 
@@ -285,6 +292,336 @@ async def test_middle_json_checksum_failure_is_recorded_without_changing_parser_
 
 
 @pytest.mark.anyio
+async def test_answer_alignment_is_persisted_idempotently_and_returned_without_private_keys(
+    submission_client: httpx.AsyncClient,
+    recording_minio_storage,
+    postgres_engine: AsyncEngine,
+) -> None:
+    submission_id, _ = await _seed_parsed_source(
+        submission_client,
+        recording_minio_storage,
+        postgres_engine,
+    )
+    session_factory = async_sessionmaker(postgres_engine, expire_on_commit=False)
+    canonical = await service.normalize_submission(
+        session_factory,
+        recording_minio_storage,
+        submission_id,
+    )
+    async with session_factory() as session:
+        assignment_id = await session.scalar(
+            select(Submission.assignment_id).where(Submission.id == submission_id)
+        )
+        question = await session.scalar(
+            select(Question).where(Question.assignment_id == assignment_id)
+        )
+    assert assignment_id is not None and question is not None
+
+    first = await answer_alignment_service.align_submission(
+        session_factory,
+        recording_minio_storage,
+        submission_id,
+    )
+    uploaded_after_first = {
+        key for key in recording_minio_storage.uploaded_keys if "/answer-alignment/" in key
+    }
+    second = await answer_alignment_service.align_submission(
+        session_factory,
+        recording_minio_storage,
+        submission_id,
+    )
+
+    assert first.id == second.id
+    assert first.canonical_artifact_id == canonical.id
+    assert first.status == "review_required"
+    assert first.not_observed_count == 1
+    assert second.object_key == first.object_key
+    assert len(uploaded_after_first) == 1
+    assert len(
+        [key for key in recording_minio_storage.uploaded_keys if "/answer-alignment/" in key]
+    ) == 1
+    downloaded = await recording_minio_storage.download(first.object_key)
+    body = b"".join([chunk async for chunk in downloaded.chunks()])
+    assert hashlib.sha256(body).hexdigest() == first.alignment_sha256
+    assert len(body) == first.alignment_size_bytes
+    document = AnswerAlignmentDocument.model_validate_json(body)
+    assert document.canonical_document_id == canonical.id
+    assert document.answers[0].question_id == question.id
+    assert document.answers[0].matching_status == "not_observed"
+    async with session_factory() as session:
+        indexes = (
+            await session.scalars(
+                select(AnswerAlignmentArtifact).where(
+                    AnswerAlignmentArtifact.canonical_artifact_id == canonical.id
+                )
+            )
+        ).all()
+    assert len(indexes) == 1
+    assert indexes[0].canonical_sha256 == canonical.canonical_sha256
+    assert indexes[0].assignment_questions_digest == document.assignment_questions_digest
+
+    summary = await submission_client.get(
+        f"/api/v1/submissions/{submission_id}/answer-alignment"
+    )
+    assert summary.status_code == 200, summary.text
+    assert summary.json()["status"] == "review_required"
+    assert summary.json()["not_observed_count"] == 1
+    assert "object_key" not in summary.text
+    assert "bucket" not in summary.text
+    answer = await submission_client.get(
+        f"/api/v1/submissions/{submission_id}/answer-alignment/questions/{question.id}"
+    )
+    assert answer.status_code == 200, answer.text
+    assert answer.json()["answer"]["matching_status"] == "not_observed"
+    assert "answer_content" not in answer.text
+    assert "集成测试答案" not in answer.text
+    assert "object_key" not in answer.text
+    absent_question = await submission_client.get(
+        f"/api/v1/submissions/{submission_id}/answer-alignment/questions/{uuid4()}"
+    )
+    assert absent_question.status_code == 404
+
+
+@pytest.mark.anyio
+async def test_explicit_question_answer_completes_synthetic_canonical_to_api_path(
+    submission_client: httpx.AsyncClient,
+    recording_minio_storage,
+    postgres_engine: AsyncEngine,
+) -> None:
+    submission_id, _ = await _seed_parsed_source(
+        submission_client,
+        recording_minio_storage,
+        postgres_engine,
+        middle_content="第1题 学生提交的合成答案",
+    )
+    session_factory = async_sessionmaker(postgres_engine, expire_on_commit=False)
+    canonical = await service.normalize_submission(
+        session_factory,
+        recording_minio_storage,
+        submission_id,
+    )
+    record = await answer_alignment_service.align_submission(
+        session_factory,
+        recording_minio_storage,
+        submission_id,
+    )
+    async with session_factory() as session:
+        question = await session.scalar(
+            select(Question).where(Question.assignment_id == record.assignment_id)
+        )
+
+    assert question is not None
+    assert record.status == "complete"
+    assert record.aligned_count == 1
+    summary = await submission_client.get(
+        f"/api/v1/submissions/{submission_id}/answer-alignment"
+    )
+    assert summary.status_code == 200
+    assert summary.json()["status"] == "complete"
+    answer = await submission_client.get(
+        f"/api/v1/submissions/{submission_id}/answer-alignment/questions/{question.id}"
+    )
+    assert answer.status_code == 200, answer.text
+    body = answer.json()
+    assert body["canonical_document_id"] == str(canonical.id)
+    assert body["answer"]["question_id"] == str(question.id)
+    assert body["answer"]["matching_status"] == "aligned"
+    assert body["answer"]["text_projection"] == "学生提交的合成答案"
+    assert body["answer"]["source_regions"][0]["source_block_id"]
+    assert "answer_content" not in answer.text
+    assert "object_key" not in answer.text
+
+
+@pytest.mark.anyio
+async def test_concurrent_answer_alignment_has_one_effective_index_and_object(
+    submission_client: httpx.AsyncClient,
+    recording_minio_storage,
+    postgres_engine: AsyncEngine,
+) -> None:
+    submission_id, _ = await _seed_parsed_source(
+        submission_client,
+        recording_minio_storage,
+        postgres_engine,
+    )
+    session_factory = async_sessionmaker(postgres_engine, expire_on_commit=False)
+    await service.normalize_submission(session_factory, recording_minio_storage, submission_id)
+    recording_minio_storage.after_upload_barrier = asyncio.Barrier(2)
+
+    first, second = await asyncio.gather(
+        answer_alignment_service.align_submission(
+            session_factory,
+            recording_minio_storage,
+            submission_id,
+        ),
+        answer_alignment_service.align_submission(
+            session_factory,
+            recording_minio_storage,
+            submission_id,
+        ),
+    )
+    recording_minio_storage.after_upload_barrier = None
+
+    assert first.id == second.id
+    assert first.object_key == second.object_key
+    generated_keys = [
+        key for key in recording_minio_storage.uploaded_keys if "/answer-alignment/" in key
+    ]
+    assert len(generated_keys) == 2
+    existing_keys = []
+    for key in generated_keys:
+        try:
+            await recording_minio_storage.head_object(key)
+            existing_keys.append(key)
+        except StorageObjectNotFoundError:
+            pass
+    assert existing_keys == [first.object_key]
+    async with session_factory() as session:
+        rows = (
+            await session.scalars(
+                select(AnswerAlignmentArtifact).where(
+                    AnswerAlignmentArtifact.id == first.id
+                )
+            )
+        ).all()
+    assert len(rows) == 1
+
+
+@pytest.mark.anyio
+async def test_question_digest_change_produces_a_new_immutable_alignment_version(
+    submission_client: httpx.AsyncClient,
+    recording_minio_storage,
+    postgres_engine: AsyncEngine,
+) -> None:
+    submission_id, _ = await _seed_parsed_source(
+        submission_client,
+        recording_minio_storage,
+        postgres_engine,
+        middle_content="第1题 学生答案",
+    )
+    session_factory = async_sessionmaker(postgres_engine, expire_on_commit=False)
+    await service.normalize_submission(session_factory, recording_minio_storage, submission_id)
+    first = await answer_alignment_service.align_submission(
+        session_factory,
+        recording_minio_storage,
+        submission_id,
+    )
+
+    async with postgres_engine.begin() as connection:
+        await connection.execute(
+            update(Question)
+            .where(Question.assignment_id == first.assignment_id)
+            .values(question_number=2)
+        )
+    changed_summary = await submission_client.get(
+        f"/api/v1/submissions/{submission_id}/answer-alignment"
+    )
+    assert changed_summary.status_code == 200
+    assert changed_summary.json()["status"] == "not_generated"
+
+    second = await answer_alignment_service.align_submission(
+        session_factory,
+        recording_minio_storage,
+        submission_id,
+    )
+    assert second.id != first.id
+    assert second.assignment_questions_digest != first.assignment_questions_digest
+    assert second.unmatched_count == 1
+    assert second.not_observed_count == 1
+    async with session_factory() as session:
+        records = (
+            await session.scalars(
+                select(AnswerAlignmentArtifact).where(
+                    AnswerAlignmentArtifact.submission_id == submission_id
+                )
+            )
+        ).all()
+    assert len(records) == 2
+    assert {record.id for record in records} == {first.id, second.id}
+
+
+@pytest.mark.anyio
+async def test_storage_upload_failure_does_not_create_an_alignment_index(
+    submission_client: httpx.AsyncClient,
+    recording_minio_storage,
+    postgres_engine: AsyncEngine,
+) -> None:
+    submission_id, _ = await _seed_parsed_source(
+        submission_client,
+        recording_minio_storage,
+        postgres_engine,
+    )
+    session_factory = async_sessionmaker(postgres_engine, expire_on_commit=False)
+    await service.normalize_submission(session_factory, recording_minio_storage, submission_id)
+
+    class FailedAlignmentUpload:
+        bucket = recording_minio_storage.bucket
+        object_key_prefix = recording_minio_storage.object_key_prefix
+
+        async def download(self, key):
+            return await recording_minio_storage.download(key)
+
+        async def head_object(self, key):
+            return await recording_minio_storage.head_object(key)
+
+        async def upload_fileobj(self, fileobj, key, content_type):
+            if "/answer-alignment/" in key:
+                raise StorageUnavailableError("storage endpoint and secret")
+            await recording_minio_storage.upload_fileobj(fileobj, key, content_type)
+
+        async def delete(self, key):
+            await recording_minio_storage.delete(key)
+
+    with pytest.raises(StorageUnavailableError):
+        await answer_alignment_service.align_submission(
+            session_factory,
+            FailedAlignmentUpload(),
+            submission_id,
+        )
+    async with session_factory() as session:
+        count = await session.scalar(select(func.count()).select_from(AnswerAlignmentArtifact))
+    assert count == 0
+
+
+@pytest.mark.anyio
+async def test_uncertain_index_commit_keeps_uploaded_immutable_object_for_reconciliation(
+    submission_client: httpx.AsyncClient,
+    recording_minio_storage,
+    postgres_engine: AsyncEngine,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    submission_id, _ = await _seed_parsed_source(
+        submission_client,
+        recording_minio_storage,
+        postgres_engine,
+    )
+    session_factory = async_sessionmaker(postgres_engine, expire_on_commit=False)
+    await service.normalize_submission(session_factory, recording_minio_storage, submission_id)
+    previous_keys = set(recording_minio_storage.uploaded_keys)
+
+    async def fail_after_upload(*_args, **_kwargs):
+        raise OperationalError("commit", {}, RuntimeError("connection lost"))
+
+    monkeypatch.setattr(answer_alignment_service.repository, "register_success", fail_after_upload)
+    with pytest.raises(OperationalError):
+        await answer_alignment_service.align_submission(
+            session_factory,
+            recording_minio_storage,
+            submission_id,
+        )
+
+    new_keys = {
+        key
+        for key in recording_minio_storage.uploaded_keys - previous_keys
+        if "/answer-alignment/" in key
+    }
+    assert len(new_keys) == 1
+    await recording_minio_storage.head_object(new_keys.pop())
+    async with session_factory() as session:
+        count = await session.scalar(select(func.count()).select_from(AnswerAlignmentArtifact))
+    assert count == 0
+
+
+@pytest.mark.anyio
 async def test_object_storage_failure_does_not_create_success_index(
     submission_client: httpx.AsyncClient,
     recording_minio_storage,
@@ -414,6 +751,52 @@ async def test_concurrent_normalization_has_one_effective_database_index(
     assert first.id == second.id == rows[0].id
     assert first.canonical_object_key == second.canonical_object_key == rows[0].canonical_object_key
     assert first.canonical_sha256 == second.canonical_sha256 == rows[0].canonical_sha256
+
+
+@pytest.mark.anyio
+async def test_successful_normalization_upgrades_a_previous_failed_marker(
+    submission_client: httpx.AsyncClient,
+    recording_minio_storage,
+    postgres_engine: AsyncEngine,
+) -> None:
+    submission_id, artifact_id = await _seed_parsed_source(
+        submission_client,
+        recording_minio_storage,
+        postgres_engine,
+    )
+    session_factory = async_sessionmaker(postgres_engine, expire_on_commit=False)
+
+    with pytest.raises(CanonicalNormalizationError):
+        await service.normalize_submission(
+            session_factory,
+            recording_minio_storage,
+            submission_id,
+            config=Settings(canonical_max_nodes=1),
+        )
+    async with session_factory() as session:
+        failed = await session.scalar(
+            select(CanonicalArtifact).where(
+                CanonicalArtifact.parsed_artifact_id == artifact_id
+            )
+        )
+    assert failed is not None and failed.status == "failed"
+
+    recovered = await service.normalize_submission(
+        session_factory,
+        recording_minio_storage,
+        submission_id,
+    )
+
+    async with session_factory() as session:
+        canonical = await session.scalar(
+            select(CanonicalArtifact).where(
+                CanonicalArtifact.parsed_artifact_id == artifact_id
+            )
+        )
+    assert canonical is not None
+    assert canonical.id == failed.id == recovered.id
+    assert canonical.status == "available"
+    assert canonical.canonical_object_key == recovered.canonical_object_key
 
 
 @pytest.mark.anyio
@@ -649,6 +1032,7 @@ async def _seed_parsed_source(
     *,
     wrong_middle_checksum: bool = False,
     with_image_asset: bool = False,
+    middle_content: str | None = None,
 ) -> tuple[UUID, UUID]:
     assignment_id = await _create_published_assignment(client)
     source = (FIXTURES / "synthetic-text.pdf").read_bytes()
@@ -683,7 +1067,7 @@ async def _seed_parsed_source(
             "type": "text",
             "index": 0,
             "bbox": [0.1, 0.1, 0.9, 0.25],
-            "content": "Canonical sample text",
+            "content": middle_content or "Canonical sample text",
         }
     )
     middle = {

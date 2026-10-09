@@ -1,6 +1,6 @@
 # 架构与模块边界
 
-慧批云端采用 src 布局的模块化单体。P1-A、P1-B、P2-A 已合并到 `main`；P2-B 的实现与验收记录见 PR #5。自动批改、题目结构化、用户权限仍未实现。
+慧批云端采用 src 布局的模块化单体。P1-A、P1-B、P2-A、P2-B 和 P2-C 已合并到 `main`。当前功能分支增加 P2-D1 答案区域识别和对齐；该分支尚待验收和独立审查。自动批改、教师复核、用户权限仍未实现。
 
 ## 模块职责
 
@@ -10,7 +10,8 @@
 - `modules/submissions`：模拟学生标识校验、文件检查、提交编排、提交查询和原始文件元数据。
 - `modules/parsing`：解析任务状态、状态迁移规则、PostgreSQL repository、解析产物索引、错误分类、重试时间策略、状态查询 Schema 与 ParserExecutor 协议。
 - `modules/canonical_documents`：Canonical Document v1 DTO、MiddleJson 适配转换、有界内容验证、稳定标识、S3/PG 持久化、状态与页面查询。
-- `workers`：独立于 FastAPI 的解析任务轮询进程，管理领取、解析调用、heartbeat、结果提交和受控退出；另含受控规范化 CLI。
+- `modules/answer_alignment`：P2-D1 分支新增模块。按 Canonical 阅读顺序识别题号候选、切分可追溯答案区域、与 Assignment 的真实 Question 对齐，并读写版本化结果索引。该模块不读取 AnswerKey。
+- `workers`：独立于 FastAPI 的解析任务轮询进程，管理领取、解析调用、heartbeat、结果提交和受控退出；另含规范化和答案对齐 CLI。
 - `infrastructure/database`：共享 Engine 工厂与按请求/操作创建的 AsyncSession；Alembic 管理结构，应用启动不会调用 `create_all`。
 - `infrastructure/storage`：boto3 S3 兼容适配器。本地对象存储使用 PGSTY SILO。
 - `infrastructure/parsing`：隔离的 MinerU 4.x 子进程启动、PDF 预检、输出归档校验和不可变解析产物上传。
@@ -30,6 +31,9 @@ erDiagram
     SUBMISSION ||--|| PARSING_TASK : registers
     PARSING_TASK ||--o| PARSED_ARTIFACT : indexes
     PARSED_ARTIFACT ||--o{ CANONICAL_ARTIFACT : normalizes
+    SUBMISSION ||--o{ ANSWER_ALIGNMENT_ARTIFACT : has
+    ASSIGNMENT ||--o{ ANSWER_ALIGNMENT_ARTIFACT : scopes
+    CANONICAL_ARTIFACT ||--o{ ANSWER_ALIGNMENT_ARTIFACT : aligns
 ```
 
 同一 `Submission` 有一份 `SubmissionFile` 元数据与唯一的 `ParsingTask`。提交、对象定位信息和初始 `pending` 任务在一个 PostgreSQL 事务内写入。原文件放在私有 S3 兼容存储，数据库只保存 bucket、服务端生成的 `object_key`、MIME、大小和 SHA-256。
@@ -50,11 +54,25 @@ Canonical `assets` 数组保留完整且通过校验的 P2-B manifest，包括�
 
 规范化有 MiddleJson、manifest 和 Canonical JSON 字节上限、最大节点数、最大嵌套深度。页面 API 的 Canonical JSON 大小默认上限为 32 MiB，并由配置强制不超过 64 MiB。API 在下载前检查 PostgreSQL 索引的字节数，再分块读入有界缓冲并验证完整 SHA-256；随后由 Pydantic 校验整份结构，再只返回请求页。它不再额外复制完整 JSON bytearray，但 Pydantic 仍会创建文档对象，所以内存峰值会高于对象字节数；并发请求会叠加内存。本接口仍只适用于本地或受控环境。对象超限、损坏、JSON 结构异常和对象存储故障都返回安全的 503，不向响应暴露 Key 或内部异常。JSON 序列化采用 UTF-8、紧凑分隔符、键排序和拒绝非有限数值。相同来源 artifact 和 normalizer 版本生成相同的文档/Block/asset ID 与 Canonical 字节；JSON 中没有每次运行变化的时间戳。Block 数只统计 Page 下的顶层 CanonicalBlock，嵌套内容节点不计入 Block 数。
 
-规范化由 `python -m huipi_cloud.workers.normalize_document --submission-id UUID` 单独执行。CLI 只读取 `succeeded` ParsingTask 对应的 ParsedArtifact，分块读取 MiddleJson 和 assets manifest，先验证数据库记录的大小与 SHA-256，再验证结构、素材引用和素材对象长度。失败只写 Canonical 的 `failed` marker，不修改 P2-B ParsingTask 的成功状态。成功时先向 S3 上传每次执行独有且不可变的 `canonical/.../runs/{uuid}/canonical.json`，然后以确定性的 `CanonicalArtifact.id` 作为 PostgreSQL UPSERT 冲突目标；`(parsed_artifact_id, normalizer_version)` 唯一约束继续作为数据不变量。这样并发请求即使先触发主键冲突，也会进入同一幂等分支。并发成功最多产生一条有效索引；并发输家对象可能成为孤儿。若数据库提交错误或 COMMIT 结果不确定，不删除 Canonical 对象，避免误删可能已被引用的对象。当前没有孤儿对象清理器，未来应按保留期与 PostgreSQL 有效索引对账。
+规范化由 `python -m huipi_cloud.workers.normalize_document --submission-id UUID` 单独执行。CLI 只读取 `succeeded` ParsingTask 对应的 ParsedArtifact，分块读取 MiddleJson 和 assets manifest，先验证数据库记录的大小与 SHA-256，再验证结构、素材引用和素材对象长度。失败只写 Canonical 的 `failed` marker，不修改 P2-B ParsingTask 的成功状态。成功时先向 S3 上传每次执行独有且不可变的 `canonical/.../runs/{uuid}/canonical.json`，然后在 PostgreSQL 事务中使用无目标的 `ON CONFLICT DO NOTHING` 插入索引，再按 `(parsed_artifact_id, normalizer_version)` 唯一键做条件更新。该写法可处理确定性主键和来源/版本唯一约束在并发插入中的任一冲突顺序；成功登记只把 `failed` marker 升级为 `available`，失败登记不会降级已成功行。并发成功最多产生一条有效索引；并发输家对象可能成为孤儿。若数据库提交错误或 COMMIT 结果不确定，不删除 Canonical 对象，避免误删可能已被引用的对象。当前没有孤儿对象清理器，未来应按保留期与 PostgreSQL 有效索引对账。
 
 `GET /api/v1/submissions/{submission_id}/canonical-document` 只返回规范化状态、来源和校验摘要。缺少成功结果返回 `not_generated`；确定性失败返回 `failed` 和安全 failure code；成功返回 `available` 和元数据。`GET /api/v1/submissions/{submission_id}/canonical-document/pages/{page_number}` 按 1 起始页码读取受限大小对象，验证整个 Canonical JSON SHA-256 和索引关系，再只返回请求页。未生成或失败返回 409，不存在的提交或页码返回 404；对象存储或 Canonical 完整性故障返回安全的 503。API 不返回 S3 Key，也不返回完整文档摘要以外的大对象。
 
-这两个接口目前没有登录、RBAC、归属验证或租户隔离，只能用于本地或受控环境。Canonical 只把文档结构稳定化；题目识别、答案对齐、自动批改和人工复核尚未实现。
+这两个接口目前没有登录、RBAC、归属验证或租户隔离，只能用于本地或受控环境。P2-C 本身只把文档结构稳定化；题号识别和答案对齐由下方当前功能分支的 P2-D1 提供，自动批改和教师复核工作流仍未实现。
+
+## P2-D1 题号候选与答案区域对齐（当前功能分支）
+
+P2-D1 从已持久化的 Canonical Document 读取学生内容，不重新运行 OCR，也不把教师标准答案作为识别输入。`Submission.assignment_id` 确定作业；服务读取该作业现存的 `Question.id`、`question_number` 和 `question_type`。结果中的每个 `AlignedAnswer.question_id` 都来自这份 Question 列表。
+
+`detector.py` 只在普通文本节点的行首识别 `第 n 题`、`n.`、`n、`、`n)` 和 `(n)`/`（n）` 候选。公式、表格、图片、代码、列表节点和页码/布局文字不会产生题号候选。规则本身不能证明编号一定是大题：当前只有无重复、顺序一致的显式 `第 n 题` 可以自动对齐。数字点号、顿号、右括号以及圆括号标记均保留证据并要求人工复核；圆括号也可能表示子题。未知题号进入带 `question_number_not_in_assignment` 的未分配区域；重复编号和题目顺序冲突保留所有区域并要求复核，不覆盖或静默合并。
+
+答案范围按 Canonical 的页面、Block 和嵌套节点阅读顺序切分，可跨多个 Block 或页面。同一纯文本 Block 出现多个行首题号时，以 Canonical 源文本的半开区间偏移切片，区域不重叠，题号本身保存在独立的证据字段。偏移单位是 Canonical 字符串中的 Unicode 码点，起点包含、终点不包含，与 Python `str` 切片一致。公式、表格和图片节点保留类型、内容指针和逻辑 asset 引用。复杂嵌套结构跨题号边界时，保留来源片段并设置 `complex_block_split_requires_review`，不伪造独立 Block。没有识别到题号时，内容进入 `unassigned_regions`；对应 Question 为 `not_observed`，此状态不代表学生没有作答。
+
+`AnswerAlignmentDocument` 使用 `huipi.answer.alignment` 版本化合同，包含 Canonical SHA-256、Canonical ID、aligner 版本、Question 集合 digest、候选证据、每道作业题的状态、source region 和未分配区域。数据库表 `answer_alignment_artifacts` 保存轻量索引，唯一约束为 `(canonical_artifact_id, aligner_version, assignment_questions_digest)`。结果 ID 由版本化输入确定；每次执行写入 UUID run Key，避免并发覆盖。Repository 用 PostgreSQL `ON CONFLICT DO NOTHING` 覆盖所有唯一冲突后读取已提交的唯一索引。确定性提交输家可删除自身未引用对象；数据库提交结果不确定时保留对象，避免删除数据库可能已经引用的对象。跨 S3/PG 仍没有原子事务，进程退出可能留下孤立对象。
+
+对齐由 `python -m huipi_cloud.workers.align_answers --submission-id UUID` 在 FastAPI 请求之外运行。两个 GET API 只查询已写入的结果，不隐式运行识别。摘要不包含 S3 Key；单题接口检查当前 Canonical 和 Question digest，并对对象大小、SHA-256 和版本合同做校验。`ANSWER_ALIGNMENT_MAX_DOCUMENT_BYTES` 默认最多 32 MiB、硬上限 64 MiB；`ANSWER_ALIGNMENT_MAX_QUESTION_RESPONSE_BYTES` 默认最多 2 MiB、硬上限 8 MiB。读取单题仍会将整份有界 JSON 解码成对象，内存峰值高于对象字节数，并随并发请求增加；当前没有全局并发读取配额。当前接口没有认证、RBAC、归属检查或租户隔离，只适用于本地或受控环境。
+
+离线人工标注集当前为 4 个合成 Canonical 案例，脚本分别输出候选检测与 Question 映射的 Precision/Recall、自动对齐覆盖率、复核候选比例和精确答案边界命中率。这些数字只描述该小型合成集，不代表真实学生手写作业质量。当前没有手写评测集、人工修订流程、概率校准、OCR、自动评分或 P2-D2。
 
 ## 任务状态与执行边界
 

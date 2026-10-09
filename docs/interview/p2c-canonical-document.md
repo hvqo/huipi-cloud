@@ -78,7 +78,7 @@
 
 **30 秒口语版**：文档、Block 和 asset 使用 UUIDv5，不把执行时间写入 Canonical JSON。序列化固定排序和分隔符。重复或并发运行可能上传多个不可变对象，但 PostgreSQL 用来源 artifact 和 normalizer 版本的唯一约束决定唯一有效索引，所以我称数据库登记幂等，不称跨系统 Exactly Once。
 
-**原理与边界**：成功与失败登记都以确定性的 `CanonicalArtifact.id` 作为 PostgreSQL UPSERT 冲突目标；`(parsed_artifact_id, normalizer_version)` 唯一约束仍负责保护数据不变量。若两个同输入请求并发插入，PostgreSQL 即使先遇到主键冲突也会进入幂等处理；已有成功结果不被失败运行降级。数据库提交失败或并发 loser 可能留下 S3 孤儿对象，当前没有对账清理任务。相同 MiddleJson bytes、manifest 和 source metadata 在同一版本下产生同一 canonical bytes。迟到失败用例以事件同步顺序：先让成功索引提交，再释放失败登记，并确认状态仍为 `available`。
+**原理与边界**：成功与失败登记先使用无目标的 PostgreSQL `ON CONFLICT DO NOTHING` 插入，再按 `(parsed_artifact_id, normalizer_version)` 唯一键做条件更新。无目标冲突处理同时覆盖主键与来源/版本唯一约束，避免并发插入只指定主键冲突目标时仍被另一唯一约束拒绝。成功登记只把 `failed` marker 升级为 `available`；失败登记不会降级已成功行。数据库提交失败或并发输家可能留下 S3 孤儿对象，当前没有对账清理任务。相同 MiddleJson bytes、manifest 和 source metadata 在同一版本下产生同一 canonical bytes。并发成功测试同步两个对象上传后再竞争数据库索引；迟到失败用例用事件控制顺序，并确认状态仍为 `available`。
 
 **代码与验证**：`normalizer.py::normalize_middle_json`、`repository.py::register_success`、`register_failure`；验证 `tests/unit/test_canonical_normalizer.py::test_mult_page_order_and_ids_are_deterministic_across_pages`、以同步屏障并发上传的 `tests/integration/test_canonical_documents.py::test_concurrent_normalization_has_one_effective_database_index` 和 `test_late_failure_cannot_replace_a_concurrent_success`。
 

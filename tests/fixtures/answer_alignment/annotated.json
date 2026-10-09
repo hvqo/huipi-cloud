@@ -1,0 +1,79 @@
+{
+  "dataset_name": "huipi-p2d1-synthetic-v1",
+  "annotation_note": "人工标注的合成 Canonical 文本样本；不代表真实学生作业分布。",
+  "cases": [
+    {
+      "case_id": "two-labels-one-block",
+      "pages": [
+        [
+          {"source_type": "text", "text": "第1题 甲答案\n第2题 乙答案"}
+        ]
+      ],
+      "question_numbers": [1, 2],
+      "labels": [
+        {
+          "question_number": 1,
+          "page_index": 0,
+          "block_index": 0,
+          "marker_start": 0,
+          "marker_end": 3,
+          "answer_regions": [{"page_index": 0, "block_index": 0, "start": 3, "end": 8}]
+        },
+        {
+          "question_number": 2,
+          "page_index": 0,
+          "block_index": 0,
+          "marker_start": 8,
+          "marker_end": 11,
+          "answer_regions": [{"page_index": 0, "block_index": 0, "start": 11, "end": 15}]
+        }
+      ],
+      "expected_answered_question_numbers": [1, 2]
+    },
+    {
+      "case_id": "answer-crosses-page-boundary",
+      "pages": [
+        [{"source_type": "text", "text": "第1题 第一步"}],
+        [{"source_type": "text", "text": "继续推导"}]
+      ],
+      "question_numbers": [1],
+      "labels": [
+        {
+          "question_number": 1,
+          "page_index": 0,
+          "block_index": 0,
+          "marker_start": 0,
+          "marker_end": 3,
+          "answer_regions": [
+            {"page_index": 0, "block_index": 0, "start": 3, "end": 7},
+            {"page_index": 1, "block_index": 0, "start": 0, "end": 4}
+          ]
+        }
+      ],
+      "expected_answered_question_numbers": [1]
+    },
+    {
+      "case_id": "parenthesized-subquestion-ambiguous",
+      "pages": [[{"source_type": "text", "text": "（1）局部步骤"}]],
+      "question_numbers": [1],
+      "labels": [
+        {
+          "question_number": 1,
+          "page_index": 0,
+          "block_index": 0,
+          "marker_start": 0,
+          "marker_end": 3,
+          "answer_regions": [{"page_index": 0, "block_index": 0, "start": 3, "end": 7}]
+        }
+      ],
+      "expected_answered_question_numbers": [1]
+    },
+    {
+      "case_id": "answer-without-question-number",
+      "pages": [[{"source_type": "text", "text": "只写了解题过程，没有题号"}]],
+      "question_numbers": [1],
+      "labels": [],
+      "expected_answered_question_numbers": []
+    }
+  ]
+}

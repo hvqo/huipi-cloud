@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -136,21 +136,21 @@ async def register_success(
     }
     update_values = {key: value for key, value in values.items() if key not in {"id"}}
     update_values["updated_at"] = func.clock_timestamp()
-    statement = (
-        insert(CanonicalArtifact)
-        .values(**values)
-        .on_conflict_do_update(
-            # The deterministic document id is the primary key. A concurrent
-            # insert can surface that conflict before PostgreSQL reports the
-            # equivalent source/version unique constraint, so use the same
-            # arbiter for both success and failure registrations.
-            index_elements=[CanonicalArtifact.id],
-            set_=update_values,
-            where=CanonicalArtifact.status == "failed",
-        )
-    )
+    statement = insert(CanonicalArtifact).values(**values).on_conflict_do_nothing()
     async with session_factory() as session, session.begin():
         await session.execute(statement)
+        # Targetless DO NOTHING handles both the deterministic primary key and
+        # the source/version unique constraint during concurrent registration.
+        # A failed marker may be upgraded, but a successful index is immutable.
+        await session.execute(
+            update(CanonicalArtifact)
+            .where(
+                CanonicalArtifact.parsed_artifact_id == parsed.id,
+                CanonicalArtifact.normalizer_version == NORMALIZER_VERSION,
+                CanonicalArtifact.status == "failed",
+            )
+            .values(**update_values)
+        )
         record = await session.scalar(
             select(CanonicalArtifact).where(
                 CanonicalArtifact.parsed_artifact_id == parsed.id,
@@ -192,14 +192,16 @@ async def register_failure(
     }
     update_values = {key: value for key, value in values.items() if key not in {"id"}}
     update_values["updated_at"] = func.clock_timestamp()
-    statement = (
-        insert(CanonicalArtifact)
-        .values(**values)
-        .on_conflict_do_update(
-            index_elements=[CanonicalArtifact.id],
-            set_=update_values,
-            where=CanonicalArtifact.status != "available",
-        )
-    )
+    statement = insert(CanonicalArtifact).values(**values).on_conflict_do_nothing()
     async with session_factory() as session, session.begin():
         await session.execute(statement)
+        # Apply a failure only when no success was committed for this source.
+        await session.execute(
+            update(CanonicalArtifact)
+            .where(
+                CanonicalArtifact.parsed_artifact_id == parsed.id,
+                CanonicalArtifact.normalizer_version == NORMALIZER_VERSION,
+                CanonicalArtifact.status != "available",
+            )
+            .values(**update_values)
+        )
