@@ -18,6 +18,7 @@ from huipi_cloud.modules.assignments.errors import (
     AssignmentNotFoundError,
     AssignmentValidationError,
 )
+from huipi_cloud.modules.parsing.errors import ParsingResultNotReadyError
 from huipi_cloud.modules.submissions.errors import (
     InvalidUploadError,
     SubmissionNotFoundError,
@@ -148,6 +149,17 @@ async def database_error_handler(_: Request, error: DBAPIError) -> JSONResponse:
 
     logger.error("Database request failed (%s)", type(error).__name__)
     return JSONResponse(status_code=response_status, content={"detail": detail})
+
+
+@app.exception_handler(ParsingResultNotReadyError)
+async def parsing_result_not_ready_handler(
+    _: Request,
+    error: ParsingResultNotReadyError,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content={"detail": f"解析尚未完成，目前状态：{error.status}"},
+    )
 
 
 def _constraint_name(error: IntegrityError) -> str | None:

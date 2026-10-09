@@ -6,19 +6,21 @@
 
 - 已合并 P1-A：教师作业、题目、人工标准答案、评分细则和发布校验。
 - 已合并 P1-B：学生模拟身份提交、PDF/JPG/PNG 原始文件存储、提交查询、文件读取和初始 `pending` 任务记录。
-- P2-A 功能在当前功能分支实现并等待 PR 审查：PostgreSQL 解析任务状态机、租约领取和续租、过期恢复、有限重试、独立 Worker 框架及安全状态查询。
-- 当前没有真实 OCR、MinerU、解析结果存储、Celery、RabbitMQ、Redis、自动批改、Copilot 或身份认证。Worker 默认拒绝启动；必须配置真实解析器工厂。测试专用假执行器只用于验证任务框架，不能代表真实解析。
+- 已合并 P2-A：PostgreSQL 解析任务状态机、租约领取和续租、过期恢复、有限重试、独立 Worker 框架及安全状态查询。
+- P2-B：MinerU 4.x Basic/ONNX 本地解析子进程、PDF/图片输入、私有 S3 解析产物、PostgreSQL 产物索引、解析结果查询 API。PR #5 记录最终验收和真实 MinerU 样本证据。
+- P2-B 不包含题目切分、批改、MongoDB、Celery、RabbitMQ、Redis、Copilot 或身份认证。真实解析要求单独安装 MinerU 和模型；未配置执行器或模型时 Worker 拒绝启动。
 
-`student_ref` 和当前提交/任务查询 API 没有认证或权限控制，只能在本地或其他受控环境使用，不能直接暴露到公网。
+`student_ref` 和当前提交、任务、解析结果 API 没有认证或权限控制，只能用于本地或其他受控环境，不能直接暴露到公网。
 
 ## 技术栈
 
 - Python 3.12、uv、FastAPI、Pydantic Settings
 - PostgreSQL 16、SQLAlchemy 2.x Async、asyncpg、Alembic
 - S3 兼容的私有对象存储（本地使用 PGSTY SILO）、boto3
+- MinerU 4.x Basic/ONNX 独立本地运行时；PDF 结构预检使用 pypdf
 - pytest、HTTPX、Ruff
 
-MongoDB、Celery、RabbitMQ、Redis、LangChain、LangGraph、vLLM、OCR 和 MinerU 尚未接入。
+MongoDB、Celery、RabbitMQ、Redis、LangChain、LangGraph、vLLM 和自动批改 Agent 尚未接入。
 
 ## 本地初始化和启动
 
@@ -33,19 +35,37 @@ uv run uvicorn huipi_cloud.main:app --reload
 
 API 文档：http://127.0.0.1:8000/docs。存活检查：`GET /api/v1/health`。应用不会通过 `create_all` 隐式建表，数据库版本由 Alembic 管理。
 
-P2-A 新增 `GET /api/v1/submissions/{submission_id}/parsing-task`。该接口返回安全的任务状态与错误摘要，不返回租约 token。
+P2-A 提供 `GET /api/v1/submissions/{submission_id}/parsing-task`。P2-B 另提供解析产物摘要和 Markdown 流式读取接口。
 
-独立 Worker 命令为：
+## 配置和启动真实解析
+
+MinerU 运行时和模型目录应与应用虚拟环境隔离。按照 [MinerU 官方安装说明](https://opendatalab.github.io/MinerU/quick_start/)安装 MinerU 4.x，并下载和验证 Basic/ONNX 本地模型。然后在 `.env` 设置：
+
+~~~bash
+uv venv /绝对路径/mineru-venv --python 3.12
+uv pip install --python /绝对路径/mineru-venv/bin/python "mineru==4.0.10"
+MINERU_HOME=/绝对路径/mineru-home MINERU_MODEL_SOURCE=modelscope /绝对路径/mineru-venv/bin/mineru-kit models download --tier basic --small-backend onnx --source modelscope
+MINERU_HOME=/绝对路径/mineru-home MINERU_MODEL_SOURCE=local /绝对路径/mineru-venv/bin/mineru-kit models verify --tier basic --small-backend onnx
+~~~
+
+~~~dotenv
+PARSING_EXECUTOR=huipi_cloud.infrastructure.parsing.mineru:build_mineru_executor
+MINERU_EXECUTABLE=/绝对路径/mineru-venv/bin/mineru-kit
+MINERU_HOME=/绝对路径/mineru-home
+MINERU_TIER=basic
+~~~
+
+执行器强制读取本地模型，不向 MinerU 子进程传递数据库、MinIO 密钥或远端模型源。Worker 启动时检查 MinerU 4.x CLI 和本地模型：
 
 ~~~bash
 uv run python -m huipi_cloud.workers.parsing_worker
 ~~~
 
-当前没有真实解析器，因此未设置 `PARSING_EXECUTOR` 时 Worker 会以配置错误退出，不会领取或伪造成功任务。后续解析器应提供 `module.path:factory` 工厂，并实现 `ParserExecutor.execute()`。
+每次解析运行的产物保存到私有对象存储的不可变 run 前缀。API 仅返回不含私有对象 Key 的产物摘要；Markdown 接口由后端流式读取对象。进程崩溃可能留下没有 PostgreSQL 索引的孤立解析对象，目前没有定期对账清理任务。
 
 ## 验证
 
-完整集成测试要求本地 PostgreSQL `_test` 数据库和本地 S3 兼容服务。它们缺失时测试会失败，不会静默跳过关键集成覆盖。
+完整集成测试要求本地 PostgreSQL `_test` 数据库和本地 S3 兼容服务。它们缺失时测试会失败，不会静默跳过 PostgreSQL/S3 覆盖。真实 MinerU 测试默认跳过；设置独立 CLI 和模型目录后可以执行三个合成样例：
 
 ~~~bash
 docker compose up -d postgres minio
@@ -56,7 +76,13 @@ uv run pytest -q
 uv run alembic check
 ~~~
 
-P2-A 任务采用 PostgreSQL 持久队列和 At Least Once 执行。过期 lease 可恢复，旧 lease token 不能提交新状态。租约不能阻止已失联 Worker 继续产生外部副作用；P2-B 必须为解析产物设计幂等写入。当前没有真实解析执行与性能数据。
+~~~bash
+MINERU_E2E=1 MINERU_EXECUTABLE=/绝对路径/mineru-venv/bin/mineru-kit MINERU_HOME=/绝对路径/mineru-home uv run pytest -q -m mineru_e2e
+~~~
+
+P2-A 任务采用 PostgreSQL 持久队列和 At Least Once 执行。P2-B 的解析产物以每次执行独立的不可变 run Key 保存；PostgreSQL 产物索引与 `succeeded` 状态在同一租约校验事务中提交。这不构成 MinIO 和 PostgreSQL 的跨系统原子事务，也没有实现运行去重或孤立对象清理。解析执行设置输入字节、PDF 页数、归档展开字节、文本大小和归档成员数上限；这些设置不是 MinerU 子进程的硬内存上限。
+
+本机最终验收使用 MinerU 4.0.10 Basic/ONNX CPU 环境，三个合成样本（文字 PDF、扫描 PDF、PNG）通过真实 Worker + PostgreSQL + S3 E2E。该结果验证数据流和样本内容断言，不代表真实学生作业准确率；GitHub CI 不下载模型。
 
 ## 项目结构
 
@@ -66,12 +92,13 @@ src/huipi_cloud/
   core/                           配置和日志
   infrastructure/database/       Async Engine、Session、ORM Base
   infrastructure/storage/        S3 兼容对象存储
+  infrastructure/parsing/        MinerU 子进程和解析结果合同校验
   modules/assignments/            作业领域
   modules/submissions/            提交、原始文件和任务登记
-  modules/parsing/                解析任务状态、执行器协议和查询
+  modules/parsing/                解析状态、产物索引、执行器协议和查询
   workers/                        独立解析 Worker 进程
 migrations/                        Alembic 迁移
 tests/unit/                        单元测试
-tests/integration/                 PostgreSQL 和 S3 集成测试
+tests/integration/                 PostgreSQL、S3 和可选 MinerU 集成测试
 docs/                              架构、路线和面试复盘
 ~~~

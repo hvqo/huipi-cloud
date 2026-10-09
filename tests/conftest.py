@@ -114,13 +114,22 @@ class RecordingS3Storage:
         self.after_upload_barrier: asyncio.Barrier | None = None
 
     async def upload_fileobj(self, fileobj, object_key: str, content_type: str) -> None:
-        await self.storage.upload_fileobj(fileobj, object_key, content_type)
         self.uploaded_keys.add(object_key)
+        await self.storage.upload_fileobj(fileobj, object_key, content_type)
+        if self.after_upload_barrier is not None:
+            await asyncio.wait_for(self.after_upload_barrier.wait(), timeout=10)
+
+    async def upload_path(self, path, object_key: str, content_type: str) -> None:
+        self.uploaded_keys.add(object_key)
+        await self.storage.upload_path(path, object_key, content_type)
         if self.after_upload_barrier is not None:
             await asyncio.wait_for(self.after_upload_barrier.wait(), timeout=10)
 
     async def download(self, object_key: str):
         return await self.storage.download(object_key)
+
+    async def head_object(self, object_key: str):
+        return await self.storage.head_object(object_key)
 
     async def delete(self, object_key: str) -> None:
         await self.storage.delete(object_key)
