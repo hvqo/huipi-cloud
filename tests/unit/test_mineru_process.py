@@ -6,8 +6,13 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from uuid import uuid4
 
-from huipi_cloud.infrastructure.parsing.mineru import _terminate_process_group
+import pytest
+
+from huipi_cloud.infrastructure.parsing.mineru import MinerUParserExecutor, _terminate_process_group
+from huipi_cloud.modules.parsing.errors import RetryableParsingError
+from huipi_cloud.modules.parsing.executor import ParsingInput
 
 _GUARD_MODULE = "huipi_cloud.infrastructure.parsing.child_guard"
 
@@ -105,3 +110,33 @@ def test_sigterm_then_sigkill_stops_uncooperative_parser_children(tmp_path: Path
     group_id, child_id = asyncio.run(run())
     assert not _is_running(group_id)
     assert not _is_running(child_id)
+
+
+@pytest.mark.anyio
+async def test_nonzero_mineru_child_exit_is_not_a_success(tmp_path: Path) -> None:
+    fake_cli = tmp_path / "mineru-kit"
+    fake_cli.write_text("#!/bin/sh\nexit 23\n")
+    fake_cli.chmod(0o700)
+    executor = object.__new__(MinerUParserExecutor)
+    executor.executable = str(fake_cli)
+    executor.mineru_home = tmp_path
+    executor.tier = "basic"
+    executor.execution_timeout_seconds = 3
+    executor.cancellation_grace_seconds = 0.1
+    executor.max_output_bytes = 1024 * 1024
+    source = tmp_path / "source.png"
+    archive = tmp_path / "result.zip"
+    source.write_bytes(b"synthetic image")
+    task = ParsingInput(
+        task_id=uuid4(),
+        submission_id=uuid4(),
+        bucket="test-bucket",
+        object_key="tests/source.png",
+        content_type="image/png",
+        size_bytes=source.stat().st_size,
+        sha256="a" * 64,
+        attempt_count=1,
+    )
+
+    with pytest.raises(RetryableParsingError, match="parser_unavailable"):
+        await executor._run_mineru(task, source, archive, tmp_path)

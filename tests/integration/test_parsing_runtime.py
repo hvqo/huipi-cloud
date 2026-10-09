@@ -4,6 +4,8 @@ import asyncio
 import os
 import subprocess
 import sys
+import tempfile
+import threading
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -23,6 +25,7 @@ from sqlalchemy.ext.asyncio import (
 from huipi_cloud.core.config import Settings, settings
 from huipi_cloud.infrastructure.database.base import utc_now
 from huipi_cloud.infrastructure.database.session import get_db_session
+from huipi_cloud.infrastructure.storage.s3 import S3ObjectStorage
 from huipi_cloud.main import app
 from huipi_cloud.modules.assignments.models import Assignment
 from huipi_cloud.modules.parsing import repository
@@ -135,6 +138,50 @@ class TimeoutAwareTestParser:
             await asyncio.Future()
         except asyncio.CancelledError:
             self.cancelled.set()
+
+
+class _BlockedS3UploadClient:
+    """Hold one blocking upload after boto has opened the worker-owned file."""
+
+    def __init__(self) -> None:
+        self.started = threading.Event()
+        self.release = threading.Event()
+        self.finished = threading.Event()
+        self.fileobj = None
+        self.payload: bytes | None = None
+
+    def upload_fileobj(self, fileobj, bucket, key, *, ExtraArgs, Config) -> None:
+        del bucket, key, ExtraArgs, Config
+        self.fileobj = fileobj
+        self.started.set()
+        if not self.release.wait(timeout=5):
+            raise TimeoutError("test upload was not released")
+        self.payload = fileobj.read()
+        self.finished.set()
+
+
+class _UploadThenReturnParser:
+    def __init__(self, storage: S3ObjectStorage) -> None:
+        self.storage = storage
+        self.started = asyncio.Event()
+        self.cancelled = asyncio.Event()
+        self.path: Path | None = None
+
+    async def execute(self, task: ParsingInput) -> ParsedArtifactResult:
+        with tempfile.TemporaryDirectory(prefix="huipi-parser-upload-test-") as directory:
+            self.path = Path(directory) / "artifact.zip"
+            self.path.write_bytes(b"old lease output")
+            self.started.set()
+            try:
+                await self.storage.upload_path(
+                    self.path,
+                    "parsed/test-only/old-lease/artifact.zip",
+                    "application/zip",
+                )
+            except asyncio.CancelledError:
+                self.cancelled.set()
+                raise
+        return _test_artifact(task)
 
 
 def _test_artifact(task: ParsingInput) -> ParsedArtifactResult:
@@ -745,6 +792,72 @@ async def test_lost_lease_cancels_parser_without_completing_task(
     assert parser.cancelled.is_set()
     assert snapshot["status"] == "running"
     assert snapshot["lease_token"] == claimed.lease_token
+
+
+@pytest.mark.anyio
+async def test_lost_lease_during_s3_upload_keeps_file_alive_and_fences_result(
+    parsing_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    """A cancelled parser cannot close a file still read by boto or index success."""
+    task_id, submission_id = await _create_task(parsing_factory)
+    claimed = await repository.claim_next_task(parsing_factory, lease_seconds=30)
+    assert claimed is not None
+
+    from boto3.s3.transfer import TransferConfig
+
+    upload_client = _BlockedS3UploadClient()
+    storage = object.__new__(S3ObjectStorage)
+    storage.bucket = claimed.task.bucket
+    storage._client = upload_client
+    storage._transfer_config = TransferConfig(max_concurrency=1, use_threads=False)
+    storage._path_upload_lock = threading.Lock()
+    storage._path_upload_thread = None
+    parser = _UploadThenReturnParser(storage)
+    worker = ParsingWorker(
+        parsing_factory,
+        parser,
+        _runtime_settings(parsing_heartbeat_seconds=1, parsing_cancel_grace_seconds=0.5),
+    )
+    execution = asyncio.create_task(worker._execute_claim(claimed))
+    try:
+        await asyncio.wait_for(parser.started.wait(), timeout=3)
+        assert await asyncio.wait_for(asyncio.to_thread(upload_client.started.wait, 3), timeout=4)
+        assert upload_client.fileobj is not None and not upload_client.fileobj.closed
+
+        async with parsing_factory() as session, session.begin():
+            await session.execute(
+                text(
+                    "UPDATE parsing_tasks SET lease_expires_at = "
+                    "clock_timestamp() - INTERVAL '1 second' WHERE id = :task_id"
+                ),
+                {"task_id": task_id},
+            )
+
+        await asyncio.wait_for(execution, timeout=3)
+        assert parser.cancelled.is_set()
+        assert parser.path is not None and not parser.path.exists()
+        assert not upload_client.fileobj.closed
+        snapshot = await _task_snapshot(parsing_factory, task_id)
+        assert snapshot["status"] == "running"
+        assert snapshot["lease_token"] == claimed.lease_token
+        async with parsing_factory() as session:
+            artifact_id = await session.scalar(
+                select(ParsedArtifact.id).where(ParsedArtifact.submission_id == submission_id)
+            )
+        assert artifact_id is None
+
+        next_claim = await repository.claim_next_task(parsing_factory, lease_seconds=30)
+        assert next_claim is not None
+        assert next_claim.lease_token != claimed.lease_token
+    finally:
+        upload_client.release.set()
+        if not execution.done():
+            execution.cancel()
+        await asyncio.gather(execution, return_exceptions=True)
+        await asyncio.wait_for(asyncio.to_thread(upload_client.finished.wait, 3), timeout=4)
+
+    assert upload_client.payload == b"old lease output"
+    assert upload_client.fileobj is not None and upload_client.fileobj.closed
 
 
 @pytest.mark.anyio

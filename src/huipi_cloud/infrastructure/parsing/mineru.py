@@ -2,8 +2,10 @@
 
 import asyncio
 import hashlib
+import html
 import json
 import logging
+import math
 import os
 import re
 import shutil
@@ -15,7 +17,8 @@ import zipfile
 import zlib
 from collections.abc import Awaitable
 from dataclasses import dataclass
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
+from urllib.parse import unquote, urlsplit
 from uuid import uuid4
 
 from huipi_cloud.core.config import Settings, settings
@@ -55,6 +58,41 @@ _IMAGE_SUFFIX_TYPES = {
     ".tiff": "image/tiff",
     ".webp": "image/webp",
 }
+_MIDDLE_PAGE_BLOCK_TYPES = {
+    "image",
+    "table",
+    "chart",
+    "code",
+    "text",
+    "equation",
+    "list",
+    "index",
+    "ref_text",
+    "header",
+    "footer",
+    "page_number",
+    "aside_text",
+    "page_footnote",
+    "doc_title",
+    "paragraph_title",
+}
+_MIDDLE_NESTED_BLOCK_TYPES = _MIDDLE_PAGE_BLOCK_TYPES | {
+    "image_body",
+    "image_caption",
+    "image_footnote",
+    "table_body",
+    "table_caption",
+    "table_footnote",
+    "chart_body",
+    "chart_caption",
+    "chart_footnote",
+    "code_body",
+    "algorithm_body",
+    "code_caption",
+    "code_footnote",
+}
+_INLINE_SPAN_TYPES = {"text", "equation_inline", "code_inline", "hyperlink"}
+_VISUAL_HTML_BLOCK_TYPES = {"image_body", "table_body", "chart_body"}
 
 
 @dataclass(frozen=True)
@@ -121,6 +159,8 @@ class MinerUParserExecutor:
 
     async def execute(self, task: ParsingInput) -> ParsedArtifactResult:
         """Download, verify, parse, validate, and persist an immutable run bundle."""
+        if task.bucket != self.storage.bucket:
+            raise PermanentParsingError("storage_bucket_mismatch")
         extension = _SUPPORTED_FORMATS.get(task.content_type)
         if extension is None:
             raise PermanentParsingError("unsupported_file_type")
@@ -418,8 +458,7 @@ class MinerUParserExecutor:
     async def _upload_path(self, path: Path, object_key: str, content_type: str) -> tuple[str, int]:
         digest, size_bytes = await asyncio.to_thread(_sha256_file, path)
         try:
-            with path.open("rb") as fileobj:
-                await self.storage.upload_fileobj(fileobj, object_key, content_type)
+            await self.storage.upload_path(path, object_key, content_type)
         except StorageUnavailableError as error:
             raise RetryableParsingError("object_store_unavailable") from error
         return digest, size_bytes
@@ -650,8 +689,12 @@ def _validate_archive(
             by_name = {}
             for info in members:
                 pure_path = PurePosixPath(info.filename)
+                windows_path = PureWindowsPath(info.filename)
                 if (
                     pure_path.is_absolute()
+                    or windows_path.is_absolute()
+                    or windows_path.drive
+                    or windows_path.root
                     or ".." in pure_path.parts
                     or "\\" in info.filename
                     or not pure_path.parts
@@ -681,51 +724,23 @@ def _validate_archive(
             except (json.JSONDecodeError, UnicodeDecodeError) as error:
                 raise PermanentParsingError("invalid_result") from error
 
-            schema_name = middle.get("schema") if isinstance(middle, dict) else None
-            schema_version = middle.get("schema_version") if isinstance(middle, dict) else None
-            metadata = middle.get("metadata", {}) if isinstance(middle, dict) else {}
-            producer = metadata.get("producer", {}) if isinstance(metadata, dict) else {}
-            extensions = middle.get("extensions", {}) if isinstance(middle, dict) else {}
-            mineru = extensions.get("mineru", {}) if isinstance(extensions, dict) else {}
-            version = producer.get("version") if isinstance(producer, dict) else None
-            actual_tier = mineru.get("tier") if isinstance(mineru, dict) else None
-            pages = middle.get("pages") if isinstance(middle, dict) else None
-            structured_pages = (
-                structured.get("pages") if isinstance(structured, dict) else None
+            schema_name, schema_version, version, pages = _validate_middle_documents(
+                middle,
+                structured,
+                expected_tier,
             )
-            if (
-                schema_name != "docvortex.middle"
-                or schema_version != "2.0"
-                or producer.get("name") != "mineru"
-                or not isinstance(version, str)
-                or not re.fullmatch(r"4\.\d+\.\d+", version)
-                or actual_tier != expected_tier
-                or not isinstance(pages, list)
-                or not pages
-                or not isinstance(structured_pages, list)
-                or len(pages) != len(structured_pages)
-            ):
-                raise PermanentParsingError("invalid_result")
-
-            page_indexes = []
-            for page in pages:
-                if not isinstance(page, dict) or not isinstance(page.get("page_idx"), int):
-                    raise PermanentParsingError("invalid_result")
-                if not isinstance(page.get("blocks"), list):
-                    raise PermanentParsingError("invalid_result")
-                page_indexes.append(page["page_idx"])
-            if sorted(page_indexes) != list(range(len(page_indexes))):
-                raise PermanentParsingError("invalid_result")
 
             asset_members: list[_Member] = []
             image_paths: set[str] = set()
             for member_name, info in by_name.items():
-                if not member_name.startswith("images/") or info.is_dir():
+                if info.is_dir():
                     continue
                 suffix = PurePosixPath(member_name).suffix.lower()
                 content_type = _IMAGE_SUFFIX_TYPES.get(suffix)
                 if content_type is None:
-                    raise PermanentParsingError("invalid_result")
+                    if member_name.startswith("images/"):
+                        raise PermanentParsingError("invalid_result")
+                    continue
                 target = output_root / f"asset-{len(asset_members):06d}{suffix}"
                 digest, size_bytes = _extract_member(archive, info, target, max_output_bytes)
                 asset_members.append(_Member(member_name, target, size_bytes, digest, content_type))
@@ -795,39 +810,263 @@ def _image_references_exist(
         text = markdown.decode("utf-8", errors="strict")
     except UnicodeDecodeError as error:
         raise PermanentParsingError("invalid_result") from error
-    references = set(re.findall(r"!?\[[^\]]*\]\(([^)]+)\)", text))
-    references.update(re.findall(r"<img\b[^>]*\bsrc=[\"']([^\"']+)", text, flags=re.I))
+    references = _markdown_image_references(text)
+    references.update(_html_image_references(text))
     for root in (middle_json, structured_content):
         references.update(_json_image_references(root))
     for reference in references:
-        normalized = reference.strip().strip("\"'").split("#", 1)[0]
-        if not normalized or normalized.startswith(("http://", "https://", "data:")):
+        resolved = _resolve_image_reference(reference, image_paths)
+        if resolved is None:
+            return False
+        if resolved == "external":
             continue
-        path = PurePosixPath(normalized)
-        if "images" in path.parts:
-            try:
-                position = path.parts.index("images")
-            except ValueError:
-                continue
-            asset_name = "/".join(path.parts[position:])
-            if asset_name not in image_paths:
-                return False
     return True
 
 
 def _json_image_references(value: object) -> set[str]:
+    """Collect only image fields and MinerU visual-block HTML, not arbitrary text."""
     found: set[str] = set()
     if isinstance(value, dict):
-        for item in value.values():
-            found.update(_json_image_references(item))
+        block_type = value.get("type")
+        content = value.get("content")
+        if (
+            isinstance(block_type, str)
+            and block_type in _VISUAL_HTML_BLOCK_TYPES
+            and isinstance(content, str)
+        ):
+            found.update(_html_image_references(content))
+        for key, item in value.items():
+            if key in {"image_path", "img_path", "image_source", "image_url"}:
+                if isinstance(item, str):
+                    found.add(item)
+                elif item is not None:
+                    found.add("")
+            else:
+                found.update(_json_image_references(item))
     elif isinstance(value, list):
         for item in value:
             found.update(_json_image_references(item))
-    elif isinstance(value, str):
-        if value.startswith("images/"):
-            found.add(value)
-        found.update(re.findall(r"(?:src=[\"'])(images/[^\"']+)", value, flags=re.I))
     return found
+
+
+def _markdown_image_references(text: str) -> set[str]:
+    """Read inline Markdown images, excluding ordinary Markdown hyperlinks."""
+    references = set()
+    pattern = re.compile(r"!\[[^\]]*\]\(\s*(?:<([^>]+)>|([^\s)]+))")
+    for match in pattern.finditer(text):
+        references.add(match.group(1) or match.group(2) or "")
+    return references
+
+
+def _html_image_references(text: str) -> set[str]:
+    """Extract only `img src` attributes using MinerU's emitted HTML convention."""
+    pattern = re.compile(
+        r"<img\b(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\s+src\s*=\s*"
+        r"(?:([\"'])(.*?)\1|([^\s>]+))",
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    references = set()
+    for match in pattern.finditer(text):
+        references.add(html.unescape(match.group(2) or match.group(3) or "").strip())
+    return references
+
+
+def _resolve_image_reference(reference: str, image_paths: set[str]) -> str | None:
+    """Return a matched sidecar name, `external`, or None for an unsafe/missing ref."""
+    reference = html.unescape(reference).strip().strip("\"'")
+    if not reference or any(ord(char) < 0x20 or ord(char) == 0x7F for char in reference):
+        return None
+    try:
+        parsed = urlsplit(reference)
+    except ValueError:
+        return None
+    scheme = parsed.scheme.casefold()
+    if scheme in {"http", "https"}:
+        try:
+            _ = parsed.port
+        except ValueError:
+            return None
+        return "external" if parsed.netloc and parsed.hostname and not parsed.username else None
+    if scheme == "data":
+        return "external" if reference.startswith("data:image/") else None
+    if scheme or parsed.netloc:
+        return None
+    try:
+        decoded_path = unquote(parsed.path, errors="strict")
+    except UnicodeDecodeError:
+        return None
+    if (
+        not decoded_path
+        or decoded_path.startswith("/")
+        or "\\" in decoded_path
+        or any(ord(char) < 0x20 or ord(char) == 0x7F for char in decoded_path)
+    ):
+        return None
+    path = PurePosixPath(decoded_path)
+    windows_path = PureWindowsPath(decoded_path)
+    if (
+        ".." in path.parts
+        or windows_path.is_absolute()
+        or windows_path.drive
+        or windows_path.root
+    ):
+        return None
+    normalized = "/".join(part for part in path.parts if part not in {"", "."})
+    if not normalized:
+        return None
+    candidates = {normalized}
+    if not normalized.startswith("images/"):
+        candidates.add(f"images/{normalized}")
+    return next((candidate for candidate in candidates if candidate in image_paths), None)
+
+
+def _validate_middle_documents(
+    middle: object,
+    structured: object,
+    expected_tier: str,
+) -> tuple[str, str, str, list[dict[str, object]]]:
+    """Validate the MinerU 4.x MiddleJson and its page-preserving rendered form."""
+    if not isinstance(middle, dict) or not isinstance(structured, dict):
+        raise PermanentParsingError("invalid_result")
+    metadata = middle.get("metadata")
+    extensions = middle.get("extensions")
+    producer = metadata.get("producer") if isinstance(metadata, dict) else None
+    mineru = extensions.get("mineru") if isinstance(extensions, dict) else None
+    pages = middle.get("pages")
+    structured_pages = structured.get("pages")
+    version = producer.get("version") if isinstance(producer, dict) else None
+    schema_name = middle.get("schema")
+    schema_version = middle.get("schema_version")
+
+    if (
+        schema_name != "docvortex.middle"
+        or schema_version != "2.0"
+        or not isinstance(metadata, dict)
+        or metadata.get("file_suffix") != "pdf"
+        or not isinstance(metadata.get("document"), (dict, type(None)))
+        or not isinstance(producer, dict)
+        or producer.get("name") != "mineru"
+        or not isinstance(version, str)
+        or not re.fullmatch(r"4\.\d+\.\d+", version)
+        or not isinstance(extensions, dict)
+        or not isinstance(mineru, dict)
+        or mineru.get("tier") != expected_tier
+        or not isinstance(mineru.get("parse_mode"), str)
+        or mineru.get("parse_mode") not in {"txt", "ocr"}
+        or not isinstance(middle.get("is_full_document"), bool)
+        or not isinstance(pages, list)
+        or not pages
+        or not isinstance(structured_pages, list)
+        or len(pages) != len(structured_pages)
+    ):
+        raise PermanentParsingError("invalid_result")
+
+    structured_metadata = structured.get("metadata")
+    structured_extensions = structured.get("extensions")
+    if (
+        structured_metadata != metadata
+        or structured_extensions != extensions
+        or structured.get("is_full_document") != middle["is_full_document"]
+    ):
+        raise PermanentParsingError("invalid_result")
+
+    page_indexes: list[int] = []
+    validated_pages: list[dict[str, object]] = []
+    for page, structured_page in zip(pages, structured_pages, strict=True):
+        if (
+            not isinstance(page, dict)
+            or not isinstance(structured_page, dict)
+            or not isinstance(page.get("page_idx"), int)
+            or isinstance(page.get("page_idx"), bool)
+            or not isinstance(structured_page.get("page_idx"), int)
+            or isinstance(structured_page.get("page_idx"), bool)
+            or page.get("page_idx") != structured_page.get("page_idx")
+            or not isinstance(page.get("blocks"), list)
+            or not isinstance(structured_page.get("blocks"), list)
+            or len(page["blocks"]) != len(structured_page["blocks"])
+        ):
+            raise PermanentParsingError("invalid_result")
+        page_indexes.append(page["page_idx"])
+        middle_types: list[str] = []
+        structured_types: list[str] = []
+        previous_block_index = -1
+        for block in page["blocks"]:
+            if (
+                not isinstance(block, dict)
+                or not isinstance(block.get("type"), str)
+                or block["type"] not in _MIDDLE_PAGE_BLOCK_TYPES
+                or not isinstance(block.get("index"), int)
+                or isinstance(block.get("index"), bool)
+                or block["index"] <= previous_block_index
+            ):
+                raise PermanentParsingError("invalid_result")
+            _validate_block_tree(
+                block,
+                _MIDDLE_NESTED_BLOCK_TYPES | _INLINE_SPAN_TYPES,
+                top_level=True,
+            )
+            previous_block_index = block["index"]
+            middle_types.append(block["type"])
+        for block in structured_page["blocks"]:
+            if (
+                not isinstance(block, dict)
+                or not isinstance(block.get("type"), str)
+                or block["type"] not in _MIDDLE_PAGE_BLOCK_TYPES
+            ):
+                raise PermanentParsingError("invalid_result")
+            _validate_block_tree(block, _MIDDLE_NESTED_BLOCK_TYPES | _INLINE_SPAN_TYPES)
+            structured_types.append(block["type"])
+        if middle_types != structured_types:
+            raise PermanentParsingError("invalid_result")
+        validated_pages.append(page)
+
+    if page_indexes != list(range(len(page_indexes))):
+        raise PermanentParsingError("invalid_result")
+    return schema_name, schema_version, version, validated_pages
+
+
+def _validate_block_tree(
+    value: object,
+    allowed_types: set[str],
+    *,
+    top_level: bool = False,
+) -> None:
+    """Check basic nested block/span structure against MinerU's 4.x wire types."""
+    if not isinstance(value, dict):
+        raise PermanentParsingError("invalid_result")
+    block_type = value.get("type")
+    if not isinstance(block_type, str) or block_type not in allowed_types:
+        raise PermanentParsingError("invalid_result")
+    block_index = value.get("index")
+    if top_level and (
+        not isinstance(block_index, int) or isinstance(block_index, bool) or block_index < 0
+    ):
+        raise PermanentParsingError("invalid_result")
+    if "index" in value and block_index is not None and (
+        not isinstance(block_index, int) or isinstance(block_index, bool) or block_index < 0
+    ):
+        raise PermanentParsingError("invalid_result")
+    bbox = value.get("bbox")
+    if bbox is not None:
+        if (
+            not isinstance(bbox, list)
+            or len(bbox) != 4
+            or any(isinstance(item, bool) or not isinstance(item, (int, float)) for item in bbox)
+            or not all(0 <= item <= 1 and math.isfinite(item) for item in bbox)
+            or bbox[2] <= bbox[0]
+            or bbox[3] <= bbox[1]
+        ):
+            raise PermanentParsingError("invalid_result")
+    for key in ("image_path", "img_path", "image_url", "image_base64", "image_source"):
+        if key in value and value[key] is not None and not isinstance(value[key], str):
+            raise PermanentParsingError("invalid_result")
+    content = value.get("content")
+    if isinstance(content, str):
+        return
+    if not isinstance(content, list):
+        raise PermanentParsingError("invalid_result")
+    for child in content:
+        _validate_block_tree(child, allowed_types)
 
 
 def _sha256_file(path: Path) -> tuple[str, int]:

@@ -52,6 +52,9 @@ class PermanentParsingError(ParsingExecutionError):
             "invalid_input": FailureSummary("invalid_input", "文件内容无效", False),
             "invalid_result": FailureSummary("invalid_result", "解析结果不完整或格式无效", False),
             "missing_source": FailureSummary("missing_source", "原始文件不存在", False),
+            "storage_bucket_mismatch": FailureSummary(
+                "storage_bucket_mismatch", "原始文件存储位置与当前解析配置不一致", False
+            ),
             "page_limit_exceeded": FailureSummary(
                 "page_limit_exceeded", "PDF页数超过处理上限", False
             ),

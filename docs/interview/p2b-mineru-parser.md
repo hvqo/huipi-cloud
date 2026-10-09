@@ -1,6 +1,6 @@
 # P2-B：真实 MinerU 解析与产物持久化面试复盘
 
-本文记录 `feat/p2b-mineru-parser` 当前实现和本机验收。它不表示题目切分、批改、MongoDB、Celery 或教师 Copilot 已实现。测试输入均为合成 PDF/PNG。提交和解析结果 API 没有认证，只适合本地或受控环境。
+本文记录 PR #5 中 P2-B 的实现与本机验收。它不表示题目切分、批改、MongoDB、Celery 或教师 Copilot 已实现。测试输入均为合成 PDF/PNG。提交和解析结果 API 没有认证，只适合本地或受控环境。
 
 ## 实际验证环境
 
@@ -11,9 +11,9 @@
 | 解析环境依赖 | ONNX Runtime 1.30.0、ModelScope 1.40.1；在独立 `/home/amber/.cache/huipi-cloud/mineru-4.0.10` venv，不进入应用 `uv.lock` |
 | 模型来源 | ModelScope 下载后保存在独立 `MINERU_HOME`；解析子进程强制 `MINERU_MODEL_SOURCE=local`，不请求远端解析服务 |
 | 样本 | 一页文字型 PDF、一页扫描型 PDF、PNG；内容为合成二次方程样例 |
-| 完整链路 | 三种样本经 API、PostgreSQL、S3 兼容测试 bucket、独立 Worker 和实际 MinerU CLI；`uv run pytest -q -m mineru_e2e` 为 3 passed，耗时 31.52 秒（包含三个用例的服务和数据库测试开销） |
+| 完整链路 | 三种样本经 API、PostgreSQL、S3 兼容测试 bucket、独立 Worker 和实际 MinerU CLI；`uv run pytest -q -m mineru_e2e` 为 3 passed，30.99 秒。`/usr/bin/time -v` 外层耗时 31.84 秒，Maximum resident set size 为 1,668,324 KiB；这是整次测试运行树的观测，不是每个样本独立的 RSS |
 | CLI 解析观测 | 单独 CLI smoke：文字 PDF 10.03 秒 / 峰值 RSS 1,621,564 KiB；扫描 PDF 8.49 秒 / 1,657,612 KiB；PNG 8.86 秒 / 1,664,252 KiB。属于这三份合成样本的单次观察，不是性能基准或准确率结论 |
-| GPU | 执行器设置 `CUDA_VISIBLE_DEVICES=""` 和 CPU ONNX 后端，MinerU 进程不使用 GPU。没有采集可归因到 MinerU 的 VRAM 峰值；桌面全局显存值不能作为解析进程数据 |
+| GPU | 执行器设置 `CUDA_VISIBLE_DEVICES=""` 和 CPU ONNX 后端，MinerU 进程不使用 GPU。没有采集 GPU VRAM 峰值；桌面全局显存值不能作为解析进程数据 |
 
 独立模型缓存和临时 PDF 不在 Git 仓库内。真实解析没有接入第三方云 API，也没有把 MinerU 深度学习依赖安装到应用虚拟环境。
 
@@ -79,7 +79,7 @@
 
 **30 秒口语回答**：数学题的公式、表格和几何图可能就是题干的一部分。若预处理时静默丢弃，后面的题目理解和批改会得到不完整输入。当前实现保留 MinerU 的 MiddleJson、StructuredContent、Markdown 和图片资产，并检查本地图片引用是否都能在 ZIP 中找到；它不对这些内容做答案推理。
 
-**2 分钟深入回答**：不同内容类型需要不同表示。公式可以是 LaTeX 或文本 block，表格要保留单元格顺序，图片和图表可能需要坐标及原始像素。P2-B 将完整 MinerU ZIP 作为归档，同时拆出 Markdown、两类 JSON 和 SHA 命名的图片对象，并保存一份映射原始路径到对象 Key 的 manifest。结果校验要求 Markdown/JSON 中的 `images/` 引用都在归档里存在，否则不允许报告解析成功。高质量公式与表格评测、图像视觉问答、题目对齐都不属于当前范围。
+**2 分钟深入回答**：不同内容类型需要不同表示。公式可以是 LaTeX 或文本 block，表格要保留单元格顺序，图片和图表可能需要坐标及原始像素。P2-B 将完整 MinerU ZIP 作为归档，同时拆出 Markdown、两类 JSON 和 SHA 命名的图片对象，并保存一份映射原始路径到对象 Key 的 manifest。结果校验检查 Markdown 图片语法、视觉 block HTML 和 JSON 图片路径；相对路径必须匹配归档中的受支持素材，路径穿越会拒绝。普通 Markdown 超链接不会当图片，HTTP(S) 和 `data:image` 不会触发网络请求。高质量公式与表格评测、图像视觉问答、题目对齐都不属于当前范围。
 
 **连续追问**：
 
@@ -232,3 +232,83 @@
 - 题目关联由谁负责？后续题目结构化阶段，不属于 P2-B。
 
 **代码与验证**：当前来源见 `src/huipi_cloud/modules/parsing/models.py::ParsedArtifact` 和 `MinerUParserExecutor._validate_archive()`；`tests/unit/test_mineru_contract.py::test_valid_middle_json_keeps_original_zero_based_page_indexes`。没有 Document/Page/Block 代码可演示。
+
+## 13. 为什么要在读取原始文件前校验 bucket？
+
+**ASD-STE100 简明解释**：任务记录保存原始 bucket。Worker 只使用同名配置读取对象。这样配置切换不会让程序从新 bucket 读同名 Key。
+
+**30 秒口语回答**：P2-B 当前采用单桶 S3 适配器。`ParsingInput` 同时带有数据库记录的 bucket 和 object key。MinerU 执行器下载前比较任务 bucket 与当前 `S3ObjectStorage.bucket`。不一致时用固定的永久 `storage_bucket_mismatch` 停止，不尝试另一个位置，也不把配置错误报告成文件损坏。产物索引保存的 bucket 则取自实际执行器所用的同一个存储适配器。
+
+**2 分钟深入回答**：bucket 是对象地址的一部分，不只是客户端参数。假设提交数据写入 bucket A，后来环境改成 bucket B；若 Worker 只用 object key 下载，它可能读到 B 内部偶然同名的其他对象，或报告为缺少/损坏文件。任务输入已经把提交文件的 bucket 和 key 一起保存，所以执行器可以在任何 S3 调用前核验配置。不匹配是确定配置/定位问题，采用永久错误避免重复重试也避免把源文件误判为坏文件。当前没有多桶客户端映射；如果迁移对象，运维需完成对象复制和元数据更新后再运行任务。
+
+**连续追问**：
+
+- 是按 bucket 动态创建客户端吗？不是，当前单桶运行。
+- bucket 不一致会读取新桶吗？不会。
+- 这个错误是否会无限重试？不会，PermanentParsingError 的 retryable 为 false。
+
+**代码与验证**：`src/huipi_cloud/infrastructure/parsing/mineru.py::MinerUParserExecutor.execute()`、`_persist_result()`；`src/huipi_cloud/modules/parsing/errors.py::PermanentParsingError`；`tests/unit/test_mineru_contract.py::test_bucket_change_is_rejected_before_reading_old_submission`。
+
+## 14. MiddleJson 怎样防止畸形 JSON 绕过验证？
+
+**ASD-STE100 简明解释**：先检查每个字段类型，再读取它。固定格式错误会停止任务，不会重试无效结果。
+
+**30 秒口语回答**：不能假设 `metadata.producer` 一定是对象。P2-B 先验证 MiddleJson 的 schema、metadata、producer、extensions、page 和 block 类型，再读取具体字段。StructuredContent 必须和 MiddleJson 保持相同页索引、页数、block 数量与 block 类型。字段合同不符时返回固定 `invalid_result` 永久错误，不包含原始 JSON 或异常堆栈。
+
+**2 分钟深入回答**：早先的访问代码虽然对 metadata 做了分支处理，后面仍无条件调用 `producer.get()`，所以 producer 是字符串或 null 时可能泄漏 AttributeError；部分 block 列表只验证了外层是 list，内部内容不完整也可能通过。现在校验顺序是类型在前、字段读取在后：producer 必须是 MinerU 对象并有 4.x 版本，当前输入产生的 file_suffix 为 PDF，Basic 扩展有 `txt` 或 `ocr` parse mode；page index 使用连续零基值；顶层 block 和嵌套 span 有允许类型、index、bbox、content 基本校验。StructuredContent 中 metadata/extensions/full-document 标识和页面来源索引也必须一致。我们没有用 `except Exception` 掩盖程序错误；确定合同错误明确抛出 `PermanentParsingError("invalid_result")`。
+
+**连续追问**：
+
+- 是否在应用安装 MinerU 后调用它的完整 Pydantic schema？没有，MinerU/DocVortex 是独立解析环境；应用实现受测试覆盖的必要合同子集。
+- 页面不一致会重试吗？不会，这是输出合同错误。
+- 这能证明识别内容正确吗？不能，只证明结构符合当前合同。
+
+**代码与验证**：`src/huipi_cloud/infrastructure/parsing/mineru.py::_validate_middle_documents()`、`_validate_block_tree()`；`tests/unit/test_mineru_contract.py` 中畸形 producer、metadata、page、block 和 StructuredContent 页索引用例。真实格式核对使用独立 MinerU 4.0.10 环境中的 DocVortex `MiddleJson.from_dict()`。
+
+## 15. 租约失效时取消 S3 上传会发生什么？
+
+**ASD-STE100 简明解释**：取消 asyncio 等待不会中止 boto3 线程。数据库会拒绝旧租约的结果。上传完成后可能留下无索引对象。
+
+**30 秒口语回答**：boto3 I/O 在专用 daemon 线程中运行，不能被 `Task.cancel()` 强制终止。线程自己打开和关闭文件，所以 parser 的临时目录清理不会提前关闭已打开的句柄。每个存储适配器限制一个未完成的路径上传。Worker 发现租约失效后会取消 Parser，并且不登记 `ParsedArtifact` 或 `succeeded`。正在执行的 S3 上传可能继续并完成，形成孤儿；每次执行使用不同的 run UUID Key，当前没有自动对账清理。
+
+**2 分钟深入回答**：Python 协程和同步线程有不同生命周期。任务取消能向协程注入 `CancelledError`，但不能中止已进入 boto3 的同步调用。若文件由协程上下文打开，取消会退出 `with` 并关闭句柄，而线程可能还在读它。`S3ObjectStorage.upload_path()` 在专用 daemon 线程内部打开/关闭路径，并使用关闭 boto 内部并行线程的 TransferConfig；每个适配器最多运行一个路径上传线程。async 等待立即响应取消，不无限 await 阻塞线程。连接/读取超时和有限重试限制单次请求，但 multipart 总时间没有严格 deadline。Worker 进程退出不会等待这个 daemon，但进程退出也不保证远端 multipart 已完成或清理。旧执行拿不到有效 lease 时不能在 PostgreSQL 同一事务写 artifact 和 succeeded；对象 Key 不共享，所以不会覆盖新运行。线程后来完成仍可能留下对象，需要以后用索引和保留时间清理孤儿。
+
+**连续追问**：
+
+- `asyncio.cancel()` 能杀死线程吗？不能。
+- 文件路径被删除后线程还可读吗？Linux 上已打开的文件描述符保持 inode 可读；若线程还没打开就会失败，不会提交数据库成功。
+- 当前是不是 Exactly Once？不是；这是 At Least Once，仍可能产生孤儿。
+
+**代码与验证**：`src/huipi_cloud/infrastructure/storage/s3.py::S3ObjectStorage.upload_path()`；`src/huipi_cloud/infrastructure/parsing/mineru.py::_upload_path()`；`src/huipi_cloud/workers/parsing.py::_execute_claim()`；`tests/unit/test_storage_cancel.py` 和 `tests/integration/test_parsing_runtime.py::test_lost_lease_during_s3_upload_keeps_file_alive_and_fences_result`。
+
+## 16. 现在的解析限制能否防止 OOM？
+
+**ASD-STE100 简明解释**：输入和输出有字节、页数和执行时间上限。当前没有对子进程设置硬内存上限。
+
+**30 秒口语回答**：应用限制输入字节、PDF 页数、ZIP 展开大小、文本大小和归档成员数。这些限制可以控制部分负载，但不能推出 MinerU 峰值内存的固定上限。一个 Worker 进程一次执行一个任务；多个进程会叠加 CPU 和 RAM 用量。正式部署应按实测峰值设置 systemd 或 cgroup 内存限制并限制 Worker 数量。子进程异常退出不会被标记为 succeeded。
+
+**2 分钟深入回答**：一页高分辨率扫描图可能比多页文本 PDF 使用更多内存，ONNX runtime、OCR 和图像解码开销也不只由上传文件大小决定。当前 parser 用 Linux 独立进程隔离运行，关闭 GPU，设置 ONNX/OMP 线程数；配置了 20MiB 输入、200 页默认上限、1GiB 输出目录、64MiB 单文本文件和 ZIP 成员上限。但没有 `RLIMIT_AS`、cgroup 自动创建或 Kubernetes 调度，因此不能说有硬内存保护。MinerU 子进程 OOM 后退出为非零值，不返回有效结果，Worker 记录 retryable 失败并受 `PARSING_MAX_ATTEMPTS` 限制。上线前可以用 `/usr/bin/time -v` 对真实运行命令采集 Max RSS，或读取 cgroup `memory.peak`，再设置主机限制和每机 Worker 数。当前三个合成样本的数据不是容量基准。
+
+**连续追问**：
+
+- 当前允许 GPU 吗？不允许，子进程使用 CPU ONNX 并隐藏 CUDA。
+- 一个 Worker 可以并行解析多个任务吗？一个 ParsingWorker 进程一次只执行一个；多进程数量由部署方控制。
+- 超时意味着内存受限吗？不意味着。
+
+**代码与验证**：`src/huipi_cloud/core/config.py` 的 `mineru_max_*` 和执行时限；`src/huipi_cloud/infrastructure/parsing/mineru.py::_child_environment()`、`_run_mineru()`；`tests/unit/test_mineru_process.py::test_nonzero_mineru_child_exit_is_not_a_success`；Worker 故障分类见 `tests/integration/test_parsing_runtime.py`。
+
+## 17. 合成 MinerU E2E 代表什么？
+
+**ASD-STE100 简明解释**：合成样本证明服务链路能运行。它们不能证明真实学生作业的准确率。
+
+**30 秒口语回答**：E2E 使用可控的一页文字 PDF、一页扫描 PDF 和 PNG。测试经过 PostgreSQL、私有 S3、API、Worker 和真实 MinerU 4.0.10 Basic/ONNX 进程，检查期望文字、任务状态、产物索引和对象 SHA。样本本身是合成文件，不含学生数据，也没有形成真实作业准确率、覆盖率或性能基准。真实教学样本要经授权和脱敏后另做评测。
+
+**2 分钟深入回答**：E2E 的作用是跨进程检查接线和持久化：数据库中提交等待任务、Worker 领取并续租、MinerU 子进程生成 ZIP、合同校验、产物上传 S3、PostgreSQL 同事务创建解析产物索引并把任务置为成功，再从 API 读 Markdown 并按 SHA 校验对象。文本 PDF、扫描 PDF、PNG 分别验证了字符层、OCR 和图片输入路径。合成文档只有明确的简单内容，不能代表手写、多栏、模糊、数学公式、表格和手机透视变形。它也不验证业务分题。代码审查对既有 ZIP 重新跑合同验证，并用 unit tests 另外验证缺失 sidecar 和路径穿越。正式识别质量要准备合法样本、标签和分科指标，再独立报告准确率、召回、人工复核率和延迟。
+
+**连续追问**：
+
+- 本轮有没有真实学生作业？没有。
+- 三个样本全通过意味着识别准确率多少？不能换算准确率。
+- 默认 GitHub CI 会下载模型吗？不会；真实解析仅在配置 MinerU 和模型的本地 E2E 中跑。
+
+**代码与验证**：`tests/integration/test_mineru_e2e.py::test_real_mineru_worker_persists_and_serves_parsed_outputs`；样本位于 `tests/fixtures/mineru/`；ZIP 合同用例位于 `tests/unit/test_mineru_contract.py`。
