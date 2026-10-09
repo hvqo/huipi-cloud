@@ -140,10 +140,11 @@ async def register_success(
         insert(CanonicalArtifact)
         .values(**values)
         .on_conflict_do_update(
-            index_elements=[
-                CanonicalArtifact.parsed_artifact_id,
-                CanonicalArtifact.normalizer_version,
-            ],
+            # The deterministic document id is the primary key. A concurrent
+            # insert can surface that conflict before PostgreSQL reports the
+            # equivalent source/version unique constraint, so use the same
+            # arbiter for both success and failure registrations.
+            index_elements=[CanonicalArtifact.id],
             set_=update_values,
             where=CanonicalArtifact.status == "failed",
         )
@@ -195,10 +196,7 @@ async def register_failure(
         insert(CanonicalArtifact)
         .values(**values)
         .on_conflict_do_update(
-            index_elements=[
-                CanonicalArtifact.parsed_artifact_id,
-                CanonicalArtifact.normalizer_version,
-            ],
+            index_elements=[CanonicalArtifact.id],
             set_=update_values,
             where=CanonicalArtifact.status != "available",
         )
