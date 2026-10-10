@@ -19,10 +19,12 @@ from huipi_cloud.infrastructure.storage.s3 import (
     StorageObjectNotFoundError,
     StorageUnavailableError,
 )
+from huipi_cloud.infrastructure.visual_evidence.provider import VisionProviderResponse
 from huipi_cloud.main import app
 from huipi_cloud.modules.answer_alignment import service as answer_alignment_service
 from huipi_cloud.modules.answer_alignment.models import AnswerAlignmentArtifact
 from huipi_cloud.modules.answer_alignment.protocol import AnswerAlignmentDocument
+from huipi_cloud.modules.answer_review.models import AnswerReviewDecision
 from huipi_cloud.modules.assignments.models import Question
 from huipi_cloud.modules.canonical_documents import service
 from huipi_cloud.modules.canonical_documents.errors import (
@@ -32,6 +34,16 @@ from huipi_cloud.modules.canonical_documents.errors import (
 from huipi_cloud.modules.canonical_documents.models import CanonicalArtifact
 from huipi_cloud.modules.parsing.models import ParsedArtifact
 from huipi_cloud.modules.submissions.models import ParsingTask, Submission
+from huipi_cloud.modules.visual_evidence import repository as visual_evidence_repository
+from huipi_cloud.modules.visual_evidence.errors import (
+    VisualEvidenceConfigurationError,
+    VisualEvidenceConflictError,
+    VisualEvidenceNotFoundError,
+    VisualEvidenceStorageError,
+)
+from huipi_cloud.modules.visual_evidence.models import VisualEvidenceArtifact
+from huipi_cloud.modules.visual_evidence.protocol import VisualEvidenceModelReply
+from huipi_cloud.modules.visual_evidence.service import analyze_question_visual_evidence
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "mineru"
 
@@ -1277,3 +1289,280 @@ def _canonical_table_schema(connection) -> dict[str, set[str]]:
             item["name"] for item in inspector.get_check_constraints("canonical_artifacts")
         },
     }
+
+
+class _VisualFakeProvider:
+    model_id = "fake-vision/integration-test"
+
+    def __init__(self, engine: AsyncEngine, *, barrier: asyncio.Barrier | None = None) -> None:
+        self.engine = engine
+        self.barrier = barrier
+        self.calls = 0
+
+    async def analyze(self, *, question_number, question_stem, source_regions, pages):
+        self.calls += 1
+        assert self.engine.sync_engine.pool.checkedout() == 0
+        assert [page.page_index for page in pages] == [0]
+        if self.barrier is not None:
+            await asyncio.wait_for(self.barrier.wait(), timeout=10)
+        reply = VisualEvidenceModelReply.model_validate(
+            {
+                "outcome": "candidate_response_present",
+                "visual_regions": [
+                    {
+                        "page_index": 0,
+                        "visual_bbox": [0.1, 0.1, 0.9, 0.25],
+                        "evidence_type": "handwritten_text",
+                        "reason_codes": ["handwriting_visible"],
+                    }
+                ],
+                "reason_codes": ["visual_evidence_candidate_only"],
+            }
+        )
+        return VisionProviderResponse(reply, elapsed_ms=17, usage=None)
+
+
+async def _prepare_visual_submission(client, storage, engine):
+    submission_id, _ = await _seed_parsed_source(
+        client,
+        storage,
+        engine,
+        middle_content="第1题 学生提交的合成答案",
+    )
+    session_factory = async_sessionmaker(engine, expire_on_commit=False)
+    await service.normalize_submission(session_factory, storage, submission_id)
+    alignment = await answer_alignment_service.align_submission(
+        session_factory, storage, submission_id
+    )
+    async with session_factory() as session:
+        question = await session.scalar(
+            select(Question).where(Question.assignment_id == alignment.assignment_id)
+        )
+    assert question is not None
+    return submission_id, question.id, session_factory
+
+
+@pytest.mark.anyio
+async def test_visual_proposal_uses_verified_sources_and_never_writes_human_review(
+    submission_client: httpx.AsyncClient,
+    recording_minio_storage,
+    postgres_engine: AsyncEngine,
+) -> None:
+    submission_id, question_id, session_factory = await _prepare_visual_submission(
+        submission_client, recording_minio_storage, postgres_engine
+    )
+    provider = _VisualFakeProvider(postgres_engine)
+    request_id = uuid4()
+    config = Settings(visual_evidence_enabled=True)
+
+    first = await analyze_question_visual_evidence(
+        session_factory,
+        recording_minio_storage,
+        provider,
+        submission_id=submission_id,
+        question_id=question_id,
+        request_id=request_id,
+        config=config,
+    )
+    replay = await analyze_question_visual_evidence(
+        session_factory,
+        recording_minio_storage,
+        provider,
+        submission_id=submission_id,
+        question_id=question_id,
+        request_id=request_id,
+        config=config,
+    )
+    assert first.id == replay.id
+    assert first.outcome == "candidate_response_present"
+    assert provider.calls == 1
+
+    async with session_factory() as session:
+        proposal_count = await session.scalar(
+            select(func.count()).select_from(VisualEvidenceArtifact)
+        )
+        review_count = await session.scalar(select(func.count()).select_from(AnswerReviewDecision))
+    assert proposal_count == 1
+    assert review_count == 0
+
+    downloaded = await recording_minio_storage.download(first.proposal_object_key)
+    payload = b"".join([chunk async for chunk in downloaded.chunks()])
+    proposal = json.loads(payload)
+    assert proposal["proposal_id"] == str(first.id)
+    assert proposal["canonical_sha256"] == first.canonical_sha256
+    assert proposal["alignment_sha256"] == first.alignment_sha256
+    assert proposal["visual_regions"][0]["attribution_status"] == "candidate"
+    assert "candidate_content_pointer" in proposal["visual_regions"][0]
+    assert hashlib.sha256(payload).hexdigest() == first.proposal_sha256
+
+    async with session_factory() as session, session.begin():
+        question = await session.get(Question, question_id)
+        assert question is not None
+        question.stem = "更新后的题目文字"
+    with pytest.raises(VisualEvidenceConflictError):
+        await analyze_question_visual_evidence(
+            session_factory,
+            recording_minio_storage,
+            provider,
+            submission_id=submission_id,
+            question_id=question_id,
+            request_id=request_id,
+            config=config,
+        )
+    assert provider.calls == 1
+
+
+@pytest.mark.anyio
+async def test_concurrent_visual_calls_with_same_request_id_register_one_proposal(
+    submission_client: httpx.AsyncClient,
+    recording_minio_storage,
+    postgres_engine: AsyncEngine,
+) -> None:
+    submission_id, question_id, session_factory = await _prepare_visual_submission(
+        submission_client, recording_minio_storage, postgres_engine
+    )
+    provider = _VisualFakeProvider(postgres_engine, barrier=asyncio.Barrier(2))
+    request_id = uuid4()
+    config = Settings(visual_evidence_enabled=True)
+
+    first, second = await asyncio.gather(
+        analyze_question_visual_evidence(
+            session_factory,
+            recording_minio_storage,
+            provider,
+            submission_id=submission_id,
+            question_id=question_id,
+            request_id=request_id,
+            config=config,
+        ),
+        analyze_question_visual_evidence(
+            session_factory,
+            recording_minio_storage,
+            provider,
+            submission_id=submission_id,
+            question_id=question_id,
+            request_id=request_id,
+            config=config,
+        ),
+    )
+    assert first.id == second.id
+    assert provider.calls == 2
+    async with session_factory() as session:
+        count = await session.scalar(select(func.count()).select_from(VisualEvidenceArtifact))
+    assert count == 1
+    assert len(
+        [key for key in recording_minio_storage.uploaded_keys if "/visual-evidence/" in key]
+    ) == 2
+
+
+@pytest.mark.anyio
+async def test_failed_postgres_registration_removes_only_unindexed_proposal_object(
+    submission_client: httpx.AsyncClient,
+    recording_minio_storage,
+    postgres_engine: AsyncEngine,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    submission_id, question_id, session_factory = await _prepare_visual_submission(
+        submission_client, recording_minio_storage, postgres_engine
+    )
+    provider = _VisualFakeProvider(postgres_engine)
+    config = Settings(visual_evidence_enabled=True)
+
+    async def failed_registration(*args, **kwargs):
+        raise RuntimeError("simulated database insert failure")
+
+    monkeypatch.setattr(visual_evidence_repository, "register_success", failed_registration)
+    with pytest.raises(VisualEvidenceStorageError, match="proposal_index_registration_failed"):
+        await analyze_question_visual_evidence(
+            session_factory,
+            recording_minio_storage,
+            provider,
+            submission_id=submission_id,
+            question_id=question_id,
+            request_id=uuid4(),
+            config=config,
+        )
+
+    keys = [key for key in recording_minio_storage.uploaded_keys if "/visual-evidence/" in key]
+    assert len(keys) == 1
+    with pytest.raises(StorageObjectNotFoundError):
+        await recording_minio_storage.head_object(keys[0])
+    async with session_factory() as session:
+        count = await session.scalar(select(func.count()).select_from(VisualEvidenceArtifact))
+    assert count == 0
+
+
+@pytest.mark.anyio
+async def test_model_failure_to_upload_proposal_leaves_no_database_success(
+    submission_client: httpx.AsyncClient,
+    recording_minio_storage,
+    postgres_engine: AsyncEngine,
+) -> None:
+    submission_id, question_id, session_factory = await _prepare_visual_submission(
+        submission_client, recording_minio_storage, postgres_engine
+    )
+    provider = _VisualFakeProvider(postgres_engine)
+
+    class FailedProposalUpload:
+        bucket = recording_minio_storage.bucket
+        object_key_prefix = recording_minio_storage.object_key_prefix
+
+        async def download(self, key):
+            return await recording_minio_storage.download(key)
+
+        async def upload_fileobj(self, fileobj, key, content_type):
+            raise StorageUnavailableError("simulated MinIO upload failure")
+
+        async def head_object(self, key):
+            return await recording_minio_storage.head_object(key)
+
+        async def delete(self, key):
+            await recording_minio_storage.delete(key)
+
+    with pytest.raises(VisualEvidenceStorageError, match="proposal_upload_failed"):
+        await analyze_question_visual_evidence(
+            session_factory,
+            FailedProposalUpload(),
+            provider,
+            submission_id=submission_id,
+            question_id=question_id,
+            request_id=uuid4(),
+            config=Settings(visual_evidence_enabled=True),
+        )
+    async with session_factory() as session:
+        count = await session.scalar(select(func.count()).select_from(VisualEvidenceArtifact))
+    assert count == 0
+    assert provider.calls == 1
+
+
+@pytest.mark.anyio
+async def test_unknown_question_and_disabled_model_fail_before_provider_call(
+    submission_client: httpx.AsyncClient,
+    recording_minio_storage,
+    postgres_engine: AsyncEngine,
+) -> None:
+    submission_id, question_id, session_factory = await _prepare_visual_submission(
+        submission_client, recording_minio_storage, postgres_engine
+    )
+    provider = _VisualFakeProvider(postgres_engine)
+    with pytest.raises(VisualEvidenceNotFoundError):
+        await analyze_question_visual_evidence(
+            session_factory,
+            recording_minio_storage,
+            provider,
+            submission_id=submission_id,
+            question_id=uuid4(),
+            request_id=uuid4(),
+            config=Settings(visual_evidence_enabled=True),
+        )
+    with pytest.raises(VisualEvidenceConfigurationError):
+        await analyze_question_visual_evidence(
+            session_factory,
+            recording_minio_storage,
+            provider,
+            submission_id=submission_id,
+            question_id=question_id,
+            request_id=uuid4(),
+            config=Settings(visual_evidence_enabled=False),
+        )
+    assert provider.calls == 0

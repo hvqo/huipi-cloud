@@ -1,6 +1,6 @@
 # 项目路线图
 
-本页区分已经合并的功能、PR 跟踪的改动和未来计划。P1-A 至 P2-D1 已合并到 `main`；P2-D1 由 PR #9 交付。P2-D2A 的当前实现位于独立功能分支，尚未合并。
+本页区分已经合并的功能、当前 PR 分支改动和未来计划。P1-A 至 P2-D2A 已合并到 `main`；P2-D2B 位于独立功能分支，尚未合并。
 
 ## P0：工程骨架与基础设施
 
@@ -61,15 +61,26 @@
 - 业务边界：`aligned` 表示来源区域与 Question 的映射证据足够，不表示学生回答存在、区域内没有其他题目内容、OCR 完整或结果可以批改。当前没有作答存在性检测、`answer_presence` 或 `ready_for_grading` 字段；`not_observed` 也不能解释为学生未作答。
 - 已知边界：没有真实手写作业评测、人工纠错、概率校准、身份认证或租户权限；保守复核会降低自动覆盖率。跨 S3/PG 不是原子提交，提交结果不确定时保留对象，仍可能需要孤立对象对账清理。
 
-### P2-D2A：学生作答证据、人工复核与标注基线（本功能分支）
+### P2-D2A：学生作答证据、人工复核与标注基线（已合并）
 
-- 已实现于当前分支：`answer_review_decisions` PostgreSQL 追加记录，绑定 `Submission`、真实 `Question`、当前 `AnswerAlignmentArtifact`、Canonical SHA 和 Question 集合摘要；每题以 `revision` 与 `supersedes_decision_id` 留下人工修订历史。
-- 已实现于当前分支：本地 CLI `inspect`、`record`、`history`、`export`。没有新增 HTTP 写入 API；`reviewer_ref` 是自声明值，不是已验证身份。文本范围使用 Canonical 节点内 Unicode 码点半开区间，所有 pointer 必须实际存在。
+- 已合并：`answer_review_decisions` PostgreSQL 追加记录，绑定 `Submission`、真实 `Question`、当前 `AnswerAlignmentArtifact`、Canonical SHA 和 Question 集合摘要；每题以 `revision` 与 `supersedes_decision_id` 留下人工修订历史。
+- 已合并：本地 CLI `inspect`、`record`、`history`、`export`。没有新增 HTTP 写入 API；`reviewer_ref` 是自声明值，不是已验证身份。文本范围使用 Canonical 节点内 Unicode 码点半开区间，所有 pointer 必须实际存在。
 - 来源归属复核：服务按真实 Canonical 父子节点关系识别父容器对后代的覆盖；父节点若含有另一题或未分配来源，不可被确认成当前题作答。Block 级图片引用不会赋予任意非图片子节点整节点选择资格；共享素材归属不明时保留 `uncertain`。同一资产跨 Block/ContentNode 重复引用会按资产身份识别。
 - 隐私边界：导出去标识化会移除 reviewer 与原始 ID、对象 Key、外部 URI，但不会保证匿名；Canonical 区域位置和标签仍可能与外部资料关联，导出仍按敏感数据保护。
-- 已实现于当前分支：13 个纯合成标注案例和独立作答存在性统计，覆盖印刷题干、跨页、未关联题号、公式、图像/几何、表格、OCR 遗漏、共享图形、多区域、歧义和 unreviewed。12/13 范围已有人工决定，3/12 为 uncertain；自动作答检测 Precision/Recall/FPR 均为 `not_evaluated`。
+- 已合并：13 个纯合成标注案例和独立作答存在性统计，覆盖印刷题干、跨页、未关联题号、公式、图像/几何、表格、OCR 遗漏、共享图形、多区域、歧义和 unreviewed。12/13 范围已有人工决定，3/12 为 uncertain；自动作答检测 Precision/Recall/FPR 均为 `not_evaluated`。
 - 边界：`alignment_status` 与人工 `decision` 分开保存；无记录是 unreviewed。`response_present` 不等于可评分，系统没有 `ready_for_grading`。纯文本合成数据不验证笔迹识别，也不代表真实作业准确率。
-- 下一步仍需完成独立代码审查和 Draft PR；以后收集经许可、脱敏的真实作业，建立双人标注/仲裁与复核者认证权限。P2-D2B、P3 不在本轮范围。
+- 后续仍需收集经许可、脱敏的真实作业，建立双人标注/仲裁与复核者认证权限。
+
+### P2-D2B：基于 VLM 的视觉作答证据辅助识别（当前功能分支）
+
+- 实现范围：本地受控 CLI 读取私有 S3 原始提交文件，只渲染 P2-D1 已关联到目标 Question 的页面。PDF 使用 PDFium；JPG/PNG 用 Pillow 检查尺寸和 EXIF。输入 SHA、MIME、文件签名、页数、像素、DPI、页面数和渲染图大小均有校验或上限。
+- VLM：实现 OpenAI-compatible Vision Provider，并提供仅 loopback 的 Ollama 原生适配器。默认禁用且 endpoint 默认只允许 loopback；访问外部 HTTPS 同时要求显式允许 endpoint 和学生数据授权。有限重试只用于网络、429、5xx 和超时；非法 JSON、越界 bbox、未知字段不重试。Ollama 原生端显式关闭思考，避免思考 token 占满本地上下文而没有 JSON 正文。
+- 协议：输出 `candidate_response_present`、`candidate_prompt_only` 或 `uncertain`。`candidate_prompt_only` 不是 `response_absent`；模型无权返回 Question ID 或 Canonical pointer。无未校准置信度、评分、身份推断或自由文本说明。
+- 来源归属：Proposal 保存渲染页和坐标变换元数据。程序只在已校验的 Alignment 和 Canonical tree 中查找单一、无跨题重叠、无共享图形的目标来源，最多生成候选指针；方向不明或来源共享时保留未归属的视觉框。空间 IoU 只是候选启发式，不是像素坐标精度保证。
+- 持久化：完整 proposal 写入私有 S3 不可变 UUID Key；PostgreSQL 记录轻索引和 source/model/version/input 摘要。相同 request ID + 输入摘要重放旧记录，不同摘要冲突；并发请求最多登记一份 proposal。VLM 调用在事务外，写入时锁定并复核版本。数据库与 S3 非原子，无法确认 COMMIT 时保留对象。
+- 测试边界：GitHub CI 测协议、资源限制、来源归属和 Fake Provider 下的真实 PostgreSQL + MinIO 持久化；CI 不下载模型。五个按需生成样本用于本地真实 VLM 请求合同检查，不代表真实学生手写准确率。实际本地模型结果应与 CI 测试分开报告；还需用许可的真实标注样本评估 Precision/Recall、校准和成本。
+- 本地观测：2026-10-10，Ollama 0.31.2 + `qwen3.5:4b` 的五个生成页面均通过严格响应协议，但几何标记样本被误判为仅印刷题干；未提供 Canonical/Alignment，来源映射未测。此误判说明真实模型合同通过不能替代真实教学样本评测。
+- 尚未实现：HTTP 查询/写接口、教师界面、认证、RBAC、人工标注回流、全局推理并发限额、系统级内存硬隔离、孤立 S3 proposal 对账和真实作业精度评估。模型建议不会修改 P2-D2A 记录，也不产生 `ready_for_grading`。
 
 ## P3：标准答案管理、Rubric 评分、AI 自动批改 Agent
 
