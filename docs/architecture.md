@@ -1,6 +1,6 @@
 # 架构与模块边界
 
-慧批云端采用 src 布局的模块化单体。P1-A、P1-B、P2-A、P2-B、P2-C 和 P2-D1 已合并到 `main`。P2-D1 由 PR #9 合并。自动批改、教师复核、用户权限仍未实现。
+慧批云端采用 src 布局的模块化单体。P1-A、P1-B、P2-A、P2-B、P2-C 和 P2-D1 已合并到 `main`。P2-D1 由 PR #9 合并。P2-D2A 的本地人工作答复核和标注基线正在独立功能分支开发，尚未合并。自动识别、自动批改和用户权限仍未实现。
 
 ## 模块职责
 
@@ -11,13 +11,30 @@
 - `modules/parsing`：解析任务状态、状态迁移规则、PostgreSQL repository、解析产物索引、错误分类、重试时间策略、状态查询 Schema 与 ParserExecutor 协议。
 - `modules/canonical_documents`：Canonical Document v1 DTO、MiddleJson 适配转换、有界内容验证、稳定标识、S3/PG 持久化、状态与页面查询。
 - `modules/answer_alignment`：P2-D1 新增模块。按 Canonical 阅读顺序识别题号候选、切分可追溯来源区域、与 Assignment 的真实 Question 对齐，并读写版本化结果索引。该模块不读取 AnswerKey，也不判断学生作答存在性。
-- `workers`：独立于 FastAPI 的解析任务轮询进程，管理领取、解析调用、heartbeat、结果提交和受控退出；另含规范化和答案对齐 CLI。
+- `modules/answer_review`：本分支新增的独立人工判断协议。校验 Canonical 节点与 Unicode 码点范围，按当前 Canonical/Alignment/Question 集合版本追加作答存在性决定，并校验合成标注基线。该模块不修改 Answer Alignment，不生成自动作答预测或评分结果。
+- `workers`：独立于 FastAPI 的解析任务轮询进程，管理领取、解析调用、heartbeat、结果提交和受控退出；另含规范化、答案对齐和本地复核 CLI。
 - `infrastructure/database`：共享 Engine 工厂与按请求/操作创建的 AsyncSession；Alembic 管理结构，应用启动不会调用 `create_all`。
 - `infrastructure/storage`：boto3 S3 兼容适配器。本地对象存储使用 PGSTY SILO。
 - `infrastructure/parsing`：隔离的 MinerU 4.x 子进程启动、PDF 预检、输出归档校验和不可变解析产物上传。
 - `migrations`：按版本演进的 PostgreSQL Schema。
 
 路由负责 HTTP 输入输出；领域服务组织用例；Repository 负责具体数据库查询。当前没有通用 Repository 框架、微服务、Celery、RabbitMQ 或 Redis。
+
+## 数据关系
+
+## P2-D2A 学生作答证据与人工复核（本功能分支）
+
+本分支在 PostgreSQL 新增 `answer_review_decisions`，每行表示某个 Submission / Question 的一次人工决定和一个修订号。`decision` 只取 `response_present`、`response_absent`、`uncertain`。没有对应行表示 `unreviewed`，绝不映射成 `response_absent`。`alignment_status` 是读取并绑定的 P2-D1 状态，两种信息各自保留。当前协议没有 `grading_readiness`，`response_present` 也不会放行批改。
+
+每条记录保存具体 `alignment_artifact_id`、alignment SHA-256、aligner 版本、Question 集合摘要、Canonical ID/SHA 和复核 schema 版本。服务通过 `load_verified_alignment_bundle` 校验当前的 Canonical 与 Alignment S3 内容和索引摘要；写事务中再获取当前 PostgreSQL 上下文并检查上述版本仍一致。若审阅期间 Canonical、Assignment Question 集合或当前对齐产物改变，则拒绝写入并要求重新检查。旧记录可保留作审计，但 `is_current_for_bundle` 只对所有来源身份和哈希完全一致的记录返回 true。
+
+revision 的排序不依赖时间戳。写入前锁住 `Submission` 行，同一提交的审阅写入顺序化；再锁 `Assignment` 行，与 P1-A 修改 Question 的事务边界一致。服务读取该 Question 的最大 revision，追加 `revision + 1` 并记录 `supersedes_decision_id`。数据库唯一约束保护 revision、request_id 和单一后继关系。相同 request_id 与请求摘要重放时返回原记录；相同 ID 的不同内容返回幂等冲突。COMMIT 确认丢失时，客户端应使用相同 request_id 重试，避免重复修订。此功能不写 S3，因此没有 review JSON 对象补偿；Canonical 和 Alignment 的读取故障会在数据库写入前失败。
+
+区域只以 JSON Pointer 指向已校验 Canonical 节点。提供文本范围时，范围使用节点字符串中的 Unicode 码点半开区间 `[start, end)`，服务使用 Python 字符串长度检查边界。同一节点只把实际相交的半开范围视为重叠，相邻范围可以分开标注；不同节点上相同的数字偏移不是同一段文字。服务按 Canonical 树的父子关系判断来源覆盖：选择父容器会覆盖其后代，若后代已有其他 Question 或 unassigned 来源，不能把父容器登记为本题的确定作答证据。整节点选择只接受有可定位素材引用的 `image` 节点；仅有 Block 级图片引用不会让空白文本、布局或容器子节点成为图片证据。Block 级图片没有字符位置，若同一 Block 还有其他 Question 来源，则不能把图像确认成某一题的专属素材；可将对应图像节点和归属原因记为 `uncertain`。图片引用按稳定资产身份去重，Block 与 ContentNode 重复指向同一素材时不会形成两个证据。服务从 Canonical 节点复制页码、Block ID、BBox、类型和安全资产元数据；不保存节点文本，不修改 Canonical。无法归属到本 Question 或来自 P2-D1 unassigned 区域的自动来源，只能明确以 `uncertain` 和 `response_not_linked_to_question` 记录，不能包装成已确认的该题答案。外部图片 URL 不返回，也不被下载。
+
+复核只有本地 CLI：`inspect` 显示被截断的来源片段和映射状态，并显示原始 `SubmissionFile` 的 ID、MIME、大小和 SHA-256，供本地人员定位原始 PDF/图片；它不输出文件名、对象 Key 或学生标识。`record` 追加决定，`history` 显示修订及当前来源是否匹配，`export` 输出脱敏 JSON。当前没有认证或 RBAC；`reviewer_ref` 是操作者自声明标记，不是身份凭据。未认证 API、复核数据和原始提交仅可在受控本地环境使用。导出会使用每次导出独有的 HMAC 盐替换数据库 ID 和摘要引用，并省略 reviewer、原始学生 ID、S3 Key 与 URI；该伪名不能跨两次导出关联。去标识化不等于彻底匿名：题号、区域位置、标签和外部数据仍可能组合识别个人，导出文件仍按敏感数据管理。
+
+`tests/fixtures/answer_presence_synthetic_v1.json` 包含 13 个合成复核范围，含仅印刷题干、普通文本、跨页、无题号、公式、图像/几何、表格、OCR 遗漏、共享图形、多区域、歧义及未复核。评测脚本验证标注一致性并统计人工覆盖率、不确定比例；当前没有自动作答检测器，模型 Precision/Recall/FPR 均为 `not_evaluated`，不会把人工标签当作预测。纯文本合成协议不能验证真实手写识别。还需收集经许可且脱敏的真实样本，制定双人标注与仲裁规则，并在开放教师界面前实现认证和审计访问控制。
 
 ## 数据关系
 
@@ -34,6 +51,11 @@ erDiagram
     SUBMISSION ||--o{ ANSWER_ALIGNMENT_ARTIFACT : has
     ASSIGNMENT ||--o{ ANSWER_ALIGNMENT_ARTIFACT : scopes
     CANONICAL_ARTIFACT ||--o{ ANSWER_ALIGNMENT_ARTIFACT : aligns
+    SUBMISSION ||--o{ ANSWER_REVIEW_DECISION : reviewed
+    QUESTION ||--o{ ANSWER_REVIEW_DECISION : concerns
+    ANSWER_ALIGNMENT_ARTIFACT ||--o{ ANSWER_REVIEW_DECISION : binds
+    CANONICAL_ARTIFACT ||--o{ ANSWER_REVIEW_DECISION : cites
+    ANSWER_REVIEW_DECISION ||--o| ANSWER_REVIEW_DECISION : supersedes
 ```
 
 同一 `Submission` 有一份 `SubmissionFile` 元数据与唯一的 `ParsingTask`。提交、对象定位信息和初始 `pending` 任务在一个 PostgreSQL 事务内写入。原文件放在私有 S3 兼容存储，数据库只保存 bucket、服务端生成的 `object_key`、MIME、大小和 SHA-256。

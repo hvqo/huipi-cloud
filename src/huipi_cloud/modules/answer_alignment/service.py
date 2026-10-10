@@ -3,6 +3,7 @@
 import hashlib
 import json
 import logging
+from dataclasses import dataclass
 from io import BytesIO
 from uuid import UUID, uuid4, uuid5
 
@@ -35,10 +36,23 @@ from huipi_cloud.modules.answer_alignment.protocol import (
 )
 from huipi_cloud.modules.answer_alignment.repository import AlignmentContext
 from huipi_cloud.modules.answer_alignment.segmenter import align_canonical_document
+from huipi_cloud.modules.canonical_documents.models import CanonicalArtifact
 from huipi_cloud.modules.canonical_documents.protocol import CanonicalDocument
 
 logger = logging.getLogger(__name__)
 _READ_CHUNK_SIZE = 64 * 1024
+
+
+@dataclass(frozen=True)
+class VerifiedAlignmentBundle:
+    """The current immutable alignment and Canonical documents after hash checks."""
+
+    context: AlignmentContext
+    canonical_artifact: CanonicalArtifact
+    canonical_document: CanonicalDocument
+    alignment_artifact: AnswerAlignmentArtifact
+    alignment_document: AnswerAlignmentDocument
+    questions_digest: str
 
 
 async def align_submission(
@@ -233,6 +247,70 @@ async def get_question_alignment(
     return response
 
 
+async def load_verified_alignment_bundle(
+    session_factory: repository.SessionFactory,
+    storage: S3ObjectStorage,
+    submission_id: UUID,
+    *,
+    config: Settings = settings,
+) -> VerifiedAlignmentBundle:
+    """Load the current Canonical and alignment objects after integrity checks.
+
+    Local review uses this routine so reviewers select evidence from the same
+    source versions that the P2-D1 alignment result actually references.
+    """
+
+    async with session_factory() as session:
+        context = await repository.get_context(session, submission_id)
+        if context is None:
+            raise AnswerAlignmentNotFoundError("提交记录不存在")
+        canonical = _require_canonical(context, storage)
+        questions_digest = assignment_questions_digest(context.questions)
+        record = await repository.get_artifact(
+            session,
+            canonical_artifact_id=canonical.id,
+            aligner_version=ALIGNER_VERSION,
+            questions_digest=questions_digest,
+        )
+    if record is None:
+        raise AnswerAlignmentResultNotFoundError("当前版本的答案对齐结果尚未生成")
+    if record.bucket != storage.bucket:
+        raise StorageUnavailableError("alignment bucket does not match configured storage")
+    if record.canonical_sha256 != canonical.canonical_sha256:
+        raise AnswerAlignmentArtifactCorruptError("alignment Canonical checksum is stale")
+
+    canonical_body = await _read_object(
+        storage,
+        canonical.canonical_object_key or "",
+        expected_size=canonical.canonical_size_bytes or 0,
+        expected_sha256=canonical.canonical_sha256,
+        maximum=config.canonical_max_document_bytes,
+    )
+    canonical_document = _decode_canonical_document(canonical_body, context)
+    alignment_body = await _read_object(
+        storage,
+        record.object_key,
+        expected_size=record.alignment_size_bytes,
+        expected_sha256=record.alignment_sha256,
+        maximum=config.answer_alignment_max_document_bytes,
+        corrupt_on_mismatch=True,
+    )
+    alignment_document = _decode_alignment_document(
+        alignment_body,
+        record,
+        context,
+        questions_digest,
+    )
+    return VerifiedAlignmentBundle(
+        context=context,
+        canonical_artifact=canonical,
+        canonical_document=canonical_document,
+        alignment_artifact=record,
+        alignment_document=alignment_document,
+        questions_digest=questions_digest,
+    )
+
+
 def _require_canonical(context: AlignmentContext, storage: S3ObjectStorage):
     canonical = context.canonical_artifact
     if canonical is None or canonical.status != "available":
@@ -313,7 +391,9 @@ def _decode_alignment_document(
     except (ValidationError, ValueError, TypeError, RecursionError) as error:
         raise AnswerAlignmentArtifactCorruptError("alignment document is invalid") from error
     if (
-        document.alignment_id != record.id
+        record.submission_id != context.submission_id
+        or record.assignment_id != context.assignment_id
+        or document.alignment_id != record.id
         or document.submission_id != context.submission_id
         or document.assignment_id != context.assignment_id
         or document.canonical_document_id != record.canonical_artifact_id

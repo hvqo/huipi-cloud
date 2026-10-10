@@ -1,6 +1,6 @@
 # 项目路线图
 
-本页区分已经合并的功能、PR 跟踪的改动和未来计划。P1-A 至 P2-D1 已合并到 `main`；P2-D1 由 PR #9 交付。
+本页区分已经合并的功能、PR 跟踪的改动和未来计划。P1-A 至 P2-D1 已合并到 `main`；P2-D1 由 PR #9 交付。P2-D2A 的当前实现位于独立功能分支，尚未合并。
 
 ## P0：工程骨架与基础设施
 
@@ -61,6 +61,16 @@
 - 业务边界：`aligned` 表示来源区域与 Question 的映射证据足够，不表示学生回答存在、区域内没有其他题目内容、OCR 完整或结果可以批改。当前没有作答存在性检测、`answer_presence` 或 `ready_for_grading` 字段；`not_observed` 也不能解释为学生未作答。
 - 已知边界：没有真实手写作业评测、人工纠错、概率校准、身份认证或租户权限；保守复核会降低自动覆盖率。跨 S3/PG 不是原子提交，提交结果不确定时保留对象，仍可能需要孤立对象对账清理。
 
+### P2-D2A：学生作答证据、人工复核与标注基线（本功能分支）
+
+- 已实现于当前分支：`answer_review_decisions` PostgreSQL 追加记录，绑定 `Submission`、真实 `Question`、当前 `AnswerAlignmentArtifact`、Canonical SHA 和 Question 集合摘要；每题以 `revision` 与 `supersedes_decision_id` 留下人工修订历史。
+- 已实现于当前分支：本地 CLI `inspect`、`record`、`history`、`export`。没有新增 HTTP 写入 API；`reviewer_ref` 是自声明值，不是已验证身份。文本范围使用 Canonical 节点内 Unicode 码点半开区间，所有 pointer 必须实际存在。
+- 来源归属复核：服务按真实 Canonical 父子节点关系识别父容器对后代的覆盖；父节点若含有另一题或未分配来源，不可被确认成当前题作答。Block 级图片引用不会赋予任意非图片子节点整节点选择资格；共享素材归属不明时保留 `uncertain`。同一资产跨 Block/ContentNode 重复引用会按资产身份识别。
+- 隐私边界：导出去标识化会移除 reviewer 与原始 ID、对象 Key、外部 URI，但不会保证匿名；Canonical 区域位置和标签仍可能与外部资料关联，导出仍按敏感数据保护。
+- 已实现于当前分支：13 个纯合成标注案例和独立作答存在性统计，覆盖印刷题干、跨页、未关联题号、公式、图像/几何、表格、OCR 遗漏、共享图形、多区域、歧义和 unreviewed。12/13 范围已有人工决定，3/12 为 uncertain；自动作答检测 Precision/Recall/FPR 均为 `not_evaluated`。
+- 边界：`alignment_status` 与人工 `decision` 分开保存；无记录是 unreviewed。`response_present` 不等于可评分，系统没有 `ready_for_grading`。纯文本合成数据不验证笔迹识别，也不代表真实作业准确率。
+- 下一步仍需完成独立代码审查和 Draft PR；以后收集经许可、脱敏的真实作业，建立双人标注/仲裁与复核者认证权限。P2-D2B、P3 不在本轮范围。
+
 ## P3：标准答案管理、Rubric 评分、AI 自动批改 Agent
 
 - 计划支持标准答案与 Rubric 版本。
@@ -75,6 +85,6 @@
 
 ## P5：教师复核、异步任务优化、模型推理与性能评测
 
-- 计划支持教师复核、修改和反馈记录。
+- 计划将 P2-D2A 的本地记录基线扩展为受认证和 RBAC 保护的教师复核、修改和反馈工作流。
 - 计划优化异步执行的可观测性、吞吐和资源使用。
 - 计划评估模型推理部署，并建立质量、延迟和成本评测；当前没有相关性能数据。
