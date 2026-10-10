@@ -1,0 +1,163 @@
+{
+  "schema_name": "huipi.answer.presence.annotations",
+  "schema_version": "1.0",
+  "dataset_kind": "synthetic_protocol_baseline",
+  "cases": [
+    {
+      "case_id": "synthetic-printed-prompt-only",
+      "scenario": "只有印刷题干，没有学生作答",
+      "question_number": 1,
+      "alignment_status": "aligned",
+      "question_link": "linked",
+      "review_status": "reviewed",
+      "decision": "response_absent",
+      "reason_codes": ["printed_prompt_only"],
+      "source_nodes": [{"node_id": "n1", "content_pointer": "/pages/0/blocks/0/content", "page_index": 0, "block_id": "b1", "normalized_type": "text", "text": "第1题 计算 2+2。", "has_image_asset": false}],
+      "regions": [{"node_id": "n1", "label": "printed_prompt", "text_start": 0, "text_end": 10}]
+    },
+    {
+      "case_id": "synthetic-handwritten-answer",
+      "scenario": "题干后有一行学生作答",
+      "question_number": 1,
+      "alignment_status": "aligned",
+      "question_link": "linked",
+      "review_status": "reviewed",
+      "decision": "response_present",
+      "reason_codes": ["student_work_visible"],
+      "source_nodes": [{"node_id": "n1", "content_pointer": "/pages/0/blocks/0/content", "page_index": 0, "block_id": "b1", "normalized_type": "text", "text": "第1题 2+2=4", "has_image_asset": false}],
+      "regions": [{"node_id": "n1", "label": "printed_prompt", "text_start": 0, "text_end": 4}, {"node_id": "n1", "label": "student_response", "text_start": 5, "text_end": 9}]
+    },
+    {
+      "case_id": "synthetic-prompt-and-steps",
+      "scenario": "印刷题干与解题步骤混排",
+      "question_number": 2,
+      "alignment_status": "review_required",
+      "question_link": "linked",
+      "review_status": "reviewed",
+      "decision": "response_present",
+      "reason_codes": ["student_work_visible"],
+      "source_nodes": [{"node_id": "n1", "content_pointer": "/pages/0/blocks/2/content", "page_index": 0, "block_id": "b3", "normalized_type": "text", "text": "第2题 解：先通分，再计算。", "has_image_asset": false}],
+      "regions": [{"node_id": "n1", "label": "printed_prompt", "text_start": 0, "text_end": 4}, {"node_id": "n1", "label": "student_response", "text_start": 5, "text_end": 13}]
+    },
+    {
+      "case_id": "synthetic-cross-page",
+      "scenario": "同一题答案跨两页继续",
+      "question_number": 3,
+      "alignment_status": "review_required",
+      "question_link": "linked",
+      "review_status": "reviewed",
+      "decision": "response_present",
+      "reason_codes": ["cross_page_response", "multiple_response_regions"],
+      "source_nodes": [{"node_id": "n1", "content_pointer": "/pages/0/blocks/4/content", "page_index": 0, "block_id": "b5", "normalized_type": "text", "text": "第3题 解得 x=", "has_image_asset": false}, {"node_id": "n2", "content_pointer": "/pages/1/blocks/0/content", "page_index": 1, "block_id": "b6", "normalized_type": "text", "text": "5，所以答案为5。", "has_image_asset": false}],
+      "regions": [{"node_id": "n1", "label": "student_response", "text_start": 5, "text_end": 9}, {"node_id": "n2", "label": "student_response", "text_start": 0, "text_end": 9}]
+    },
+    {
+      "case_id": "synthetic-unlinked-answer",
+      "scenario": "没有可识别题号但存在解题过程",
+      "question_number": null,
+      "alignment_status": "not_observed",
+      "question_link": "unlinked",
+      "review_status": "reviewed",
+      "decision": "response_present",
+      "reason_codes": ["response_not_linked_to_question"],
+      "source_nodes": [{"node_id": "n1", "content_pointer": "/pages/0/blocks/1/content", "page_index": 0, "block_id": "b2", "normalized_type": "text", "text": "x=3, y=4", "has_image_asset": false}],
+      "regions": [{"node_id": "n1", "label": "unlinked_response", "text_start": 0, "text_end": 8}]
+    },
+    {
+      "case_id": "synthetic-formula-only",
+      "scenario": "答案只包含公式",
+      "question_number": 4,
+      "alignment_status": "aligned",
+      "question_link": "linked",
+      "review_status": "reviewed",
+      "decision": "response_present",
+      "reason_codes": ["formula_only_response"],
+      "source_nodes": [{"node_id": "n1", "content_pointer": "/pages/0/blocks/6/content", "page_index": 0, "block_id": "b7", "normalized_type": "formula", "text": "x²+1=0", "has_image_asset": false}],
+      "regions": [{"node_id": "n1", "label": "student_response", "text_start": 0, "text_end": 6}]
+    },
+    {
+      "case_id": "synthetic-geometry-marks",
+      "scenario": "答案以几何图形和辅助线为主",
+      "question_number": 5,
+      "alignment_status": "review_required",
+      "question_link": "linked",
+      "review_status": "reviewed",
+      "decision": "response_present",
+      "reason_codes": ["diagram_marks_visible"],
+      "source_nodes": [{"node_id": "n1", "content_pointer": "/pages/0/blocks/8/content", "page_index": 0, "block_id": "b9", "normalized_type": "image", "text": "", "has_image_asset": true}],
+      "regions": [{"node_id": "n1", "label": "student_response"}]
+    },
+    {
+      "case_id": "synthetic-table-entry",
+      "scenario": "表格中填写了答案",
+      "question_number": 6,
+      "alignment_status": "aligned",
+      "question_link": "linked",
+      "review_status": "reviewed",
+      "decision": "response_present",
+      "reason_codes": ["table_entry_visible"],
+      "source_nodes": [{"node_id": "n1", "content_pointer": "/pages/0/blocks/10/content", "page_index": 0, "block_id": "b11", "normalized_type": "table", "text": "12", "has_image_asset": false}],
+      "regions": [{"node_id": "n1", "label": "student_response", "text_start": 0, "text_end": 2}]
+    },
+    {
+      "case_id": "synthetic-ocr-miss",
+      "scenario": "OCR遗漏了可能存在的手写内容",
+      "question_number": 7,
+      "alignment_status": "review_required",
+      "question_link": "linked",
+      "review_status": "reviewed",
+      "decision": "uncertain",
+      "reason_codes": ["ocr_incomplete"],
+      "source_nodes": [{"node_id": "n1", "content_pointer": "/pages/0/blocks/12/content", "page_index": 0, "block_id": "b13", "normalized_type": "image", "text": "", "has_image_asset": true}],
+      "regions": [{"node_id": "n1", "label": "uncertain"}]
+    },
+    {
+      "case_id": "synthetic-shared-figure",
+      "scenario": "多道题共用一个图形，归属无法确定",
+      "question_number": 8,
+      "alignment_status": "review_required",
+      "question_link": "uncertain",
+      "review_status": "reviewed",
+      "decision": "uncertain",
+      "reason_codes": ["shared_figure_attribution_unclear"],
+      "source_nodes": [{"node_id": "n1", "content_pointer": "/pages/0/blocks/14/content", "page_index": 0, "block_id": "b15", "normalized_type": "image", "text": "", "has_image_asset": true}],
+      "regions": [{"node_id": "n1", "label": "uncertain"}]
+    },
+    {
+      "case_id": "synthetic-multiple-regions",
+      "scenario": "一个答案由多个不连续区域组成",
+      "question_number": 9,
+      "alignment_status": "aligned",
+      "question_link": "linked",
+      "review_status": "reviewed",
+      "decision": "response_present",
+      "reason_codes": ["multiple_response_regions"],
+      "source_nodes": [{"node_id": "n1", "content_pointer": "/pages/0/blocks/16/content", "page_index": 0, "block_id": "b17", "normalized_type": "text", "text": "第一步", "has_image_asset": false}, {"node_id": "n2", "content_pointer": "/pages/0/blocks/19/content", "page_index": 0, "block_id": "b20", "normalized_type": "text", "text": "第二步", "has_image_asset": false}],
+      "regions": [{"node_id": "n1", "label": "student_response", "text_start": 0, "text_end": 3}, {"node_id": "n2", "label": "student_response", "text_start": 0, "text_end": 3}]
+    },
+    {
+      "case_id": "synthetic-ambiguous-handwriting",
+      "scenario": "笔迹歧义，不能确定是否为有效作答",
+      "question_number": 10,
+      "alignment_status": "review_required",
+      "question_link": "linked",
+      "review_status": "reviewed",
+      "decision": "uncertain",
+      "reason_codes": ["ambiguous_handwriting"],
+      "source_nodes": [{"node_id": "n1", "content_pointer": "/pages/0/blocks/21/content", "page_index": 0, "block_id": "b22", "normalized_type": "text", "text": "?7", "has_image_asset": false}],
+      "regions": [{"node_id": "n1", "label": "uncertain", "text_start": 0, "text_end": 2}]
+    },
+    {
+      "case_id": "synthetic-unreviewed",
+      "scenario": "没有人工复核记录，不能推断为未作答",
+      "question_number": 11,
+      "alignment_status": "aligned",
+      "question_link": "linked",
+      "review_status": "unreviewed",
+      "decision": null,
+      "reason_codes": [],
+      "source_nodes": [{"node_id": "n1", "content_pointer": "/pages/0/blocks/23/content", "page_index": 0, "block_id": "b24", "normalized_type": "text", "text": "第11题 求面积。", "has_image_asset": false}],
+      "regions": []
+    }
+  ]
+}

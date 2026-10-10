@@ -10,6 +10,7 @@
 - P2-B：MinerU 4.x Basic/ONNX 本地解析子进程、PDF/图片输入、私有 S3 解析产物、PostgreSQL 产物索引、解析结果查询 API。PR #5 记录最终验收和真实 MinerU 样本证据。
 - 已合并 P2-C：Canonical Document v1、MiddleJson 转换、完整合法素材清单、来源元数据保留、S3 JSON 产物与 PostgreSQL 轻量索引、规范化 CLI 和按页查询 API。
 - 已合并 P2-D1：规则式题号候选识别、来源区域切分、与真实 Assignment Question 对齐、S3 不可变结果和 PostgreSQL 幂等索引，以及只读查询 API。`aligned` 只表示来源到 Question 的映射，不表示学生已经作答、区域内没有其他题目内容、OCR/公式/图像识别完整或可以批改；评测和测试不代表真实教学数据准确率。
+- P2-D2A（本功能分支）：新增独立的人工作答存在性决定协议 `response_present` / `response_absent` / `uncertain`。没有复核记录是 `unreviewed`，不等同于 `response_absent`。决定只通过本地 CLI 追加到 PostgreSQL，并绑定当前 Canonical、Question 集合和 AnswerAlignment 哈希版本；不修改 P2-D1 结果，不提供匿名写入 API，也不表示 `ready_for_grading`。
 - P2-B 不包含题目切分、批改、MongoDB、Celery、RabbitMQ、Redis、Copilot 或身份认证。真实解析要求单独安装 MinerU 和模型；未配置执行器或模型时 Worker 拒绝启动。
 
 `student_ref` 和当前提交、任务、解析结果 API 没有认证或权限控制，只能用于本地或其他受控环境，不能直接暴露到公网。
@@ -42,6 +43,19 @@ P2-A 提供 `GET /api/v1/submissions/{submission_id}/parsing-task`。P2-B 另提
 `python -m huipi_cloud.workers.normalize_document --submission-id UUID` 只处理已有 `succeeded` 的 P2-B 解析结果，不会重置或重新执行 MinerU。状态摘要为 `GET /api/v1/submissions/{submission_id}/canonical-document`；页面读取为 `GET /api/v1/submissions/{submission_id}/canonical-document/pages/{page_number}`。Canonical JSON 存在私有 S3；页面接口先检查索引大小，再分块读取、校验 SHA-256 和完整结构后只返回指定页。页面 API 默认上限 32 MiB、硬上限 64 MiB；Pydantic 解码会增加峰值内存，并随并发请求增加。
 
 P2-D1 已合并到 `main`。`python -m huipi_cloud.workers.align_answers --submission-id UUID` 只处理可用 Canonical 文档和所属 Assignment 的真实 Question。查询接口为 `GET /api/v1/submissions/{submission_id}/answer-alignment` 与 `GET /api/v1/submissions/{submission_id}/answer-alignment/questions/{question_id}`。对齐 JSON 存在私有 S3，PostgreSQL 保存版本、题目集合摘要和安全查询索引。`ANSWER_ALIGNMENT_MAX_DOCUMENT_BYTES` 默认 32 MiB、硬上限 64 MiB；`ANSWER_ALIGNMENT_MAX_QUESTION_RESPONSE_BYTES` 默认 2 MiB、硬上限 8 MiB。读取会加载并解析整份对齐 JSON，结构解码和并发请求会增加内存。通用数字标签及括号子题号默认待复核；未标号内容保持未观察/未分配，不推断学生未作答。`matching_status=aligned` 只表示来源区域已关联到 Question，不表示学生确实作答、文本不是印刷题干、OCR 完整或结果可以直接批改；当前没有单独的作答存在性或 `ready_for_grading` 状态。当前 API 无认证和 RBAC，只能用于受控环境。
+
+本分支提供本地受控的人工复核 CLI（没有 HTTP 写入 API）：
+
+~~~bash
+# 将 SUBMISSION_UUID、QUESTION_UUID、REQUEST_UUID 替换为实际 UUID。
+uv run python -m huipi_cloud.workers.review_answers inspect --submission-id SUBMISSION_UUID
+uv run python -m huipi_cloud.workers.review_answers record --submission-id SUBMISSION_UUID --question-id QUESTION_UUID --request-id REQUEST_UUID --reviewer-ref local-reviewer --decision response_present --response-region '/pages/0/blocks/0/content:6:13' --reason-code student_work_visible
+uv run python -m huipi_cloud.workers.review_answers history --submission-id SUBMISSION_UUID --question-id QUESTION_UUID
+uv run python -m huipi_cloud.workers.review_answers export --submission-id SUBMISSION_UUID --output /tmp/answer-review-redacted.json
+uv run python scripts/evaluate_answer_presence.py
+~~~
+
+CLI 输出 `reviewer_ref` 只是自声明标记，不是登录身份。不要将未认证的 API、原始作业或 CLI 检查输出暴露到公网。JSON Pointer 必须能定位现有 Canonical ContentNode；文本选择格式使用 Python Unicode 码点半开偏移 `CONTENT_POINTER:START:END`。标注导出会去掉自声明 reviewer、学生/提交原始 ID、对象 Key 和外部 URI，并仅提供当前导出内的随机化引用。当前没有自动作答检测器，所以作答 Precision/Recall/FPR 是 `not_evaluated`；13 个合成范围中 12 个有人工作答标签、3 个为 uncertain，覆盖率和不确定比例只说明该合成协议数据，不能代表真实作业。
 
 ## 配置和启动真实解析
 
@@ -104,10 +118,11 @@ src/huipi_cloud/
   infrastructure/parsing/        MinerU 子进程和解析结果合同校验
   modules/canonical_documents/    Canonical 协议、转换、轻量索引和查询 API
   modules/answer_alignment/       题号候选、答案区域、Question 匹配和结果查询
+  modules/answer_review/          作答存在性复核协议、追加历史、来源验证和合成标注评测
   modules/assignments/            作业领域
   modules/submissions/            提交、原始文件和任务登记
   modules/parsing/                解析状态、产物索引、执行器协议和查询
-  workers/                        独立解析 Worker、规范化和对齐 CLI
+  workers/                        独立解析 Worker、规范化、对齐和本地复核 CLI
 migrations/                        Alembic 迁移
 tests/unit/                        单元测试
 tests/integration/                 PostgreSQL、S3 和可选 MinerU 集成测试
