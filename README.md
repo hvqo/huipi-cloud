@@ -55,7 +55,7 @@ uv run python -m huipi_cloud.workers.review_answers export --submission-id SUBMI
 uv run python scripts/evaluate_answer_presence.py
 ~~~
 
-CLI 输出 `reviewer_ref` 只是自声明标记，不是登录身份。不要将未认证的 API、原始作业或 CLI 检查输出暴露到公网。JSON Pointer 必须能定位现有 Canonical ContentNode；文本选择格式使用 Python Unicode 码点半开偏移 `CONTENT_POINTER:START:END`。标注导出会去掉自声明 reviewer、学生/提交原始 ID、对象 Key 和外部 URI，并仅提供当前导出内的随机化引用。当前没有自动作答检测器，所以作答 Precision/Recall/FPR 是 `not_evaluated`；13 个合成范围中 12 个有人工作答标签、3 个为 uncertain，覆盖率和不确定比例只说明该合成协议数据，不能代表真实作业。
+CLI 输出 `reviewer_ref` 只是自声明标记，不是登录身份。不要将未认证的 API、原始作业或 CLI 检查输出暴露到公网。JSON Pointer 必须能定位现有 Canonical ContentNode；文本选择格式使用 Python Unicode 码点半开偏移 `CONTENT_POINTER:START:END`。嵌套节点按 Canonical 树判断包含关系：整节点父容器覆盖其子节点；父节点包含别题或未分配来源时，不能确认为本题作答。Block 级图片引用不会让空白的非图片子节点成为可选证据；共享图片的 Question 归属无法证明时只能记为 `uncertain`。标注导出会去掉自声明 reviewer、学生/提交原始 ID、对象 Key 和外部 URI，并仅提供当前导出内的随机化引用。这是去标识化，不是真正匿名化；区域位置、内容标签或外部关联仍可能暴露身份，因此导出和原始复核数据都应按敏感数据保护。当前没有自动作答检测器，所以作答 Precision/Recall/FPR 是 `not_evaluated`；13 个合成范围中 12 个有人工作答标签、3 个为 uncertain，覆盖率和不确定比例只说明该合成协议数据，不能代表真实作业。
 
 ## 配置和启动真实解析
 

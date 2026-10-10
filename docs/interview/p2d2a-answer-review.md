@@ -181,7 +181,11 @@ Canonical JSON Pointer 由 page、block 和嵌套 child 组成。节点偏移以
 
 ### 2 分钟深入回答
 
-`content_pointer` 指向 `/pages/{page}/blocks/{index}/content/children/...` 中的具体 `CanonicalContentNode`。在 `_index_canonical_nodes` 中，服务按 Canonical 树生成 pointer 到节点及所属 Page/Block 的映射。之后 `_materialize_regions` 对不存在的路径拒绝，对文本节点要求明确 start/end，并检查 `end <= len(value)`。这遵循 Python Unicode 字符串语义和半开区间。
+`content_pointer` 指向 `/pages/{page}/blocks/{index}/content/children/...` 中的具体 `CanonicalContentNode`。在 `_index_canonical_nodes` 中，服务按 Canonical 树生成 pointer、父节点和所属 Page/Block 的映射。之后 `_materialize_regions` 对不存在的路径拒绝，对文本节点要求明确 start/end，并检查 `end <= len(value)`。这遵循 Python Unicode 字符串语义和半开区间。
+
+Question 归属校验也遍历这棵树。同一节点内按半开字符范围比较；父容器和后代被视为内容覆盖关系，不能因为 pointer 字符串不同就当成独立区域。若父节点覆盖另一 Question 的来源，当前题不能把整个父节点确认为答案。不同兄弟节点使用相同 `[start, end)` 数字时仍是不同来源，不会误认为相同文字。
+
+没有文本范围时，服务只接受有有效资产引用的 `image` 节点。Block 的图片引用不会让任意空文本或布局节点变成图像证据。如果某个 Block 级图片同时落在多道题的来源范围内，系统不接受专属 `response_present`；复核者可以把对应图片标成 `uncertain` 并注明 `shared_figure_attribution_unclear`。Block 与子节点重复引用相同资产时按资产 ID/内容摘要去重。
 
 选中节点后，复核记录补上 page index/number、Block UUID、reading order、BBox、source/normalized type 和安全逻辑资产引用。外部 URL 和对象 Key不写入复核结果。Canonical 原始对象和 pointer 仍保存在现有私有存储体系中，人工决定不会反向修改它。
 
@@ -197,6 +201,8 @@ Canonical JSON Pointer 由 page、block 和嵌套 child 组成。节点偏移以
 - `src/huipi_cloud/modules/answer_review/service.py::_materialize_regions`
 - `tests/integration/test_answer_review.py::test_invalid_pointer_and_unicode_range_fail_before_insert`
 - `tests/fixtures/answer_presence_synthetic_v1.json::synthetic-cross-page`
+- `tests/unit/test_answer_review_ownership.py::test_parent_container_cannot_claim_a_sibling_questions_child`
+- `tests/unit/test_answer_review_ownership.py::test_shared_image_is_uncertain_not_question_specific_response`
 
 ## 7. 为什么人工标签与模型预测必须分开？
 
@@ -327,3 +333,7 @@ VLM 需要读取受控的 Canonical 或页面图像并输出候选节点/区域�
 - 当前评测基线：`src/huipi_cloud/modules/answer_review/evaluation.py::evaluate_predictions`
 - `docs/roadmap.md` 的 P2-D2A 与 P3 项
 - 演示：运行 `uv run python scripts/evaluate_answer_presence.py`，确认自动检测器指标仍为 `not_evaluated`。
+
+## 去标识化不是匿名化
+
+`export` 会移除 `reviewer_ref` 和原始 UUID，并用本次导出专用随机盐替换 ID 与摘要引用；它还会移除对象 Key 和外部 URI。这降低直接识别风险，但导出仍保留题号、Canonical pointer、页码、区域标签、BBox 等结构信息，关联到外部作业或其他资料时仍可能识别学生。导出和数据库原始复核数据都属于敏感数据；本地受控 CLI 也不等于访问控制系统。

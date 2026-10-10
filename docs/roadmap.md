@@ -65,6 +65,8 @@
 
 - 已实现于当前分支：`answer_review_decisions` PostgreSQL 追加记录，绑定 `Submission`、真实 `Question`、当前 `AnswerAlignmentArtifact`、Canonical SHA 和 Question 集合摘要；每题以 `revision` 与 `supersedes_decision_id` 留下人工修订历史。
 - 已实现于当前分支：本地 CLI `inspect`、`record`、`history`、`export`。没有新增 HTTP 写入 API；`reviewer_ref` 是自声明值，不是已验证身份。文本范围使用 Canonical 节点内 Unicode 码点半开区间，所有 pointer 必须实际存在。
+- 来源归属复核：服务按真实 Canonical 父子节点关系识别父容器对后代的覆盖；父节点若含有另一题或未分配来源，不可被确认成当前题作答。Block 级图片引用不会赋予任意非图片子节点整节点选择资格；共享素材归属不明时保留 `uncertain`。同一资产跨 Block/ContentNode 重复引用会按资产身份识别。
+- 隐私边界：导出去标识化会移除 reviewer 与原始 ID、对象 Key、外部 URI，但不会保证匿名；Canonical 区域位置和标签仍可能与外部资料关联，导出仍按敏感数据保护。
 - 已实现于当前分支：13 个纯合成标注案例和独立作答存在性统计，覆盖印刷题干、跨页、未关联题号、公式、图像/几何、表格、OCR 遗漏、共享图形、多区域、歧义和 unreviewed。12/13 范围已有人工决定，3/12 为 uncertain；自动作答检测 Precision/Recall/FPR 均为 `not_evaluated`。
 - 边界：`alignment_status` 与人工 `decision` 分开保存；无记录是 unreviewed。`response_present` 不等于可评分，系统没有 `ready_for_grading`。纯文本合成数据不验证笔迹识别，也不代表真实作业准确率。
 - 下一步仍需完成独立代码审查和 Draft PR；以后收集经许可、脱敏的真实作业，建立双人标注/仲裁与复核者认证权限。P2-D2B、P3 不在本轮范围。

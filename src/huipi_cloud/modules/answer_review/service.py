@@ -43,6 +43,8 @@ from huipi_cloud.modules.canonical_documents.protocol import (
 
 @dataclass(frozen=True)
 class _NodeLocation:
+    pointer: str
+    parent_pointer: str | None
     page_index: int
     page_number: int
     block: CanonicalBlock
@@ -78,16 +80,22 @@ async def record_decision(
     if aligned_answer is None:
         raise AnswerReviewSourceNotReadyError
 
+    node_index = _index_canonical_nodes(bundle.canonical_document)
+    response_regions = _materialize_regions(payload.response_regions, node_index)
+    prompt_regions = _materialize_regions(payload.excluded_prompt_regions, node_index)
+    uncertain_regions = _materialize_regions(
+        payload.uncertain_regions,
+        node_index,
+        allow_block_asset_context=True,
+    )
+    _validate_selection_conflicts(payload, node_index)
     _validate_question_ownership(
         payload,
         question_id,
         bundle.alignment_document.answers,
         bundle.alignment_document.unassigned_regions,
+        node_index,
     )
-    node_index = _index_canonical_nodes(bundle.canonical_document)
-    response_regions = _materialize_regions(payload.response_regions, node_index)
-    prompt_regions = _materialize_regions(payload.excluded_prompt_regions, node_index)
-    uncertain_regions = _materialize_regions(payload.uncertain_regions, node_index)
     request_sha256 = _request_digest(
         submission_id=submission_id,
         question_id=question_id,
@@ -202,13 +210,26 @@ def _index_canonical_nodes(
     locations: dict[str, _NodeLocation] = {}
 
     def visit(
-        node: CanonicalContentNode, pointer: str, page_index: int, page_number: int, block
+        node: CanonicalContentNode,
+        pointer: str,
+        parent_pointer: str | None,
+        page_index: int,
+        page_number: int,
+        block: CanonicalBlock,
     ) -> None:
-        locations[pointer] = _NodeLocation(page_index, page_number, block, node)
+        locations[pointer] = _NodeLocation(
+            pointer,
+            parent_pointer,
+            page_index,
+            page_number,
+            block,
+            node,
+        )
         for child_index, child in enumerate(node.children):
             visit(
                 child,
                 f"{pointer}/children/{child_index}",
+                pointer,
                 page_index,
                 page_number,
                 block,
@@ -219,6 +240,7 @@ def _index_canonical_nodes(
             visit(
                 block.content,
                 f"/pages/{page.page_index}/blocks/{block_index}/content",
+                None,
                 page.page_index,
                 page.page_number,
                 block,
@@ -231,6 +253,7 @@ def _validate_question_ownership(
     question_id: UUID,
     answers: list[AlignedAnswer],
     unassigned_regions: list[UnassignedRegion],
+    node_index: dict[str, _NodeLocation],
 ) -> None:
     """Reject evidence already assigned to another Question by P2-D1.
 
@@ -261,7 +284,7 @@ def _validate_question_ownership(
         selection
         for selection in selections
         if any(
-            _selection_overlaps_source(selection, source_region)
+            _selection_overlaps_source(selection, source_region, node_index)
             for source_region in (*other_question_regions, *unassigned_source_regions)
         )
     ]
@@ -270,7 +293,10 @@ def _validate_question_ownership(
     uncertain_keys = {_selection_key(selection) for selection in payload.uncertain_regions}
     if (
         payload.decision != "uncertain"
-        or "response_not_linked_to_question" not in payload.reason_codes
+        or not {
+            "response_not_linked_to_question",
+            "shared_figure_attribution_unclear",
+        }.intersection(payload.reason_codes)
         or not payload.uncertain_regions
         or not {_selection_key(selection) for selection in unresolved}.issubset(uncertain_keys)
     ):
@@ -280,16 +306,123 @@ def _validate_question_ownership(
 def _selection_overlaps_source(
     selection: ReviewRegionSelection,
     source_region: SourceRegion,
+    node_index: dict[str, _NodeLocation],
 ) -> bool:
-    if selection.content_pointer != source_region.content_pointer:
+    if selection.content_pointer == source_region.content_pointer:
+        if selection.text_start is None or source_region.text_start is None:
+            return True
+        assert selection.text_end is not None and source_region.text_end is not None
+        return max(selection.text_start, source_region.text_start) < min(
+            selection.text_end,
+            source_region.text_end,
+        )
+
+    selected_location = node_index.get(selection.content_pointer)
+    source_location = node_index.get(source_region.content_pointer)
+    if selected_location is None or source_location is None:
         return False
-    if selection.text_start is None or source_region.text_start is None:
-        return True
-    assert selection.text_end is not None and source_region.text_end is not None
-    return max(selection.text_start, source_region.text_start) < min(
+
+    if _nodes_overlap(
+        selection.content_pointer,
+        selection.text_start,
         selection.text_end,
+        source_region.content_pointer,
+        source_region.text_start,
         source_region.text_end,
+        node_index,
+    ):
+        return True
+
+    if _selection_asset_keys(selection, selected_location) & _source_asset_keys(
+        source_region,
+        source_location,
+    ):
+        return True
+
+    # A Block-level image link has no character or child-node position. If the
+    # reviewer selects that image and another Question has a source in the same
+    # Block, the image cannot be claimed as exclusive evidence for this one.
+    selected_node_asset_keys = {
+        _asset_reference_key(reference) for reference in selected_location.node.asset_refs
+    }
+    block_asset_keys = {
+        _asset_reference_key(reference) for reference in selected_location.block.asset_refs
+    }
+    return (
+        selection.text_start is None
+        and selected_location.node.normalized_type == "image"
+        and selected_location.block.block_id == source_region.source_block_id
+        and bool(block_asset_keys)
+        and (not selected_node_asset_keys or bool(block_asset_keys & selected_node_asset_keys))
     )
+
+
+def _nodes_overlap(
+    first_pointer: str,
+    first_start: int | None,
+    first_end: int | None,
+    second_pointer: str,
+    second_start: int | None,
+    second_end: int | None,
+    node_index: dict[str, _NodeLocation],
+) -> bool:
+    if first_pointer == second_pointer:
+        if first_start is None or second_start is None:
+            return True
+        assert first_end is not None and second_end is not None
+        return max(first_start, second_start) < min(first_end, second_end)
+    return _is_ancestor(first_pointer, second_pointer, node_index) or _is_ancestor(
+        second_pointer,
+        first_pointer,
+        node_index,
+    )
+
+
+def _is_ancestor(
+    ancestor_pointer: str,
+    child_pointer: str,
+    node_index: dict[str, _NodeLocation],
+) -> bool:
+    child = node_index.get(child_pointer)
+    while child is not None and child.parent_pointer is not None:
+        if child.parent_pointer == ancestor_pointer:
+            return True
+        child = node_index.get(child.parent_pointer)
+    return False
+
+
+def _validate_selection_conflicts(
+    payload: AnswerReviewDecisionCreate,
+    node_index: dict[str, _NodeLocation],
+) -> None:
+    """Reject overlapping content or duplicate visual assets across roles."""
+
+    selections = [
+        selection
+        for regions in (
+            payload.response_regions,
+            payload.excluded_prompt_regions,
+            payload.uncertain_regions,
+        )
+        for selection in regions
+    ]
+    for index, first in enumerate(selections):
+        for second in selections[index + 1 :]:
+            first_location = node_index[first.content_pointer]
+            second_location = node_index[second.content_pointer]
+            if _nodes_overlap(
+                first.content_pointer,
+                first.text_start,
+                first.text_end,
+                second.content_pointer,
+                second.text_start,
+                second.text_end,
+                node_index,
+            ) or _selection_asset_keys(first, first_location) & _selection_asset_keys(
+                second,
+                second_location,
+            ):
+                raise AnswerReviewRegionInvalidError
 
 
 def _selection_key(selection: ReviewRegionSelection) -> tuple[str, int | None, int | None]:
@@ -299,6 +432,8 @@ def _selection_key(selection: ReviewRegionSelection) -> tuple[str, int | None, i
 def _materialize_regions(
     selections: list[ReviewRegionSelection],
     node_index: dict[str, _NodeLocation],
+    *,
+    allow_block_asset_context: bool = False,
 ) -> list[ReviewEvidenceRegion]:
     evidence: list[ReviewEvidenceRegion] = []
     for selection in selections:
@@ -314,12 +449,32 @@ def _materialize_regions(
         elif node.value not in {None, ""}:
             # Text must be selected with explicit Unicode code-point offsets.
             raise AnswerReviewRegionInvalidError
-        elif not (node.asset_refs or location.block.asset_refs or node.normalized_type == "image"):
-            # A non-text pointer without an image/reference is not reviewable
-            # evidence. Do not permit selecting an empty container node.
+        elif node.normalized_type == "image":
+            if not (node.asset_refs or location.block.asset_refs):
+                raise AnswerReviewRegionInvalidError
+        elif not (
+            allow_block_asset_context
+            and location.parent_pointer is None
+            and location.block.asset_refs
+        ):
+            # Only an explicit image node can be a confirmed whole-node
+            # selection. A root container may cite a Block-level image only
+            # in the uncertain role; that link must not qualify its children.
             raise AnswerReviewRegionInvalidError
 
-        references = _safe_asset_references((*location.block.asset_refs, *node.asset_refs))
+        references = list(node.asset_refs)
+        if node.normalized_type == "image" and not references:
+            references = list(location.block.asset_refs)
+        elif (
+            selection.text_start is None
+            and allow_block_asset_context
+            and location.parent_pointer is None
+            and not references
+        ):
+            references = list(location.block.asset_refs)
+        safe_references = _safe_asset_references(references)
+        if node.normalized_type == "image" and not safe_references:
+            raise AnswerReviewRegionInvalidError
         evidence.append(
             ReviewEvidenceRegion(
                 content_pointer=selection.content_pointer,
@@ -332,7 +487,7 @@ def _materialize_regions(
                 normalized_type=node.normalized_type,
                 text_start=selection.text_start,
                 text_end=selection.text_end,
-                asset_refs=references,
+                asset_refs=safe_references,
             )
         )
     return evidence
@@ -341,18 +496,53 @@ def _materialize_regions(
 def _safe_asset_references(
     references: Iterable[CanonicalAssetReference],
 ) -> list[ReviewAssetReference]:
-    seen: set[str] = set()
+    seen: set[tuple[str, ...]] = set()
     safe: list[ReviewAssetReference] = []
     for reference in references:
         item = ReviewAssetReference.model_validate(
             reference.model_dump(mode="json", exclude={"uri"})
         )
-        key = json.dumps(item.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
+        key = _asset_reference_key(reference)
         if key in seen:
             continue
         seen.add(key)
         safe.append(item)
     return safe
+
+
+def _selection_asset_keys(
+    selection: ReviewRegionSelection,
+    location: _NodeLocation,
+) -> set[tuple[str, ...]]:
+    if selection.text_start is not None or location.node.normalized_type != "image":
+        return set()
+    references = list(location.node.asset_refs)
+    if not references:
+        references = list(location.block.asset_refs)
+    return {_asset_reference_key(reference) for reference in references}
+
+
+def _source_asset_keys(
+    source_region: SourceRegion,
+    location: _NodeLocation,
+) -> set[tuple[str, ...]]:
+    return {
+        _asset_reference_key(reference)
+        for reference in (*source_region.asset_refs, *location.node.asset_refs)
+    }
+
+
+def _asset_reference_key(reference: CanonicalAssetReference) -> tuple[str, ...]:
+    if reference.kind == "stored":
+        return ("stored", str(reference.asset_id))
+    if reference.kind == "external":
+        return ("external", reference.uri or "")
+    return (
+        "inline_redacted",
+        reference.sha256 or "",
+        str(reference.size_bytes),
+        reference.content_type or "",
+    )
 
 
 def _request_digest(
