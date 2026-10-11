@@ -64,6 +64,12 @@ class Settings(BaseSettings):
         ge=1024,
         le=8 * 1024 * 1024,
     )
+    grade_input_max_text_bytes: int = Field(default=1024 * 1024, ge=1024, le=8 * 1024 * 1024)
+    grade_input_max_document_bytes: int = Field(
+        default=4 * 1024 * 1024,
+        ge=4096,
+        le=16 * 1024 * 1024,
+    )
     visual_evidence_enabled: bool = False
     visual_evidence_provider: Literal["openai_compatible", "ollama_native"] = (
         "openai_compatible"

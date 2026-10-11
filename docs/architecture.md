@@ -12,6 +12,7 @@
 - `modules/canonical_documents`：Canonical Document v1 DTO、MiddleJson 适配转换、有界内容验证、稳定标识、S3/PG 持久化、状态与页面查询。
 - `modules/answer_alignment`：P2-D1 新增模块。按 Canonical 阅读顺序识别题号候选、切分可追溯来源区域、与 Assignment 的真实 Question 对齐，并读写版本化结果索引。该模块不读取 AnswerKey，也不判断学生作答存在性。
 - `modules/answer_review`：独立人工判断协议。校验 Canonical 节点与 Unicode 码点范围，按当前 Canonical/Alignment/Question 集合版本追加作答存在性决定，并校验合成标注基线。该模块不修改 Answer Alignment，不生成自动作答预测或评分结果。
+- `modules/grading`：从当前版本的人工 `response_present` 证据、Canonical 和 Alignment 中构建版本化评分输入；校验已发布作业、教师标准答案、Rubric 总分和来源版本。它只准备输入，不调用评分模型或生成分数。
 - `modules/visual_evidence`：严格版本化机器建议协议、幂等请求索引和来源版本复核。proposal 写私有 S3，PostgreSQL 保存轻量索引；不修改人工复核表。
 - `modules/visual_evaluation`：版本化合成视觉标签协议、图像引用/hash/尺寸验证、作答存在性与区域定位统计。它消费 Provider 已保存的预测，不访问数据库，也不把 Canonical 映射当作标签。
 - `workers`：独立于 FastAPI 的解析任务轮询进程，管理领取、解析调用、heartbeat、结果提交和受控退出；另含规范化、答案对齐、人工复核和 VLM 建议 CLI。
@@ -196,3 +197,19 @@ Heartbeat 已确认本轮 Task 的状态和租约。它不保证解析产物只�
 opt-in 本机 E2E 对三个合成样本均通过；三个文件都为一页，断言分别验证文字 PDF 的样本文字、扫描 PDF 的 OCR 文字、PNG 输入识别出的样本文字，并校验产物对象的 SHA-256。默认 GitHub CI 的三个 E2E 项跳过，因为 CI 不安装 MinerU 模型。上述结果不等同真实教学数据质量评估。
 
 输入上限、页数、ZIP展开大小、文本输出和成员数上限可以限制部分工作量，但它们不构成 MinerU 进程的硬内存或 CPU 配额。当前 CPU ONNX 执行设置 `OMP_NUM_THREADS=4`、ONNX intra-op 4 / inter-op 1，并隐藏 CUDA；一个 Worker 进程每次处理一个任务，多进程部署会线性叠加资源压力。MinerU 4.0.10 Basic/ONNX CPU 单样本内存应使用 `/usr/bin/time -v` 或 cgroup `memory.peak` 观察，并据此设定 systemd/Docker 内存限制与 Worker 数量。若子进程被 OOM Killer 终止，它以非零状态退出，任务不会成功；现有策略会按可重试解析故障记录，达到最大尝试次数后转为失败。
+
+## P3-A 可信评分输入与 Rubric 快照
+
+`modules/grading` 只准备不可变的评分输入，不运行评分模型、不生成分数，也不把 `response_absent` 转成零分。作业必须已发布，目标 Question 必须属于 Submission 的 Assignment，且必须有教师录入的 AnswerKey 和有效 Rubric。Rubric Criterion 使用 `Decimal`，严格要求总分与 Question 的 `max_score` 相等；输入包保留 Criterion ID、Question ID、说明、分值和排序。
+
+评分门禁读取经 `load_verified_alignment_bundle()` 验证的 Canonical/Alignment 对象及当前 SHA，再读取该 Submission/Question 的最高 revision。最新决定必须是当前版本绑定的 `response_present`，且其 response region 必须实际存在于当前 Canonical。仅取 `response_regions`，绝不把 `excluded_prompt_regions` 或 `uncertain_regions` 拼入学生答案。`aligned` 只是来源与 Question 的映射状态；人工 `response_present` 是复核者的判断。两者都不能单独证明 OCR 完整、标注绝对正确或内容可直接评分。
+
+纯文本提取只按完整 `content_pointer` 找到 CanonicalContentNode，并在该节点的字符串上用 Python Unicode 码点半开区间 `[start, end)` 切片。包保留每个片段的页码、Block ID、reading order、pointer、偏移和 SHA；跨页片段按 Canonical 阅读顺序排列，不把相同内容去重。打印题干不会进入包，除非复核者明确把它选为 `response_present`；系统仍不能判断人工标签是否正确。
+
+可验证的公式文本或 LaTeX 以 `formula_text` 独立保留。带图片引用或只有图片表示的公式、图片/几何、表格、图表及其他非纯文本节点会进入 inspection 的证据清单并带固定原因码；只要存在此类必要作答内容，就返回 `unsupported_modality`，不创建文本评分包。Canonical 当前没有经验证的表格单元格解析或几何向量表示，因此不会把 HTML、图片占位标记或普通整页 OCR 投影改写成虚构答案文本。
+
+完整 `huipi.grading.input` 1.0 JSON 写入私有 S3；PostgreSQL 的 `grade_input_artifacts` 只保留输入/来源哈希、外键、对象 Key、字节数和请求索引。包绑定 Submission 原文件 SHA、Canonical artifact/SHA/schema、Alignment artifact/SHA/aligner/Question digest、人工复核 ID/revision/request SHA、Question、AnswerKey 快照和 Rubric 快照。`input_sha256` 是规范化 JSON 对语义输入（不含 artifact ID、创建时间和自身 hash）的摘要；`object_sha256` 覆盖实际存储字节。AnswerKey 原文、Rubric 描述和学生回答都不复制到数据库日志或 CLI inspection。
+
+上传对象使用每次尝试独立的不可变 Key。写 PostgreSQL 前以 `Submission → Assignment → Question` 的顺序加锁，与人工复核、作业写入路径保持一致；再锁定并重新核对 Canonical、Alignment、最新 Review、AnswerKey 和 Rubric。唯一约束 `(submission_id, question_id, request_id)` 保护并发重放。同 request ID 与相同 `input_sha256` 返回既有包；内容不同返回冲突。只有确认事务在 COMMIT 前失败或确认其他对象已登记为赢家后，服务才尽力删除本次对象；COMMIT 结果未知时保留对象。S3 与 PostgreSQL 不共享事务，进程中断或上传取消仍可能留下孤立对象，当前没有对账清理器。
+
+`read_grade_input_artifact()` 重新计算当前输入摘要，拒绝已被新复核修订替代的旧包；随后校验对象大小、SHA-256、严格 Pydantic 协议和索引字段。P3-B 消费者仍必须在实际评分前读取当前包，不应把历史对象状态当作永久有效授权。CLI 位于 `workers/prepare_grade_input.py`，只支持本地 `inspect` 与 `prepare`，没有匿名 HTTP 写 API。项目没有认证或 RBAC，原始作业、复核证据和评分输入只适用于受控环境。
