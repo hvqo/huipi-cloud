@@ -262,16 +262,11 @@ async def _main_async(arguments: argparse.Namespace) -> int:
         prediction_path = arguments.evaluate_predictions.resolve()
         prediction_run = json.loads(prediction_path.read_text(encoding="utf-8"))
         expected_digest = hashlib.sha256(dataset_path.read_bytes()).hexdigest()
-        if (
-            prediction_run.get("dataset_id") != dataset.dataset_id
-            or prediction_run.get("dataset_version") != dataset.dataset_version
-            or prediction_run.get("dataset_sha256") != expected_digest
-        ):
-            raise ValueError("stored predictions do not match this dataset version and digest")
         metrics = evaluate_visual_predictions(
             dataset,
             prediction_run,
             iou_threshold=arguments.iou_threshold,
+            expected_dataset_sha256=expected_digest,
         )
         metrics_path = arguments.output.with_name(
             f"{arguments.output.stem}.metrics{arguments.output.suffix or '.json'}"

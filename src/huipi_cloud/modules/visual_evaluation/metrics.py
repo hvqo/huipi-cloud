@@ -3,13 +3,22 @@
 from __future__ import annotations
 
 import math
+import re
 from collections import Counter
 from typing import Any
+
+from pydantic import ValidationError
 
 from huipi_cloud.modules.visual_evaluation.protocol import (
     VisualEvaluationCase,
     VisualEvaluationDataset,
 )
+from huipi_cloud.modules.visual_evidence.protocol import VisualEvidenceModelReply
+
+PREDICTION_SCHEMA_NAME = "huipi.visual.evidence.predictions"
+PREDICTION_SCHEMA_VERSION = "1.0"
+_PREDICTION_STATUSES = {"ok", "protocol_error", "request_error", "input_error"}
+_SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 
 
 def _ratio(numerator: int, denominator: int, reason: str) -> dict[str, Any]:
@@ -42,18 +51,17 @@ def evaluate_visual_predictions(
     prediction_run: dict[str, Any],
     *,
     iou_threshold: float = 0.5,
+    expected_dataset_sha256: str | None = None,
 ) -> dict[str, Any]:
     """Compare stored model outputs to labels, without mixing the two data sources."""
 
     if not math.isfinite(iou_threshold) or not 0 < iou_threshold <= 1:
         raise ValueError("IoU threshold must be finite and in (0, 1]")
-    output_cases = prediction_run.get("cases")
-    if not isinstance(output_cases, list):
-        raise ValueError("prediction run must contain a cases list")
-    by_id = {record.get("case_id"): record for record in output_cases if isinstance(record, dict)}
-    expected = {case.case_id for case in dataset.cases}
-    if len(by_id) != len(output_cases) or set(by_id) != expected:
-        raise ValueError("prediction case IDs must exactly match the evaluation dataset")
+    by_id = _validate_prediction_run(
+        dataset,
+        prediction_run,
+        expected_dataset_sha256=expected_dataset_sha256,
+    )
 
     presence = _presence_metrics(dataset, by_id)
     regions = _region_metrics(dataset, by_id, iou_threshold)
@@ -305,6 +313,155 @@ def _candidate_detection_metrics(
     }
 
 
+def _validate_prediction_run(
+    dataset: VisualEvaluationDataset,
+    prediction_run: dict[str, Any],
+    *,
+    expected_dataset_sha256: str | None,
+) -> dict[str, dict[str, Any]]:
+    if not isinstance(prediction_run, dict):
+        raise ValueError("prediction run must be a JSON object")
+    if prediction_run.get("schema_name") != PREDICTION_SCHEMA_NAME:
+        raise ValueError("unsupported prediction run schema_name")
+    if prediction_run.get("schema_version") != PREDICTION_SCHEMA_VERSION:
+        raise ValueError("unsupported prediction run schema_version")
+    if prediction_run.get("dataset_id") != dataset.dataset_id:
+        raise ValueError("prediction dataset_id does not match the evaluation dataset")
+    if prediction_run.get("dataset_version") != dataset.dataset_version:
+        raise ValueError("prediction dataset version does not match the evaluation dataset")
+
+    recorded_digest = prediction_run.get("dataset_sha256")
+    if not isinstance(recorded_digest, str) or _SHA256_PATTERN.fullmatch(recorded_digest) is None:
+        raise ValueError("prediction dataset SHA-256 is missing or invalid")
+    if expected_dataset_sha256 is not None:
+        if _SHA256_PATTERN.fullmatch(expected_dataset_sha256) is None:
+            raise ValueError("expected dataset SHA-256 is invalid")
+        if recorded_digest != expected_dataset_sha256:
+            raise ValueError("prediction dataset SHA-256 does not match the evaluation dataset")
+
+    output_cases = prediction_run.get("cases")
+    if not isinstance(output_cases, list):
+        raise ValueError("prediction run must contain a cases list")
+    expected = {case.case_id: case for case in dataset.cases}
+    by_id: dict[str, dict[str, Any]] = {}
+    for record in output_cases:
+        if not isinstance(record, dict):
+            raise ValueError("every prediction case must be a JSON object")
+        case_id = record.get("case_id")
+        if not isinstance(case_id, str) or not case_id:
+            raise ValueError("prediction case_id must be a non-empty string")
+        if case_id in by_id:
+            raise ValueError(f"duplicate case_id in prediction run: {case_id}")
+        if case_id not in expected:
+            raise ValueError(f"unexpected prediction case_id: {case_id}")
+        _validate_prediction_record(expected[case_id], record)
+        by_id[case_id] = record
+
+    expected_ids = set(expected)
+    if set(by_id) != expected_ids:
+        missing = sorted(expected_ids - set(by_id))
+        raise ValueError(
+            f"prediction case IDs must exactly match the evaluation dataset; missing={missing}"
+        )
+    return by_id
+
+
+def _validate_prediction_record(
+    case: VisualEvaluationCase,
+    record: dict[str, Any],
+) -> None:
+    status = record.get("status")
+    if not isinstance(status, str) or status not in _PREDICTION_STATUSES:
+        raise ValueError(f"prediction case {case.case_id} has unknown status")
+
+    elapsed_ms = record.get("elapsed_ms")
+    if isinstance(elapsed_ms, bool) or not isinstance(elapsed_ms, int) or elapsed_ms < 0:
+        raise ValueError(f"prediction case {case.case_id} has invalid elapsed_ms")
+    source_bytes = record.get("source_bytes_total")
+    if isinstance(source_bytes, bool) or not isinstance(source_bytes, int) or source_bytes < 0:
+        raise ValueError(f"prediction case {case.case_id} has invalid source_bytes_total")
+
+    rendered_pages = record.get("rendered_pages")
+    if not isinstance(rendered_pages, list):
+        raise ValueError(f"prediction case {case.case_id} must list rendered_pages")
+    provided_page_indexes: list[int] = []
+    for page in rendered_pages:
+        if not isinstance(page, dict):
+            raise ValueError(f"prediction case {case.case_id} contains an invalid rendered page")
+        page_index = page.get("page_index")
+        if isinstance(page_index, bool) or not isinstance(page_index, int):
+            raise ValueError(f"prediction case {case.case_id} contains an invalid page_index")
+        provided_page_indexes.append(page_index)
+        for dimension in ("width", "height"):
+            value = page.get(dimension)
+            if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+                raise ValueError(
+                    f"prediction case {case.case_id} contains an invalid rendered page {dimension}"
+                )
+
+    if len(set(provided_page_indexes)) != len(provided_page_indexes):
+        raise ValueError(f"prediction case {case.case_id} has duplicate rendered page indexes")
+    expected_page_indexes = {page.page_index for page in case.pages}
+    provided_page_set = set(provided_page_indexes)
+    if not provided_page_set <= expected_page_indexes:
+        raise ValueError(f"prediction case {case.case_id} lists a page not provided for the case")
+
+    usage = record.get("usage")
+    if usage is not None:
+        if not isinstance(usage, dict):
+            raise ValueError(f"prediction case {case.case_id} has invalid token usage")
+        for field in ("prompt_tokens", "completion_tokens", "total_tokens"):
+            value = usage.get(field)
+            if value is not None and (
+                isinstance(value, bool) or not isinstance(value, int) or value < 0
+            ):
+                raise ValueError(f"prediction case {case.case_id} has invalid {field}")
+
+    if status == "ok":
+        if record.get("protocol_valid") is not True:
+            raise ValueError(
+                f"successful prediction case {case.case_id} is not marked protocol_valid"
+            )
+        if provided_page_set != expected_page_indexes:
+            raise ValueError(
+                f"case {case.case_id} does not include every dataset page"
+            )
+        input_digest = record.get("input_digest")
+        if not isinstance(input_digest, str) or _SHA256_PATTERN.fullmatch(input_digest) is None:
+            raise ValueError(f"successful prediction case {case.case_id} has invalid input_digest")
+        suggestion = record.get("suggestion")
+        if not isinstance(suggestion, dict):
+            raise ValueError(f"successful prediction case {case.case_id} is missing suggestion")
+        try:
+            reply = VisualEvidenceModelReply.model_validate(suggestion)
+        except ValidationError as error:
+            issue_summary = "; ".join(
+                f"{'.'.join(str(part) for part in issue['loc'])}: {issue['msg']}"
+                for issue in error.errors(
+                    include_url=False,
+                    include_context=False,
+                    include_input=False,
+                )
+            )
+            raise ValueError(
+                f"case {case.case_id} has invalid VisualEvidenceModelReply: "
+                f"{issue_summary}"
+            ) from error
+        if any(region.page_index not in provided_page_set for region in reply.visual_regions):
+            raise ValueError(
+                f"case {case.case_id} references a page not given to the model"
+            )
+        return
+
+    if record.get("protocol_valid") is not False:
+        raise ValueError(f"failed prediction case {case.case_id} must set protocol_valid to false")
+    error_code = record.get("error_code")
+    if not isinstance(error_code, str) or not error_code:
+        raise ValueError(f"failed prediction case {case.case_id} is missing error_code")
+    if record.get("suggestion") is not None:
+        raise ValueError(f"failed prediction case {case.case_id} cannot contain a suggestion")
+
+
 def _region_metrics(
     dataset: VisualEvaluationDataset,
     predictions: dict[str, dict[str, Any]],
@@ -512,7 +669,9 @@ def _case_failures(
         if record.get("status") == "protocol_error":
             categories.append("model_protocol_error")
         elif record.get("status") == "request_error":
-            categories.append("provider_or_input_error")
+            categories.append("provider_request_error")
+        elif record.get("status") == "input_error":
+            categories.append("render_or_input_error")
         else:
             predicted = _predicted_presence(record)
             if predicted is None and case.manual_answer_presence != "uncertain":

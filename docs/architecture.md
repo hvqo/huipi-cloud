@@ -1,6 +1,6 @@
 # 架构与模块边界
 
-慧批云端采用 src 布局的模块化单体。P1-A 至 P2-D2B 已合并到 `main`。当前 P2-D2C 功能分支增加视觉评测数据集和离线评测工具，不改变线上视觉建议协议。自动批改、教师 Copilot、完整认证和 RBAC 仍未实现。
+慧批云端采用 src 布局的模块化单体，围绕作业提交、文档解析、来源对齐、视觉建议和人工复核建立可追溯的数据流。离线视觉评测与线上视觉建议使用同一严格回复协议，但评测工具不修改线上 Provider 行为。自动批改、教师 Copilot、完整认证和 RBAC 仍未实现。
 
 ## 模块职责
 
@@ -51,7 +51,7 @@ revision 的排序不依赖时间戳。写入前锁住 `Submission` 行，同一
 
 Provider 有两个显式选项：`openai_compatible` 使用 `/v1/chat/completions` 和环境变量 Key；`ollama_native` 只接受本机 HTTP loopback，使用 `/api/chat` 的 `think=false` 与 JSON 格式控制，并读取 Ollama 返回的 token 计数。使用原生接口是为避免本机 Qwen 3.5 OpenAI-compatible 调用把有限上下文耗尽在隐藏思考输出；通用兼容 Provider 不发送 Ollama 私有参数。两种适配器都使用有界响应读取、请求超时、仅对网络/429/5xx 的有限重试和同一严格 Pydantic 输出协议。
 
-2026-10-10 的本地真实模型合同检查使用 Ollama 0.31.2 与 `qwen3.5:4b`，五个生成样本均返回合法响应（5/5），单次耗时约 4.8–6.2 秒；几何标记仍被误判为“仅印刷题干”。2026-10-11 的专项真实业务闭环使用合成 PNG、合成 MiddleJson fixture 和真实 Canonical/Alignment 持久化链路，模型仍把几何标记误报为 `printed_prompt`。模型框 `[0.21, 0.365, 0.798, 0.674]` 与合成 Canonical 答案来源框 IoU 为 0.952；新规则保留此几何证据但因类型为印刷题干拒绝 pointer。最新验收调用耗时 9359 ms，prompt/completion 用量 1807/120 tokens。S3 proposal 大小 1967 字节，SHA-256 经下载核验，人工复核行数未变。该样本没有运行 MinerU，不含真实学生数据，也不能用于准确率或性能结论。错误分类是 VLM 视觉识别误判；JSON 合同有效；输入是 PNG，不涉及 PDF/EXIF 转换；来源拒绝是有意的安全策略，不是 Canonical 解析失败。
+真实 VLM 调用、协议结果、合成样本的视觉误判以及来源映射观测属于评测证据，不作为架构保证；详见[视觉证据评测文档](evaluation/visual-evidence.md)。
 
 `candidate_prompt_only` 只说模型看到了印刷题干，不等于 `response_absent`；`candidate_response_present` 也不是人工作答确认。模型没有自由文本理由和未校准置信度。程序把归一化图像框经所记录的变换后，与真实 Canonical tree 中由 P2-D1 提供、且 `content_pointer` 和 Block ID 均能在树中验证的区域作启发式重叠检查。IoU 门限保持 0.08，Proposal 的 `source_bbox_iou` 记录实际几何交并比，不是置信度。单一空间候选不证明 Question 真实归属；它仍是待复核机器建议。`printed_prompt` 类别永远不获得答案来源 pointer，即使框与唯一 Canonical BBox 完全重叠。共享图形、多题交叉、无匹配、不可映射坐标或多来源重叠时保留原图视觉框和 `unresolved`。Proposal schema 升到 1.1，预处理版本升到 1.1.0，以区分新增来源框 IoU 和 PDF 页面框元数据。
 
@@ -59,17 +59,15 @@ VLM 调用没有打开数据库事务。生成结果后，系统先上传至私�
 
 机器 JSON 保存完整 proposal；PostgreSQL 不保存图像或原始 OCR 文本。数据表通过外键绑定 Submission、Assignment、Question、CanonicalArtifact 和 AnswerAlignmentArtifact，并记录文件/模型/版本/输入摘要。当前没有 proposal HTTP 查询或匿名写接口，只有本地 `analyze_visual_evidence` CLI；CLI dry-run 会下载、校验并渲染，但不会发模型调用或写结果。建议不会写入 `answer_review_decisions`，不会改 Canonical/Alignment，也不能作为评分状态。数据留存、访问认证、对象孤儿清理和真实样本质量评测仍是上线前置工作。
 
-## P2-D2C 视觉作答证据质量评测（当前功能分支）
+## 视觉作答证据评测
 
-`modules/visual_evaluation/protocol.py` 解析严格版本化 JSON 标注。每页图像必须位于数据集目录内，并通过文件大小、实际格式、尺寸、像素和 SHA-256 校验。人工标签与模型预测分开保存。合成数据生成器生成 26 个案例和 27 页；标签依据确定性生成配方及图片人工核对，所有蓝色笔迹或几何标记均由程序绘制，不是真实学生手写。
+`modules/visual_evaluation/protocol.py` 解析严格版本化 JSON 标注。每页图像必须位于数据集目录内，并通过文件大小、实际格式、尺寸、像素和 SHA-256 校验。人工标签与模型预测分开保存。当前公开回归集为 26 个合成案例、27 张程序绘制的图片；模拟笔迹和几何标记不是真实学生作业。
 
-`scripts/evaluate_visual_evidence.py` 默认执行 dry-run。`--run-model` 复用 P2-D2B Provider 和页面预处理；`--evaluate-predictions` 可以从同一数据集 digest 对已有输出重算，不再次调用模型。输出记录模型、Prompt/预处理版本、输入 SHA、结构化建议、耗时、token 和错误类别，不记录图像字节或 Base64。外部 endpoint 需要显式确认外部数据授权。
+`scripts/evaluate_visual_evidence.py` 默认执行 dry-run。`--run-model` 复用视觉 Provider 和页面预处理；`--evaluate-predictions` 仅从已保存的预测 JSON 重算指标，不再次调用模型。离线加载器校验预测 Schema、数据集 ID/版本/SHA、案例集合、记录状态和页面信息；`status=ok` 的每条建议会再次通过 `VisualEvidenceModelReply` 严格校验，并且区域页面必须属于该案例实际提供的页面。合法的 Provider、协议和输入失败记录单独统计；未知状态或不合规的历史成功记录会被拒绝，不参与协议通过率。评测输出写入新文件，不修改预测或人工标签。
 
-指标区分案例级作答存在性、目标题作答区域候选检测和全部目标 Question 区域定位。区域在同一案例和页面内按 IoU 0.5 确定性一对一匹配；报告 TP/FP/FN/TN、各分母、覆盖率和弃权率。`candidate_prompt_only` 仅作为离线分类中的候选负类，不表示人工作答缺失；uncertain 人工案例不计入确定标签分类分母。视觉集没有 Canonical/AnswerAlignment 来源 pointer 真值，因此 Candidate Question Link 和 Automatic Accept 的 Precision/Recall 是 `not_evaluated`，不依据输入 Question 号推断关联正确。
+指标区分案例级作答存在性、目标题作答区域候选检测和全部目标 Question 区域定位。区域在同一案例和页面内按 IoU 0.5 确定性一对一匹配；报告原始计数、分母、覆盖率和弃权率。`candidate_prompt_only` 仅作为离线分类中的候选负类，不表示人工作答缺失；uncertain 人工案例不计入确定标签分类分母。视觉集没有 Canonical/AnswerAlignment 来源 pointer 真值，因此 Candidate Question Link 和 Automatic Accept 的 Precision/Recall 是 `not_evaluated`，不依据输入 Question 号推断关联正确。
 
-qwen3.5:4b 的本地基线对 26 个案例的 JSON 协议通过率为 26/26。21 个确定标签案例的作答存在性计数为 TP=8、FP=0、FN=6、TN=7；IoU=0.5 的作答区域候选检测为 TP=0、FP=8、FN=14。所有目标区域（含印刷题干）的定位为 TP=0、FP=26、FN=54。几何标记样本被判为 `candidate_prompt_only`，而人工标签是 `response_present`；原始预测及每例失败列表留在评测 JSON。平均/P50/P95 延迟为 2927.6/2661/3224 ms，prompt/completion token 合计 46153/2005。该 26 例合成集不衡量真实作业准确率、模型校准或推理成本。
-
-专项 opt-in 测试使用真实 MinerU 4.0.10 Basic/ONNX 子进程解析标记过的合成 PDF，接着持久化 Canonical、生成真实 AnswerAlignment、用 qwen3.5:4b 调用 VLM，并保存 proposal 到测试 MinIO/PostgreSQL。测试只在 P2-D1 实际状态为 `aligned` 时继续；Canonical 关联本次真实 ParsedArtifact，不设置或伪造对齐状态。Proposal 下载后 SHA-256 和大小正确，人工复核行数未变化。当前样本模型返回 `geometry_mark` 候选，来源 bbox IoU 为 0.0，最终映射为 `unresolved/source_mapping_unavailable`；这验证真实链路，不证明来源映射正确或模型准确率。默认 CI 不启动 MinerU/Ollama。
+数据集定义、固定合成基线、逐案例失败和真实 MinerU/Ollama 专项运行结果记录在[视觉证据评测文档](evaluation/visual-evidence.md)。报告必须区分协议通过、作答判断、区域定位和 Canonical 来源映射；合成样本及单次模型调用不代表真实教学作业准确率或生产性能。
 
 ## 数据关系
 
@@ -195,6 +193,6 @@ Heartbeat 已确认本轮 Task 的状态和租约。它不保证解析产物只�
 
 集成测试要求真实 PostgreSQL；文件和产物集成测试还需要本地 S3 兼容服务。CI 使用 PostgreSQL 16 与 PGSTY SILO；默认 CI 不下载 MinerU 模型。`tests/integration/test_mineru_e2e.py` 使用受控合成文本 PDF、扫描 PDF 和 PNG，经 API、真实 Worker、独立 MinerU 子进程、PostgreSQL 与 S3 验证数据流；运行它需显式启用 `MINERU_E2E=1` 并配置本地模型。测试仅操作 `_test` 数据库和测试对象前缀，不清空开发数据卷。
 
-PR #5 最终本机 E2E 对这三个合成样本均通过；三个文件都为一页，断言分别验证文字 PDF 的样本文字、扫描 PDF 的 OCR 文字、PNG 输入识别出的样本文字，并校验产物对象的 SHA-256。默认 GitHub CI 的三个 E2E 项跳过，因为 CI 不安装 MinerU 模型。上述结果不等同真实教学数据质量评估。
+opt-in 本机 E2E 对三个合成样本均通过；三个文件都为一页，断言分别验证文字 PDF 的样本文字、扫描 PDF 的 OCR 文字、PNG 输入识别出的样本文字，并校验产物对象的 SHA-256。默认 GitHub CI 的三个 E2E 项跳过，因为 CI 不安装 MinerU 模型。上述结果不等同真实教学数据质量评估。
 
 输入上限、页数、ZIP展开大小、文本输出和成员数上限可以限制部分工作量，但它们不构成 MinerU 进程的硬内存或 CPU 配额。当前 CPU ONNX 执行设置 `OMP_NUM_THREADS=4`、ONNX intra-op 4 / inter-op 1，并隐藏 CUDA；一个 Worker 进程每次处理一个任务，多进程部署会线性叠加资源压力。MinerU 4.0.10 Basic/ONNX CPU 单样本内存应使用 `/usr/bin/time -v` 或 cgroup `memory.peak` 观察，并据此设定 systemd/Docker 内存限制与 Worker 数量。若子进程被 OOM Killer 终止，它以非零状态退出，任务不会成功；现有策略会按可重试解析故障记录，达到最大尝试次数后转为失败。

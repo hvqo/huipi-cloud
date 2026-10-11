@@ -1,6 +1,6 @@
 # 项目路线图
 
-本页区分已经合并的功能、当前 PR 分支改动和未来计划。P1-A 至 P2-D2B 已合并到 `main`；P2-D2C 位于当前独立功能分支。
+本页按项目阶段概述已具备能力和后续计划。评测基线与逐案例结果见[评测文档](evaluation/README.md)，不在本页维护单次运行数据。
 
 ## P0：工程骨架与基础设施
 
@@ -51,13 +51,12 @@
 - 已合并：受控 CLI、状态摘要和按页 API。页面 API 默认文档上限 32 MiB、硬上限 64 MiB，读取后校验 SHA-256 和完整结构。真实 MinerU E2E 使用合成文档和独立 Basic/ONNX 环境，不代表真实教学数据准确率。
 - 已知边界：DB 登记失败或并发输家可能留下不可变孤立 Canonical 对象；当前无对账清理器。外部图片不联网读取，尚无图片素材读取 API；当前接口没有认证和租户权限，不可直接公开部署。页面 API 的字节限制不是解码后内存上限。
 
-### P2-D1：题号候选识别、学生答案区域切分与作业题目对齐（已合并，PR #9）
+### P2-D1：题号候选识别、学生答案区域切分与作业题目对齐（已合并）
 
-- PR #9 实现：基于 Canonical 行首文本与结构线索识别题号候选，涵盖 `第 n 题`、`n.`、`n、`n)` 和常见中英文括号题号；公式、表格、图片、列表和页码结构不作为题号来源。
-- PR #9 实现：将候选题号与 Submission 所属 Assignment 的真实 Question ID 匹配；显式且无冲突的 `第 n 题` 只有在前后答案边界可信时才可能自动对齐。未知编号、可能列表项、括号子题、重复题号和顺序冲突要求复核或进入未分配区域。
-- PR #9 实现：按 Canonical 阅读顺序跨 Block/跨页切分答案，保留半开文本偏移、Canonical JSON pointer、Block ID、页码、BBox、公式/表格类型和图片逻辑引用。题号候选与无法精确定位的图片来源处于同一 Block 时保留引用并要求复核；区域不重叠，复杂嵌套边界保留并要求复核。
-- PR #9 实现：`huipi.answer.alignment` 1.0 结果合同和 `ALIGNER_VERSION=1.1.0`、S3 不可变运行对象、PostgreSQL 唯一约束和幂等索引、受控对齐 CLI、摘要与单题 GET API。不读 AnswerKey，不在 HTTP 请求内执行对齐，不提供自动批改。旧 1.0.0 产物不会被覆盖；查询按当前算法版本选择结果。
-- PR #9 测试：合成规则单测、人工标注的 13 个离线案例、真实 PostgreSQL + S3 索引/并发/故障测试，以及 Canonical→对齐→API 集成路径。PR #10 将离线评测指标升至版本 2.1：候选检测、Question 关联和答案边界均保留完整 Canonical `content_pointer`，按案例、Question 和 ContentNode 隔离；同节点内归并半开范围，跨节点偏移不匹配。原 13 个顶层案例独立报告，嵌套节点专项样本另行报告。数据包含仅有题干的负样本，明确展示 `aligned` 不代表学生作答；样本规模很小，不代表真实学生数据。真实 MinerU 端到端链路依赖独立安装的 MinerU CLI 和模型。
+- 基于 Canonical 文本与结构线索识别题号候选；显式且无冲突的 `第 n 题` 只有在边界可信时才可能自动对齐，通用数字、括号子题、未知编号和顺序冲突要求复核。
+- 按阅读顺序跨 Block 和页面切分答案来源，保留 Unicode 半开偏移、Canonical pointer、Block ID、页码、BBox、公式/表格类型和图片逻辑引用。
+- 结果以版本化 JSON 保存在私有对象存储，PostgreSQL 保存幂等索引；提供受控 CLI 和只读查询 API。不读 AnswerKey，也不在 HTTP 请求内执行对齐。
+- 已具备：合成规则单测、13 个离线案例、真实 PostgreSQL + S3 索引/并发/故障测试，以及 Canonical→对齐→API 集成路径。离线评测指标按案例、Question 和完整 Canonical `content_pointer` 区分来源；同节点内按半开范围归并，跨节点相同偏移不匹配。原有顶层案例和嵌套节点专项样本分开报告。数据包含仅有题干的负样本，明确展示 `aligned` 不代表学生作答；样本规模很小，不代表真实学生数据。真实 MinerU 端到端链路依赖独立安装的 MinerU CLI 和模型。
 - 业务边界：`aligned` 表示来源区域与 Question 的映射证据足够，不表示学生回答存在、区域内没有其他题目内容、OCR 完整或结果可以批改。当前没有作答存在性检测、`answer_presence` 或 `ready_for_grading` 字段；`not_observed` 也不能解释为学生未作答。
 - 已知边界：没有真实手写作业评测、人工纠错、概率校准、身份认证或租户权限；保守复核会降低自动覆盖率。跨 S3/PG 不是原子提交，提交结果不确定时保留对象，仍可能需要孤立对象对账清理。
 
@@ -82,12 +81,10 @@
 - 本地观测：2026-10-10 五个生成页面均通过严格响应协议，但几何标记被误判为仅印刷题干。2026-10-11 的真实 Ollama + PostgreSQL + MinIO 业务闭环使用合成 Canonical/Alignment fixture，模型仍把几何标记判断为 printed_prompt；该区域与合成答案框 IoU 0.952。程序现保留 BBox/IoU 并拒绝来源 pointer。此结果不是 MinerU E2E 或真实作业准确率。
 - 尚未实现：HTTP 查询/写接口、教师界面、认证、RBAC、人工标注回流、全局推理并发限额、系统级内存硬隔离、孤立 S3 proposal 对账和真实作业精度评估。模型建议不会修改 P2-D2A 记录，也不产生 `ready_for_grading`。
 
-### P2-D2C：视觉作答证据质量评测与真实解析闭环（当前功能分支）
+### P2-D2C：视觉作答证据质量评测与真实解析闭环
 
-- 当前分支新增：26 个案例、27 页的版本化合成图像评测集；图像文件引用、类型、尺寸、像素上限和 SHA-256 校验；按需调用现有 VLM Provider 的评测 CLI；可从相同预测 JSON 重算指标。
-- 指标分开报告作答存在性、response 区域候选检测和目标视觉区域定位，包含计数、分母、覆盖率、弃权、延迟和 token。视觉集没有 Canonical/Alignment 指针真值，Question Link 与 Automatic Accept 指标为 `not_evaluated`。
-- 本地 qwen3.5:4b 合成基线：26/26 JSON 协议通过；21 个确定标签案例作答存在性 TP=8、FP=0、FN=6、TN=7；IoU=0.5 response 区域检测 TP=0、FP=8、FN=14。该样本集不是实际教学作业准确率。
-- 已尝试真实 MinerU 4.0.10 Basic/ONNX → Canonical → AnswerAlignment → Ollama → S3/PG 专项链路。测试样本由程序生成；实际 alignment 状态为 `aligned`，VLM Proposal 上传与 SHA 校验成功，但该次视觉区域来源映射为 `unresolved`，IoU=0.0。
+- 已具备：带 SHA-256 校验的 26 案例/27 页合成评测集、按需调用现有 VLM Provider 的 CLI，以及经过协议校验的离线预测重算。指标分开统计作答存在性、候选区域检测、视觉区域定位和运行质量；没有 Canonical/Alignment 指针真值的指标标记为 `not_evaluated`。
+- 已验证：真实 MinerU 4.0.10 Basic/ONNX → Canonical → AnswerAlignment → 本地 Ollama → 私有 S3/PostgreSQL 专项链路可运行。专项数据由程序生成，视觉来源映射仍为 `unresolved`；具体模型输出与指标见[评测结果](evaluation/visual-evidence.md)。这不代表真实教学作业准确率。
 - 尚未实现：真实学生作业授权标注集、人工标注分歧仲裁、真实数据准确率及校准评测、模型微调、自动评分。不得把 synthetic 结果用于真实作业质量承诺。
 
 ## P3：标准答案管理、Rubric 评分、AI 自动批改 Agent
