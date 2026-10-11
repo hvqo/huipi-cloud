@@ -206,7 +206,7 @@ opt-in 本机 E2E 对三个合成样本均通过；三个文件都为一页，�
 
 纯文本提取只按完整 `content_pointer` 找到 CanonicalContentNode，并在该节点的字符串上用 Python Unicode 码点半开区间 `[start, end)` 切片。包保留每个片段的页码、Block ID、reading order、pointer、偏移和 SHA；跨页片段按 Canonical 阅读顺序排列，不把相同内容去重。打印题干不会进入包，除非复核者明确把它选为 `response_present`；系统仍不能判断人工标签是否正确。
 
-可验证的公式文本或 LaTeX 以 `formula_text` 独立保留。带图片引用或只有图片表示的公式、图片/几何、表格、图表及其他非纯文本节点会进入 inspection 的证据清单并带固定原因码；只要存在此类必要作答内容，就返回 `unsupported_modality`，不创建文本评分包。Canonical 当前没有经验证的表格单元格解析或几何向量表示，因此不会把 HTML、图片占位标记或普通整页 OCR 投影改写成虚构答案文本。
+可验证的公式文本或 LaTeX 以 `formula_text` 独立保留。文本与公式节点在提取前共用纯文本表示安全检查：Canonical asset 引用、内联图片占位符、Markdown 图片引用、HTML 图片/SVG、HTML 表格结构及嵌入媒体标记都会进入 inspection 证据清单，并附 `canonical_asset_reference`、`canonical_inline_image_placeholder`、`markdown_image_reference`、`embedded_image_markup`、`embedded_table_markup`、`embedded_media_markup` 或 `structured_math_markup` 等固定原因码。此检查按已知标记识别，不因任意 HTML、比较符 `<` / `>` 或泛型符号而拒绝文本。只要所选必要区域含这类内容，整个选择就返回 `unsupported_modality`，不会剥除标记后留下不完整文本，也不会创建文本评分包。Canonical 当前没有经验证的表格单元格解析或几何向量表示，因此不会把 HTML、图片占位标记或普通整页 OCR 投影改写成虚构答案文本。
 
 完整 `huipi.grading.input` 1.0 JSON 写入私有 S3；PostgreSQL 的 `grade_input_artifacts` 只保留输入/来源哈希、外键、对象 Key、字节数和请求索引。包绑定 Submission 原文件 SHA、Canonical artifact/SHA/schema、Alignment artifact/SHA/aligner/Question digest、人工复核 ID/revision/request SHA、Question、AnswerKey 快照和 Rubric 快照。`input_sha256` 是规范化 JSON 对语义输入（不含 artifact ID、创建时间和自身 hash）的摘要；`object_sha256` 覆盖实际存储字节。AnswerKey 原文、Rubric 描述和学生回答都不复制到数据库日志或 CLI inspection。
 

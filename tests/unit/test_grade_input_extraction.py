@@ -231,7 +231,7 @@ def test_plain_formula_text_is_typed_but_image_formula_and_table_are_unsupported
         "unsupported",
     ]
     assert manifest[1].asset_refs[0].sha256 == "c" * 64
-    assert manifest[1].reason_code == "formula_is_not_textual"
+    assert manifest[1].reason_code == "canonical_asset_reference"
     assert manifest[2].reason_code == "table_cells_not_normalized"
 
 
@@ -259,3 +259,113 @@ def test_pure_image_selection_is_audited_but_never_becomes_text():
     assert manifest[0].representation == "unsupported"
     assert manifest[0].reason_code == "image_only_response"
     assert manifest[0].asset_refs[0].asset_id == image_asset.asset_id
+
+
+def test_plain_text_and_math_inequality_remain_textual():
+    document = _document(
+        [[
+            _scalar("学生写下的普通答案"),
+            _scalar("x < 5", source_type="equation", normalized_type="formula"),
+            _scalar("List<T> values; if (x < 5) return values;", source_type="code"),
+        ]]
+    )
+    regions = []
+    for index, block in enumerate(document.pages[0].blocks):
+        value = block.content.value
+        assert value is not None
+        regions.append(
+            _region(document, 0, index, f"/pages/0/blocks/{index}/content", 0, len(value))
+        )
+
+    segments, manifest = _extract_confirmed_regions(document, regions)
+
+    assert [item.text for item in segments] == [
+        "学生写下的普通答案",
+        "x < 5",
+        "List<T> values; if (x < 5) return values;",
+    ]
+    assert [item.kind for item in segments] == ["text", "formula_text", "text"]
+    assert all(item.representation != "unsupported" for item in manifest)
+
+
+@pytest.mark.parametrize(
+    ("text", "reason_code"),
+    [
+        ('学生作答 <img src="assets/answer.png">', "embedded_image_markup"),
+        ("学生作答 <table><tr><td>图表值</td></tr></table>", "embedded_table_markup"),
+        (
+            "学生作答 ![手绘图](assets/answer.png)",
+            "markdown_image_reference",
+        ),
+        (
+            "学生作答 ![手绘图][answer-image]",
+            "markdown_image_reference",
+        ),
+        (
+            "学生作答 canonical-inline-image:image/png:deadbeef:128",
+            "canonical_inline_image_placeholder",
+        ),
+    ],
+)
+def test_text_nodes_with_hidden_multimodal_content_are_unsupported(text, reason_code):
+    document = _document([[_scalar(text)]])
+    pointer = "/pages/0/blocks/0/content"
+    region = _region(document, 0, 0, pointer, 0, len(text))
+
+    segments, manifest = _extract_confirmed_regions(document, [region])
+
+    assert segments == []
+    assert len(manifest) == 1
+    assert manifest[0].representation == "unsupported"
+    assert manifest[0].reason_code == reason_code
+    assert manifest[0].content_pointer == pointer
+    assert (manifest[0].text_start, manifest[0].text_end) == (0, len(text))
+
+
+def test_text_node_with_canonical_asset_reference_is_unsupported():
+    asset_ref = CanonicalAssetReference(
+        kind="inline_redacted",
+        sha256="d" * 64,
+        size_bytes=42,
+        content_type="image/png",
+        source_pointer="/pages/0/blocks/0/content",
+        source_encoding="data_uri",
+    )
+    text = "答案含图片"
+    node = _scalar(text).model_copy(update={"asset_refs": [asset_ref]})
+    document = _document([[node]])
+    region = _region(document, 0, 0, "/pages/0/blocks/0/content", 0, len(text))
+
+    segments, manifest = _extract_confirmed_regions(document, [region])
+
+    assert segments == []
+    assert manifest[0].representation == "unsupported"
+    assert manifest[0].reason_code == "canonical_asset_reference"
+    assert manifest[0].asset_refs[0].sha256 == "d" * 64
+
+
+def test_formula_node_uses_the_same_embedded_media_guard_as_text_nodes():
+    text = 'x^2 + 1 <img src="figures/formula.png">'
+    document = _document(
+        [[_scalar(text, source_type="equation", normalized_type="formula")]]
+    )
+    region = _region(document, 0, 0, "/pages/0/blocks/0/content", 0, len(text))
+
+    segments, manifest = _extract_confirmed_regions(document, [region])
+
+    assert segments == []
+    assert manifest[0].representation == "unsupported"
+    assert manifest[0].reason_code == "embedded_image_markup"
+
+
+def test_mixed_plain_text_and_unreadable_image_blocks_the_whole_selection():
+    text = "先写了 4，再附图 ![草图](images/sketch.png)"
+    document = _document([[_scalar(text)]])
+    region = _region(document, 0, 0, "/pages/0/blocks/0/content", 0, len(text))
+
+    segments, manifest = _extract_confirmed_regions(document, [region])
+
+    assert segments == []
+    assert len(manifest) == 1
+    assert manifest[0].representation == "unsupported"
+    assert manifest[0].reason_code == "markdown_image_reference"

@@ -118,15 +118,15 @@ P2-D1 的 `aligned` 只回答“这段来源更可能对应哪道题”。它不
 
 **30 秒回答**：
 
-普通 text 节点可以按复核范围提取。公式只有在内容是纯文本或 LaTeX 且没有图片素材引用时，才作为独立 `formula_text` 片段保存。图片/几何、图片形式公式、表格和图表进入素材审计清单并返回 `unsupported_modality`。这样系统宁可停止，也不猜一个文本结果。
+普通 text 和 formula 节点都先通过同一个文本表示安全检查。Canonical 素材引用、内联图片占位符、Markdown 图片引用、HTML 图片/SVG、表格结构或嵌入媒体标记会成为 `unsupported` 审计项；任一必要区域不支持时，整个评分输入被阻塞。公式只有在内容是纯文本或 LaTeX 且没有这些标记时，才作为独立 `formula_text` 片段保存。
 
 **2 分钟回答**：
 
-Canonical 节点有 `normalized_type`、scalar/children 结构和安全的 asset refs。P3-A 只接受验证过的纯文本范围。公式文本可以保留类型，不和普通语句混为一段。若公式含图片引用或被 Canonical 标记为 inline image，就作为不支持模态。表格当前没有经验证的 cell model，所以即使有字符串，也不推断行列。纯图片节点保留 asset id/hash/content type 等安全引用，不把图片塞入普通字符串。任何 unsupported 区域都会阻止创建 `ready_text` 包。
+Canonical 节点有 `normalized_type`、scalar/children 结构和安全的 asset refs。P3-A 只接受验证过的纯文本范围。原因码包括 `canonical_asset_reference`、`canonical_inline_image_placeholder`、`markdown_image_reference`、`embedded_image_markup`、`embedded_table_markup`、`embedded_media_markup` 和 `structured_math_markup`；inspection 保留来源 pointer、页码、Block、字符范围及素材摘要，不复制被阻塞的原文。检查针对已知非文本表示，不会只因为任意 HTML 或 `<`、`>` 符号就拒绝内容，因此 `x < 5` 和 `List<T>` 仍可进入文本/公式验证。表格当前没有经验证的 cell model，所以即使有 HTML 表格字符串，也不推断行列。纯图片节点保留 asset id/hash/content type 等安全引用，不把图片塞入普通字符串。任何 unsupported 区域都会阻止创建 `ready_text` 包。
 
 **连续追问**：为什么能处理 LaTeX却不处理表格 Markdown？当前公式节点能够以原始文本区间和 source pointer追溯；表格结构尚未定义经过验证的 cell 坐标与合并语义。
 
-**代码与演示**：[service._extract_confirmed_regions](../../src/huipi_cloud/modules/grading/service.py)；测试 `test_plain_formula_text_is_typed_but_image_formula_and_table_are_unsupported`、`test_pure_image_selection_is_audited_but_never_becomes_text`。
+**代码与演示**：[service._extract_confirmed_regions](../../src/huipi_cloud/modules/grading/service.py) 与 `_text_representation_issue()`；测试 `test_text_nodes_with_hidden_multimodal_content_are_unsupported`、`test_text_node_with_canonical_asset_reference_is_unsupported`、`test_formula_node_uses_the_same_embedded_media_guard_as_text_nodes`、`test_plain_text_and_math_inequality_remain_textual`，以及集成测试 `test_confirmed_text_with_embedded_image_blocks_inspect_and_prepare_without_persistence`。
 
 ## 8. 幂等和未知 COMMIT 结果如何处理？
 

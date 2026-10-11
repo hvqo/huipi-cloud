@@ -54,6 +54,8 @@ uv run python -m huipi_cloud.workers.prepare_grade_input prepare \
 
 系统只读取最新人工决定中的 `response_regions`。它按完整 Canonical `content_pointer` 定位节点，再使用 Python Unicode 码点的半开范围 `[start, end)` 还原该节点文本。每个片段保留页码、Block ID、Canonical reading order、来源 pointer、字符范围和 SHA-256。不同来源位置即使文字相同也分别保留。`excluded_prompt_regions`、`uncertain_regions`、P2-D1 `text_projection` 和 VLM proposal 都不会作为学生答案输入。
 
+普通文本与公式节点都先检查实际选中的 Canonical 字符范围。带 Canonical asset 引用、`canonical-inline-image:` 占位符、Markdown 图片语法、HTML `img`/`svg`、表格标签、嵌入媒体或 MathML 标签时，inspection 会返回 `unsupported_modality`，并保留节点 pointer、页码、Block、字符范围和固定原因码，例如 `canonical_asset_reference`、`canonical_inline_image_placeholder`、`markdown_image_reference`、`embedded_image_markup`、`embedded_table_markup`、`embedded_media_markup` 和 `structured_math_markup`。服务不会删除标记后只保留其余文本。纯文本与图片标记混合时，整段选择都被阻塞。普通 `x < 5`、`List<T>` 等内容不会仅因尖括号而被拒绝；系统也不会因为任意 HTML 标记就一概阻止文本。
+
 不带素材引用、内容是文本/LaTeX 的公式节点可保留为独立 `formula_text` 片段。只有图片表达的公式、图片/几何、表格、图表、含图片的公式及其他不支持的必要模态会出现在 inspection 证据清单中，并阻止文本包生成。当前没有验证过的表格单元格表示或图像评分表达，因此不会把这些内容猜成普通答案文字。
 
 包内同时快照教师 AnswerKey 与 Rubric Criterion（ID、Question ID、描述、Decimal 分值和顺序）。Rubric 合计必须严格等于题目满分；不使用浮点计算。快照用于复现原始输入，不表示答案或规则经过独立审核。

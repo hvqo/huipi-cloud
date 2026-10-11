@@ -59,12 +59,14 @@ async def _prepared_review(
     engine: AsyncEngine,
     *,
     decision: str = "response_present",
+    middle_content: str = _MIDDLE_CONTENT,
+    response_text: str = _RESPONSE,
 ):
     submission_id, _ = await _seed_parsed_source(
         client,
         storage,
         engine,
-        middle_content=_MIDDLE_CONTENT,
+        middle_content=middle_content,
     )
     factory = async_sessionmaker(engine, expire_on_commit=False)
     await canonical_service.normalize_submission(factory, storage, submission_id)
@@ -76,8 +78,8 @@ async def _prepared_review(
     )
     question = bundle.context.questions[0]
     pointer = "/pages/0/blocks/0/content"
-    prompt_start = _MIDDLE_CONTENT.index(_PROMPT)
-    response_start = _MIDDLE_CONTENT.index(_RESPONSE)
+    prompt_start = middle_content.index(_PROMPT)
+    response_start = middle_content.index(response_text)
     prompt = ReviewRegionSelection(
         content_pointer=pointer,
         text_start=prompt_start,
@@ -86,7 +88,7 @@ async def _prepared_review(
     response = ReviewRegionSelection(
         content_pointer=pointer,
         text_start=response_start,
-        text_end=response_start + len(_RESPONSE),
+        text_end=response_start + len(response_text),
     )
     if decision == "response_present":
         payload = AnswerReviewDecisionCreate(
@@ -560,6 +562,58 @@ async def test_invalid_rubric_total_blocks_input_even_if_human_review_is_present
     )
     assert result.status == "invalid_rubric"
     assert "rubric_total_or_fields_invalid" in result.reason_codes
+
+
+@pytest.mark.anyio
+async def test_confirmed_text_with_embedded_image_blocks_inspect_and_prepare_without_persistence(
+    submission_client: httpx.AsyncClient,
+    recording_minio_storage,
+    postgres_engine: AsyncEngine,
+) -> None:
+    embedded_image = '学生作答：4。<img src="figures/answer.png">'
+    middle_content = f"第1题 {_PROMPT}{embedded_image}"
+    factory, submission_id, question, _ = await _prepared_review(
+        submission_client,
+        recording_minio_storage,
+        postgres_engine,
+        middle_content=middle_content,
+        response_text=embedded_image,
+    )
+    request_id = uuid4()
+    uploads_before = set(recording_minio_storage.uploaded_keys)
+
+    inspection = await inspect_grade_input(
+        factory,
+        recording_minio_storage,
+        submission_id=submission_id,
+        question_id=question.id,
+        request_id=request_id,
+    )
+    prepared = await prepare_grade_input(
+        factory,
+        recording_minio_storage,
+        submission_id=submission_id,
+        question_id=question.id,
+        request_id=request_id,
+    )
+
+    assert inspection.status == "unsupported_modality"
+    assert "embedded_image_markup" in inspection.reason_codes
+    assert "figures/answer.png" not in inspection.model_dump_json()
+    assert inspection.segment_count == 0
+    assert len(inspection.evidence_manifest) == 1
+    assert inspection.evidence_manifest[0].representation == "unsupported"
+    assert inspection.evidence_manifest[0].text_start is not None
+    assert prepared.artifact_id is None
+    assert prepared.inspection.status == "unsupported_modality"
+    assert set(recording_minio_storage.uploaded_keys) == uploads_before
+    async with factory() as session:
+        count = await session.scalar(
+            select(func.count())
+            .select_from(GradeInputArtifact)
+            .where(GradeInputArtifact.submission_id == submission_id)
+        )
+    assert count == 0
 
 
 @pytest.mark.anyio

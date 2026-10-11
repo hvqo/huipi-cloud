@@ -75,7 +75,28 @@ from huipi_cloud.modules.submissions.models import SubmissionFile
 logger = logging.getLogger(__name__)
 _GRADE_INPUT_NAMESPACE = UUID("d554ae75-573c-4d35-a928-7f99f1b9ccea")
 _REDACTED_INLINE_IMAGE = "canonical-inline-image:"
-_HTML_IMAGE_TAG = re.compile(r"<\s*(?:img|svg|table|div)\b", re.IGNORECASE)
+_MARKDOWN_IMAGE_REFERENCE = re.compile(
+    r"(?<!\\)!\[(?:\\.|[^\]\\])*\]\s*(?:\([^\)\n]+\)|\[[^\]\n]*\])"
+)
+_EMBEDDED_NON_TEXT_TAG = re.compile(
+    r"<\s*(?P<tag>img|picture|svg|table|thead|tbody|tfoot|tr|td|th|caption|colgroup|col|"
+    r"video|audio|iframe|object|embed|canvas|math)(?=[\s/>])",
+    re.IGNORECASE,
+)
+_IMAGE_MARKUP_TAGS = {"img", "picture", "svg"}
+_TABLE_MARKUP_TAGS = {
+    "table",
+    "thead",
+    "tbody",
+    "tfoot",
+    "tr",
+    "td",
+    "th",
+    "caption",
+    "colgroup",
+    "col",
+}
+_EMBEDDED_MEDIA_TAGS = {"video", "audio", "iframe", "object", "embed", "canvas"}
 
 
 @dataclass(frozen=True)
@@ -488,6 +509,11 @@ async def _assess(
     text_byte_count = sum(len(item.text.encode("utf-8")) for item in segments)
     if text_byte_count > config.grade_input_max_text_bytes:
         reasons.append("selected_text_size_limit")
+    reasons.extend(
+        item.reason_code
+        for item in evidence
+        if item.representation == "unsupported" and item.reason_code is not None
+    )
 
     status = _readiness_status(reasons, evidence)
     inspection = GradeInputInspection(
@@ -590,15 +616,12 @@ def _extract_confirmed_regions(
         if not text.strip():
             raise _InvalidReviewSource("review_region_has_no_text")
 
-        if node.normalized_type == "text" and not asset_refs and _REDACTED_INLINE_IMAGE not in text:
-            kind = "text"
-        elif (
-            node.normalized_type == "formula"
-            and not asset_refs
-            and _REDACTED_INLINE_IMAGE not in text
-            and _HTML_IMAGE_TAG.search(text) is None
-        ):
-            kind = "formula_text"
+        if node.normalized_type in {"text", "formula"}:
+            reason = _text_representation_issue(text, asset_refs)
+            if reason is not None:
+                evidence.append(_evidence_item(region, "unsupported", reason, asset_refs))
+                continue
+            kind = "text" if node.normalized_type == "text" else "formula_text"
         else:
             reason = {
                 "formula": "formula_is_not_textual",
@@ -700,6 +723,31 @@ def _safe_node_asset_refs(
         seen.add(serialized)
         safe.append(GradeInputAssetReference.model_validate(item.model_dump(mode="json")))
     return safe
+
+
+def _text_representation_issue(
+    text: str,
+    asset_refs: list[GradeInputAssetReference],
+) -> str | None:
+    """Return a stable reason when a selected scalar is not a complete text representation."""
+
+    if asset_refs:
+        return "canonical_asset_reference"
+    if _REDACTED_INLINE_IMAGE in text:
+        return "canonical_inline_image_placeholder"
+    if _MARKDOWN_IMAGE_REFERENCE.search(text):
+        return "markdown_image_reference"
+    match = _EMBEDDED_NON_TEXT_TAG.search(text)
+    if match is None:
+        return None
+    tag = match.group("tag").lower()
+    if tag in _IMAGE_MARKUP_TAGS:
+        return "embedded_image_markup"
+    if tag in _TABLE_MARKUP_TAGS:
+        return "embedded_table_markup"
+    if tag in _EMBEDDED_MEDIA_TAGS:
+        return "embedded_media_markup"
+    return "structured_math_markup"
 
 
 def _evidence_item(
