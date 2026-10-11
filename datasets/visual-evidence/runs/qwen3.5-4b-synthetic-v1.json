@@ -1,0 +1,1253 @@
+{
+  "cases": [
+    {
+      "case_id": "baseline_print_only",
+      "elapsed_ms": 8277,
+      "input_digest": "0357f74979b613feb2efad0c7b97f2a208af87ef6c1ff7acdec1df4e1e7aaf96",
+      "protocol_valid": true,
+      "rendered_pages": [
+        {
+          "content_type": "image/jpeg",
+          "height": 1400,
+          "mapping_eligible": true,
+          "mapping_reason": null,
+          "page_index": 0,
+          "sha256": "9ebcf036b76bf72d533e02d1b141b9cedfa81b399f2066e451a0c03d836d053a",
+          "width": 1000
+        }
+      ],
+      "source_bytes_total": 26065,
+      "source_mapping": {
+        "reason": "no Canonical or AnswerAlignment context was supplied",
+        "status": "not_evaluated"
+      },
+      "status": "ok",
+      "suggestion": {
+        "outcome": "candidate_prompt_only",
+        "reason_codes": [],
+        "visual_regions": [
+          {
+            "evidence_type": "printed_prompt",
+            "page_index": 0,
+            "reason_codes": [
+              "printed_prompt_only"
+            ],
+            "visual_bbox": [
+              0.15,
+              0.38,
+              0.92,
+              0.46
+            ]
+          }
+        ]
+      },
+      "usage": {
+        "completion_tokens": 111,
+        "prompt_tokens": 1775,
+        "total_tokens": 1886
+      }
+    },
+    {
+      "case_id": "baseline_mixed_ink",
+      "elapsed_ms": 2659,
+      "input_digest": "a74d7ead57b42b5be5c0bf027d7a86c1db9d22c99bafa964018e64da6168ecb0",
+      "protocol_valid": true,
+      "rendered_pages": [
+        {
+          "content_type": "image/jpeg",
+          "height": 1400,
+          "mapping_eligible": true,
+          "mapping_reason": null,
+          "page_index": 0,
+          "sha256": "2912a8d33b22d6a89d15f230b4045361da51890188cc1f05cfd97225873c66a4",
+          "width": 1000
+        }
+      ],
+      "source_bytes_total": 22612,
+      "source_mapping": {
+        "reason": "no Canonical or AnswerAlignment context was supplied",
+        "status": "not_evaluated"
+      },
+      "status": "ok",
+      "suggestion": {
+        "outcome": "candidate_response_present",
+        "reason_codes": [],
+        "visual_regions": [
+          {
+            "evidence_type": "handwritten_text",
+            "page_index": 0,
+            "reason_codes": [
+              "handwriting_visible"
+            ],
+            "visual_bbox": [
+              0.35,
+              0.48,
+              0.62,
+              0.7
+            ]
+          }
+        ]
+      },
+      "usage": {
+        "completion_tokens": 73,
+        "prompt_tokens": 1775,
+        "total_tokens": 1848
+      }
+    },
+    {
+      "case_id": "baseline_formula_ink",
+      "elapsed_ms": 2661,
+      "input_digest": "819de5173b386a1b506b481d2f0f7529df856a4d0c83d846b8a4a667c1d82973",
+      "protocol_valid": true,
+      "rendered_pages": [
+        {
+          "content_type": "image/jpeg",
+          "height": 1400,
+          "mapping_eligible": true,
+          "mapping_reason": null,
+          "page_index": 0,
+          "sha256": "3632a5767dc79859cea851985335a122439640fb58ff8dd845d9d6f718412630",
+          "width": 1000
+        }
+      ],
+      "source_bytes_total": 23888,
+      "source_mapping": {
+        "reason": "no Canonical or AnswerAlignment context was supplied",
+        "status": "not_evaluated"
+      },
+      "status": "ok",
+      "suggestion": {
+        "outcome": "candidate_response_present",
+        "reason_codes": [],
+        "visual_regions": [
+          {
+            "evidence_type": "handwritten_formula",
+            "page_index": 0,
+            "reason_codes": [
+              "formula_marks_visible"
+            ],
+            "visual_bbox": [
+              0.15,
+              0.48,
+              0.72,
+              0.6
+            ]
+          }
+        ]
+      },
+      "usage": {
+        "completion_tokens": 73,
+        "prompt_tokens": 1775,
+        "total_tokens": 1848
+      }
+    },
+    {
+      "case_id": "baseline_geometry_mark",
+      "elapsed_ms": 2925,
+      "input_digest": "2a04947f352e54ce3006b1762bdb22cebaf660e39cf6be8944721eb5b3246ab4",
+      "protocol_valid": true,
+      "rendered_pages": [
+        {
+          "content_type": "image/jpeg",
+          "height": 1400,
+          "mapping_eligible": true,
+          "mapping_reason": null,
+          "page_index": 0,
+          "sha256": "fda79d030978acd91963326f510ea0cab957a0069c144d03c82061a55585d140",
+          "width": 1000
+        }
+      ],
+      "source_bytes_total": 25959,
+      "source_mapping": {
+        "reason": "no Canonical or AnswerAlignment context was supplied",
+        "status": "not_evaluated"
+      },
+      "status": "ok",
+      "suggestion": {
+        "outcome": "candidate_prompt_only",
+        "reason_codes": [],
+        "visual_regions": [
+          {
+            "evidence_type": "printed_prompt",
+            "page_index": 0,
+            "reason_codes": [
+              "printed_prompt_only"
+            ],
+            "visual_bbox": [
+              0.15,
+              0.28,
+              0.63,
+              0.4
+            ]
+          }
+        ]
+      },
+      "usage": {
+        "completion_tokens": 72,
+        "prompt_tokens": 1775,
+        "total_tokens": 1847
+      }
+    },
+    {
+      "case_id": "baseline_blank_with_print",
+      "elapsed_ms": 2721,
+      "input_digest": "4db85b4b0906893bf2c5db11ba0cc9e83825ffeaa287a393881badce44b2abfd",
+      "protocol_valid": true,
+      "rendered_pages": [
+        {
+          "content_type": "image/jpeg",
+          "height": 1400,
+          "mapping_eligible": true,
+          "mapping_reason": null,
+          "page_index": 0,
+          "sha256": "9dc7cc8a2bec22a896584c46a247357cd8cdb0f45ef176f8bf9962aa40f92497",
+          "width": 1000
+        }
+      ],
+      "source_bytes_total": 27394,
+      "source_mapping": {
+        "reason": "no Canonical or AnswerAlignment context was supplied",
+        "status": "not_evaluated"
+      },
+      "status": "ok",
+      "suggestion": {
+        "outcome": "candidate_prompt_only",
+        "reason_codes": [],
+        "visual_regions": [
+          {
+            "evidence_type": "printed_prompt",
+            "page_index": 0,
+            "reason_codes": [
+              "printed_prompt_only"
+            ],
+            "visual_bbox": [
+              0.15,
+              0.28,
+              0.63,
+              0.4
+            ]
+          }
+        ]
+      },
+      "usage": {
+        "completion_tokens": 72,
+        "prompt_tokens": 1775,
+        "total_tokens": 1847
+      }
+    },
+    {
+      "case_id": "blank_answer_area",
+      "elapsed_ms": 3067,
+      "input_digest": "7f79188e4c91809e0b4c32033c8871f1e3a54db9af2c3d00097b79ff19f23a73",
+      "protocol_valid": true,
+      "rendered_pages": [
+        {
+          "content_type": "image/jpeg",
+          "height": 1400,
+          "mapping_eligible": true,
+          "mapping_reason": null,
+          "page_index": 0,
+          "sha256": "712710be40f995df09181478c165785907035dbc6c9f8607d1ca0b52325221ae",
+          "width": 1000
+        }
+      ],
+      "source_bytes_total": 17904,
+      "source_mapping": {
+        "reason": "no Canonical or AnswerAlignment context was supplied",
+        "status": "not_evaluated"
+      },
+      "status": "ok",
+      "suggestion": {
+        "outcome": "candidate_prompt_only",
+        "reason_codes": [],
+        "visual_regions": [
+          {
+            "evidence_type": "printed_prompt",
+            "page_index": 0,
+            "reason_codes": [
+              "printed_prompt_only"
+            ],
+            "visual_bbox": [
+              0.15,
+              0.28,
+              0.65,
+              0.34
+            ]
+          }
+        ]
+      },
+      "usage": {
+        "completion_tokens": 111,
+        "prompt_tokens": 1775,
+        "total_tokens": 1886
+      }
+    },
+    {
+      "case_id": "dense_print_only",
+      "elapsed_ms": 2185,
+      "input_digest": "6bec064f8b4a0f14a744e7440a84b62a2786aca6b7d8885ba15c79e8455d8d12",
+      "protocol_valid": true,
+      "rendered_pages": [
+        {
+          "content_type": "image/jpeg",
+          "height": 1400,
+          "mapping_eligible": true,
+          "mapping_reason": null,
+          "page_index": 0,
+          "sha256": "19a71f1be9b8ed966d3f3c553307fae2b92de1af5d69620afb0a001b4ec9e5ac",
+          "width": 1000
+        }
+      ],
+      "source_bytes_total": 32278,
+      "source_mapping": {
+        "reason": "no Canonical or AnswerAlignment context was supplied",
+        "status": "not_evaluated"
+      },
+      "status": "ok",
+      "suggestion": {
+        "outcome": "candidate_prompt_only",
+        "reason_codes": [],
+        "visual_regions": [
+          {
+            "evidence_type": "printed_prompt",
+            "page_index": 0,
+            "reason_codes": [],
+            "visual_bbox": [
+              0.1,
+              0.25,
+              0.98,
+              0.3
+            ]
+          }
+        ]
+      },
+      "usage": {
+        "completion_tokens": 45,
+        "prompt_tokens": 1775,
+        "total_tokens": 1820
+      }
+    },
+    {
+      "case_id": "simulated_sparse_four",
+      "elapsed_ms": 2687,
+      "input_digest": "de5ae4463be684cc136325f00756de7de053c5f18a83b2df289f1e048e2d1d0f",
+      "protocol_valid": true,
+      "rendered_pages": [
+        {
+          "content_type": "image/jpeg",
+          "height": 1400,
+          "mapping_eligible": true,
+          "mapping_reason": null,
+          "page_index": 0,
+          "sha256": "3ee1a0176afc162d03414fcf7c484b53a16e454a974af5ddf88c0fc316f32762",
+          "width": 1000
+        }
+      ],
+      "source_bytes_total": 18139,
+      "source_mapping": {
+        "reason": "no Canonical or AnswerAlignment context was supplied",
+        "status": "not_evaluated"
+      },
+      "status": "ok",
+      "suggestion": {
+        "outcome": "candidate_response_present",
+        "reason_codes": [],
+        "visual_regions": [
+          {
+            "evidence_type": "handwritten_text",
+            "page_index": 0,
+            "reason_codes": [
+              "handwriting_visible"
+            ],
+            "visual_bbox": [
+              0.35,
+              0.48,
+              0.65,
+              0.52
+            ]
+          }
+        ]
+      },
+      "usage": {
+        "completion_tokens": 74,
+        "prompt_tokens": 1775,
+        "total_tokens": 1849
+      }
+    },
+    {
+      "case_id": "unclear_single_dash",
+      "elapsed_ms": 2785,
+      "input_digest": "2728a76872c04a315dc914af39410cfebeb483cc931c1d31c58115a87d9ff165",
+      "protocol_valid": true,
+      "rendered_pages": [
+        {
+          "content_type": "image/jpeg",
+          "height": 1400,
+          "mapping_eligible": true,
+          "mapping_reason": null,
+          "page_index": 0,
+          "sha256": "6ee8468bd584896bc530ad9a631490ffc8afd523e03980119c6fdfc417f5f586",
+          "width": 1000
+        }
+      ],
+      "source_bytes_total": 17953,
+      "source_mapping": {
+        "reason": "no Canonical or AnswerAlignment context was supplied",
+        "status": "not_evaluated"
+      },
+      "status": "ok",
+      "suggestion": {
+        "outcome": "candidate_prompt_only",
+        "reason_codes": [],
+        "visual_regions": [
+          {
+            "evidence_type": "printed_prompt",
+            "page_index": 0,
+            "reason_codes": [
+              "printed_prompt_only"
+            ],
+            "visual_bbox": [
+              0.15,
+              0.28,
+              0.63,
+              0.4
+            ]
+          }
+        ]
+      },
+      "usage": {
+        "completion_tokens": 72,
+        "prompt_tokens": 1775,
+        "total_tokens": 1847
+      }
+    },
+    {
+      "case_id": "simulated_fraction_formula",
+      "elapsed_ms": 2649,
+      "input_digest": "d79b017d2a278d14d3eb78b836497c4b6f8712dccef7f3fddd46a8a9d6c6df73",
+      "protocol_valid": true,
+      "rendered_pages": [
+        {
+          "content_type": "image/jpeg",
+          "height": 1400,
+          "mapping_eligible": true,
+          "mapping_reason": null,
+          "page_index": 0,
+          "sha256": "f9a88d8595fae0b1a15b9b2afbdbd60db3932e00b6a09acac626d9342d79dfb9",
+          "width": 1000
+        }
+      ],
+      "source_bytes_total": 19565,
+      "source_mapping": {
+        "reason": "no Canonical or AnswerAlignment context was supplied",
+        "status": "not_evaluated"
+      },
+      "status": "ok",
+      "suggestion": {
+        "outcome": "candidate_prompt_only",
+        "reason_codes": [],
+        "visual_regions": [
+          {
+            "evidence_type": "printed_prompt",
+            "page_index": 0,
+            "reason_codes": [
+              "printed_prompt_only"
+            ],
+            "visual_bbox": [
+              0.15,
+              0.28,
+              0.63,
+              0.4
+            ]
+          }
+        ]
+      },
+      "usage": {
+        "completion_tokens": 72,
+        "prompt_tokens": 1775,
+        "total_tokens": 1847
+      }
+    },
+    {
+      "case_id": "table_with_fill",
+      "elapsed_ms": 2566,
+      "input_digest": "f2bc9d23423ae86a4e69b686354423ce79484f25931662be8c3863e6847c69a8",
+      "protocol_valid": true,
+      "rendered_pages": [
+        {
+          "content_type": "image/jpeg",
+          "height": 1400,
+          "mapping_eligible": true,
+          "mapping_reason": null,
+          "page_index": 0,
+          "sha256": "5ba3dfda0ec636deb9ce9fce8dcea65aa334de12a3b7918cf1fe2fd4a10a20f3",
+          "width": 1000
+        }
+      ],
+      "source_bytes_total": 20448,
+      "source_mapping": {
+        "reason": "no Canonical or AnswerAlignment context was supplied",
+        "status": "not_evaluated"
+      },
+      "status": "ok",
+      "suggestion": {
+        "outcome": "candidate_prompt_only",
+        "reason_codes": [],
+        "visual_regions": [
+          {
+            "evidence_type": "printed_prompt",
+            "page_index": 0,
+            "reason_codes": [
+              "printed_prompt_only"
+            ],
+            "visual_bbox": [
+              0.15,
+              0.08,
+              0.92,
+              0.14
+            ]
+          }
+        ]
+      },
+      "usage": {
+        "completion_tokens": 73,
+        "prompt_tokens": 1775,
+        "total_tokens": 1848
+      }
+    },
+    {
+      "case_id": "blank_table",
+      "elapsed_ms": 2661,
+      "input_digest": "c04c20caaea6a6c4fe09dca5fa88975a35782ca3bf093862ea52317386f6b1c4",
+      "protocol_valid": true,
+      "rendered_pages": [
+        {
+          "content_type": "image/jpeg",
+          "height": 1400,
+          "mapping_eligible": true,
+          "mapping_reason": null,
+          "page_index": 0,
+          "sha256": "c9e2d64ff4fc44a33955813c29f018c0baba76869e4a8689a61df0174a5d6e65",
+          "width": 1000
+        }
+      ],
+      "source_bytes_total": 19868,
+      "source_mapping": {
+        "reason": "no Canonical or AnswerAlignment context was supplied",
+        "status": "not_evaluated"
+      },
+      "status": "ok",
+      "suggestion": {
+        "outcome": "candidate_prompt_only",
+        "reason_codes": [],
+        "visual_regions": [
+          {
+            "evidence_type": "printed_prompt",
+            "page_index": 0,
+            "reason_codes": [
+              "printed_prompt_only"
+            ],
+            "visual_bbox": [
+              0.15,
+              0.08,
+              0.92,
+              0.14
+            ]
+          }
+        ]
+      },
+      "usage": {
+        "completion_tokens": 73,
+        "prompt_tokens": 1775,
+        "total_tokens": 1848
+      }
+    },
+    {
+      "case_id": "two_questions_target_one",
+      "elapsed_ms": 2643,
+      "input_digest": "3b847fbf7b5229ee6796a28b12b359a1390bd6c9b3840b438434b298dbfd5fb3",
+      "protocol_valid": true,
+      "rendered_pages": [
+        {
+          "content_type": "image/jpeg",
+          "height": 1400,
+          "mapping_eligible": true,
+          "mapping_reason": null,
+          "page_index": 0,
+          "sha256": "97538a48a69a3a664bd8ab93f3789c524ade3f2ef4939bcc81ed0bf065f8a670",
+          "width": 1000
+        }
+      ],
+      "source_bytes_total": 21804,
+      "source_mapping": {
+        "reason": "no Canonical or AnswerAlignment context was supplied",
+        "status": "not_evaluated"
+      },
+      "status": "ok",
+      "suggestion": {
+        "outcome": "candidate_response_present",
+        "reason_codes": [],
+        "visual_regions": [
+          {
+            "evidence_type": "handwritten_text",
+            "page_index": 0,
+            "reason_codes": [
+              "handwriting_visible"
+            ],
+            "visual_bbox": [
+              0.25,
+              0.38,
+              0.74,
+              0.61
+            ]
+          }
+        ]
+      },
+      "usage": {
+        "completion_tokens": 74,
+        "prompt_tokens": 1775,
+        "total_tokens": 1849
+      }
+    },
+    {
+      "case_id": "other_question_answer_only",
+      "elapsed_ms": 2561,
+      "input_digest": "8fbc1030a51cb28860e198c764b174eb0502566694680fc91405e9e60236f214",
+      "protocol_valid": true,
+      "rendered_pages": [
+        {
+          "content_type": "image/jpeg",
+          "height": 1400,
+          "mapping_eligible": true,
+          "mapping_reason": null,
+          "page_index": 0,
+          "sha256": "effeef55501d33e78e3e1c4360d9c71b0d3925d95cb10e973b38f7ba9169dc70",
+          "width": 1000
+        }
+      ],
+      "source_bytes_total": 21804,
+      "source_mapping": {
+        "reason": "no Canonical or AnswerAlignment context was supplied",
+        "status": "not_evaluated"
+      },
+      "status": "ok",
+      "suggestion": {
+        "outcome": "candidate_prompt_only",
+        "reason_codes": [],
+        "visual_regions": [
+          {
+            "evidence_type": "printed_prompt",
+            "page_index": 0,
+            "reason_codes": [
+              "printed_prompt_only"
+            ],
+            "visual_bbox": [
+              0.15,
+              0.28,
+              0.73,
+              0.4
+            ]
+          }
+        ]
+      },
+      "usage": {
+        "completion_tokens": 72,
+        "prompt_tokens": 1775,
+        "total_tokens": 1847
+      }
+    },
+    {
+      "case_id": "shared_geometry_uncertain",
+      "elapsed_ms": 2653,
+      "input_digest": "4e625d160bdcaf3e637f18355af5a0fd7c4648f9dbf1bb02379c16931d9249c6",
+      "protocol_valid": true,
+      "rendered_pages": [
+        {
+          "content_type": "image/jpeg",
+          "height": 1400,
+          "mapping_eligible": true,
+          "mapping_reason": null,
+          "page_index": 0,
+          "sha256": "d424c1c63d1b706f007f8db84a4eac3f0a795e8c92fab670cac1b4021fd337b9",
+          "width": 1000
+        }
+      ],
+      "source_bytes_total": 24517,
+      "source_mapping": {
+        "reason": "no Canonical or AnswerAlignment context was supplied",
+        "status": "not_evaluated"
+      },
+      "status": "ok",
+      "suggestion": {
+        "outcome": "candidate_prompt_only",
+        "reason_codes": [],
+        "visual_regions": [
+          {
+            "evidence_type": "printed_prompt",
+            "page_index": 0,
+            "reason_codes": [
+              "printed_prompt_only"
+            ],
+            "visual_bbox": [
+              0.12,
+              0.15,
+              0.38,
+              0.2
+            ]
+          }
+        ]
+      },
+      "usage": {
+        "completion_tokens": 72,
+        "prompt_tokens": 1775,
+        "total_tokens": 1847
+      }
+    },
+    {
+      "case_id": "blurred_response_uncertain",
+      "elapsed_ms": 3197,
+      "input_digest": "8b21cc19b0c0652b383f6236b76315a2edb44fdb0bb109c10d7da237ac194bc4",
+      "protocol_valid": true,
+      "rendered_pages": [
+        {
+          "content_type": "image/jpeg",
+          "height": 1400,
+          "mapping_eligible": true,
+          "mapping_reason": null,
+          "page_index": 0,
+          "sha256": "e6e52214603ec30cdc01ace8a039a85a1671e0c75bd7695efe850221e306f288",
+          "width": 1000
+        }
+      ],
+      "source_bytes_total": 32629,
+      "source_mapping": {
+        "reason": "no Canonical or AnswerAlignment context was supplied",
+        "status": "not_evaluated"
+      },
+      "status": "ok",
+      "suggestion": {
+        "outcome": "candidate_response_present",
+        "reason_codes": [],
+        "visual_regions": [
+          {
+            "evidence_type": "handwritten_text",
+            "page_index": 0,
+            "reason_codes": [
+              "handwriting_visible"
+            ],
+            "visual_bbox": [
+              0.15,
+              0.38,
+              0.42,
+              0.62
+            ]
+          }
+        ]
+      },
+      "usage": {
+        "completion_tokens": 112,
+        "prompt_tokens": 1775,
+        "total_tokens": 1887
+      }
+    },
+    {
+      "case_id": "answer_near_prompt",
+      "elapsed_ms": 2747,
+      "input_digest": "4ed7f5a59aa18c6819e9185178080ef41675db560d7ef74107fc3a6d357d0c53",
+      "protocol_valid": true,
+      "rendered_pages": [
+        {
+          "content_type": "image/jpeg",
+          "height": 1400,
+          "mapping_eligible": true,
+          "mapping_reason": null,
+          "page_index": 0,
+          "sha256": "077fe2be2620a1e81a608b4d62a30868960ab1b2e9206c14e021702c4cd6d61b",
+          "width": 1000
+        }
+      ],
+      "source_bytes_total": 18176,
+      "source_mapping": {
+        "reason": "no Canonical or AnswerAlignment context was supplied",
+        "status": "not_evaluated"
+      },
+      "status": "ok",
+      "suggestion": {
+        "outcome": "candidate_response_present",
+        "reason_codes": [],
+        "visual_regions": [
+          {
+            "evidence_type": "handwritten_text",
+            "page_index": 0,
+            "reason_codes": [
+              "handwriting_visible"
+            ],
+            "visual_bbox": [
+              0.75,
+              0.12,
+              0.83,
+              0.16
+            ]
+          }
+        ]
+      },
+      "usage": {
+        "completion_tokens": 74,
+        "prompt_tokens": 1775,
+        "total_tokens": 1849
+      }
+    },
+    {
+      "case_id": "cross_page_response",
+      "elapsed_ms": 2611,
+      "input_digest": "c4321beee37d87daa4d5343d41556e58b39508d80688dcd2e9372402a1007c31",
+      "protocol_valid": true,
+      "rendered_pages": [
+        {
+          "content_type": "image/jpeg",
+          "height": 1400,
+          "mapping_eligible": true,
+          "mapping_reason": null,
+          "page_index": 0,
+          "sha256": "712710be40f995df09181478c165785907035dbc6c9f8607d1ca0b52325221ae",
+          "width": 1000
+        },
+        {
+          "content_type": "image/jpeg",
+          "height": 1400,
+          "mapping_eligible": true,
+          "mapping_reason": null,
+          "page_index": 1,
+          "sha256": "dc0a8553700c309b5a668d46413253cb32601a10579d26e79957ff38060f36e5",
+          "width": 1000
+        }
+      ],
+      "source_bytes_total": 35665,
+      "source_mapping": {
+        "reason": "no Canonical or AnswerAlignment context was supplied",
+        "status": "not_evaluated"
+      },
+      "status": "ok",
+      "suggestion": {
+        "outcome": "candidate_response_present",
+        "reason_codes": [],
+        "visual_regions": [
+          {
+            "evidence_type": "handwritten_text",
+            "page_index": 0,
+            "reason_codes": [
+              "handwriting_visible"
+            ],
+            "visual_bbox": [
+              0.45,
+              0.68,
+              0.55,
+              0.72
+            ]
+          }
+        ]
+      },
+      "usage": {
+        "completion_tokens": 60,
+        "prompt_tokens": 1778,
+        "total_tokens": 1838
+      }
+    },
+    {
+      "case_id": "visible_geometry_no_text",
+      "elapsed_ms": 2612,
+      "input_digest": "ba0a6790eeeb1586486fbaba58dbdcf5e7bf267c52fb174a21567307438ba04c",
+      "protocol_valid": true,
+      "rendered_pages": [
+        {
+          "content_type": "image/jpeg",
+          "height": 1400,
+          "mapping_eligible": true,
+          "mapping_reason": null,
+          "page_index": 0,
+          "sha256": "eead3bc0436a5a1ff04ee33b696e26f904a2bb798681d1a710c814f58a259db3",
+          "width": 1000
+        }
+      ],
+      "source_bytes_total": 19922,
+      "source_mapping": {
+        "reason": "no Canonical or AnswerAlignment context was supplied",
+        "status": "not_evaluated"
+      },
+      "status": "ok",
+      "suggestion": {
+        "outcome": "candidate_prompt_only",
+        "reason_codes": [],
+        "visual_regions": [
+          {
+            "evidence_type": "printed_prompt",
+            "page_index": 0,
+            "reason_codes": [
+              "printed_prompt_only"
+            ],
+            "visual_bbox": [
+              0.15,
+              0.28,
+              0.63,
+              0.4
+            ]
+          }
+        ]
+      },
+      "usage": {
+        "completion_tokens": 72,
+        "prompt_tokens": 1775,
+        "total_tokens": 1847
+      }
+    },
+    {
+      "case_id": "printed_solution_distractor",
+      "elapsed_ms": 2612,
+      "input_digest": "0026692630a90271eb3bf1bb297f14bcb27caf92295ff3fdbb4341d49de8f1a8",
+      "protocol_valid": true,
+      "rendered_pages": [
+        {
+          "content_type": "image/jpeg",
+          "height": 1400,
+          "mapping_eligible": true,
+          "mapping_reason": null,
+          "page_index": 0,
+          "sha256": "bd9d7869f6a17382899e6ea71d22211b469deab09e726bbecb2b4ebbb9b9d4e9",
+          "width": 1000
+        }
+      ],
+      "source_bytes_total": 24494,
+      "source_mapping": {
+        "reason": "no Canonical or AnswerAlignment context was supplied",
+        "status": "not_evaluated"
+      },
+      "status": "ok",
+      "suggestion": {
+        "outcome": "candidate_prompt_only",
+        "reason_codes": [],
+        "visual_regions": [
+          {
+            "evidence_type": "printed_prompt",
+            "page_index": 0,
+            "reason_codes": [
+              "printed_prompt_only"
+            ],
+            "visual_bbox": [
+              0.15,
+              0.28,
+              0.63,
+              0.4
+            ]
+          }
+        ]
+      },
+      "usage": {
+        "completion_tokens": 72,
+        "prompt_tokens": 1775,
+        "total_tokens": 1847
+      }
+    },
+    {
+      "case_id": "crossed_out_simulated_answer",
+      "elapsed_ms": 3224,
+      "input_digest": "a7bf19d0a1565cc9de8a5e0f2de9f05b17870fe4e3b61529bb5ad4b5f984fa86",
+      "protocol_valid": true,
+      "rendered_pages": [
+        {
+          "content_type": "image/jpeg",
+          "height": 1400,
+          "mapping_eligible": true,
+          "mapping_reason": null,
+          "page_index": 0,
+          "sha256": "e1435db1d5cac2bd2c3f53228123809de54d639d200280bbb68c7c13b2cc1314",
+          "width": 1000
+        }
+      ],
+      "source_bytes_total": 18179,
+      "source_mapping": {
+        "reason": "no Canonical or AnswerAlignment context was supplied",
+        "status": "not_evaluated"
+      },
+      "status": "ok",
+      "suggestion": {
+        "outcome": "candidate_response_present",
+        "reason_codes": [],
+        "visual_regions": [
+          {
+            "evidence_type": "handwritten_text",
+            "page_index": 0,
+            "reason_codes": [
+              "handwriting_visible"
+            ],
+            "visual_bbox": [
+              0.35,
+              0.48,
+              0.65,
+              0.52
+            ]
+          }
+        ]
+      },
+      "usage": {
+        "completion_tokens": 112,
+        "prompt_tokens": 1775,
+        "total_tokens": 1887
+      }
+    },
+    {
+      "case_id": "low_contrast_formula",
+      "elapsed_ms": 2721,
+      "input_digest": "955185a89fd3e5035d1f3f535ed735ee19d93afa12c390e7376ed06e6c3008c3",
+      "protocol_valid": true,
+      "rendered_pages": [
+        {
+          "content_type": "image/jpeg",
+          "height": 1400,
+          "mapping_eligible": true,
+          "mapping_reason": null,
+          "page_index": 0,
+          "sha256": "66d17f360fa6de774a7e8162d195be062a8933242ea326b46aa43ecb1eaf7056",
+          "width": 1000
+        }
+      ],
+      "source_bytes_total": 18746,
+      "source_mapping": {
+        "reason": "no Canonical or AnswerAlignment context was supplied",
+        "status": "not_evaluated"
+      },
+      "status": "ok",
+      "suggestion": {
+        "outcome": "candidate_prompt_only",
+        "reason_codes": [],
+        "visual_regions": [
+          {
+            "evidence_type": "printed_prompt",
+            "page_index": 0,
+            "reason_codes": [
+              "printed_prompt_only"
+            ],
+            "visual_bbox": [
+              0.15,
+              0.28,
+              0.63,
+              0.4
+            ]
+          }
+        ]
+      },
+      "usage": {
+        "completion_tokens": 72,
+        "prompt_tokens": 1775,
+        "total_tokens": 1847
+      }
+    },
+    {
+      "case_id": "ambiguous_shared_step",
+      "elapsed_ms": 2683,
+      "input_digest": "bea3c1b27b4809fe28ed6947a2c37671d916c7185694cc746372dbda9e75a84a",
+      "protocol_valid": true,
+      "rendered_pages": [
+        {
+          "content_type": "image/jpeg",
+          "height": 1400,
+          "mapping_eligible": true,
+          "mapping_reason": null,
+          "page_index": 0,
+          "sha256": "24fd4aeae086b6411c249d66b129f967d242c84d5f4f8b1825b8e37b4ec07405",
+          "width": 1000
+        }
+      ],
+      "source_bytes_total": 18490,
+      "source_mapping": {
+        "reason": "no Canonical or AnswerAlignment context was supplied",
+        "status": "not_evaluated"
+      },
+      "status": "ok",
+      "suggestion": {
+        "outcome": "candidate_response_present",
+        "reason_codes": [],
+        "visual_regions": [
+          {
+            "evidence_type": "handwritten_text",
+            "page_index": 0,
+            "reason_codes": [
+              "handwriting_visible"
+            ],
+            "visual_bbox": [
+              0.35,
+              0.48,
+              0.65,
+              0.52
+            ]
+          }
+        ]
+      },
+      "usage": {
+        "completion_tokens": 74,
+        "prompt_tokens": 1775,
+        "total_tokens": 1849
+      }
+    },
+    {
+      "case_id": "formula_equals_only",
+      "elapsed_ms": 2680,
+      "input_digest": "301056891eb8da8d20103fcaaffc1ba177dc7eee38fac243b67a2b8723dc21c4",
+      "protocol_valid": true,
+      "rendered_pages": [
+        {
+          "content_type": "image/jpeg",
+          "height": 1400,
+          "mapping_eligible": true,
+          "mapping_reason": null,
+          "page_index": 0,
+          "sha256": "6197c94dea600f5a8542f55992cf5b77b1357e2e7578138f90536e44ebb25a3c",
+          "width": 1000
+        }
+      ],
+      "source_bytes_total": 18510,
+      "source_mapping": {
+        "reason": "no Canonical or AnswerAlignment context was supplied",
+        "status": "not_evaluated"
+      },
+      "status": "ok",
+      "suggestion": {
+        "outcome": "candidate_prompt_only",
+        "reason_codes": [],
+        "visual_regions": [
+          {
+            "evidence_type": "printed_prompt",
+            "page_index": 0,
+            "reason_codes": [
+              "printed_prompt_only"
+            ],
+            "visual_bbox": [
+              0.15,
+              0.28,
+              0.63,
+              0.4
+            ]
+          }
+        ]
+      },
+      "usage": {
+        "completion_tokens": 72,
+        "prompt_tokens": 1775,
+        "total_tokens": 1847
+      }
+    },
+    {
+      "case_id": "two_questions_target_two",
+      "elapsed_ms": 2733,
+      "input_digest": "d87e95d36dc26d09d206378a0ebc2e03f497d066c7db266c0ff61a9de091fd88",
+      "protocol_valid": true,
+      "rendered_pages": [
+        {
+          "content_type": "image/jpeg",
+          "height": 1400,
+          "mapping_eligible": true,
+          "mapping_reason": null,
+          "page_index": 0,
+          "sha256": "effeef55501d33e78e3e1c4360d9c71b0d3925d95cb10e973b38f7ba9169dc70",
+          "width": 1000
+        }
+      ],
+      "source_bytes_total": 21804,
+      "source_mapping": {
+        "reason": "no Canonical or AnswerAlignment context was supplied",
+        "status": "not_evaluated"
+      },
+      "status": "ok",
+      "suggestion": {
+        "outcome": "candidate_response_present",
+        "reason_codes": [],
+        "visual_regions": [
+          {
+            "evidence_type": "handwritten_text",
+            "page_index": 0,
+            "reason_codes": [
+              "handwriting_visible"
+            ],
+            "visual_bbox": [
+              0.35,
+              0.68,
+              0.64,
+              0.79
+            ]
+          }
+        ]
+      },
+      "usage": {
+        "completion_tokens": 74,
+        "prompt_tokens": 1775,
+        "total_tokens": 1849
+      }
+    },
+    {
+      "case_id": "tiny_mark_uncertain",
+      "elapsed_ms": 2597,
+      "input_digest": "40f941becb91735c2094cd9f5890b72750983506bb1917d65728b250fc00ab8e",
+      "protocol_valid": true,
+      "rendered_pages": [
+        {
+          "content_type": "image/jpeg",
+          "height": 1400,
+          "mapping_eligible": true,
+          "mapping_reason": null,
+          "page_index": 0,
+          "sha256": "1a751ba67cadc2f44e2b689dd36bb52aae98c5e5c983bd7c9a54739d152218b1",
+          "width": 1000
+        }
+      ],
+      "source_bytes_total": 17923,
+      "source_mapping": {
+        "reason": "no Canonical or AnswerAlignment context was supplied",
+        "status": "not_evaluated"
+      },
+      "status": "ok",
+      "suggestion": {
+        "outcome": "candidate_prompt_only",
+        "reason_codes": [],
+        "visual_regions": [
+          {
+            "evidence_type": "printed_prompt",
+            "page_index": 0,
+            "reason_codes": [
+              "printed_prompt_only"
+            ],
+            "visual_bbox": [
+              0.15,
+              0.28,
+              0.63,
+              0.4
+            ]
+          }
+        ]
+      },
+      "usage": {
+        "completion_tokens": 72,
+        "prompt_tokens": 1775,
+        "total_tokens": 1847
+      }
+    }
+  ],
+  "created_at": "2026-10-11T11:28:31.728905+00:00",
+  "dataset_id": "synthetic_visual_evidence_baseline",
+  "dataset_sha256": "7b3ec71e471087e5ae4a039f946caf3bee75f5c6501858982d43687c8b94d026",
+  "dataset_version": "1.0.0",
+  "endpoint_host": "127.0.0.1",
+  "input_summary": {
+    "image_bytes": 584736,
+    "image_count": 27,
+    "image_pixels": 37800000,
+    "request_count": 26
+  },
+  "model_id": "qwen3.5:4b",
+  "preprocessing_version": "1.1.0",
+  "prompt_version": "1.0.0",
+  "provider": "OllamaNativeVisionProvider",
+  "request_budget": 26,
+  "run_id": "eb3d14e9-1a5c-4a05-a296-b5d941586c36",
+  "schema_name": "huipi.visual.evidence.predictions",
+  "schema_version": "1.0",
+  "source_mapping_status": "not_evaluated_without_canonical_alignment_context"
+}

@@ -1,0 +1,1434 @@
+{
+  "cases": [
+    {
+      "annotation_provenance": "Region boxes and labels were hand-authored from this deterministic drawing recipe. All simulated ink is programmatically drawn; no real student image or human handwriting is used.",
+      "case_id": "baseline_print_only",
+      "dataset_kind": "synthetic",
+      "ground_truth_regions": [
+        {
+          "bbox": [
+            0.09,
+            0.13357142857142856,
+            0.965,
+            0.16285714285714287
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "target-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.15,
+            0.36142857142857143,
+            0.494,
+            0.385
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "printed-answer-area-text",
+          "role": "prompt"
+        }
+      ],
+      "manual_answer_presence": "response_absent",
+      "pages": [
+        {
+          "content_type": "image/png",
+          "height": 1400,
+          "image_path": "images/baseline_print_only/page-0.png",
+          "page_index": 0,
+          "sha256": "946b7b09034feaa9f081875b03bd6e861c894e33a8c958c5da6fd553ae4b8caf",
+          "width": 1000
+        }
+      ],
+      "question_attribution": {
+        "question_number": null,
+        "status": "not_applicable"
+      },
+      "question_number": 1,
+      "question_stem": "Solve 2 + 2. Show your work.",
+      "source_kind": "programmatic_raster"
+    },
+    {
+      "annotation_provenance": "Region boxes and labels were hand-authored from this deterministic drawing recipe. All simulated ink is programmatically drawn; no real student image or human handwriting is used.",
+      "case_id": "baseline_mixed_ink",
+      "dataset_kind": "synthetic",
+      "ground_truth_regions": [
+        {
+          "bbox": [
+            0.09,
+            0.13357142857142856,
+            0.965,
+            0.16285714285714287
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "target-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.285,
+            0.3942857142857143,
+            0.4,
+            0.5107142857142857
+          ],
+          "label": "handwritten_text",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "simulated-blue-four",
+          "role": "response"
+        }
+      ],
+      "manual_answer_presence": "response_present",
+      "pages": [
+        {
+          "content_type": "image/png",
+          "height": 1400,
+          "image_path": "images/baseline_mixed_ink/page-0.png",
+          "page_index": 0,
+          "sha256": "0cabf15d1049e07c16525111e97af4705c51b58bb9fabfe0993a18d84bcee989",
+          "width": 1000
+        }
+      ],
+      "question_attribution": {
+        "question_number": 1,
+        "status": "target_question"
+      },
+      "question_number": 1,
+      "question_stem": "Solve 2 + 2. Show your work.",
+      "source_kind": "programmatic_raster"
+    },
+    {
+      "annotation_provenance": "Region boxes and labels were hand-authored from this deterministic drawing recipe. All simulated ink is programmatically drawn; no real student image or human handwriting is used.",
+      "case_id": "baseline_formula_ink",
+      "dataset_kind": "synthetic",
+      "ground_truth_regions": [
+        {
+          "bbox": [
+            0.09,
+            0.13357142857142856,
+            0.965,
+            0.16285714285714287
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "target-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.18,
+            0.4107142857142857,
+            0.65,
+            0.46785714285714286
+          ],
+          "label": "handwritten_formula",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "simulated-formula",
+          "role": "response"
+        }
+      ],
+      "manual_answer_presence": "response_present",
+      "pages": [
+        {
+          "content_type": "image/png",
+          "height": 1400,
+          "image_path": "images/baseline_formula_ink/page-0.png",
+          "page_index": 0,
+          "sha256": "7fb60957d1f2c3273a157ea99b358fc9f2800a29a041ecc4ba076f2634c62cba",
+          "width": 1000
+        }
+      ],
+      "question_attribution": {
+        "question_number": 1,
+        "status": "target_question"
+      },
+      "question_number": 1,
+      "question_stem": "Solve 2 + 2. Show your work.",
+      "source_kind": "programmatic_raster"
+    },
+    {
+      "annotation_provenance": "Region boxes and labels were hand-authored from this deterministic drawing recipe. All simulated ink is programmatically drawn; no real student image or human handwriting is used.",
+      "case_id": "baseline_geometry_mark",
+      "dataset_kind": "synthetic",
+      "ground_truth_regions": [
+        {
+          "bbox": [
+            0.09,
+            0.13357142857142856,
+            0.965,
+            0.16285714285714287
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "target-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.22,
+            0.375,
+            0.78,
+            0.6535714285714286
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "printed-geometry-diagram",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.475,
+            0.40714285714285714,
+            0.512,
+            0.6535714285714286
+          ],
+          "label": "geometry_mark",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "blue-geometry-marks",
+          "role": "response"
+        }
+      ],
+      "manual_answer_presence": "response_present",
+      "pages": [
+        {
+          "content_type": "image/png",
+          "height": 1400,
+          "image_path": "images/baseline_geometry_mark/page-0.png",
+          "page_index": 0,
+          "sha256": "5d1f2585d31f7a8ccede09b4903a31b4f60309c4cb8e4d764d03d470763e2cbe",
+          "width": 1000
+        }
+      ],
+      "question_attribution": {
+        "question_number": 1,
+        "status": "target_question"
+      },
+      "question_number": 1,
+      "question_stem": "Solve 2 + 2. Show your work.",
+      "source_kind": "programmatic_raster"
+    },
+    {
+      "annotation_provenance": "Region boxes and labels were hand-authored from this deterministic drawing recipe. All simulated ink is programmatically drawn; no real student image or human handwriting is used.",
+      "case_id": "baseline_blank_with_print",
+      "dataset_kind": "synthetic",
+      "ground_truth_regions": [
+        {
+          "bbox": [
+            0.09,
+            0.13357142857142856,
+            0.965,
+            0.16285714285714287
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "target-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.15,
+            0.36142857142857143,
+            0.652,
+            0.38
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "printed-no-marks-message",
+          "role": "prompt"
+        }
+      ],
+      "manual_answer_presence": "response_absent",
+      "pages": [
+        {
+          "content_type": "image/png",
+          "height": 1400,
+          "image_path": "images/baseline_blank_with_print/page-0.png",
+          "page_index": 0,
+          "sha256": "83d1fee2e9d0ac0fc0da4ed7213cce1ba6fd92120318b4e682690b5f3c5a07d6",
+          "width": 1000
+        }
+      ],
+      "question_attribution": {
+        "question_number": null,
+        "status": "not_applicable"
+      },
+      "question_number": 1,
+      "question_stem": "Solve 2 + 2. Show your work.",
+      "source_kind": "programmatic_raster"
+    },
+    {
+      "annotation_provenance": "Region boxes and labels were hand-authored from this deterministic drawing recipe. All simulated ink is programmatically drawn; no real student image or human handwriting is used.",
+      "case_id": "blank_answer_area",
+      "dataset_kind": "synthetic",
+      "ground_truth_regions": [
+        {
+          "bbox": [
+            0.08,
+            0.11142857142857143,
+            0.788,
+            0.135
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "target-prompt",
+          "role": "prompt"
+        }
+      ],
+      "manual_answer_presence": "response_absent",
+      "pages": [
+        {
+          "content_type": "image/png",
+          "height": 1400,
+          "image_path": "images/blank_answer_area/page-0.png",
+          "page_index": 0,
+          "sha256": "c0f7376cb5634e710d4fd6d1f77e66f25088b69a763a1b0ea29ce1d70e51dfb9",
+          "width": 1000
+        }
+      ],
+      "question_attribution": {
+        "question_number": null,
+        "status": "not_applicable"
+      },
+      "question_number": 1,
+      "question_stem": "Solve 2 + 2. Show your work.",
+      "source_kind": "programmatic_raster"
+    },
+    {
+      "annotation_provenance": "Region boxes and labels were hand-authored from this deterministic drawing recipe. All simulated ink is programmatically drawn; no real student image or human handwriting is used.",
+      "case_id": "dense_print_only",
+      "dataset_kind": "synthetic",
+      "ground_truth_regions": [
+        {
+          "bbox": [
+            0.08,
+            0.11142857142857143,
+            0.788,
+            0.135
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "target-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.14,
+            0.3107142857142857,
+            0.617,
+            0.33071428571428574
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "printed-line-1",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.139,
+            0.355,
+            0.613,
+            0.3707142857142857
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "printed-line-2",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.14,
+            0.3992857142857143,
+            0.585,
+            0.41928571428571426
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "printed-line-3",
+          "role": "prompt"
+        }
+      ],
+      "manual_answer_presence": "response_absent",
+      "pages": [
+        {
+          "content_type": "image/png",
+          "height": 1400,
+          "image_path": "images/dense_print_only/page-0.png",
+          "page_index": 0,
+          "sha256": "01626a0f865609fff10c21eb9a9718c360a9486b7844b1797e9af366a3dfa0e5",
+          "width": 1000
+        }
+      ],
+      "question_attribution": {
+        "question_number": null,
+        "status": "not_applicable"
+      },
+      "question_number": 1,
+      "question_stem": "Solve 2 + 2. Show your work.",
+      "source_kind": "programmatic_raster"
+    },
+    {
+      "annotation_provenance": "Region boxes and labels were hand-authored from this deterministic drawing recipe. All simulated ink is programmatically drawn; no real student image or human handwriting is used.",
+      "case_id": "simulated_sparse_four",
+      "dataset_kind": "synthetic",
+      "ground_truth_regions": [
+        {
+          "bbox": [
+            0.08,
+            0.11142857142857143,
+            0.788,
+            0.135
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "target-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.46,
+            0.4607142857142857,
+            0.545,
+            0.55
+          ],
+          "label": "handwritten_text",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "sparse-simulated-four",
+          "role": "response"
+        }
+      ],
+      "manual_answer_presence": "response_present",
+      "pages": [
+        {
+          "content_type": "image/png",
+          "height": 1400,
+          "image_path": "images/simulated_sparse_four/page-0.png",
+          "page_index": 0,
+          "sha256": "73a349bd080bfe584dee031a29c5cdd987b92b244d0baeb5c6c38dbc3a0b7329",
+          "width": 1000
+        }
+      ],
+      "question_attribution": {
+        "question_number": 1,
+        "status": "target_question"
+      },
+      "question_number": 1,
+      "question_stem": "Solve 2 + 2. Show your work.",
+      "source_kind": "programmatic_raster"
+    },
+    {
+      "annotation_provenance": "Region boxes and labels were hand-authored from this deterministic drawing recipe. All simulated ink is programmatically drawn; no real student image or human handwriting is used.",
+      "case_id": "unclear_single_dash",
+      "dataset_kind": "synthetic",
+      "ground_truth_regions": [
+        {
+          "bbox": [
+            0.08,
+            0.11142857142857143,
+            0.788,
+            0.135
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "target-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.465,
+            0.46785714285714286,
+            0.55,
+            0.4928571428571429
+          ],
+          "label": "unclear",
+          "page_index": 0,
+          "question_number": null,
+          "region_id": "ambiguous-dash",
+          "role": "response"
+        }
+      ],
+      "manual_answer_presence": "uncertain",
+      "pages": [
+        {
+          "content_type": "image/png",
+          "height": 1400,
+          "image_path": "images/unclear_single_dash/page-0.png",
+          "page_index": 0,
+          "sha256": "09b4b27f4aae8f13d03752ab85d2443c4afccf1596fd96dd8407ff890231a79a",
+          "width": 1000
+        }
+      ],
+      "question_attribution": {
+        "question_number": null,
+        "status": "uncertain"
+      },
+      "question_number": 1,
+      "question_stem": "Solve 2 + 2. Show your work.",
+      "source_kind": "programmatic_raster"
+    },
+    {
+      "annotation_provenance": "Region boxes and labels were hand-authored from this deterministic drawing recipe. All simulated ink is programmatically drawn; no real student image or human handwriting is used.",
+      "case_id": "simulated_fraction_formula",
+      "dataset_kind": "synthetic",
+      "ground_truth_regions": [
+        {
+          "bbox": [
+            0.08,
+            0.11142857142857143,
+            0.788,
+            0.135
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "target-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.245,
+            0.3535714285714286,
+            0.66,
+            0.46785714285714286
+          ],
+          "label": "handwritten_formula",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "fraction-formula",
+          "role": "response"
+        }
+      ],
+      "manual_answer_presence": "response_present",
+      "pages": [
+        {
+          "content_type": "image/png",
+          "height": 1400,
+          "image_path": "images/simulated_fraction_formula/page-0.png",
+          "page_index": 0,
+          "sha256": "804330bec61ada928b9c9986abdf6070e6ff12f4c94f72604b226d0e7584c538",
+          "width": 1000
+        }
+      ],
+      "question_attribution": {
+        "question_number": 1,
+        "status": "target_question"
+      },
+      "question_number": 1,
+      "question_stem": "Solve 2 + 2. Show your work.",
+      "source_kind": "programmatic_raster"
+    },
+    {
+      "annotation_provenance": "Region boxes and labels were hand-authored from this deterministic drawing recipe. All simulated ink is programmatically drawn; no real student image or human handwriting is used.",
+      "case_id": "table_with_fill",
+      "dataset_kind": "synthetic",
+      "ground_truth_regions": [
+        {
+          "bbox": [
+            0.08,
+            0.11142857142857143,
+            0.788,
+            0.135
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "target-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.425,
+            0.42857142857142855,
+            0.585,
+            0.5
+          ],
+          "label": "student_filled_table",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "filled-table-cell",
+          "role": "response"
+        }
+      ],
+      "manual_answer_presence": "response_present",
+      "pages": [
+        {
+          "content_type": "image/png",
+          "height": 1400,
+          "image_path": "images/table_with_fill/page-0.png",
+          "page_index": 0,
+          "sha256": "6c3f7eea725231a1a630d192c8d43a53c663d8b0c6403fa3bcd6a62ef6dfec4e",
+          "width": 1000
+        }
+      ],
+      "question_attribution": {
+        "question_number": 1,
+        "status": "target_question"
+      },
+      "question_number": 1,
+      "question_stem": "Solve 2 + 2. Show your work.",
+      "source_kind": "programmatic_raster"
+    },
+    {
+      "annotation_provenance": "Region boxes and labels were hand-authored from this deterministic drawing recipe. All simulated ink is programmatically drawn; no real student image or human handwriting is used.",
+      "case_id": "blank_table",
+      "dataset_kind": "synthetic",
+      "ground_truth_regions": [
+        {
+          "bbox": [
+            0.08,
+            0.11142857142857143,
+            0.788,
+            0.135
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "target-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.22,
+            0.34285714285714286,
+            0.78,
+            0.5928571428571429
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "printed-table",
+          "role": "prompt"
+        }
+      ],
+      "manual_answer_presence": "response_absent",
+      "pages": [
+        {
+          "content_type": "image/png",
+          "height": 1400,
+          "image_path": "images/blank_table/page-0.png",
+          "page_index": 0,
+          "sha256": "2e18c36459a877b175c66e6ff9d76197edc160595cd0a0ffc65eb9d02658dbc4",
+          "width": 1000
+        }
+      ],
+      "question_attribution": {
+        "question_number": null,
+        "status": "not_applicable"
+      },
+      "question_number": 1,
+      "question_stem": "Solve 2 + 2. Show your work.",
+      "source_kind": "programmatic_raster"
+    },
+    {
+      "annotation_provenance": "Region boxes and labels were hand-authored from this deterministic drawing recipe. All simulated ink is programmatically drawn; no real student image or human handwriting is used.",
+      "case_id": "two_questions_target_one",
+      "dataset_kind": "synthetic",
+      "ground_truth_regions": [
+        {
+          "bbox": [
+            0.08,
+            0.09714285714285714,
+            0.495,
+            0.11857142857142858
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "target-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.08,
+            0.5292857142857142,
+            0.495,
+            0.5507142857142857
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 2,
+          "region_id": "other-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.405,
+            0.26785714285714285,
+            0.49,
+            0.35714285714285715
+          ],
+          "label": "handwritten_text",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "q1-answer",
+          "role": "response"
+        }
+      ],
+      "manual_answer_presence": "response_present",
+      "pages": [
+        {
+          "content_type": "image/png",
+          "height": 1400,
+          "image_path": "images/two_questions_target_one/page-0.png",
+          "page_index": 0,
+          "sha256": "9c1eeb9dcda04eca27c0bdd11676baa98e2496f306a2b0ee5804b268917846f5",
+          "width": 1000
+        }
+      ],
+      "question_attribution": {
+        "question_number": 1,
+        "status": "target_question"
+      },
+      "question_number": 1,
+      "question_stem": "Solve 2 + 2. Show your work.",
+      "source_kind": "programmatic_raster"
+    },
+    {
+      "annotation_provenance": "Region boxes and labels were hand-authored from this deterministic drawing recipe. All simulated ink is programmatically drawn; no real student image or human handwriting is used.",
+      "case_id": "other_question_answer_only",
+      "dataset_kind": "synthetic",
+      "ground_truth_regions": [
+        {
+          "bbox": [
+            0.08,
+            0.09714285714285714,
+            0.495,
+            0.11857142857142858
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "target-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.08,
+            0.5292857142857142,
+            0.495,
+            0.5507142857142857
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 2,
+          "region_id": "other-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.405,
+            0.7035714285714286,
+            0.49,
+            0.7928571428571428
+          ],
+          "label": "handwritten_text",
+          "page_index": 0,
+          "question_number": 2,
+          "region_id": "q2-answer",
+          "role": "response"
+        }
+      ],
+      "manual_answer_presence": "response_absent",
+      "pages": [
+        {
+          "content_type": "image/png",
+          "height": 1400,
+          "image_path": "images/other_question_answer_only/page-0.png",
+          "page_index": 0,
+          "sha256": "6129382b3a4ef6914138bebff506346da28d96feda057ce828ed46b3cb2a26c7",
+          "width": 1000
+        }
+      ],
+      "question_attribution": {
+        "question_number": 2,
+        "status": "other_question"
+      },
+      "question_number": 1,
+      "question_stem": "Solve 2 + 2. Show your work.",
+      "source_kind": "programmatic_raster"
+    },
+    {
+      "annotation_provenance": "Region boxes and labels were hand-authored from this deterministic drawing recipe. All simulated ink is programmatically drawn; no real student image or human handwriting is used.",
+      "case_id": "shared_geometry_uncertain",
+      "dataset_kind": "synthetic",
+      "ground_truth_regions": [
+        {
+          "bbox": [
+            0.08,
+            0.09714285714285714,
+            0.506,
+            0.12071428571428572
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "target-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.08,
+            0.16142857142857142,
+            0.507,
+            0.185
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 2,
+          "region_id": "second-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.49,
+            0.3142857142857143,
+            0.51,
+            0.6892857142857143
+          ],
+          "label": "geometry_mark",
+          "page_index": 0,
+          "question_number": null,
+          "region_id": "shared-mark",
+          "role": "response"
+        }
+      ],
+      "manual_answer_presence": "uncertain",
+      "pages": [
+        {
+          "content_type": "image/png",
+          "height": 1400,
+          "image_path": "images/shared_geometry_uncertain/page-0.png",
+          "page_index": 0,
+          "sha256": "24de34ffcd9505708ed2458d1fb7cb7c1fd0887b85ea1e588404f96a96d8bb43",
+          "width": 1000
+        }
+      ],
+      "question_attribution": {
+        "question_number": null,
+        "status": "uncertain"
+      },
+      "question_number": 1,
+      "question_stem": "Solve 2 + 2. Show your work.",
+      "source_kind": "programmatic_raster"
+    },
+    {
+      "annotation_provenance": "Region boxes and labels were hand-authored from this deterministic drawing recipe. All simulated ink is programmatically drawn; no real student image or human handwriting is used.",
+      "case_id": "blurred_response_uncertain",
+      "dataset_kind": "synthetic",
+      "ground_truth_regions": [
+        {
+          "bbox": [
+            0.08,
+            0.11142857142857143,
+            0.788,
+            0.135
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "target-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.405,
+            0.3964285714285714,
+            0.49,
+            0.4857142857142857
+          ],
+          "label": "unclear",
+          "page_index": 0,
+          "question_number": null,
+          "region_id": "blurred-ink",
+          "role": "response"
+        }
+      ],
+      "manual_answer_presence": "uncertain",
+      "pages": [
+        {
+          "content_type": "image/png",
+          "height": 1400,
+          "image_path": "images/blurred_response_uncertain/page-0.png",
+          "page_index": 0,
+          "sha256": "23c2e83ced4a4dbc4fe3b1eb229448a6e9a10f3dde78427c055c64a2acbceb93",
+          "width": 1000
+        }
+      ],
+      "question_attribution": {
+        "question_number": null,
+        "status": "uncertain"
+      },
+      "question_number": 1,
+      "question_stem": "Solve 2 + 2. Show your work.",
+      "source_kind": "programmatic_raster"
+    },
+    {
+      "annotation_provenance": "Region boxes and labels were hand-authored from this deterministic drawing recipe. All simulated ink is programmatically drawn; no real student image or human handwriting is used.",
+      "case_id": "answer_near_prompt",
+      "dataset_kind": "synthetic",
+      "ground_truth_regions": [
+        {
+          "bbox": [
+            0.08,
+            0.11142857142857143,
+            0.788,
+            0.135
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "target-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.775,
+            0.16428571428571428,
+            0.86,
+            0.25357142857142856
+          ],
+          "label": "handwritten_text",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "ink-near-prompt",
+          "role": "response"
+        }
+      ],
+      "manual_answer_presence": "response_present",
+      "pages": [
+        {
+          "content_type": "image/png",
+          "height": 1400,
+          "image_path": "images/answer_near_prompt/page-0.png",
+          "page_index": 0,
+          "sha256": "1223efb225786480828f81fccdd36662c9c40628d60079623c09c95f671047ca",
+          "width": 1000
+        }
+      ],
+      "question_attribution": {
+        "question_number": 1,
+        "status": "target_question"
+      },
+      "question_number": 1,
+      "question_stem": "Solve 2 + 2. Show your work.",
+      "source_kind": "programmatic_raster"
+    },
+    {
+      "annotation_provenance": "Region boxes and labels were hand-authored from this deterministic drawing recipe. All simulated ink is programmatically drawn; no real student image or human handwriting is used.",
+      "case_id": "cross_page_response",
+      "dataset_kind": "synthetic",
+      "ground_truth_regions": [
+        {
+          "bbox": [
+            0.08,
+            0.11142857142857143,
+            0.788,
+            0.135
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "target-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.08,
+            0.11857142857142858,
+            0.75,
+            0.14
+          ],
+          "label": "printed_prompt",
+          "page_index": 1,
+          "question_number": 1,
+          "region_id": "continuation-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.495,
+            0.4785714285714286,
+            0.58,
+            0.5678571428571428
+          ],
+          "label": "handwritten_text",
+          "page_index": 1,
+          "question_number": 1,
+          "region_id": "page-two-answer",
+          "role": "response"
+        }
+      ],
+      "manual_answer_presence": "response_present",
+      "pages": [
+        {
+          "content_type": "image/png",
+          "height": 1400,
+          "image_path": "images/cross_page_response/page-0.png",
+          "page_index": 0,
+          "sha256": "c0f7376cb5634e710d4fd6d1f77e66f25088b69a763a1b0ea29ce1d70e51dfb9",
+          "width": 1000
+        },
+        {
+          "content_type": "image/png",
+          "height": 1400,
+          "image_path": "images/cross_page_response/page-1.png",
+          "page_index": 1,
+          "sha256": "b35ded2c5d2a236a47acd74c247b6600ce0599696bf04d796a6d05b9867f9582",
+          "width": 1000
+        }
+      ],
+      "question_attribution": {
+        "question_number": 1,
+        "status": "target_question"
+      },
+      "question_number": 1,
+      "question_stem": "Solve 2 + 2. Show your work.",
+      "source_kind": "programmatic_raster"
+    },
+    {
+      "annotation_provenance": "Region boxes and labels were hand-authored from this deterministic drawing recipe. All simulated ink is programmatically drawn; no real student image or human handwriting is used.",
+      "case_id": "visible_geometry_no_text",
+      "dataset_kind": "synthetic",
+      "ground_truth_regions": [
+        {
+          "bbox": [
+            0.08,
+            0.11142857142857143,
+            0.788,
+            0.135
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "target-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.47,
+            0.5642857142857143,
+            0.53,
+            0.6071428571428571
+          ],
+          "label": "geometry_mark",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "geometry-only-mark",
+          "role": "response"
+        }
+      ],
+      "manual_answer_presence": "response_present",
+      "pages": [
+        {
+          "content_type": "image/png",
+          "height": 1400,
+          "image_path": "images/visible_geometry_no_text/page-0.png",
+          "page_index": 0,
+          "sha256": "37ad706bd52989b32823b183a8da4ba81935434d45d38ebd5c498daf7bee98a4",
+          "width": 1000
+        }
+      ],
+      "question_attribution": {
+        "question_number": 1,
+        "status": "target_question"
+      },
+      "question_number": 1,
+      "question_stem": "Solve 2 + 2. Show your work.",
+      "source_kind": "programmatic_raster"
+    },
+    {
+      "annotation_provenance": "Region boxes and labels were hand-authored from this deterministic drawing recipe. All simulated ink is programmatically drawn; no real student image or human handwriting is used.",
+      "case_id": "printed_solution_distractor",
+      "dataset_kind": "synthetic",
+      "ground_truth_regions": [
+        {
+          "bbox": [
+            0.08,
+            0.11142857142857143,
+            0.788,
+            0.135
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "target-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.18,
+            0.43357142857142855,
+            0.694,
+            0.4592857142857143
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "printed-worked-example",
+          "role": "prompt"
+        }
+      ],
+      "manual_answer_presence": "response_absent",
+      "pages": [
+        {
+          "content_type": "image/png",
+          "height": 1400,
+          "image_path": "images/printed_solution_distractor/page-0.png",
+          "page_index": 0,
+          "sha256": "c855d820e0ab0520930c023c6429ec55bf0f97fc68cd9b8bcbc0505c15e335b0",
+          "width": 1000
+        }
+      ],
+      "question_attribution": {
+        "question_number": null,
+        "status": "not_applicable"
+      },
+      "question_number": 1,
+      "question_stem": "Solve 2 + 2. Show your work.",
+      "source_kind": "programmatic_raster"
+    },
+    {
+      "annotation_provenance": "Region boxes and labels were hand-authored from this deterministic drawing recipe. All simulated ink is programmatically drawn; no real student image or human handwriting is used.",
+      "case_id": "crossed_out_simulated_answer",
+      "dataset_kind": "synthetic",
+      "ground_truth_regions": [
+        {
+          "bbox": [
+            0.08,
+            0.11142857142857143,
+            0.788,
+            0.135
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "target-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.33,
+            0.39285714285714285,
+            0.515,
+            0.48214285714285715
+          ],
+          "label": "handwritten_text",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "crossed-out-answer",
+          "role": "response"
+        }
+      ],
+      "manual_answer_presence": "response_present",
+      "pages": [
+        {
+          "content_type": "image/png",
+          "height": 1400,
+          "image_path": "images/crossed_out_simulated_answer/page-0.png",
+          "page_index": 0,
+          "sha256": "9627736972563816451c1091f388e7e20121e584ea6e9ab6170f40db7a116dee",
+          "width": 1000
+        }
+      ],
+      "question_attribution": {
+        "question_number": 1,
+        "status": "target_question"
+      },
+      "question_number": 1,
+      "question_stem": "Solve 2 + 2. Show your work.",
+      "source_kind": "programmatic_raster"
+    },
+    {
+      "annotation_provenance": "Region boxes and labels were hand-authored from this deterministic drawing recipe. All simulated ink is programmatically drawn; no real student image or human handwriting is used.",
+      "case_id": "low_contrast_formula",
+      "dataset_kind": "synthetic",
+      "ground_truth_regions": [
+        {
+          "bbox": [
+            0.08,
+            0.11142857142857143,
+            0.788,
+            0.135
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "target-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.3,
+            0.42857142857142855,
+            0.64,
+            0.4928571428571429
+          ],
+          "label": "handwritten_formula",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "low-contrast-formula",
+          "role": "response"
+        }
+      ],
+      "manual_answer_presence": "response_present",
+      "pages": [
+        {
+          "content_type": "image/png",
+          "height": 1400,
+          "image_path": "images/low_contrast_formula/page-0.png",
+          "page_index": 0,
+          "sha256": "cb0e762c1999db62aec1c9a1b29c32e7955b4e0e0e57b3e784290991c56b58fb",
+          "width": 1000
+        }
+      ],
+      "question_attribution": {
+        "question_number": 1,
+        "status": "target_question"
+      },
+      "question_number": 1,
+      "question_stem": "Solve 2 + 2. Show your work.",
+      "source_kind": "programmatic_raster"
+    },
+    {
+      "annotation_provenance": "Region boxes and labels were hand-authored from this deterministic drawing recipe. All simulated ink is programmatically drawn; no real student image or human handwriting is used.",
+      "case_id": "ambiguous_shared_step",
+      "dataset_kind": "synthetic",
+      "ground_truth_regions": [
+        {
+          "bbox": [
+            0.08,
+            0.11142857142857143,
+            0.788,
+            0.135
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "target-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.445,
+            0.4035714285714286,
+            0.495,
+            0.45357142857142857
+          ],
+          "label": "unclear",
+          "page_index": 0,
+          "question_number": null,
+          "region_id": "ambiguous-shared-answer",
+          "role": "response"
+        }
+      ],
+      "manual_answer_presence": "uncertain",
+      "pages": [
+        {
+          "content_type": "image/png",
+          "height": 1400,
+          "image_path": "images/ambiguous_shared_step/page-0.png",
+          "page_index": 0,
+          "sha256": "6c6e757506a2e516f81475bee3fd434ea0c8e50114890ea5da70535847c00249",
+          "width": 1000
+        }
+      ],
+      "question_attribution": {
+        "question_number": null,
+        "status": "uncertain"
+      },
+      "question_number": 1,
+      "question_stem": "Solve 2 + 2. Show your work.",
+      "source_kind": "programmatic_raster"
+    },
+    {
+      "annotation_provenance": "Region boxes and labels were hand-authored from this deterministic drawing recipe. All simulated ink is programmatically drawn; no real student image or human handwriting is used.",
+      "case_id": "formula_equals_only",
+      "dataset_kind": "synthetic",
+      "ground_truth_regions": [
+        {
+          "bbox": [
+            0.08,
+            0.11142857142857143,
+            0.788,
+            0.135
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "target-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.37,
+            0.44285714285714284,
+            0.585,
+            0.5071428571428571
+          ],
+          "label": "handwritten_formula",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "sparse-formula",
+          "role": "response"
+        }
+      ],
+      "manual_answer_presence": "response_present",
+      "pages": [
+        {
+          "content_type": "image/png",
+          "height": 1400,
+          "image_path": "images/formula_equals_only/page-0.png",
+          "page_index": 0,
+          "sha256": "1535661467fe02d5e8f5186c81a09200ce109c9a452e2aae3ca05bc03eaa90b1",
+          "width": 1000
+        }
+      ],
+      "question_attribution": {
+        "question_number": 1,
+        "status": "target_question"
+      },
+      "question_number": 1,
+      "question_stem": "Solve 2 + 2. Show your work.",
+      "source_kind": "programmatic_raster"
+    },
+    {
+      "annotation_provenance": "Region boxes and labels were hand-authored from this deterministic drawing recipe. All simulated ink is programmatically drawn; no real student image or human handwriting is used.",
+      "case_id": "two_questions_target_two",
+      "dataset_kind": "synthetic",
+      "ground_truth_regions": [
+        {
+          "bbox": [
+            0.08,
+            0.5292857142857142,
+            0.495,
+            0.5507142857142857
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 2,
+          "region_id": "target-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.08,
+            0.09714285714285714,
+            0.495,
+            0.11857142857142858
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "other-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.405,
+            0.7035714285714286,
+            0.49,
+            0.7928571428571428
+          ],
+          "label": "handwritten_text",
+          "page_index": 0,
+          "question_number": 2,
+          "region_id": "q2-answer",
+          "role": "response"
+        }
+      ],
+      "manual_answer_presence": "response_present",
+      "pages": [
+        {
+          "content_type": "image/png",
+          "height": 1400,
+          "image_path": "images/two_questions_target_two/page-0.png",
+          "page_index": 0,
+          "sha256": "6129382b3a4ef6914138bebff506346da28d96feda057ce828ed46b3cb2a26c7",
+          "width": 1000
+        }
+      ],
+      "question_attribution": {
+        "question_number": 2,
+        "status": "target_question"
+      },
+      "question_number": 2,
+      "question_stem": "Solve 3 + 3. Show your work.",
+      "source_kind": "programmatic_raster"
+    },
+    {
+      "annotation_provenance": "Region boxes and labels were hand-authored from this deterministic drawing recipe. All simulated ink is programmatically drawn; no real student image or human handwriting is used.",
+      "case_id": "tiny_mark_uncertain",
+      "dataset_kind": "synthetic",
+      "ground_truth_regions": [
+        {
+          "bbox": [
+            0.08,
+            0.11142857142857143,
+            0.788,
+            0.135
+          ],
+          "label": "printed_prompt",
+          "page_index": 0,
+          "question_number": 1,
+          "region_id": "target-prompt",
+          "role": "prompt"
+        },
+        {
+          "bbox": [
+            0.5,
+            0.49642857142857144,
+            0.515,
+            0.5071428571428571
+          ],
+          "label": "unclear",
+          "page_index": 0,
+          "question_number": null,
+          "region_id": "tiny-ambiguous-mark",
+          "role": "response"
+        }
+      ],
+      "manual_answer_presence": "uncertain",
+      "pages": [
+        {
+          "content_type": "image/png",
+          "height": 1400,
+          "image_path": "images/tiny_mark_uncertain/page-0.png",
+          "page_index": 0,
+          "sha256": "2bd9c280587ef8899e706d937ff8604c392e015379863cfb2d88a4e3f71de4c2",
+          "width": 1000
+        }
+      ],
+      "question_attribution": {
+        "question_number": null,
+        "status": "uncertain"
+      },
+      "question_number": 1,
+      "question_stem": "Solve 2 + 2. Show your work.",
+      "source_kind": "programmatic_raster"
+    }
+  ],
+  "dataset_id": "synthetic_visual_evidence_baseline",
+  "dataset_kind": "synthetic",
+  "dataset_version": "1.0.0",
+  "schema_name": "huipi.visual.evidence.dataset",
+  "schema_version": "1.0"
+}

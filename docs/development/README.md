@@ -1,0 +1,11 @@
+# 开发与运行指南
+
+面向本地开发者的操作文档。首次启动从[快速开始](quickstart.md)开始；要验证从 API 上传到题目对齐的完整流程，使用[基本作业流程](basic-workflow.md)。
+
+- [快速开始：环境、PostgreSQL、对象存储与 API](quickstart.md)
+- [基本作业流程：创建、提交、解析和对齐](basic-workflow.md)
+- [安装 MinerU 并运行解析 Worker](mineru.md)
+- [运行视觉作答证据建议](visual-evidence.md)
+- [人工复核 CLI 与脱敏导出](answer-review.md)
+
+所有示例默认用于本地受控环境。项目尚未实现登录、RBAC 或租户隔离。

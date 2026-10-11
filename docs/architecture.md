@@ -1,6 +1,6 @@
 # 架构与模块边界
 
-慧批云端采用 src 布局的模块化单体。P1-A、P1-B、P2-A、P2-B、P2-C、P2-D1 和 P2-D2A 已合并到 `main`。P2-D2B 的视觉作答建议位于当前独立功能分支，尚未合并。自动批改、教师 Copilot、完整认证和 RBAC 仍未实现。
+慧批云端采用 src 布局的模块化单体，围绕作业提交、文档解析、来源对齐、视觉建议和人工复核建立可追溯的数据流。离线视觉评测与线上视觉建议使用同一严格回复协议，但评测工具不修改线上 Provider 行为。自动批改、教师 Copilot、完整认证和 RBAC 仍未实现。
 
 ## 模块职责
 
@@ -12,7 +12,8 @@
 - `modules/canonical_documents`：Canonical Document v1 DTO、MiddleJson 适配转换、有界内容验证、稳定标识、S3/PG 持久化、状态与页面查询。
 - `modules/answer_alignment`：P2-D1 新增模块。按 Canonical 阅读顺序识别题号候选、切分可追溯来源区域、与 Assignment 的真实 Question 对齐，并读写版本化结果索引。该模块不读取 AnswerKey，也不判断学生作答存在性。
 - `modules/answer_review`：独立人工判断协议。校验 Canonical 节点与 Unicode 码点范围，按当前 Canonical/Alignment/Question 集合版本追加作答存在性决定，并校验合成标注基线。该模块不修改 Answer Alignment，不生成自动作答预测或评分结果。
-- `modules/visual_evidence`：当前分支新增的严格版本化机器建议协议、幂等请求索引和来源版本复核。proposal 写私有 S3，PostgreSQL 保存轻量索引；不修改人工复核表。
+- `modules/visual_evidence`：严格版本化机器建议协议、幂等请求索引和来源版本复核。proposal 写私有 S3，PostgreSQL 保存轻量索引；不修改人工复核表。
+- `modules/visual_evaluation`：版本化合成视觉标签协议、图像引用/hash/尺寸验证、作答存在性与区域定位统计。它消费 Provider 已保存的预测，不访问数据库，也不把 Canonical 映射当作标签。
 - `workers`：独立于 FastAPI 的解析任务轮询进程，管理领取、解析调用、heartbeat、结果提交和受控退出；另含规范化、答案对齐、人工复核和 VLM 建议 CLI。
 - `infrastructure/database`：共享 Engine 工厂与按请求/操作创建的 AsyncSession；Alembic 管理结构，应用启动不会调用 `create_all`。
 - `infrastructure/storage`：boto3 S3 兼容适配器。本地对象存储使用 PGSTY SILO。
@@ -24,7 +25,7 @@
 
 ## 数据关系
 
-## P2-D2A 学生作答证据与人工复核（本功能分支）
+## P2-D2A 学生作答证据与人工复核（已合并）
 
 本分支在 PostgreSQL 新增 `answer_review_decisions`，每行表示某个 Submission / Question 的一次人工决定和一个修订号。`decision` 只取 `response_present`、`response_absent`、`uncertain`。没有对应行表示 `unreviewed`，绝不映射成 `response_absent`。`alignment_status` 是读取并绑定的 P2-D1 状态，两种信息各自保留。当前协议没有 `grading_readiness`，`response_present` 也不会放行批改。
 
@@ -38,7 +39,7 @@ revision 的排序不依赖时间戳。写入前锁住 `Submission` 行，同一
 
 `tests/fixtures/answer_presence_synthetic_v1.json` 包含 13 个合成复核范围，含仅印刷题干、普通文本、跨页、无题号、公式、图像/几何、表格、OCR 遗漏、共享图形、多区域、歧义及未复核。评测脚本验证标注一致性并统计人工覆盖率、不确定比例；当前没有自动作答检测器，模型 Precision/Recall/FPR 均为 `not_evaluated`，不会把人工标签当作预测。纯文本合成协议不能验证真实手写识别。还需收集经许可且脱敏的真实样本，制定双人标注与仲裁规则，并在开放教师界面前实现认证和审计访问控制。
 
-## P2-D2B 视觉作答证据建议（当前功能分支）
+## P2-D2B 视觉作答证据建议（已合并）
 
 此流程只接受已有的 `SubmissionFile`、成功 Canonical、当前 AnswerAlignment 和真实 Assignment Question。服务先调用 `load_verified_alignment_bundle` 验证 Canonical/Alignment 对象 SHA、索引、作业归属和 Question digest，再在独立只读 Session 中读取原始文件元数据。原始 bucket 必须等于当前 S3 适配器 bucket；分块下载写到权限受限临时目录，并同时验证索引大小、`MAX_UPLOAD_SIZE_BYTES`、P2-D2B 文件上限和 SHA-256。MIME、扩展名和 PDF/JPEG/PNG magic bytes 必须一致。
 
@@ -50,13 +51,23 @@ revision 的排序不依赖时间戳。写入前锁住 `Submission` 行，同一
 
 Provider 有两个显式选项：`openai_compatible` 使用 `/v1/chat/completions` 和环境变量 Key；`ollama_native` 只接受本机 HTTP loopback，使用 `/api/chat` 的 `think=false` 与 JSON 格式控制，并读取 Ollama 返回的 token 计数。使用原生接口是为避免本机 Qwen 3.5 OpenAI-compatible 调用把有限上下文耗尽在隐藏思考输出；通用兼容 Provider 不发送 Ollama 私有参数。两种适配器都使用有界响应读取、请求超时、仅对网络/429/5xx 的有限重试和同一严格 Pydantic 输出协议。
 
-2026-10-10 的本地真实模型合同检查使用 Ollama 0.31.2 与 `qwen3.5:4b`，五个生成样本均返回合法响应（5/5），单次耗时约 4.8–6.2 秒；几何标记仍被误判为“仅印刷题干”。2026-10-11 的专项真实业务闭环使用合成 PNG、合成 MiddleJson fixture 和真实 Canonical/Alignment 持久化链路，模型仍把几何标记误报为 `printed_prompt`。模型框 `[0.21, 0.365, 0.798, 0.674]` 与合成 Canonical 答案来源框 IoU 为 0.952；新规则保留此几何证据但因类型为印刷题干拒绝 pointer。最新验收调用耗时 9359 ms，prompt/completion 用量 1807/120 tokens。S3 proposal 大小 1967 字节，SHA-256 经下载核验，人工复核行数未变。该样本没有运行 MinerU，不含真实学生数据，也不能用于准确率或性能结论。错误分类是 VLM 视觉识别误判；JSON 合同有效；输入是 PNG，不涉及 PDF/EXIF 转换；来源拒绝是有意的安全策略，不是 Canonical 解析失败。
+真实 VLM 调用、协议结果、合成样本的视觉误判以及来源映射观测属于评测证据，不作为架构保证；详见[视觉证据评测文档](evaluation/visual-evidence.md)。
 
 `candidate_prompt_only` 只说模型看到了印刷题干，不等于 `response_absent`；`candidate_response_present` 也不是人工作答确认。模型没有自由文本理由和未校准置信度。程序把归一化图像框经所记录的变换后，与真实 Canonical tree 中由 P2-D1 提供、且 `content_pointer` 和 Block ID 均能在树中验证的区域作启发式重叠检查。IoU 门限保持 0.08，Proposal 的 `source_bbox_iou` 记录实际几何交并比，不是置信度。单一空间候选不证明 Question 真实归属；它仍是待复核机器建议。`printed_prompt` 类别永远不获得答案来源 pointer，即使框与唯一 Canonical BBox 完全重叠。共享图形、多题交叉、无匹配、不可映射坐标或多来源重叠时保留原图视觉框和 `unresolved`。Proposal schema 升到 1.1，预处理版本升到 1.1.0，以区分新增来源框 IoU 和 PDF 页面框元数据。
 
 VLM 调用没有打开数据库事务。生成结果后，系统先上传至私有 S3 每次 UUID 独立的不可变 proposal Key，再在 PostgreSQL 一个短事务中锁定 Submission、Assignment 和当前来源行，重新检查源文件、题目文字、Canonical 与 Alignment ID/SHA，然后用 `(submission_id, question_id, request_id)` 唯一约束登记。相同 request ID + 相同输入摘要返回既有记录；同 request ID 但摘要不同冲突。Repository 在发出 COMMIT 前失败时显式回滚并标为确定失败，此时服务可核验并删除未索引对象。COMMIT 一旦开始后若客户端确认丢失或会话关闭失败，则标为结果未知；不论幂等查询返回已有行、空结果或暂时不可用，都不删除本次 S3 对象。若已确认有其他不可变对象登记为唯一赢家，输家对象可作尽力清理。无法确认时会保留孤儿以避免删掉已提交对象。取消等待中的 boto3 `asyncio.to_thread` 不会中止同步线程；取消路径不发删除操作，上传可能继续完成为无索引对象。进程崩溃及 S3/PG 非原子性仍可能留下孤儿，后续需有保留期的 S3/PG 对账清理。
 
 机器 JSON 保存完整 proposal；PostgreSQL 不保存图像或原始 OCR 文本。数据表通过外键绑定 Submission、Assignment、Question、CanonicalArtifact 和 AnswerAlignmentArtifact，并记录文件/模型/版本/输入摘要。当前没有 proposal HTTP 查询或匿名写接口，只有本地 `analyze_visual_evidence` CLI；CLI dry-run 会下载、校验并渲染，但不会发模型调用或写结果。建议不会写入 `answer_review_decisions`，不会改 Canonical/Alignment，也不能作为评分状态。数据留存、访问认证、对象孤儿清理和真实样本质量评测仍是上线前置工作。
+
+## 视觉作答证据评测
+
+`modules/visual_evaluation/protocol.py` 解析严格版本化 JSON 标注。每页图像必须位于数据集目录内，并通过文件大小、实际格式、尺寸、像素和 SHA-256 校验。人工标签与模型预测分开保存。当前公开回归集为 26 个合成案例、27 张程序绘制的图片；模拟笔迹和几何标记不是真实学生作业。
+
+`scripts/evaluate_visual_evidence.py` 默认执行 dry-run。`--run-model` 复用视觉 Provider 和页面预处理；`--evaluate-predictions` 仅从已保存的预测 JSON 重算指标，不再次调用模型。离线加载器校验预测 Schema、数据集 ID/版本/SHA、案例集合、记录状态和页面信息；`status=ok` 的每条建议会再次通过 `VisualEvidenceModelReply` 严格校验，并且区域页面必须属于该案例实际提供的页面。合法的 Provider、协议和输入失败记录单独统计；未知状态或不合规的历史成功记录会被拒绝，不参与协议通过率。评测输出写入新文件，不修改预测或人工标签。
+
+指标区分案例级作答存在性、目标题作答区域候选检测和全部目标 Question 区域定位。区域在同一案例和页面内按 IoU 0.5 确定性一对一匹配；报告原始计数、分母、覆盖率和弃权率。`candidate_prompt_only` 仅作为离线分类中的候选负类，不表示人工作答缺失；uncertain 人工案例不计入确定标签分类分母。视觉集没有 Canonical/AnswerAlignment 来源 pointer 真值，因此 Candidate Question Link 和 Automatic Accept 的 Precision/Recall 是 `not_evaluated`，不依据输入 Question 号推断关联正确。
+
+数据集定义、固定合成基线、逐案例失败和真实 MinerU/Ollama 专项运行结果记录在[视觉证据评测文档](evaluation/visual-evidence.md)。报告必须区分协议通过、作答判断、区域定位和 Canonical 来源映射；合成样本及单次模型调用不代表真实教学作业准确率或生产性能。
 
 ## 数据关系
 
@@ -182,6 +193,6 @@ Heartbeat 已确认本轮 Task 的状态和租约。它不保证解析产物只�
 
 集成测试要求真实 PostgreSQL；文件和产物集成测试还需要本地 S3 兼容服务。CI 使用 PostgreSQL 16 与 PGSTY SILO；默认 CI 不下载 MinerU 模型。`tests/integration/test_mineru_e2e.py` 使用受控合成文本 PDF、扫描 PDF 和 PNG，经 API、真实 Worker、独立 MinerU 子进程、PostgreSQL 与 S3 验证数据流；运行它需显式启用 `MINERU_E2E=1` 并配置本地模型。测试仅操作 `_test` 数据库和测试对象前缀，不清空开发数据卷。
 
-PR #5 最终本机 E2E 对这三个合成样本均通过；三个文件都为一页，断言分别验证文字 PDF 的样本文字、扫描 PDF 的 OCR 文字、PNG 输入识别出的样本文字，并校验产物对象的 SHA-256。默认 GitHub CI 的三个 E2E 项跳过，因为 CI 不安装 MinerU 模型。上述结果不等同真实教学数据质量评估。
+opt-in 本机 E2E 对三个合成样本均通过；三个文件都为一页，断言分别验证文字 PDF 的样本文字、扫描 PDF 的 OCR 文字、PNG 输入识别出的样本文字，并校验产物对象的 SHA-256。默认 GitHub CI 的三个 E2E 项跳过，因为 CI 不安装 MinerU 模型。上述结果不等同真实教学数据质量评估。
 
 输入上限、页数、ZIP展开大小、文本输出和成员数上限可以限制部分工作量，但它们不构成 MinerU 进程的硬内存或 CPU 配额。当前 CPU ONNX 执行设置 `OMP_NUM_THREADS=4`、ONNX intra-op 4 / inter-op 1，并隐藏 CUDA；一个 Worker 进程每次处理一个任务，多进程部署会线性叠加资源压力。MinerU 4.0.10 Basic/ONNX CPU 单样本内存应使用 `/usr/bin/time -v` 或 cgroup `memory.peak` 观察，并据此设定 systemd/Docker 内存限制与 Worker 数量。若子进程被 OOM Killer 终止，它以非零状态退出，任务不会成功；现有策略会按可重试解析故障记录，达到最大尝试次数后转为失败。
