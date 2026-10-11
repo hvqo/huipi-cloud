@@ -34,13 +34,16 @@ from huipi_cloud.modules.answer_alignment.service import load_verified_alignment
 from huipi_cloud.modules.answer_alignment.structure import canonical_atoms
 from huipi_cloud.modules.visual_evidence import repository
 from huipi_cloud.modules.visual_evidence.errors import (
+    VisualEvidenceCommitOutcomeUnknownError,
     VisualEvidenceConfigurationError,
     VisualEvidenceConflictError,
+    VisualEvidenceError,
     VisualEvidenceInputError,
     VisualEvidenceLimitError,
     VisualEvidenceNotFoundError,
     VisualEvidenceNotReadyError,
     VisualEvidenceProtocolError,
+    VisualEvidenceRegistrationRolledBackError,
     VisualEvidenceSourceChangedError,
     VisualEvidenceStorageError,
 )
@@ -322,7 +325,7 @@ async def analyze_question_visual_evidence(
                 expected_source_bucket=source_context.source_file.bucket,
                 expected_source_size=source_context.source_file.size_bytes,
             )
-        except Exception as error:
+        except VisualEvidenceCommitOutcomeUnknownError as error:
             existing = await _lookup_request_safely(
                 session_factory,
                 submission_id=submission_id,
@@ -330,15 +333,19 @@ async def analyze_question_visual_evidence(
                 request_id=request_id,
             )
             if existing is not None:
-                await _delete_unindexed_object(storage, session_factory, object_key)
                 if existing.model_input_digest == model_input_digest:
                     return existing
                 raise VisualEvidenceConflictError from error
+            logger.warning("Visual proposal commit outcome remains unknown; object retained")
+            raise VisualEvidenceStorageError("proposal_commit_outcome_unknown") from error
+        except VisualEvidenceRegistrationRolledBackError as error:
             await _delete_unindexed_object(storage, session_factory, object_key)
-            if isinstance(error, (VisualEvidenceConflictError, VisualEvidenceSourceChangedError)):
-                raise
-            logger.error("Visual proposal registration failed (%s)", type(error).__name__)
+            logger.error("Visual proposal registration rolled back (%s)", type(error).__name__)
             raise VisualEvidenceStorageError("proposal_index_registration_failed") from error
+        except VisualEvidenceError:
+            # Repository domain rejections leave through an explicit pre-COMMIT rollback.
+            await _delete_unindexed_object(storage, session_factory, object_key)
+            raise
         if record.proposal_object_key != object_key:
             await _delete_unindexed_object(storage, session_factory, object_key)
         return record
@@ -411,6 +418,8 @@ def _page_metadata(page: RenderedPage) -> RenderedPageMetadata:
         source_height=float(page.source_height),
         source_unit=page.source_unit,
         source_rotation_degrees=page.source_rotation_degrees,
+        source_media_box=page.source_media_box,
+        source_crop_box=page.source_crop_box,
         rendered_width=page.rendered_width,
         rendered_height=page.rendered_height,
         effective_dpi=page.effective_dpi,
@@ -486,8 +495,9 @@ def _attribute_regions(
             continue
         source_visual_bbox = transform_bbox_to_source(raw_region.visual_bbox, page.transform)
 
-        target_matches: list[SourceRegion] = []
-        foreign_matches: list[SourceRegion] = []
+        target_matches: dict[tuple[str, UUID], tuple[SourceRegion, float]] = {}
+        foreign_matches: dict[tuple[str, UUID], tuple[SourceRegion, float]] = {}
+        observed_ious: list[float] = []
         shared_asset = False
         target_asset_ids = {
             ref.asset_id
@@ -499,20 +509,27 @@ def _attribute_regions(
             for source_region in answer.source_regions:
                 if source_region.page_index != raw_region.page_index:
                     continue
-                if not _boxes_match(source_visual_bbox, source_region.bbox):
-                    continue
                 if source_region.content_pointer not in atoms:
                     continue
                 atom = atoms[source_region.content_pointer]
                 if atom.block.block_id != source_region.source_block_id:
+                    continue
+                iou = _box_iou(source_visual_bbox, source_region.bbox)
+                if iou is None:
+                    continue
+                observed_ious.append(iou)
+                if iou < _SOURCE_BBOX_IOU_THRESHOLD:
                     continue
                 refs = {
                     ref.asset_id
                     for ref in source_region.asset_refs
                     if ref.asset_id is not None
                 }
+                identity = (source_region.content_pointer, source_region.source_block_id)
                 if answer.question_id == target.question_id:
-                    target_matches.append(source_region)
+                    previous = target_matches.get(identity)
+                    if previous is None or iou > previous[1]:
+                        target_matches[identity] = (source_region, iou)
                     if refs.intersection(
                         ref.asset_id
                         for other in all_answers
@@ -523,15 +540,21 @@ def _attribute_regions(
                     ):
                         shared_asset = True
                 else:
-                    foreign_matches.append(source_region)
+                    previous = foreign_matches.get(identity)
+                    if previous is None or iou > previous[1]:
+                        foreign_matches[identity] = (source_region, iou)
                     if refs.intersection(target_asset_ids):
                         shared_asset = True
 
-        unique_target = {
-            (region.content_pointer, region.source_block_id): region for region in target_matches
-        }
-        if len(unique_target) == 1 and not foreign_matches and not shared_asset:
-            source = next(iter(unique_target.values()))
+        best_iou = max(observed_ious, default=None)
+        if raw_region.evidence_type == "printed_prompt":
+            reasons.append("printed_prompt_only")
+            result.append(
+                _unresolved_region(raw_region, reasons, source_bbox_iou=best_iou)
+            )
+            continue
+        if len(target_matches) == 1 and not foreign_matches and not shared_asset:
+            source, target_iou = next(iter(target_matches.values()))
             atom = atoms[source.content_pointer]
             # The pointer is generated from the verified alignment and checked against the tree.
             if (
@@ -545,6 +568,7 @@ def _attribute_regions(
                         evidence_type=raw_region.evidence_type,
                         candidate_content_pointer=source.content_pointer,
                         candidate_source_block_id=source.source_block_id,
+                        source_bbox_iou=target_iou,
                         attribution_status="candidate",
                         reason_codes=[*reasons, "visual_evidence_candidate_only"],
                     )
@@ -552,18 +576,29 @@ def _attribute_regions(
                 continue
         if foreign_matches or shared_asset:
             reasons.extend(("question_attribution_uncertain", "shared_figure_possible"))
-        elif len(unique_target) != 1:
+        elif len(target_matches) > 1:
+            reasons.append("multiple_source_regions")
+        elif not target_matches:
             reasons.append("source_mapping_unavailable")
-        result.append(_unresolved_region(raw_region, reasons))
+        result.append(_unresolved_region(raw_region, reasons, source_bbox_iou=best_iou))
     return result
 
 
-def _unresolved_region(raw_region, reasons: list[str]) -> VisualEvidenceRegion:
+_SOURCE_BBOX_IOU_THRESHOLD = 0.08
+
+
+def _unresolved_region(
+    raw_region,
+    reasons: list[str],
+    *,
+    source_bbox_iou: float | None = None,
+) -> VisualEvidenceRegion:
     safe_reasons = list(dict.fromkeys(code for code in reasons if code in VISUAL_REASON_CODES))
     return VisualEvidenceRegion(
         page_index=raw_region.page_index,
         visual_bbox=raw_region.visual_bbox,
         evidence_type=raw_region.evidence_type,
+        source_bbox_iou=source_bbox_iou,
         attribution_status="unresolved",
         reason_codes=safe_reasons,
     )
@@ -573,15 +608,23 @@ def _boxes_match(
     visual_bbox: tuple[float, float, float, float],
     source_bbox: tuple[float, float, float, float] | None,
 ) -> bool:
+    iou = _box_iou(visual_bbox, source_bbox)
+    return iou is not None and iou >= _SOURCE_BBOX_IOU_THRESHOLD
+
+
+def _box_iou(
+    visual_bbox: tuple[float, float, float, float],
+    source_bbox: tuple[float, float, float, float] | None,
+) -> float | None:
     if source_bbox is None:
-        return False
+        return None
     vx0, vy0, vx1, vy1 = visual_bbox
     sx0, sy0, sx1, sy1 = source_bbox
     width = max(0.0, min(vx1, sx1) - max(vx0, sx0))
     height = max(0.0, min(vy1, sy1) - max(vy0, sy0))
     intersection = width * height
     union = (vx1 - vx0) * (vy1 - vy0) + (sx1 - sx0) * (sy1 - sy0) - intersection
-    return union > 0 and intersection / union >= 0.08
+    return intersection / union if union > 0 else 0.0
 
 
 async def _lookup_request_safely(

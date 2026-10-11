@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from pathlib import Path
 from uuid import uuid4
 
@@ -42,7 +43,11 @@ from huipi_cloud.modules.visual_evidence.protocol import (
     VisualEvidenceModelRegion,
     VisualEvidenceModelReply,
 )
-from huipi_cloud.modules.visual_evidence.service import _attribute_regions, _boxes_match
+from huipi_cloud.modules.visual_evidence.service import (
+    _attribute_regions,
+    _box_iou,
+    _boxes_match,
+)
 from tests.visual_samples import create_visual_samples
 
 
@@ -231,6 +236,106 @@ def test_pdf_renders_only_selected_page_and_records_rotation(tmp_path: Path) -> 
     assert (pages[0].rendered_width, pages[0].rendered_height) == (1320, 1020)
     assert not pages[0].mapping_eligible
     assert pages[0].mapping_reason == "rotated_pdf_page"
+    assert pages[0].source_media_box == (0.0, 0.0, 612.0, 792.0)
+    assert pages[0].source_crop_box == pages[0].source_media_box
+
+
+@pytest.mark.parametrize("rotation", [90, 180, 270])
+def test_all_rotated_pdf_pages_preserve_rendered_box_but_refuse_canonical_mapping(
+    rotation: int,
+    tmp_path: Path,
+) -> None:
+    writer = PdfWriter()
+    page = writer.add_blank_page(width=612, height=792)
+    page.rotate(rotation)
+    source = tmp_path / f"rotated-{rotation}.pdf"
+    with source.open("wb") as stream:
+        writer.write(stream)
+
+    rendered = render_selected_pages(
+        source,
+        content_type="application/pdf",
+        selected_page_indexes=[0],
+    )[0]
+    assert rendered.source_rotation_degrees == rotation
+    assert not rendered.mapping_eligible
+    assert rendered.mapping_reason == "rotated_pdf_page"
+    assert rendered.source_media_box == (0.0, 0.0, 612.0, 792.0)
+    assert rendered.source_crop_box == rendered.source_media_box
+
+
+@pytest.mark.parametrize(
+    ("crop_box", "expected_reason"),
+    [
+        ((0, 0, 500, 700), "pdf_cropbox_mismatch"),
+        ((10, 20, 500, 700), "pdf_cropbox_offset"),
+    ],
+)
+def test_pdf_cropbox_difference_or_offset_refuses_source_mapping(
+    crop_box: tuple[int, int, int, int],
+    expected_reason: str,
+    tmp_path: Path,
+) -> None:
+    writer = PdfWriter()
+    page = writer.add_blank_page(width=612, height=792)
+    page.cropbox.lower_left = (crop_box[0], crop_box[1])
+    page.cropbox.upper_right = (crop_box[2], crop_box[3])
+    source = tmp_path / "cropped.pdf"
+    with source.open("wb") as stream:
+        writer.write(stream)
+
+    rendered = render_selected_pages(
+        source,
+        content_type="application/pdf",
+        selected_page_indexes=[0],
+    )[0]
+    assert rendered.source_media_box == (0.0, 0.0, 612.0, 792.0)
+    assert rendered.source_crop_box == tuple(float(value) for value in crop_box)
+    assert not rendered.mapping_eligible
+    assert rendered.mapping_reason == expected_reason
+
+
+def test_pdf_equal_nonzero_media_and_crop_boxes_are_not_assumed_to_share_origin(
+    tmp_path: Path,
+) -> None:
+    writer = PdfWriter()
+    page = writer.add_blank_page(width=612, height=792)
+    for box in (page.mediabox, page.cropbox):
+        box.lower_left = (10, 20)
+        box.upper_right = (622, 812)
+    source = tmp_path / "offset-page.pdf"
+    with source.open("wb") as stream:
+        writer.write(stream)
+
+    rendered = render_selected_pages(
+        source,
+        content_type="application/pdf",
+        selected_page_indexes=[0],
+    )[0]
+    assert rendered.source_media_box == rendered.source_crop_box == (10.0, 20.0, 622.0, 812.0)
+    assert not rendered.mapping_eligible
+    assert rendered.mapping_reason == "pdf_media_box_offset"
+
+
+def test_non_square_pdf_remains_mappable_after_uniform_raster_scaling(tmp_path: Path) -> None:
+    writer = PdfWriter()
+    writer.add_blank_page(width=1440, height=360)
+    source = tmp_path / "wide.pdf"
+    with source.open("wb") as stream:
+        writer.write(stream)
+
+    rendered = render_selected_pages(
+        source,
+        content_type="application/pdf",
+        selected_page_indexes=[0],
+        config=Settings(visual_evidence_max_render_edge=512),
+    )[0]
+    assert rendered.mapping_eligible
+    assert rendered.mapping_reason is None
+    assert (rendered.rendered_width, rendered.rendered_height) == (512, 128)
+    assert transform_bbox_to_source((0.2, 0.3, 0.7, 0.8), rendered.transform) == pytest.approx(
+        (0.2, 0.3, 0.7, 0.8)
+    )
 
 
 def test_pdf_page_selection_rejects_page_outside_document(tmp_path: Path) -> None:
@@ -265,21 +370,41 @@ def test_png_and_jpeg_samples_render_as_bounded_rgb_images(tmp_path: Path) -> No
         assert len(page.sha256) == 64
 
 
-def test_exif_orientation_is_applied_and_transform_is_recorded(tmp_path: Path) -> None:
+@pytest.mark.parametrize("orientation", range(1, 9))
+def test_exif_orientations_are_recorded_and_nondefault_mapping_is_refused(
+    orientation: int,
+    tmp_path: Path,
+) -> None:
     raw = Image.new("RGB", (300, 200), "white")
     exif = raw.getexif()
-    exif[274] = 6
-    path = tmp_path / "oriented.jpg"
+    exif[274] = orientation
+    path = tmp_path / f"oriented-{orientation}.jpg"
     raw.save(path, format="JPEG", exif=exif)
 
     page = render_selected_pages(
         path, content_type="image/jpeg", selected_page_indexes=[0]
     )[0]
     assert (page.source_width, page.source_height) == (300, 200)
-    assert (page.rendered_width, page.rendered_height) == (200, 300)
-    assert page.exif_orientation == 6
-    assert not page.mapping_eligible
-    assert page.transform == (0, 1, 0, -1, 0, 1)
+    assert page.exif_orientation == orientation
+    if orientation in {5, 6, 7, 8}:
+        assert (page.rendered_width, page.rendered_height) == (200, 300)
+    else:
+        assert (page.rendered_width, page.rendered_height) == (300, 200)
+    assert page.mapping_eligible is (orientation == 1)
+    assert page.mapping_reason == (
+        None if orientation == 1 else "exif_orientation_transformed"
+    )
+    expected_transforms = {
+        1: (1, 0, 0, 0, 1, 0),
+        2: (-1, 0, 1, 0, 1, 0),
+        3: (-1, 0, 1, 0, -1, 1),
+        4: (1, 0, 0, 0, -1, 1),
+        5: (0, 1, 0, 1, 0, 0),
+        6: (0, 1, 0, -1, 0, 1),
+        7: (0, -1, 1, -1, 0, 1),
+        8: (0, -1, 1, 1, 0, 0),
+    }
+    assert page.transform == expected_transforms[orientation]
 
 
 def test_affine_transform_restores_crop_and_rejects_outside_bbox() -> None:
@@ -416,6 +541,7 @@ def test_visual_bbox_only_becomes_candidate_with_one_owned_canonical_region() ->
     assert region.attribution_status == "candidate"
     assert region.candidate_content_pointer == first_pointer
     assert region.candidate_source_block_id == ids.block_id
+    assert 0.0 <= region.source_bbox_iou <= 1.0
     assert "visual_evidence_candidate_only" in region.reason_codes
 
 
@@ -513,6 +639,300 @@ def test_shared_image_asset_is_not_assigned_to_one_question() -> None:
 def test_candidate_regions_do_not_overlap_by_question_or_coordinates() -> None:
     assert _boxes_match((0.1, 0.1, 0.4, 0.4), (0.1, 0.1, 0.4, 0.4))
     assert not _boxes_match((0.1, 0.1, 0.2, 0.2), (0.8, 0.8, 0.9, 0.9))
+
+
+def test_bbox_iou_values_are_manual_and_small_prompt_overlap_stays_unmatched() -> None:
+    assert _box_iou((0, 0, 0.5, 0.5), (0.25, 0.25, 0.75, 0.75)) == pytest.approx(
+        1 / 7
+    )
+    # Intersection 0.02; union 0.27.  The IoU is below the unchanged 0.08 threshold.
+    assert _box_iou((0.4, 0.1, 0.6, 0.3), (0.0, 0.0, 0.5, 0.5)) == pytest.approx(
+        0.02 / 0.27
+    )
+    assert not _boxes_match((0.4, 0.1, 0.6, 0.3), (0.0, 0.0, 0.5, 0.5))
+
+
+def test_single_wide_source_overlap_is_only_a_candidate_not_question_proof() -> None:
+    canonical, ids = _canonical()
+    question_id = uuid4()
+    source_pointer = "/pages/0/blocks/0/content/children/0"
+    target = AlignedAnswer(
+        question_id=question_id,
+        question_number=1,
+        question_type="short_answer",
+        matching_status="aligned",
+        source_regions=[_source_region(source_pointer, ids.block_id, (0, 0, 1, 1))],
+    )
+    reply = VisualEvidenceModelReply(
+        outcome="candidate_response_present",
+        visual_regions=[
+            VisualEvidenceModelRegion(
+                page_index=0,
+                visual_bbox=(0.1, 0.1, 0.4, 0.4),
+                evidence_type="handwritten_text",
+            )
+        ],
+    )
+
+    region = _attribute_regions(reply, target, [target], canonical, {0: _image_page()})[0]
+    # The broad source box crosses the existing spatial threshold.  The result remains an
+    # uncalibrated geometry candidate, never proof that the handwriting belongs to Question 1.
+    assert region.attribution_status == "candidate"
+    assert region.source_bbox_iou == pytest.approx(0.09)
+    assert region.candidate_content_pointer == source_pointer
+    assert "visual_evidence_candidate_only" in region.reason_codes
+
+
+def test_printed_prompt_never_gets_an_answer_source_pointer_even_with_perfect_iou() -> None:
+    canonical, ids = _canonical()
+    question_id = uuid4()
+    source_pointer = "/pages/0/blocks/0/content/children/0"
+    target = AlignedAnswer(
+        question_id=question_id,
+        question_number=1,
+        question_type="short_answer",
+        matching_status="aligned",
+        source_regions=[
+            _source_region(source_pointer, ids.block_id, (0.1, 0.1, 0.45, 0.45))
+        ],
+    )
+    reply = VisualEvidenceModelReply(
+        outcome="candidate_prompt_only",
+        visual_regions=[
+            VisualEvidenceModelRegion(
+                page_index=0,
+                visual_bbox=(0.1, 0.1, 0.45, 0.45),
+                evidence_type="printed_prompt",
+                reason_codes=["printed_prompt_only"],
+            )
+        ],
+    )
+
+    region = _attribute_regions(reply, target, [target], canonical, {0: _image_page()})[0]
+    assert region.attribution_status == "unresolved"
+    assert region.candidate_content_pointer is None
+    assert region.source_bbox_iou == pytest.approx(1.0)
+    assert "printed_prompt_only" in region.reason_codes
+
+
+def test_visual_box_close_to_two_adjacent_questions_is_not_uniquely_attributed() -> None:
+    canonical, ids = _canonical()
+    question_one, question_two = uuid4(), uuid4()
+    first = AlignedAnswer(
+        question_id=question_one,
+        question_number=1,
+        question_type="short_answer",
+        matching_status="aligned",
+        source_regions=[
+            _source_region(
+                "/pages/0/blocks/0/content/children/0",
+                ids.block_id,
+                (0.1, 0.1, 0.5, 0.5),
+            )
+        ],
+    )
+    second = AlignedAnswer(
+        question_id=question_two,
+        question_number=2,
+        question_type="short_answer",
+        matching_status="aligned",
+        source_regions=[
+            _source_region(
+                "/pages/0/blocks/0/content/children/1",
+                ids.block_id,
+                (0.5, 0.1, 0.9, 0.5),
+            )
+        ],
+    )
+    reply = VisualEvidenceModelReply(
+        outcome="candidate_response_present",
+        visual_regions=[
+            VisualEvidenceModelRegion(
+                page_index=0,
+                visual_bbox=(0.35, 0.2, 0.65, 0.4),
+                evidence_type="handwritten_text",
+            )
+        ],
+    )
+
+    region = _attribute_regions(reply, first, [first, second], canonical, {0: _image_page()})[0]
+    assert region.attribution_status == "unresolved"
+    assert region.candidate_content_pointer is None
+    assert region.source_bbox_iou is not None
+    assert "question_attribution_uncertain" in region.reason_codes
+    assert "shared_figure_possible" in region.reason_codes
+
+
+def test_visual_box_inside_one_of_two_adjacent_answer_regions_is_candidate_only() -> None:
+    canonical, ids = _canonical()
+    question_one, question_two = uuid4(), uuid4()
+    first = AlignedAnswer(
+        question_id=question_one,
+        question_number=1,
+        question_type="short_answer",
+        matching_status="aligned",
+        source_regions=[
+            _source_region(
+                "/pages/0/blocks/0/content/children/0", ids.block_id, (0.1, 0.1, 0.49, 0.5)
+            )
+        ],
+    )
+    second = AlignedAnswer(
+        question_id=question_two,
+        question_number=2,
+        question_type="short_answer",
+        matching_status="aligned",
+        source_regions=[
+            _source_region(
+                "/pages/0/blocks/0/content/children/1", ids.block_id, (0.51, 0.1, 0.9, 0.5)
+            )
+        ],
+    )
+    reply = VisualEvidenceModelReply(
+        outcome="candidate_response_present",
+        visual_regions=[
+            VisualEvidenceModelRegion(
+                page_index=0,
+                visual_bbox=(0.18, 0.2, 0.38, 0.4),
+                evidence_type="handwritten_text",
+            )
+        ],
+    )
+
+    region = _attribute_regions(reply, first, [first, second], canonical, {0: _image_page()})[0]
+    assert region.attribution_status == "candidate"
+    assert region.candidate_content_pointer == first.source_regions[0].content_pointer
+    assert "visual_evidence_candidate_only" in region.reason_codes
+
+
+def test_single_unrelated_canonical_box_has_no_spatial_match() -> None:
+    canonical, ids = _canonical()
+    question_id = uuid4()
+    target = AlignedAnswer(
+        question_id=question_id,
+        question_number=1,
+        question_type="short_answer",
+        matching_status="aligned",
+        source_regions=[
+            _source_region(
+                "/pages/0/blocks/0/content/children/0", ids.block_id, (0.1, 0.1, 0.45, 0.45)
+            )
+        ],
+    )
+    reply = VisualEvidenceModelReply(
+        outcome="candidate_response_present",
+        visual_regions=[
+            VisualEvidenceModelRegion(
+                page_index=0,
+                visual_bbox=(0.7, 0.7, 0.9, 0.9),
+                evidence_type="handwritten_formula",
+            )
+        ],
+    )
+
+    region = _attribute_regions(reply, target, [target], canonical, {0: _image_page()})[0]
+    assert region.attribution_status == "unresolved"
+    assert region.candidate_content_pointer is None
+    assert region.source_bbox_iou == 0.0
+    assert "source_mapping_unavailable" in region.reason_codes
+
+
+def test_bbox_crossing_distinct_canonical_blocks_is_unresolved() -> None:
+    canonical, ids = _canonical()
+    second_block_id = uuid4()
+    second_content = CanonicalContentNode(
+        normalized_type="text",
+        source_type="text",
+        content_kind="scalar",
+        value="Question two source",
+        bbox=(0.51, 0.1, 0.9, 0.5),
+        source_index=0,
+    )
+    canonical.pages[0].blocks.append(
+        CanonicalBlock(
+            block_id=second_block_id,
+            normalized_type="text",
+            reading_order=1,
+            page_index=0,
+            page_number=1,
+            source_page_idx=0,
+            source_block_index=1,
+            source_type="text",
+            bbox=(0.51, 0.1, 0.9, 0.5),
+            content=second_content,
+        )
+    )
+    question_one, question_two = uuid4(), uuid4()
+    first = AlignedAnswer(
+        question_id=question_one,
+        question_number=1,
+        question_type="short_answer",
+        matching_status="aligned",
+        source_regions=[
+            _source_region(
+                "/pages/0/blocks/0/content/children/0", ids.block_id, (0.1, 0.1, 0.49, 0.5)
+            )
+        ],
+    )
+    second = AlignedAnswer(
+        question_id=question_two,
+        question_number=2,
+        question_type="short_answer",
+        matching_status="aligned",
+        source_regions=[
+            _source_region("/pages/0/blocks/1/content", second_block_id, (0.51, 0.1, 0.9, 0.5))
+        ],
+    )
+    reply = VisualEvidenceModelReply(
+        outcome="candidate_response_present",
+        visual_regions=[
+            VisualEvidenceModelRegion(
+                page_index=0,
+                visual_bbox=(0.35, 0.2, 0.65, 0.4),
+                evidence_type="handwritten_formula",
+            )
+        ],
+    )
+
+    region = _attribute_regions(reply, first, [first, second], canonical, {0: _image_page()})[0]
+    assert region.attribution_status == "unresolved"
+    assert region.candidate_content_pointer is None
+    assert "question_attribution_uncertain" in region.reason_codes
+
+
+def test_unmappable_page_keeps_visual_box_but_never_adds_canonical_pointer() -> None:
+    canonical, ids = _canonical()
+    question_id = uuid4()
+    pointer = "/pages/0/blocks/0/content/children/0"
+    target = AlignedAnswer(
+        question_id=question_id,
+        question_number=1,
+        question_type="short_answer",
+        matching_status="aligned",
+        source_regions=[_source_region(pointer, ids.block_id, (0.1, 0.1, 0.45, 0.45))],
+    )
+    bbox = (0.18, 0.22, 0.32, 0.4)
+    reply = VisualEvidenceModelReply(
+        outcome="candidate_response_present",
+        visual_regions=[
+            VisualEvidenceModelRegion(
+                page_index=0,
+                visual_bbox=bbox,
+                evidence_type="handwritten_text",
+            )
+        ],
+    )
+    page = replace(
+        _image_page(),
+        mapping_eligible=False,
+        mapping_reason="exif_orientation_transformed",
+    )
+
+    region = _attribute_regions(reply, target, [target], canonical, {0: page})[0]
+    assert region.visual_bbox == bbox
+    assert region.attribution_status == "unresolved"
+    assert region.candidate_content_pointer is None
+    assert "source_mapping_unavailable" in region.reason_codes
 
 
 def test_disabled_provider_and_unapproved_remote_endpoint_fail_closed() -> None:

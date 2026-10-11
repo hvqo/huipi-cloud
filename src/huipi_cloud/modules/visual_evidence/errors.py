@@ -49,3 +49,15 @@ class VisualEvidenceLimitError(VisualEvidenceError):
 
 class VisualEvidenceStorageError(VisualEvidenceError):
     code = "visual_evidence_storage_unavailable"
+
+
+class VisualEvidenceRegistrationRolledBackError(VisualEvidenceError):
+    """Registration failed before COMMIT was attempted; cleanup is safe."""
+
+    code = "proposal_index_registration_failed"
+
+
+class VisualEvidenceCommitOutcomeUnknownError(VisualEvidenceError):
+    """COMMIT or session close failed after COMMIT began; keep the S3 object."""
+
+    code = "proposal_commit_outcome_unknown"

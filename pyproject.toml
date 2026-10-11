@@ -36,6 +36,7 @@ packages = ["src/huipi_cloud"]
 testpaths = ["tests"]
 markers = [
     "mineru_e2e: requires the isolated local MinerU 4.x runtime and model cache",
+    "visual_evidence_e2e: requires the explicitly enabled local real Ollama model",
 ]
 
 [tool.ruff]

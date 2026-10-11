@@ -78,13 +78,13 @@ uv run python -m huipi_cloud.workers.analyze_visual_evidence --submission-id SUB
 VISUAL_EVIDENCE_ENABLED=true uv run python -m huipi_cloud.workers.analyze_visual_evidence --submission-id SUBMISSION_UUID --question-id QUESTION_UUID --request-id REQUEST_UUID
 ~~~
 
-输出是 `candidate_response_present`、`candidate_prompt_only` 或 `uncertain`。`candidate_prompt_only` 只表示看到了印刷题干，不是 `response_absent`。模型不能输出 Question ID、Canonical pointer、任意解释文本或 URL；服务将图像区域与已验证的题目来源作保守空间匹配，仅在坐标方向可信、唯一关联到目标题且没有跨题区域/共享素材冲突时写入程序生成的候选 pointer。空间重叠只是候选，不是精确几何证明。旋转 PDF 页、非默认 EXIF 朝向、缺少对齐来源或多题共享图形不会获得确定归属。
+输出是 schema 1.1 的 `candidate_response_present`、`candidate_prompt_only` 或 `uncertain`；预处理版本为 1.1.0。`candidate_prompt_only` 只表示模型报告看到了印刷题干，不是 `response_absent`。模型不能输出 Question ID、Canonical pointer、任意解释文本或 URL。服务记录几何 `source_bbox_iou`，但它是原始 IoU 数值，不是置信度。即使唯一匹配到一个已对齐来源，也只生成机器候选，不证明区域真正属于该题；`printed_prompt` 区域一律不获得答案来源 pointer。旋转 PDF、CropBox 与 MediaBox 不同、页面框原点偏移、非默认 EXIF 朝向、跨题重叠或共享素材均保留视觉框但不映射 Canonical。
 
-完整建议 JSON 写入私有 S3 不可变 Key；PostgreSQL 只保存 source/model/version/input digest、状态、SHA、大小和对象索引。同一 `request_id` 且输入摘要相同会重放既有记录；摘要不同返回冲突。模型调用位于数据库事务外；写入前事务锁定 Submission 与 Assignment 并重新核验来源版本。数据库 COMMIT 结果不确定且无法查询时保留对象，以后对账清理；对象存储和 PostgreSQL 没有跨系统原子事务。该流程只产生机器建议，不写 `answer_review_decisions`，不表示作答已确认或 `ready_for_grading`。当前 CLI 未认证，只能在受控本地环境运行。
+完整建议 JSON 写入私有 S3 不可变 Key；PostgreSQL 只保存 source/model/version/input digest、状态、SHA、大小和对象索引。同一 `request_id` 且输入摘要相同会重放既有记录；摘要不同返回冲突。模型调用位于数据库事务外；写入前事务锁定 Submission 与 Assignment 并重新核验来源版本。数据库注册明确区分提交前已回滚和 COMMIT 已开始但结果未知：只有前者及已确认的并发输家对象可清理；未知时即使新查询暂时不可用或返回空结果，也保留对象。对象存储和 PostgreSQL 没有跨系统原子事务；进程崩溃或未知提交可能产生孤立对象，后续需要对账清理。取消等待中的 boto3 `asyncio.to_thread` 不会终止同步线程，取消路径不做并发删除，因此上传可能完成为孤立对象。该流程只产生机器建议，不写 `answer_review_decisions`，不表示作答已确认或 `ready_for_grading`。当前 CLI 未认证，只能在受控本地环境运行。
 
-真实本地 VLM E2E 脚本运行五个按需生成的虚构图像样本：印刷题干、印刷加手写、手写公式、几何标记、空白答题区。它记录协议有效数、输出区域类型、调用耗时和服务可提供的 Token 用量；样本只验证端到端请求/JSON合同，不代表真实学生笔迹准确率。GitHub CI 不下载模型，数据库与 MinIO 路径由 Fake Provider 集成测试覆盖；真实模型质量需要后续用许可、去标识并双人标注的教学数据评测。
+真实模型业务闭环需要本地 Ollama、PostgreSQL 和 MinIO。该集成测试会通过真实上传 API 创建合成 Submission，使用合成 MiddleJson fixture 规范化 Canonical 并执行 AnswerAlignment，再调用真实 Ollama Provider，上传并索引 proposal，最后下载对象核验大小和 SHA-256，同时比较人工作答记录数。运行命令：`VISUAL_EVIDENCE_E2E=1 uv run pytest -q -s tests/integration/test_canonical_documents.py -m visual_evidence_e2e`。其中 Canonical 是测试 fixture，不是 MinerU 结果；GitHub CI 不下载模型。该合成闭环不代表真实学生作业准确率。
 
-2026-10-10 本机实测：Ollama 0.31.2、`qwen3.5:4b` 原生接口，5/5 响应通过协议校验，结构失败 0；单次耗时约 4.8–6.2 秒，可用时每次 prompt 用量为 1771 tokens。混合手写与公式样本分别返回手写文字/公式候选；几何标记样本被判为“仅印刷题干”，这是已观察到的语义误判。来源映射因样本没有 Canonical/Alignment 上下文而未测试，弃权比例 0/5。以上只证明真实模型调用和严格响应合同可运行，不代表视觉准确率。
+2026-10-10 的五个单图调用曾显示：几何标记样本被判为“仅印刷题干”。2026-10-11 增加了真实 Submission → 合成 Canonical/Alignment → Ollama → S3/PG 的完整闭环。Ollama 0.31.2、`qwen3.5:4b` 对几何标记样本仍返回 `candidate_prompt_only` 与 `printed_prompt`，BBox 为 `[0.21, 0.365, 0.798, 0.674]`，与合成答案来源框 IoU 为 0.952。最新验收调用耗时 9359 ms，返回 prompt 1807 / completion 120 tokens。更新后的服务保留视觉框和 IoU，但不生成 Canonical pointer。该证据分别说明视觉识别发生语义误判、JSON 协议有效、PNG 坐标变换无变换、映射拒绝逻辑生效；Canonical 来自测试 fixture，因此没有真实 MinerU 验证。这是一条合成闭环，不是准确率或性能基准。
 
 ## 配置和启动真实解析
 

@@ -48,15 +48,15 @@
 
 **简洁解释：** 模型只返回图像上的归一化框。程序保存渲染尺寸和变换，再检查它是否与已验证来源框重叠。重叠只生成候选。
 
-**底层原理：** 当前使用完整页面，不做裁剪。缩放不改变归一化坐标；PDF rotation 和 EXIF 信息会记录。若方向不能证明一致，程序不生成 Canonical pointer。映射还要求目标题目有唯一来源、没有别题区域重叠或共享素材冲突。
+**底层原理：** 当前使用完整页面，不做裁剪。均匀缩放不改变归一化坐标。PDF MediaBox/CropBox 和 EXIF 信息会记录。PDF 框不一致、原点偏移、页面旋转或 EXIF 不是 1 时，程序保留视觉框但不生成 Canonical pointer。`source_bbox_iou` 是实际几何比例，不是来源正确率。
 
-**30 秒回答：** VLM 输出 `[x0,y0,x1,y1]`，坐标范围是当前渲染页的 0 到 1 比例。proposal 记录原始页尺寸、旋转、EXIF、栅格尺寸和仿射变换。当前没有裁剪，所以全页缩放仍使用归一化坐标。只有方向可信、与一个已验证的目标题来源区域重叠，且没有跨题冲突时，服务才写候选 pointer；它不是精确匹配声明。
+**30 秒回答：** VLM 输出的是当前渲染页 0 到 1 的归一化框。Proposal 记录 MediaBox、CropBox、rotation、EXIF、输出尺寸和变换。映射只在 PDF 框相等且全页原点为零、未旋转，或图片 EXIF 为 1 时允许。IoU 0.08 只是候选门槛。即使唯一重叠，结果仍不是已证明的题目归属；印刷题干区域不拿答案 pointer。
 
-**2 分钟回答：** 图像坐标不能直接等同于 Canonical 坐标。PDF 可以有旋转，图片可以有 EXIF 方向，渲染也会缩放。系统在 `RenderedPageMetadata` 中保留源宽高、页单位、旋转、EXIF、输出宽高、有效 DPI、渲染图摘要和仿射矩阵。当前整页模式没有 crop，缩放前后的归一化坐标相同。服务将模型框用变换函数还原，再与目标题、其他题的已验证 source region 做空间交并比较。匹配采用保守阈值，但阈值未经真实作业校准，因此只标成 candidate。只要方向、页面来源、题目归属或共享图形有疑问，pointer 就为空，视觉框仍保存为 unresolved。
+**2 分钟回答：** 图像坐标不能直接等同于 Canonical 坐标。PDF 可用 CropBox 改变实际显示区域，MediaBox 或 CropBox 也可带偏移；PDF rotation 和图片 EXIF 会改变方向。系统保存两个 PDF 页面框、旋转、EXIF、输出尺寸、DPI、图像摘要和变换。映射门槛是刻意保守的：PDF 必须是全 MediaBox 可见、原点为零且 rotation 为零；图片必须使用默认 EXIF 朝向。否则 proposal 仍存原始 VLM bbox，但不产生 Canonical pointer。通过门槛后，程序保存原始 IoU 数值，并检查目标来源、跨题区域与共享素材。IoU 0.08 只是历史候选启发式，未经真实作业校准；唯一重叠也不能证明归属。`printed_prompt` 一律保持 unresolved。这样保留视觉意见，同时不会把它升级成人工作答证明。
 
 **连续追问：** 为什么 rotated PDF 页不直接用记录的矩阵映射？IoU 0.08 可以说明什么、不能说明什么？
 
-**代码与验证：** [`render.py`](../../src/huipi_cloud/infrastructure/visual_evidence/render.py) 的 `_rotation_display_to_source`、`_exif_display_to_source`、`transform_bbox_to_source`；[`service.py`](../../src/huipi_cloud/modules/visual_evidence/service.py) 的 `_boxes_match`；`test_affine_transform_restores_crop_and_rejects_outside_bbox` 和方向测试。
+**代码与验证：** [`render.py`](../../src/huipi_cloud/infrastructure/visual_evidence/render.py) 的 `_render_pdf`、`_render_image`、`transform_bbox_to_source`；[`service.py`](../../src/huipi_cloud/modules/visual_evidence/service.py) 的 `_box_iou`、`_attribute_regions`；测试 `test_pdf_cropbox_difference_or_offset_refuses_source_mapping`、`test_all_rotated_pdf_pages_preserve_rendered_box_but_refuse_canonical_mapping`、`test_exif_orientations_are_recorded_and_nondefault_mapping_is_refused`、`test_printed_prompt_never_gets_an_answer_source_pointer_even_with_perfect_iou`。
 
 ## 5. 如何防止 VLM 编造 Question ID 和来源指针？
 
@@ -66,7 +66,7 @@
 
 **30 秒回答：** 我不让模型决定它正在回答哪道题。Question ID 从 CLI 输入并在当前 Assignment 中验证。模型 JSON 只允许 outcome、page index、bbox、证据类型和枚举原因。额外的 Question ID 或 pointer 会被拒绝。指针由服务根据已校验的 Canonical 节点生成，模型不能提交任意 JSON Pointer。
 
-**2 分钟回答：** 如果模型返回 Question ID，我们就会把模型自述当作数据库事实；如果模型返回 JSON Pointer，它也可能指向不存在或另一个题目的内容。本实现把这些字段排除在 Provider schema 之外，并用 `extra="forbid"` 拒绝未知字段。输入页面索引也会验证为本次选中的范围。调用服务会将 `question_id` 与 Submission 的 Assignment Question 集合匹配。完成模型调用后，系统从当前 Alignment source regions 找候选，再通过 Canonical atom 的完整 pointer、Block ID 和页码确认该节点存在。即使匹配成功，状态也只叫 candidate。跨题、共享图片、方向不明或多个来源都重叠时不会给确定归属。
+**2 分钟回答：** 如果模型返回 Question ID 或 JSON Pointer，就会把模型自述当作数据库事实。本实现把这些字段排除在 Provider schema 之外。后端从当前 Alignment 找可能的来源，再用 Canonical atom 的完整 pointer、Block ID 和页码验证存在性。空间关系只给 `source_bbox_iou`，它不代表概率或真实 Question 所有权。单一来源仍只是候选；不同题的框相交、共享素材或来源不唯一时不生成 pointer；`printed_prompt` 不会映射成答案来源。合成真实链路中，几何作答样本的模型返回印刷题干，框与 Canonical 区域 IoU 0.952；新规则保留这个几何证据但拒绝 pointer。
 
 **连续追问：** Question 在模型执行期间被编辑怎么办？模型输出相同框但 Canonical 已变化怎么办？
 
@@ -94,7 +94,7 @@
 
 **30 秒回答：** HTTPX 有连接和总请求超时。配置最多三次尝试；只对网络、timeout、429 和 5xx 进行退避重试。其他 4xx 和 Pydantic/JSON 合同错误不会重试。Provider 失败后不上传 proposal，也不写成功索引。CLI 输出安全 failure code，日志只记录异常类型。
 
-**2 分钟回答：** VLM 服务的故障分为可恢复和不可恢复。网络中断、限流或服务端 5xx 可能短暂发生，因此在配置的最大次数内进行退避。HTTP 重定向关闭；OpenAI-compatible endpoint 必须是 loopback，或使用显式允许且有学生数据授权的 HTTPS。Ollama 原生适配器只允许本机 HTTP loopback，并使用 `think=false` 避免思考内容耗尽本地上下文。4xx 不视为临时错误；JSON 缺字段、额外字段、非法 outcome、越界 bbox 等属于模型输出合同错误，重试通常不能修复，因此立即失败。输出大小也有上限。失败不会被改写成 `uncertain` 成功结果，更不会伪造 proposal。若对象写入后数据库登记失败，会先查询幂等记录；无法确认 COMMIT 时保留对象以免删除已被引用数据。
+**2 分钟回答：** VLM 服务区分 Provider 失败和持久化失败。网络、限流或 5xx 只做有界重试。proposal 对象先写私有 S3，再由 PostgreSQL 短事务重新验证来源版本并登记。Repository 在 COMMIT 前显式回滚并给出“确定回滚”结果，服务核验未索引后可以删对象。如果 COMMIT 调用或之后的 Session 清理出错，状态是未知；一次查询返回空或暂时失败都不能证明没有提交，因此绝不删除对象。若查询确认同一 request 已由竞争请求登记，返回既有记录；多出来的不可变对象先保留以待后续对账。当前没有完整垃圾回收器。
 
 **连续追问：** 为何 429 重试而 400 不重试？如果数据库 COMMIT 结果不确定，S3 对象怎样处理？
 
@@ -102,13 +102,13 @@
 
 ## 8. 为什么模型置信度不能直接视为真实概率？
 
-**简洁解释：** 模型自报分数没有与人工标签校准。0.9 不代表 90% 的真实正确率。
+**简洁解释：** 协议不接受模型 confidence。`source_bbox_iou` 是两个框的几何交并比，不是 VLM 正确率或概率。
 
-**底层原理：** 概率校准需要有代表性的标注集、明确评估单位和留出的验证数据。当前只有合成图像合同测试，没有真实学生作业标签，也没有模型置信度字段。
+**底层原理：** 概率校准需要有代表性的标注集、明确评估单位和留出的验证数据。当前没有真实学生作业标签。IoU 只描述图像框与来源框重合多少，不衡量来源是否正确。
 
-**30 秒回答：** 当前没有把模型自报置信度当作真实概率。协议没有 confidence 字段。要解释概率，必须用有代表性的真实标注集做校准和分布外测试。本轮只有虚构样本的模型调用合同检查，不能报告视觉 Precision/Recall，也不能把结果当作评分门槛。
+**30 秒回答：** 当前协议没有模型 confidence 字段。`source_bbox_iou` 是几何重叠数值，不等于来源归属概率。要报告模型正确率，需要有代表性的真实标注样本和独立测试集；当前只有合成测试，不能报告视觉 Precision/Recall 或评分门槛。
 
-**2 分钟回答：** 生成模型即使输出一个 confidence，也只是模型自我报告的数值，可能因题型、图片质量、模型版本和提示语变化而失准。若要将它解释为概率，需要先定义正例，例如“有可确认的学生回应区域”，再由多位标注者建立带仲裁的真实样本集，按作业/学生隔离训练、校准和测试。之后要测 Brier score、可靠性曲线和不同题型/图片质量分层，同时监控漂移。本轮没有真实标签，也没有统计校准流程，因此协议根本不接受置信度。机器 outcome 只能作为人工复核线索。
+**2 分钟回答：** 生成模型即使输出 confidence，也可能因题型、图像质量、模型版本和提示语变化而失准。若要将它解释为概率，需要定义“正确”的事件，再由多位标注者建立带仲裁的真实样本集，按作业或学生隔离校准和测试，测可靠性曲线与分层表现。本轮协议拒绝模型自报 confidence。我们新增的 `source_bbox_iou` 来自两个矩形的面积公式，是可手算的空间重叠，不是置信度、模型校准分数或 Question 归属正确率。视觉 outcome 仍只是人工复核线索。
 
 **连续追问：** 将来你会选 Platt scaling 还是 isotonic regression？标签分歧如何计入校准？
 
@@ -140,4 +140,32 @@
 
 **连续追问：** 如何防止训练/测试数据泄漏？为什么只报告总 Precision 不够？
 
-**代码与验证：** [`tests/visual_samples.py`](../../tests/visual_samples.py) 的五类虚构样本；[`scripts/run_visual_evidence_vlm_e2e.py`](../../scripts/run_visual_evidence_vlm_e2e.py) 的真实调用统计。2026-10-10 本地 Ollama 0.31.2 + `qwen3.5:4b` 五个响应均通过协议校验，但几何标记样本误判为仅印刷题干，来源映射未测。P2-D2A 的 [`evaluate_answer_presence.py`](../../scripts/evaluate_answer_presence.py) 仅评人工标注基线，不应冒充 VLM 评测。
+**代码与验证：** [`tests/visual_samples.py`](../../tests/visual_samples.py) 的五类虚构样本；`VISUAL_EVIDENCE_E2E=1 uv run pytest -q -s tests/integration/test_canonical_documents.py -m visual_evidence_e2e` 运行真实 Ollama + PostgreSQL + MinIO 闭环。2026-10-11 几何样本模型误判为 `printed_prompt`，新规则阻止候选来源指针。Canonical 是合成 MiddleJson fixture，没有运行真实 MinerU。P2-D2A 的 [`evaluate_answer_presence.py`](../../scripts/evaluate_answer_presence.py) 仅评人工标注基线，不应冒充 VLM 评测。
+
+## 11. 为什么 COMMIT 结果未知时不能删除 S3 对象？
+
+**简洁解释：** COMMIT 请求一旦开始，客户端异常不等于数据库回滚。结果未知时保留对象，避免删除已提交索引所指向的数据。
+
+**底层原理：** S3 对象先上传，PostgreSQL 后登记。Repository 把写事务分成提交前工作和 COMMIT 阶段。提交前失败会显式回滚；此时对象可经数据库确认未引用后清理。COMMIT 或会话关闭失败则标成 `VisualEvidenceCommitOutcomeUnknownError`。新连接查询为空也只说明查询当时没有可见行，不能证明服务器不会随后完成 COMMIT。因此服务会在未知状态下保留对象。
+
+**30 秒回答：** 数据库 COMMIT 的确认可能在服务端成功后丢失。客户端看到异常时不能推断事务失败。我的 Repository 只在 COMMIT 尚未开始、并已显式回滚时标为确定失败；COMMIT 阶段错误单独标为未知。遇到未知状态，不管幂等查询是空还是暂时不可用，我都保留 S3 对象。多出的对象以后对账清理，比删掉已提交记录引用的文件安全。
+
+**2 分钟回答：** 写入顺序是先 S3 上传，再由 PostgreSQL 保存对象索引。两个系统没有共同事务。原实现用一次幂等查询判断是否删除；但数据库提交可能正在处理，或成功后确认丢失，查询短暂为空不代表事务最终失败。现在 Repository 在事务体和 COMMIT 之间设了明确边界：事务体内异常执行 rollback，返回 `VisualEvidenceRegistrationRolledBackError`；发出 COMMIT 后任何结果异常都包装为 `VisualEvidenceCommitOutcomeUnknownError`。Service 对前者查询索引并做补偿删除，对后者只尝试幂等读取，从不删除。相同 request ID 已经由竞争请求登记时，返回已有记录并保留不确定的另一个 UUID 对象。我们用事件门闩让测试中的提交稍后完成，验证空查询和暂时不可用都不会产生“数据库有索引但对象已删”。孤儿对象仍可能出现，完整保留期和对账清理留待后续设计。
+
+**连续追问：** 为什么不等待第二次查询确认？并发输家什么时候可以删除？
+
+**代码与验证：** [`repository.py`](../../src/huipi_cloud/modules/visual_evidence/repository.py) 的 `register_success`、`_rollback_before_commit`；[`service.py`](../../src/huipi_cloud/modules/visual_evidence/service.py) 的 `analyze_question_visual_evidence`、`_lookup_request_safely`、`_delete_unindexed_object`；集成测试 `test_unknown_commit_never_deletes_object_before_late_commit_is_resolved`、`test_commit_confirmation_lost_after_commit_returns_index_and_preserves_object`、`test_failed_postgres_registration_removes_only_unindexed_proposal_object`。
+
+## 12. 取消 asyncio 上传是否会终止 boto3 线程？
+
+**简洁解释：** 不会。`asyncio.to_thread` 只取消等待协程，已运行的同步线程可能继续完成 S3 请求。
+
+**底层原理：** boto3 的 `upload_fileobj` 是同步阻塞调用。线程启动后，取消外层 Task 不会安全地中断该线程。取消后 Service 不会提交数据库索引，也不会并发删除同一 Key；上传之后可能成为未索引的孤立对象。当前只使用独立不可变 UUID Key 与 boto3 已有请求超时，没有声称实现 exactly once。
+
+**30 秒回答：** `asyncio.cancel()` 不能杀掉正在运行的 boto3 线程。若取消上传等待，我不触发对象删除，避免线程仍在写时发生危险竞争。线程可能完成上传但不会有 PostgreSQL 成功索引；对象可能孤立。需要后续对账处理，不能说它被强制停止。
+
+**2 分钟回答：** S3 adapter 把 boto3 放到 `asyncio.to_thread`，这防止事件循环被同步网络调用阻塞，但没有给线程增加强制中断能力。Task 被取消时 Python 会让协程停止等待，执行中的 boto3 函数还可能持有文件对象并继续读写。当前视觉 proposal 是内存中的 `BytesIO`，底层线程的 future 会持有必要对象；Service 的 `CancelledError` 不进入正常失败补偿，也不登记数据库。我们用真实 S3 客户端调用加线程 Event 阻塞，取消 Service 后确认没有发出 delete；释放事件后上传完成，MinIO 对象存在、PostgreSQL 请求索引不存在。这个安全边界允许孤立对象，未来应增加按保留期和索引引用对账的清理程序。
+
+**连续追问：** 为什么不在取消后无限等待线程完成？如果网络上传超时，谁负责清理？
+
+**代码与验证：** [`s3.py`](../../src/huipi_cloud/infrastructure/storage/s3.py) 的 `S3ObjectStorage.upload_fileobj`；[`service.py`](../../src/huipi_cloud/modules/visual_evidence/service.py) 的 S3 上传与登记顺序；集成测试 `test_cancelled_boto_upload_is_not_deleted_while_its_thread_is_running`。

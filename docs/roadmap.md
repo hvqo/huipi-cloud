@@ -76,10 +76,10 @@
 - 实现范围：本地受控 CLI 读取私有 S3 原始提交文件，只渲染 P2-D1 已关联到目标 Question 的页面。PDF 使用 PDFium；JPG/PNG 用 Pillow 检查尺寸和 EXIF。输入 SHA、MIME、文件签名、页数、像素、DPI、页面数和渲染图大小均有校验或上限。
 - VLM：实现 OpenAI-compatible Vision Provider，并提供仅 loopback 的 Ollama 原生适配器。默认禁用且 endpoint 默认只允许 loopback；访问外部 HTTPS 同时要求显式允许 endpoint 和学生数据授权。有限重试只用于网络、429、5xx 和超时；非法 JSON、越界 bbox、未知字段不重试。Ollama 原生端显式关闭思考，避免思考 token 占满本地上下文而没有 JSON 正文。
 - 协议：输出 `candidate_response_present`、`candidate_prompt_only` 或 `uncertain`。`candidate_prompt_only` 不是 `response_absent`；模型无权返回 Question ID 或 Canonical pointer。无未校准置信度、评分、身份推断或自由文本说明。
-- 来源归属：Proposal 保存渲染页和坐标变换元数据。程序只在已校验的 Alignment 和 Canonical tree 中查找单一、无跨题重叠、无共享图形的目标来源，最多生成候选指针；方向不明或来源共享时保留未归属的视觉框。空间 IoU 只是候选启发式，不是像素坐标精度保证。
-- 持久化：完整 proposal 写入私有 S3 不可变 UUID Key；PostgreSQL 记录轻索引和 source/model/version/input 摘要。相同 request ID + 输入摘要重放旧记录，不同摘要冲突；并发请求最多登记一份 proposal。VLM 调用在事务外，写入时锁定并复核版本。数据库与 S3 非原子，无法确认 COMMIT 时保留对象。
+- 来源归属：Proposal 协议 1.1 保存 PDF MediaBox/CropBox、EXIF、渲染页信息及原始 `source_bbox_iou`。PDF MediaBox/CropBox不一致、页面框原点非零、旋转或非默认 EXIF 时拒绝 Canonical 映射。IoU 0.08 仍是未经校准的空间候选阈值，不是概率；单一候选不证明来源真的属于该 Question。`printed_prompt` 永不获得答案来源 pointer；模型框仍保留为 unresolved。
+- 持久化：完整 proposal 写入私有 S3 不可变 UUID Key；PostgreSQL 记录轻索引和 source/model/version/input 摘要。相同 request ID + 输入摘要重放旧记录，不同摘要冲突；并发请求最多登记一份 proposal。VLM 调用在事务外，写入时锁定并复核版本。确定回滚可清理对象；COMMIT 开始后的未知结果一律保留对象，即使查询空或暂时不可用。S3 与 PostgreSQL 非原子，取消 boto3 的 `asyncio.to_thread` 不会杀线程，可能留下孤立对象。
 - 测试边界：GitHub CI 测协议、资源限制、来源归属和 Fake Provider 下的真实 PostgreSQL + MinIO 持久化；CI 不下载模型。五个按需生成样本用于本地真实 VLM 请求合同检查，不代表真实学生手写准确率。实际本地模型结果应与 CI 测试分开报告；还需用许可的真实标注样本评估 Precision/Recall、校准和成本。
-- 本地观测：2026-10-10，Ollama 0.31.2 + `qwen3.5:4b` 的五个生成页面均通过严格响应协议，但几何标记样本被误判为仅印刷题干；未提供 Canonical/Alignment，来源映射未测。此误判说明真实模型合同通过不能替代真实教学样本评测。
+- 本地观测：2026-10-10 五个生成页面均通过严格响应协议，但几何标记被误判为仅印刷题干。2026-10-11 的真实 Ollama + PostgreSQL + MinIO 业务闭环使用合成 Canonical/Alignment fixture，模型仍把几何标记判断为 printed_prompt；该区域与合成答案框 IoU 0.952。程序现保留 BBox/IoU 并拒绝来源 pointer。此结果不是 MinerU E2E 或真实作业准确率。
 - 尚未实现：HTTP 查询/写接口、教师界面、认证、RBAC、人工标注回流、全局推理并发限额、系统级内存硬隔离、孤立 S3 proposal 对账和真实作业精度评估。模型建议不会修改 P2-D2A 记录，也不产生 `ready_for_grading`。
 
 ## P3：标准答案管理、Rubric 评分、AI 自动批改 Agent

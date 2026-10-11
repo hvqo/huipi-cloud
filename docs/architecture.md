@@ -17,7 +17,7 @@
 - `infrastructure/database`：共享 Engine 工厂与按请求/操作创建的 AsyncSession；Alembic 管理结构，应用启动不会调用 `create_all`。
 - `infrastructure/storage`：boto3 S3 兼容适配器。本地对象存储使用 PGSTY SILO。
 - `infrastructure/parsing`：隔离的 MinerU 4.x 子进程启动、PDF 预检、输出归档校验和不可变解析产物上传。
-- `infrastructure/visual_evidence`：PDFium/Pillow 页面栅格化与 EXIF 处理、坐标变换记录、OpenAI-compatible Vision Provider、endpoint 限制和有界 HTTP 重试。
+- `infrastructure/visual_evidence`：PDFium/Pillow 页面栅格化、PDF MediaBox/CropBox 与 EXIF 坐标校验、OpenAI-compatible 和 loopback Ollama Provider、endpoint 限制和有界 HTTP 重试。
 - `migrations`：按版本演进的 PostgreSQL Schema。
 
 路由负责 HTTP 输入输出；领域服务组织用例；Repository 负责具体数据库查询。当前没有通用 Repository 框架、微服务、Celery、RabbitMQ 或 Redis。
@@ -44,17 +44,17 @@ revision 的排序不依赖时间戳。写入前锁住 `Submission` 行，同一
 
 页面来源只从目标 `AlignedAnswer.evidence` 与 `source_regions` 中取得。没有任何可确认来源页时安全失败，不会默认把整份文档发送给 VLM。PDF 使用 pypdf 检查加密状态、页数和媒体框，使用 PDFium 按需渲染选中页；图像使用 Pillow 检查实际格式、像素数和 EXIF，并作方向归一。最大输入 20 MiB、PDF 页数最多 200、每个问题最多 5 页、单页最多 12 MP/2048 像素长边/3 MiB JPEG、全部渲染图最多 12 MiB。原文件字节、单页解码图和 VLM 请求有上限；这不是进程级硬内存隔离，也没有跨进程全局并发配额。多 CLI 同时运行会按进程数增加内存及推理占用，部署应按主机内存串行限流。JPEG 重编码可能损失细小笔迹，本阶段没有图像增强。
 
-`RenderedPageMetadata` 保存源宽高及单位、PDF rotation、EXIF orientation、栅格尺寸、有效 DPI、渲染图 SHA-256 和仿射变换。当前只发整页图，没有裁剪；缩放不改变归一化全页坐标。PDF rotation 非零或 EXIF 非默认时，虽然记录可逆方向变换，但 Canonical 与渲染方向/预处理不能证明完全一致，因此禁止生成 Canonical pointer。`transform_bbox_to_source` 支持并测试一般仿射还原，但没有声称 MinerU 与 PDFium 的坐标误差已校准。合成测试覆盖裁剪框仿射运算，不表示当前生产路径执行了裁剪。
+`RenderedPageMetadata` 保存源宽高及单位、PDF MediaBox/CropBox、rotation、EXIF orientation、栅格尺寸、有效 DPI、渲染图 SHA-256 和仿射变换。当前只发整页图，没有应用 CropBox 裁剪；均匀缩放不改变归一化全页坐标。PDF 只有在 MediaBox 与 CropBox 相等、原点为零且 rotation 为零时才允许 Canonical 映射。CropBox 大小或原点不同、MediaBox 原点非零、PDF rotation 非零、EXIF orientation 非默认时，仍保存渲染 BBox，但 `mapping_eligible=false`、不给来源 pointer。记录方向变换不是映射正确的证明。PNG/JPG 尺寸缩放保持归一化坐标；Orientation 1 至 8 均有覆盖测试。
 
 模型协议拒绝未知字段、无效页面索引、越界/退化 bbox、未知状态、自由解释文本、Question ID 和任何 Canonical pointer；印刷题干区域也不能同时声明手写、公式、表格或几何作答证据。模型不返回身份；调用目标 Question ID 由本地服务固定。模型看到 Question 编号/题干、每个已对齐来源区域的页码/BBox/类型以及相应整页图像；alignment hash 与图像 hash进入 `model_input_digest`。输入中的学生作业可能含姓名或其他敏感信息，故默认禁用 VLM、默认仅允许 loopback；外部 HTTPS 需要分别打开 endpoint 和数据授权开关。不会请求模型给出的 URL，也不会把 API Key、请求图像或完整异常写入日志。
 
 Provider 有两个显式选项：`openai_compatible` 使用 `/v1/chat/completions` 和环境变量 Key；`ollama_native` 只接受本机 HTTP loopback，使用 `/api/chat` 的 `think=false` 与 JSON 格式控制，并读取 Ollama 返回的 token 计数。使用原生接口是为避免本机 Qwen 3.5 OpenAI-compatible 调用把有限上下文耗尽在隐藏思考输出；通用兼容 Provider 不发送 Ollama 私有参数。两种适配器都使用有界响应读取、请求超时、仅对网络/429/5xx 的有限重试和同一严格 Pydantic 输出协议。
 
-2026-10-10 的本地真实模型合同检查使用 Ollama 0.31.2 与 `qwen3.5:4b`，五个生成样本均返回合法响应（5/5），协议校验失败为 0，单次耗时约 4.8–6.2 秒。混合手写和公式样本各返回对应候选；含几何标记的样本被误判为“仅印刷题干”，说明合法 JSON 不等于视觉判断正确。脚本没有 Canonical/Alignment 数据，因此来源映射未测；也没有真实学生数据或准确率结论。
+2026-10-10 的本地真实模型合同检查使用 Ollama 0.31.2 与 `qwen3.5:4b`，五个生成样本均返回合法响应（5/5），单次耗时约 4.8–6.2 秒；几何标记仍被误判为“仅印刷题干”。2026-10-11 的专项真实业务闭环使用合成 PNG、合成 MiddleJson fixture 和真实 Canonical/Alignment 持久化链路，模型仍把几何标记误报为 `printed_prompt`。模型框 `[0.21, 0.365, 0.798, 0.674]` 与合成 Canonical 答案来源框 IoU 为 0.952；新规则保留此几何证据但因类型为印刷题干拒绝 pointer。最新验收调用耗时 9359 ms，prompt/completion 用量 1807/120 tokens。S3 proposal 大小 1967 字节，SHA-256 经下载核验，人工复核行数未变。该样本没有运行 MinerU，不含真实学生数据，也不能用于准确率或性能结论。错误分类是 VLM 视觉识别误判；JSON 合同有效；输入是 PNG，不涉及 PDF/EXIF 转换；来源拒绝是有意的安全策略，不是 Canonical 解析失败。
 
-`candidate_prompt_only` 只说模型看到了印刷题干，不等于 `response_absent`；`candidate_response_present` 也不是人工作答确认。模型没有自由文本理由和未校准置信度。程序把归一化图像框经所记录的变换后，与真实 Canonical tree 中由 P2-D1 提供、且 `content_pointer` 和 Block ID 均能在树中验证的区域作启发式重叠检查。只有目标 Question 当前 `matching_status=aligned`、唯一目标区域相交、没有其他 Question 区域相交、素材没有跨题共享且页面方向可映射时，才写入由服务端从 Canonical/Alignment 生成的 `candidate_content_pointer`。使用的 IoU 门限为 0.08，只表示空间候选，不是坐标精度或语义归属证明；共享图形、多题交叉、无匹配或边界不确定时只保留原图视觉框和 `unresolved`。
+`candidate_prompt_only` 只说模型看到了印刷题干，不等于 `response_absent`；`candidate_response_present` 也不是人工作答确认。模型没有自由文本理由和未校准置信度。程序把归一化图像框经所记录的变换后，与真实 Canonical tree 中由 P2-D1 提供、且 `content_pointer` 和 Block ID 均能在树中验证的区域作启发式重叠检查。IoU 门限保持 0.08，Proposal 的 `source_bbox_iou` 记录实际几何交并比，不是置信度。单一空间候选不证明 Question 真实归属；它仍是待复核机器建议。`printed_prompt` 类别永远不获得答案来源 pointer，即使框与唯一 Canonical BBox 完全重叠。共享图形、多题交叉、无匹配、不可映射坐标或多来源重叠时保留原图视觉框和 `unresolved`。Proposal schema 升到 1.1，预处理版本升到 1.1.0，以区分新增来源框 IoU 和 PDF 页面框元数据。
 
-VLM 调用没有打开数据库事务。生成结果后，系统先上传至私有 S3 每次 UUID 独立的不可变 proposal Key，再在 PostgreSQL 一个短事务中锁定 Submission、Assignment 和当前来源行，重新检查源文件、题目文字、Canonical 与 Alignment ID/SHA，然后用 `(submission_id, question_id, request_id)` 唯一约束登记。相同 request ID + 相同输入摘要返回既有记录；同 request ID 但摘要不同冲突。并发相同请求可能发出两个 VLM 请求、上传两个独立对象，数据库只登记一个，确认未被索引的输家对象才会删除。数据库 COMMIT 结果不确定且新连接无法核实索引时，保留对象；进程崩溃及 S3/PG 非原子性仍可能留下孤儿，后续需有保留期的 S3/PG 对账清理。
+VLM 调用没有打开数据库事务。生成结果后，系统先上传至私有 S3 每次 UUID 独立的不可变 proposal Key，再在 PostgreSQL 一个短事务中锁定 Submission、Assignment 和当前来源行，重新检查源文件、题目文字、Canonical 与 Alignment ID/SHA，然后用 `(submission_id, question_id, request_id)` 唯一约束登记。相同 request ID + 相同输入摘要返回既有记录；同 request ID 但摘要不同冲突。Repository 在发出 COMMIT 前失败时显式回滚并标为确定失败，此时服务可核验并删除未索引对象。COMMIT 一旦开始后若客户端确认丢失或会话关闭失败，则标为结果未知；不论幂等查询返回已有行、空结果或暂时不可用，都不删除本次 S3 对象。若已确认有其他不可变对象登记为唯一赢家，输家对象可作尽力清理。无法确认时会保留孤儿以避免删掉已提交对象。取消等待中的 boto3 `asyncio.to_thread` 不会中止同步线程；取消路径不发删除操作，上传可能继续完成为无索引对象。进程崩溃及 S3/PG 非原子性仍可能留下孤儿，后续需有保留期的 S3/PG 对账清理。
 
 机器 JSON 保存完整 proposal；PostgreSQL 不保存图像或原始 OCR 文本。数据表通过外键绑定 Submission、Assignment、Question、CanonicalArtifact 和 AnswerAlignmentArtifact，并记录文件/模型/版本/输入摘要。当前没有 proposal HTTP 查询或匿名写接口，只有本地 `analyze_visual_evidence` CLI；CLI dry-run 会下载、校验并渲染，但不会发模型调用或写结果。建议不会写入 `answer_review_decisions`，不会改 Canonical/Alignment，也不能作为评分状态。数据留存、访问认证、对象孤儿清理和真实样本质量评测仍是上线前置工作。
 

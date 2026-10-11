@@ -10,9 +10,9 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 VISUAL_EVIDENCE_SCHEMA_NAME = "huipi.visual.evidence.proposal"
-VISUAL_EVIDENCE_SCHEMA_VERSION = "1.0"
+VISUAL_EVIDENCE_SCHEMA_VERSION = "1.1"
 VISUAL_PROMPT_VERSION = "1.0.0"
-VISUAL_PREPROCESSING_VERSION = "1.0.0"
+VISUAL_PREPROCESSING_VERSION = "1.1.0"
 VISUAL_COORDINATE_SPACE = "normalized_rendered_page_ratio_0_to_1"
 
 Outcome = Literal["candidate_response_present", "candidate_prompt_only", "uncertain"]
@@ -36,6 +36,7 @@ ReasonCode = Literal[
     "question_attribution_uncertain",
     "shared_figure_possible",
     "source_mapping_unavailable",
+    "multiple_source_regions",
     "visual_evidence_candidate_only",
 ]
 VISUAL_REASON_CODES = frozenset(
@@ -50,6 +51,7 @@ VISUAL_REASON_CODES = frozenset(
         "question_attribution_uncertain",
         "shared_figure_possible",
         "source_mapping_unavailable",
+        "multiple_source_regions",
         "visual_evidence_candidate_only",
     }
 )
@@ -140,7 +142,7 @@ class VisualEvidenceModelReply(StrictModel):
 
 
 class VisualEvidenceRegion(StrictModel):
-    """Raw image box plus an optional server-verified Canonical candidate."""
+    """Raw image box plus optional geometric evidence and a Canonical candidate."""
 
     page_index: int = Field(ge=0)
     visual_bbox: tuple[float, float, float, float]
@@ -148,6 +150,7 @@ class VisualEvidenceRegion(StrictModel):
         VISUAL_COORDINATE_SPACE
     )
     evidence_type: EvidenceType
+    source_bbox_iou: float | None = Field(default=None, ge=0.0, le=1.0)
     candidate_content_pointer: str | None = Field(default=None, max_length=4096)
     candidate_source_block_id: UUID | None = None
     attribution_status: Literal["candidate", "unresolved"]
@@ -181,8 +184,12 @@ class VisualEvidenceRegion(StrictModel):
             raise ValueError("Canonical candidate pointer and block ID must appear together")
         if self.attribution_status == "candidate" and self.candidate_content_pointer is None:
             raise ValueError("candidate attribution requires a verified Canonical pointer")
+        if self.attribution_status == "candidate" and self.source_bbox_iou is None:
+            raise ValueError("candidate attribution requires recorded source bbox IoU")
         if self.attribution_status == "unresolved" and self.candidate_content_pointer is not None:
             raise ValueError("unresolved attribution cannot carry a Canonical pointer")
+        if self.source_bbox_iou is not None and not math.isfinite(self.source_bbox_iou):
+            raise ValueError("source bbox IoU must be finite")
         return self
 
 
@@ -198,10 +205,46 @@ class RenderedPageMetadata(StrictModel):
     rendered_height: int = Field(gt=0)
     effective_dpi: float | None = Field(default=None, gt=0)
     exif_orientation: int | None = Field(default=None, ge=1, le=8)
+    source_media_box: tuple[float, float, float, float] | None = None
+    source_crop_box: tuple[float, float, float, float] | None = None
     mapping_eligible: bool
     mapping_reason: str | None = Field(default=None, max_length=64)
     transform: tuple[float, float, float, float, float, float]
     rendered_image_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+    @model_validator(mode="after")
+    def validate_source_coordinate_space(self) -> Self:
+        if self.source_unit == "pdf_points":
+            if self.source_media_box is None or self.source_crop_box is None:
+                raise ValueError("PDF render metadata must include MediaBox and CropBox")
+            for box in (self.source_media_box, self.source_crop_box):
+                if (
+                    any(not math.isfinite(value) for value in box)
+                    or box[2] <= box[0]
+                    or box[3] <= box[1]
+                ):
+                    raise ValueError("PDF source boxes must be finite and non-empty")
+            boxes_match = all(
+                math.isclose(media, crop, rel_tol=0.0, abs_tol=1e-6)
+                for media, crop in zip(
+                    self.source_media_box, self.source_crop_box, strict=True
+                )
+            )
+            origin_is_zero = math.isclose(
+                self.source_media_box[0], 0.0, rel_tol=0.0, abs_tol=1e-6
+            ) and math.isclose(self.source_media_box[1], 0.0, rel_tol=0.0, abs_tol=1e-6)
+            if self.mapping_eligible and (
+                self.source_rotation_degrees != 0 or not boxes_match or not origin_is_zero
+            ):
+                raise ValueError("PDF mapping requires an unrotated full-origin page")
+        elif self.source_media_box is not None or self.source_crop_box is not None:
+            raise ValueError("raster render metadata cannot include PDF page boxes")
+        if self.mapping_eligible and self.source_unit == "image_pixels":
+            if self.exif_orientation != 1:
+                raise ValueError("raster mapping requires default EXIF orientation")
+        if self.mapping_eligible and self.transform != (1.0, 0.0, 0.0, 0.0, 1.0, 0.0):
+            raise ValueError("eligible source mapping requires an identity transform")
+        return self
 
 
 class ProviderUsage(StrictModel):
@@ -216,7 +259,7 @@ class VisualEvidenceProposal(StrictModel):
     """Immutable machine suggestion bound to all source and model versions."""
 
     schema_name: Literal["huipi.visual.evidence.proposal"] = VISUAL_EVIDENCE_SCHEMA_NAME
-    schema_version: Literal["1.0"] = VISUAL_EVIDENCE_SCHEMA_VERSION
+    schema_version: Literal["1.1"] = VISUAL_EVIDENCE_SCHEMA_VERSION
     proposal_id: UUID
     request_id: UUID
     submission_id: UUID

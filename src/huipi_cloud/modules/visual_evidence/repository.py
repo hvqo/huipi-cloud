@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -17,13 +18,17 @@ from huipi_cloud.modules.assignments.models import Assignment
 from huipi_cloud.modules.canonical_documents.models import CanonicalArtifact
 from huipi_cloud.modules.submissions.models import Submission, SubmissionFile
 from huipi_cloud.modules.visual_evidence.errors import (
+    VisualEvidenceCommitOutcomeUnknownError,
     VisualEvidenceConflictError,
+    VisualEvidenceError,
     VisualEvidenceNotFoundError,
+    VisualEvidenceRegistrationRolledBackError,
     VisualEvidenceSourceChangedError,
 )
 from huipi_cloud.modules.visual_evidence.models import VisualEvidenceArtifact
 
 SessionFactory = async_sessionmaker[AsyncSession]
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -104,84 +109,131 @@ async def register_success(
     expected_source_bucket: str,
     expected_source_size: int,
 ) -> VisualEvidenceArtifact:
-    """Revalidate current source versions and insert once in one PG transaction."""
-    async with session_factory() as session, session.begin():
-        submission_id = values["submission_id"]
-        question_id = values["question_id"]
-        request_id = values["request_id"]
-        assert isinstance(submission_id, UUID)
-        assert isinstance(question_id, UUID)
-        assert isinstance(request_id, UUID)
-        submission = await session.scalar(
-            select(Submission).where(Submission.id == submission_id).with_for_update()
-        )
-        if submission is None:
-            raise VisualEvidenceSourceChangedError("submission_removed_during_model_call")
-        assignment = await session.scalar(
-            select(Assignment)
-            .where(Assignment.id == submission.assignment_id)
-            .with_for_update()
-        )
-        if assignment is None or assignment.id != values["assignment_id"]:
-            raise VisualEvidenceSourceChangedError("assignment_changed_during_model_call")
-        context = await load_context(session, submission_id)
-        question = next(
-            (item for item in context.alignment.questions if item.id == question_id),
-            None,
-        )
-        if question is None:
-            raise VisualEvidenceSourceChangedError("question_removed_or_changed")
-        if question.stem != expected_question_stem:
-            raise VisualEvidenceSourceChangedError("question_text_changed")
-        current_canonical = await session.scalar(
-            select(CanonicalArtifact)
-            .where(CanonicalArtifact.id == context.canonical.id)
-            .with_for_update(read=True)
-            .execution_options(populate_existing=True)
-        )
-        current_alignment = await session.scalar(
-            select(AnswerAlignmentArtifact)
-            .where(AnswerAlignmentArtifact.id == context.alignment_artifact.id)
-            .with_for_update(read=True)
-            .execution_options(populate_existing=True)
-        )
-        current_file = await session.scalar(
-            select(SubmissionFile)
-            .where(SubmissionFile.id == context.source_file.id)
-            .with_for_update(read=True)
-            .execution_options(populate_existing=True)
-        )
-        if (
-            current_file is None
-            or current_canonical is None
-            or current_alignment is None
-            or current_file.id != expected_source_file_id
-            or current_file.object_key != expected_source_object_key
-            or current_file.bucket != expected_source_bucket
-            or current_file.size_bytes != expected_source_size
-            or current_file.sha256 != values["original_file_sha256"]
-            or context.alignment.assignment_id != values["assignment_id"]
-            or current_canonical.id != values["canonical_artifact_id"]
-            or current_canonical.canonical_sha256 != values["canonical_sha256"]
-            or current_alignment.id != values["alignment_artifact_id"]
-            or current_alignment.alignment_sha256 != values["alignment_sha256"]
-        ):
-            raise VisualEvidenceSourceChangedError
+    """Revalidate sources, then expose whether failure was before or during COMMIT."""
+    commit_attempted = False
+    try:
+        async with session_factory() as session:
+            transaction = await session.begin()
+            try:
+                existing = await _register_in_transaction(
+                    session,
+                    values=values,
+                    expected_question_stem=expected_question_stem,
+                    expected_source_file_id=expected_source_file_id,
+                    expected_source_object_key=expected_source_object_key,
+                    expected_source_bucket=expected_source_bucket,
+                    expected_source_size=expected_source_size,
+                )
+            except Exception:
+                await _rollback_before_commit(transaction)
+                raise
+            commit_attempted = True
+            await transaction.commit()
+            return existing
+    except Exception as error:
+        if commit_attempted:
+            raise VisualEvidenceCommitOutcomeUnknownError from error
+        if isinstance(error, VisualEvidenceError):
+            raise
+        raise VisualEvidenceRegistrationRolledBackError from error
 
-        statement = (
-            insert(VisualEvidenceArtifact)
-            .values(**values)
-            .on_conflict_do_nothing(constraint="uq_visual_evidence_submission_question_request")
-        )
-        await session.execute(statement)
-        existing = await get_request(
-            session,
-            submission_id=submission_id,
-            question_id=question_id,
-            request_id=request_id,
-        )
-        if existing is None:
-            raise RuntimeError("visual evidence registration did not produce an index")
-        if existing.model_input_digest != values["model_input_digest"]:
-            raise VisualEvidenceConflictError
-        return existing
+
+async def _register_in_transaction(
+    session: AsyncSession,
+    *,
+    values: dict[str, object],
+    expected_question_stem: str,
+    expected_source_file_id: UUID,
+    expected_source_object_key: str,
+    expected_source_bucket: str,
+    expected_source_size: int,
+) -> VisualEvidenceArtifact:
+    submission_id = values["submission_id"]
+    question_id = values["question_id"]
+    request_id = values["request_id"]
+    assert isinstance(submission_id, UUID)
+    assert isinstance(question_id, UUID)
+    assert isinstance(request_id, UUID)
+    submission = await session.scalar(
+        select(Submission).where(Submission.id == submission_id).with_for_update()
+    )
+    if submission is None:
+        raise VisualEvidenceSourceChangedError("submission_removed_during_model_call")
+    assignment = await session.scalar(
+        select(Assignment)
+        .where(Assignment.id == submission.assignment_id)
+        .with_for_update()
+    )
+    if assignment is None or assignment.id != values["assignment_id"]:
+        raise VisualEvidenceSourceChangedError("assignment_changed_during_model_call")
+    context = await load_context(session, submission_id)
+    question = next(
+        (item for item in context.alignment.questions if item.id == question_id),
+        None,
+    )
+    if question is None:
+        raise VisualEvidenceSourceChangedError("question_removed_or_changed")
+    if question.stem != expected_question_stem:
+        raise VisualEvidenceSourceChangedError("question_text_changed")
+    current_canonical = await session.scalar(
+        select(CanonicalArtifact)
+        .where(CanonicalArtifact.id == context.canonical.id)
+        .with_for_update(read=True)
+        .execution_options(populate_existing=True)
+    )
+    current_alignment = await session.scalar(
+        select(AnswerAlignmentArtifact)
+        .where(AnswerAlignmentArtifact.id == context.alignment_artifact.id)
+        .with_for_update(read=True)
+        .execution_options(populate_existing=True)
+    )
+    current_file = await session.scalar(
+        select(SubmissionFile)
+        .where(SubmissionFile.id == context.source_file.id)
+        .with_for_update(read=True)
+        .execution_options(populate_existing=True)
+    )
+    if (
+        current_file is None
+        or current_canonical is None
+        or current_alignment is None
+        or current_file.id != expected_source_file_id
+        or current_file.object_key != expected_source_object_key
+        or current_file.bucket != expected_source_bucket
+        or current_file.size_bytes != expected_source_size
+        or current_file.sha256 != values["original_file_sha256"]
+        or context.alignment.assignment_id != values["assignment_id"]
+        or current_canonical.id != values["canonical_artifact_id"]
+        or current_canonical.canonical_sha256 != values["canonical_sha256"]
+        or current_alignment.id != values["alignment_artifact_id"]
+        or current_alignment.alignment_sha256 != values["alignment_sha256"]
+    ):
+        raise VisualEvidenceSourceChangedError
+
+    statement = (
+        insert(VisualEvidenceArtifact)
+        .values(**values)
+        .on_conflict_do_nothing(constraint="uq_visual_evidence_submission_question_request")
+    )
+    await session.execute(statement)
+    existing = await get_request(
+        session,
+        submission_id=submission_id,
+        question_id=question_id,
+        request_id=request_id,
+    )
+    if existing is None:
+        raise RuntimeError("visual evidence registration did not produce an index")
+    if existing.model_input_digest != values["model_input_digest"]:
+        raise VisualEvidenceConflictError
+    return existing
+
+
+async def _rollback_before_commit(transaction) -> None:
+    """Best-effort rollback when COMMIT has not been attempted."""
+    if not transaction.is_active:
+        return
+    try:
+        await transaction.rollback()
+    except Exception as error:
+        logger.warning("Visual proposal pre-commit rollback failed (%s)", type(error).__name__)

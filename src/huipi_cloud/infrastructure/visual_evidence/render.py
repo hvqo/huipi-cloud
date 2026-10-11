@@ -40,6 +40,8 @@ class RenderedPage:
     mapping_reason: str | None
     transform: tuple[float, float, float, float, float, float]
     sha256: str
+    source_media_box: tuple[float, float, float, float] | None = None
+    source_crop_box: tuple[float, float, float, float] | None = None
 
 
 def render_selected_pages(
@@ -89,13 +91,43 @@ def _render_pdf(path: Path | bytes, selected: list[int], config: Settings) -> li
         for index in sorted(selected):
             try:
                 source_page = reader.pages[index]
-                media_width = float(source_page.mediabox.width)
-                media_height = float(source_page.mediabox.height)
+                media_box = tuple(float(value) for value in source_page.mediabox)
+                crop_box = tuple(float(value) for value in source_page.cropbox)
+                media_width = media_box[2] - media_box[0]
+                media_height = media_box[3] - media_box[1]
                 rotation = int(source_page.rotation or 0) % 360
                 page = document[index]
                 display_width, display_height = page.get_size()
-                if min(display_width, display_height, media_width, media_height) <= 0:
+                if min(
+                    display_width,
+                    display_height,
+                    media_width,
+                    media_height,
+                    crop_box[2] - crop_box[0],
+                    crop_box[3] - crop_box[1],
+                ) <= 0:
                     raise VisualEvidenceInputError("pdf_page_dimensions_invalid")
+                full_page_crop = all(
+                    math.isclose(media, crop, rel_tol=0.0, abs_tol=1e-6)
+                    for media, crop in zip(media_box, crop_box, strict=True)
+                )
+                crop_origin_differs = not (
+                    math.isclose(media_box[0], crop_box[0], rel_tol=0.0, abs_tol=1e-6)
+                    and math.isclose(media_box[1], crop_box[1], rel_tol=0.0, abs_tol=1e-6)
+                )
+                media_origin_is_zero = math.isclose(
+                    media_box[0], 0.0, rel_tol=0.0, abs_tol=1e-6
+                ) and math.isclose(media_box[1], 0.0, rel_tol=0.0, abs_tol=1e-6)
+                if rotation:
+                    mapping_reason = "rotated_pdf_page"
+                elif not full_page_crop:
+                    mapping_reason = (
+                        "pdf_cropbox_offset" if crop_origin_differs else "pdf_cropbox_mismatch"
+                    )
+                elif not media_origin_is_zero:
+                    mapping_reason = "pdf_media_box_offset"
+                else:
+                    mapping_reason = None
                 scale = _bounded_scale(
                     float(display_width),
                     float(display_height),
@@ -123,10 +155,12 @@ def _render_pdf(path: Path | bytes, selected: list[int], config: Settings) -> li
                         rendered_height=height,
                         effective_dpi=width / float(display_width) * 72.0,
                         exif_orientation=None,
-                        mapping_eligible=rotation == 0,
-                        mapping_reason=None if rotation == 0 else "rotated_pdf_page",
+                        mapping_eligible=mapping_reason is None,
+                        mapping_reason=mapping_reason,
                         transform=_rotation_display_to_source(rotation),
                         sha256=hashlib.sha256(image_bytes).hexdigest(),
+                        source_media_box=media_box,
+                        source_crop_box=crop_box,
                     )
                 )
             except VisualEvidenceError:

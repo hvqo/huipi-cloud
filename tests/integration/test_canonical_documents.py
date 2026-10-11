@@ -3,6 +3,8 @@
 import asyncio
 import hashlib
 import json
+import os
+import threading
 from io import BytesIO
 from pathlib import Path
 from uuid import UUID, uuid4
@@ -19,7 +21,10 @@ from huipi_cloud.infrastructure.storage.s3 import (
     StorageObjectNotFoundError,
     StorageUnavailableError,
 )
-from huipi_cloud.infrastructure.visual_evidence.provider import VisionProviderResponse
+from huipi_cloud.infrastructure.visual_evidence.provider import (
+    VisionProviderResponse,
+    build_vision_provider,
+)
 from huipi_cloud.main import app
 from huipi_cloud.modules.answer_alignment import service as answer_alignment_service
 from huipi_cloud.modules.answer_alignment.models import AnswerAlignmentArtifact
@@ -36,6 +41,7 @@ from huipi_cloud.modules.parsing.models import ParsedArtifact
 from huipi_cloud.modules.submissions.models import ParsingTask, Submission
 from huipi_cloud.modules.visual_evidence import repository as visual_evidence_repository
 from huipi_cloud.modules.visual_evidence.errors import (
+    VisualEvidenceCommitOutcomeUnknownError,
     VisualEvidenceConfigurationError,
     VisualEvidenceConflictError,
     VisualEvidenceNotFoundError,
@@ -44,6 +50,7 @@ from huipi_cloud.modules.visual_evidence.errors import (
 from huipi_cloud.modules.visual_evidence.models import VisualEvidenceArtifact
 from huipi_cloud.modules.visual_evidence.protocol import VisualEvidenceModelReply
 from huipi_cloud.modules.visual_evidence.service import analyze_question_visual_evidence
+from tests.visual_samples import create_visual_samples
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "mineru"
 
@@ -1092,13 +1099,20 @@ async def _seed_parsed_source(
     wrong_middle_checksum: bool = False,
     with_image_asset: bool = False,
     middle_content: str | None = None,
+    middle_bbox: tuple[float, float, float, float] | None = None,
+    source_override: tuple[str, bytes, str] | None = None,
+    question_stem: str = "读取合成样例。",
 ) -> tuple[UUID, UUID]:
-    assignment_id = await _create_published_assignment(client)
-    source = (FIXTURES / "synthetic-text.pdf").read_bytes()
+    assignment_id = await _create_published_assignment(client, question_stem=question_stem)
+    filename, source, content_type = source_override or (
+        "source.pdf",
+        (FIXTURES / "synthetic-text.pdf").read_bytes(),
+        "application/pdf",
+    )
     upload = await client.post(
         f"/api/v1/assignments/{assignment_id}/submissions",
         data={"student_ref": f"canonical-{uuid4().hex[:12]}"},
-        files={"file": ("source.pdf", source, "application/pdf")},
+        files={"file": (filename, source, content_type)},
     )
     assert upload.status_code == 201, upload.text
     submission_id = UUID(upload.json()["id"])
@@ -1125,7 +1139,7 @@ async def _seed_parsed_source(
         else {
             "type": "text",
             "index": 0,
-            "bbox": [0.1, 0.1, 0.9, 0.25],
+            "bbox": middle_bbox or (0.1, 0.1, 0.9, 0.25),
             "content": middle_content or "Canonical sample text",
         }
     )
@@ -1243,7 +1257,11 @@ async def _seed_parsed_source(
     return submission_id, artifact_id
 
 
-async def _create_published_assignment(client: httpx.AsyncClient) -> str:
+async def _create_published_assignment(
+    client: httpx.AsyncClient,
+    *,
+    question_stem: str = "读取合成样例。",
+) -> str:
     created = await client.post(
         "/api/v1/assignments",
         json={"title": "Canonical集成样例", "subject": "数学", "grade_level": "高一"},
@@ -1255,7 +1273,7 @@ async def _create_published_assignment(client: httpx.AsyncClient) -> str:
         json={
             "question_number": 1,
             "question_type": "short_answer",
-            "stem": "读取合成样例。",
+            "stem": question_stem,
             "max_score": "10.00",
         },
     )
@@ -1322,12 +1340,24 @@ class _VisualFakeProvider:
         return VisionProviderResponse(reply, elapsed_ms=17, usage=None)
 
 
-async def _prepare_visual_submission(client, storage, engine):
+async def _prepare_visual_submission(
+    client,
+    storage,
+    engine,
+    *,
+    middle_content: str = "第1题 学生提交的合成答案",
+    middle_bbox: tuple[float, float, float, float] | None = None,
+    source_override: tuple[str, bytes, str] | None = None,
+    question_stem: str = "读取合成样例。",
+):
     submission_id, _ = await _seed_parsed_source(
         client,
         storage,
         engine,
-        middle_content="第1题 学生提交的合成答案",
+        middle_content=middle_content,
+        middle_bbox=middle_bbox,
+        source_override=source_override,
+        question_stem=question_stem,
     )
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
     await service.normalize_submission(session_factory, storage, submission_id)
@@ -1340,6 +1370,88 @@ async def _prepare_visual_submission(client, storage, engine):
         )
     assert question is not None
     return submission_id, question.id, session_factory
+
+
+@pytest.mark.anyio
+@pytest.mark.visual_evidence_e2e
+@pytest.mark.skipif(
+    os.environ.get("VISUAL_EVIDENCE_E2E") != "1",
+    reason="requires explicit opt-in to call the local real Ollama model",
+)
+async def test_real_ollama_visual_evidence_submission_to_proposal_e2e(
+    submission_client: httpx.AsyncClient,
+    recording_minio_storage,
+    postgres_engine: AsyncEngine,
+    tmp_path: Path,
+) -> None:
+    samples = create_visual_samples(tmp_path / "samples")
+    original_image = samples["geometry"].read_bytes()
+    submission_id, question_id, session_factory = await _prepare_visual_submission(
+        submission_client,
+        recording_minio_storage,
+        postgres_engine,
+        middle_content="第1题 求2+2，展示计算过程。",
+        middle_bbox=(0.2, 0.36, 0.8, 0.67),
+        source_override=("synthetic-geometry.png", original_image, "image/png"),
+        question_stem="求 2 + 2。请展示计算过程。",
+    )
+    config = Settings(
+        visual_evidence_enabled=True,
+        visual_evidence_provider="ollama_native",
+    )
+    provider = build_vision_provider(config)
+    async with session_factory() as session:
+        reviews_before = await session.scalar(
+            select(func.count()).select_from(AnswerReviewDecision)
+        )
+
+    proposal = await analyze_question_visual_evidence(
+        session_factory,
+        recording_minio_storage,
+        provider,
+        submission_id=submission_id,
+        question_id=question_id,
+        request_id=uuid4(),
+        config=config,
+    )
+    assert isinstance(proposal, VisualEvidenceArtifact)
+    downloaded = await recording_minio_storage.download(proposal.proposal_object_key)
+    payload = b"".join([chunk async for chunk in downloaded.chunks()])
+    assert len(payload) == proposal.proposal_size_bytes
+    assert hashlib.sha256(payload).hexdigest() == proposal.proposal_sha256
+    async with session_factory() as session:
+        indexed = await session.get(VisualEvidenceArtifact, proposal.id)
+        reviews_after = await session.scalar(
+            select(func.count()).select_from(AnswerReviewDecision)
+        )
+    assert indexed is not None
+    assert reviews_after == reviews_before
+
+    persisted = json.loads(payload)
+    result = {
+        "status": "completed",
+        "model_id": proposal.model_id,
+        "canonical_fixture": "synthetic MiddleJson fixture; MinerU was not run",
+        "sample": "geometry",
+        "synthetic_expected_label": "geometry_mark in the lower answer area",
+        "model_outcome": proposal.outcome,
+        "model_regions": [
+            {
+                "bbox": region["visual_bbox"],
+                "evidence_type": region["evidence_type"],
+                "attribution_status": region["attribution_status"],
+                "source_bbox_iou": region["source_bbox_iou"],
+                "reason_codes": region["reason_codes"],
+            }
+            for region in persisted["visual_regions"]
+        ],
+        "proposal_sha256_verified": True,
+        "proposal_size_bytes": len(payload),
+        "model_elapsed_ms": persisted["model_elapsed_ms"],
+        "provider_usage": persisted["provider_usage"],
+        "answer_review_record_count_unchanged": True,
+    }
+    print("REAL_VISUAL_EVIDENCE_E2E=" + json.dumps(result, ensure_ascii=False, sort_keys=True))
 
 
 @pytest.mark.anyio
@@ -1448,11 +1560,18 @@ async def test_concurrent_visual_calls_with_same_request_id_register_one_proposa
     assert first.id == second.id
     assert provider.calls == 2
     async with session_factory() as session:
-        count = await session.scalar(select(func.count()).select_from(VisualEvidenceArtifact))
-    assert count == 1
-    assert len(
-        [key for key in recording_minio_storage.uploaded_keys if "/visual-evidence/" in key]
-    ) == 2
+        indexed = (await session.scalars(select(VisualEvidenceArtifact))).all()
+    assert len(indexed) == 1
+    proposal_keys = {
+        key for key in recording_minio_storage.uploaded_keys if "/visual-evidence/" in key
+    }
+    assert len(proposal_keys) == 2
+    winning_key = indexed[0].proposal_object_key
+    assert winning_key in proposal_keys
+    await recording_minio_storage.head_object(winning_key)
+    losing_key = next(key for key in proposal_keys if key != winning_key)
+    with pytest.raises(StorageObjectNotFoundError):
+        await recording_minio_storage.head_object(losing_key)
 
 
 @pytest.mark.anyio
@@ -1468,10 +1587,17 @@ async def test_failed_postgres_registration_removes_only_unindexed_proposal_obje
     provider = _VisualFakeProvider(postgres_engine)
     config = Settings(visual_evidence_enabled=True)
 
-    async def failed_registration(*args, **kwargs):
-        raise RuntimeError("simulated database insert failure")
+    original_get_request = visual_evidence_repository.get_request
+    lookup_count = 0
 
-    monkeypatch.setattr(visual_evidence_repository, "register_success", failed_registration)
+    async def fail_after_insert(*args, **kwargs):
+        nonlocal lookup_count
+        lookup_count += 1
+        if lookup_count == 2:
+            raise RuntimeError("simulated failure after insert, before commit")
+        return await original_get_request(*args, **kwargs)
+
+    monkeypatch.setattr(visual_evidence_repository, "get_request", fail_after_insert)
     with pytest.raises(VisualEvidenceStorageError, match="proposal_index_registration_failed"):
         await analyze_question_visual_evidence(
             session_factory,
@@ -1490,6 +1616,270 @@ async def test_failed_postgres_registration_removes_only_unindexed_proposal_obje
     async with session_factory() as session:
         count = await session.scalar(select(func.count()).select_from(VisualEvidenceArtifact))
     assert count == 0
+
+
+@pytest.mark.parametrize("recovery_lookup", ["empty", "unavailable"])
+@pytest.mark.anyio
+async def test_unknown_commit_never_deletes_object_before_late_commit_is_resolved(
+    recovery_lookup: str,
+    submission_client: httpx.AsyncClient,
+    recording_minio_storage,
+    postgres_engine: AsyncEngine,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    submission_id, question_id, session_factory = await _prepare_visual_submission(
+        submission_client,
+        recording_minio_storage,
+        postgres_engine,
+    )
+    provider = _VisualFakeProvider(postgres_engine)
+    config = Settings(visual_evidence_enabled=True)
+    original_register = visual_evidence_repository.register_success
+    original_get_request = visual_evidence_repository.get_request
+    commit_release = asyncio.Event()
+    commit_started = asyncio.Event()
+    late_commit: asyncio.Task | None = None
+    lookup_count = 0
+
+    async def delayed_commit(*args, **kwargs):
+        nonlocal late_commit
+
+        async def commit_when_released():
+            await commit_release.wait()
+            commit_started.set()
+            return await original_register(*args, **kwargs)
+
+        late_commit = asyncio.create_task(commit_when_released())
+        raise VisualEvidenceCommitOutcomeUnknownError from OperationalError(
+            "commit", {}, RuntimeError("connection lost")
+        )
+
+    async def lookup_with_optional_transient_failure(*args, **kwargs):
+        nonlocal lookup_count
+        lookup_count += 1
+        if (
+            recovery_lookup == "unavailable"
+            and lookup_count == 2
+            and not commit_release.is_set()
+        ):
+            raise OperationalError("select", {}, RuntimeError("connection unavailable"))
+        return await original_get_request(*args, **kwargs)
+
+    monkeypatch.setattr(visual_evidence_repository, "register_success", delayed_commit)
+    monkeypatch.setattr(
+        visual_evidence_repository,
+        "get_request",
+        lookup_with_optional_transient_failure,
+    )
+    with pytest.raises(VisualEvidenceStorageError):
+        await analyze_question_visual_evidence(
+            session_factory,
+            recording_minio_storage,
+            provider,
+            submission_id=submission_id,
+            question_id=question_id,
+            request_id=uuid4(),
+            config=config,
+        )
+
+    proposal_keys = [
+        key
+        for key in recording_minio_storage.uploaded_keys
+        if "/visual-evidence/" in key
+    ]
+    assert len(proposal_keys) == 1
+    proposal_key = proposal_keys[0]
+    commit_release.set()
+    assert late_commit is not None
+    await asyncio.wait_for(commit_started.wait(), timeout=5)
+    await late_commit
+
+    async with session_factory() as session:
+        indexed = await session.scalar(
+            select(VisualEvidenceArtifact).where(
+                VisualEvidenceArtifact.proposal_object_key == proposal_key
+            )
+        )
+    assert indexed is not None
+    # The old implementation deletes this object after its recovery read sees no row.
+    # A transaction that later commits then leaves a dangling PostgreSQL index.
+    await recording_minio_storage.head_object(proposal_key)
+
+
+@pytest.mark.anyio
+async def test_commit_confirmation_lost_after_commit_returns_index_and_preserves_object(
+    submission_client: httpx.AsyncClient,
+    recording_minio_storage,
+    postgres_engine: AsyncEngine,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    submission_id, question_id, session_factory = await _prepare_visual_submission(
+        submission_client,
+        recording_minio_storage,
+        postgres_engine,
+    )
+    provider = _VisualFakeProvider(postgres_engine)
+    original_register = visual_evidence_repository.register_success
+
+    async def commit_then_lose_ack(*args, **kwargs):
+        await original_register(*args, **kwargs)
+        raise VisualEvidenceCommitOutcomeUnknownError
+
+    monkeypatch.setattr(visual_evidence_repository, "register_success", commit_then_lose_ack)
+    result = await analyze_question_visual_evidence(
+        session_factory,
+        recording_minio_storage,
+        provider,
+        submission_id=submission_id,
+        question_id=question_id,
+        request_id=uuid4(),
+        config=Settings(visual_evidence_enabled=True),
+    )
+    assert result.proposal_object_key in recording_minio_storage.uploaded_keys
+    await recording_minio_storage.head_object(result.proposal_object_key)
+
+
+@pytest.mark.anyio
+async def test_unknown_registration_with_competing_immutable_object_keeps_both_objects(
+    submission_client: httpx.AsyncClient,
+    recording_minio_storage,
+    postgres_engine: AsyncEngine,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    submission_id, question_id, session_factory = await _prepare_visual_submission(
+        submission_client,
+        recording_minio_storage,
+        postgres_engine,
+    )
+    provider = _VisualFakeProvider(postgres_engine, barrier=asyncio.Barrier(2))
+    request_id = uuid4()
+    original_register = visual_evidence_repository.register_success
+
+    async def unknown_if_another_immutable_object_won(*args, **kwargs):
+        record = await original_register(*args, **kwargs)
+        attempted_key = kwargs["values"]["proposal_object_key"]
+        if record.proposal_object_key != attempted_key:
+            raise VisualEvidenceCommitOutcomeUnknownError
+        return record
+
+    monkeypatch.setattr(
+        visual_evidence_repository,
+        "register_success",
+        unknown_if_another_immutable_object_won,
+    )
+    first, second = await asyncio.gather(
+        analyze_question_visual_evidence(
+            session_factory,
+            recording_minio_storage,
+            provider,
+            submission_id=submission_id,
+            question_id=question_id,
+            request_id=request_id,
+            config=Settings(visual_evidence_enabled=True),
+        ),
+        analyze_question_visual_evidence(
+            session_factory,
+            recording_minio_storage,
+            provider,
+            submission_id=submission_id,
+            question_id=question_id,
+            request_id=request_id,
+            config=Settings(visual_evidence_enabled=True),
+        ),
+    )
+    assert first.id == second.id
+    proposal_keys = {
+        key for key in recording_minio_storage.uploaded_keys if "/visual-evidence/" in key
+    }
+    assert len(proposal_keys) == 2
+    for key in proposal_keys:
+        await recording_minio_storage.head_object(key)
+    async with session_factory() as session:
+        indexed = (await session.scalars(select(VisualEvidenceArtifact))).all()
+    assert len(indexed) == 1
+    assert indexed[0].proposal_object_key in proposal_keys
+    assert indexed[0].proposal_object_key != next(
+        key for key in proposal_keys if key != indexed[0].proposal_object_key
+    )
+
+
+@pytest.mark.anyio
+async def test_cancelled_boto_upload_is_not_deleted_while_its_thread_is_running(
+    submission_client: httpx.AsyncClient,
+    recording_minio_storage,
+    postgres_engine: AsyncEngine,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    submission_id, question_id, session_factory = await _prepare_visual_submission(
+        submission_client,
+        recording_minio_storage,
+        postgres_engine,
+    )
+    provider = _VisualFakeProvider(postgres_engine)
+    original_upload = recording_minio_storage.storage._client.upload_fileobj
+    upload_started = threading.Event()
+    allow_upload_to_finish = threading.Event()
+    upload_finished = threading.Event()
+    delete_called = asyncio.Event()
+    request_id = uuid4()
+
+    def blocked_client_upload(*args, **kwargs):
+        upload_started.set()
+        try:
+            if not allow_upload_to_finish.wait(timeout=10):
+                raise TimeoutError("test did not release blocked S3 upload")
+            return original_upload(*args, **kwargs)
+        finally:
+            upload_finished.set()
+
+    original_delete = recording_minio_storage.delete
+
+    async def record_delete(key):
+        if "/visual-evidence/" in key:
+            delete_called.set()
+        await original_delete(key)
+
+    monkeypatch.setattr(
+        recording_minio_storage.storage._client,
+        "upload_fileobj",
+        blocked_client_upload,
+    )
+    monkeypatch.setattr(recording_minio_storage, "delete", record_delete)
+
+    task = asyncio.create_task(
+        analyze_question_visual_evidence(
+            session_factory,
+            recording_minio_storage,
+            provider,
+            submission_id=submission_id,
+            question_id=question_id,
+            request_id=request_id,
+            config=Settings(visual_evidence_enabled=True),
+        )
+    )
+    assert await asyncio.to_thread(upload_started.wait, 5)
+    proposal_keys = {
+        key for key in recording_minio_storage.uploaded_keys if "/visual-evidence/" in key
+    }
+    assert len(proposal_keys) == 1
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert not delete_called.is_set()
+
+    allow_upload_to_finish.set()
+    assert await asyncio.to_thread(upload_finished.wait, 10)
+    proposal_key = next(iter(proposal_keys))
+    await recording_minio_storage.head_object(proposal_key)
+    async with session_factory() as session:
+        indexed = await visual_evidence_repository.get_request(
+            session,
+            submission_id=submission_id,
+            question_id=question_id,
+            request_id=request_id,
+        )
+    assert indexed is None
+    assert not delete_called.is_set()
 
 
 @pytest.mark.anyio
