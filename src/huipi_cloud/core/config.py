@@ -70,6 +70,21 @@ class Settings(BaseSettings):
         ge=4096,
         le=16 * 1024 * 1024,
     )
+    grading_enabled: bool = False
+    grading_provider: Literal["openai_compatible", "ollama_native"] = "ollama_native"
+    grading_base_url: str = "http://127.0.0.1:11434"
+    grading_model: str = ""
+    grading_api_key: SecretStr | None = None
+    grading_allow_remote: bool = False
+    grading_external_data_authorized: bool = False
+    grading_timeout_seconds: float = Field(default=90.0, gt=0, le=180)
+    grading_max_output_tokens: int = Field(default=1200, ge=64, le=4096)
+    grading_max_input_bytes: int = Field(default=32 * 1024, ge=1024, le=256 * 1024)
+    grading_max_input_tokens: int = Field(default=48 * 1024, ge=1024, le=256 * 1024)
+    grading_max_proposal_bytes: int = Field(default=512 * 1024, ge=4096, le=2 * 1024 * 1024)
+    grading_max_rationale_characters: int = Field(default=1600, ge=100, le=4000)
+    grading_max_quote_characters: int = Field(default=400, ge=20, le=2000)
+    grading_invalid_response_retries: int = Field(default=1, ge=0, le=1)
     visual_evidence_enabled: bool = False
     visual_evidence_provider: Literal["openai_compatible", "ollama_native"] = (
         "openai_compatible"

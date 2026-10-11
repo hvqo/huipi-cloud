@@ -12,6 +12,10 @@ class GradeInputNotFoundError(GradeInputError):
 class GradeInputSourceChangedError(GradeInputError):
     """A source version changed between assessment and PostgreSQL registration."""
 
+    def __init__(self, reason_code: str = "grade_input_source_changed") -> None:
+        self.reason_code = reason_code
+        super().__init__(reason_code)
+
 
 class GradeInputIdempotencyConflictError(GradeInputError):
     """The request ID is already bound to a different semantic input."""

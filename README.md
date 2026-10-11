@@ -2,7 +2,7 @@
 
 慧批云端是一个独立重建的高中 AI 教学辅助平台。项目先建立可信的作业数据与来源链路，为教师检查学生提交、解析作业内容和复核作答证据提供后端能力。
 
-当前系统支持作业管理、学生作业文件提交、文档解析、题目来源对齐、视觉证据建议、人工作答复核和经复核来源约束的文本评分输入准备。模型输出是待人工检查的建议，不是评分或教学结论。
+当前系统支持作业管理、学生作业文件提交、文档解析、题目来源对齐、视觉证据建议、人工作答复核，以及基于当前人工确认文本与 Rubric 生成候选评分。模型输出只供人工检查，不是最终成绩或教学结论。
 
 ## 功能特性
 
@@ -14,6 +14,7 @@
 - **视觉作答证据建议**：调用本地 Ollama 或经授权的兼容视觉模型，生成与人工复核分离的视觉建议。
 - **人工复核与评测**：记录版本化的人工作答判断；提供合成数据评测工具，用于检查协议、作答判断和区域定位表现。
 - **评分输入准备**：从当前人工确认的 Canonical 文本范围构建不可变输入包，并快照教师标准答案与 Rubric；不调用评分模型或产生分数。
+- **Rubric 候选评分**：受控本地 CLI 可调用配置的文本模型，为每个评分项生成候选分数、理由和可核验的原文引用；不会发布成绩，也不会修改人工复核记录。
 
 ## 系统架构
 
@@ -37,6 +38,11 @@ flowchart LR
     Assignment[Question / AnswerKey / Rubric] --> GradeCLI
     GradeCLI --> GradeS3[私有 GradeInput JSON]
     GradeCLI --> PG
+
+    GradeS3 --> ScoreCLI[本地候选评分 CLI]
+    Assignment --> ScoreCLI
+    ScoreCLI --> TextModel[本地 Ollama 或经授权的兼容文本模型]
+    TextModel --> ScoreProposal[私有候选评分对象与 PostgreSQL 索引]
 
     Original[私有原始作业文件] --> Visual[VisualEvidence]
     Alignment --> Visual
@@ -72,7 +78,7 @@ API 文档位于 <http://127.0.0.1:8000/docs>，存活检查为 `GET /api/v1/hea
 
 ## 基本使用
 
-基本流程是：创建并发布作业 → 上传一份学生作业 → 运行解析 Worker → 标准化文档 → 对齐题目来源 → 可选地生成视觉建议 → 人工复核 → 可选地准备文本评分输入。
+基本流程是：创建并发布作业 → 上传一份学生作业 → 运行解析 Worker → 标准化文档 → 对齐题目来源 → 可选地生成视觉建议 → 人工复核 → 准备文本评分输入 → 可选地生成待人工检查的 Rubric 候选评分。
 
 最小可执行 API 示例和完整本地处理步骤见[作业处理教程](docs/development/basic-workflow.md)。MinerU 和 Ollama 需要单独配置，快速启动不会自动安装模型或启动解析 Worker。
 
@@ -95,7 +101,7 @@ API 文档位于 <http://127.0.0.1:8000/docs>，存活检查为 `GET /api/v1/hea
 - 系统没有完整登录、RBAC 或租户隔离。`student_ref` 是本地模拟标识；提交、查询、下载和复核工具只适用于受控环境，不能直接暴露到公网。
 - `aligned` 只表示来源区域与作业题目的映射证据足够，不表示学生已作答、OCR 完整或可以评分。
 - `ready_text` 只表示文本评分输入通过来源门禁，不表示已产生分数、图像/表格/公式均可评分或人工标签绝对正确。
-- 视觉模型只生成候选建议。尚无经充分验证的真实教学作业准确率，也没有自动评分和教师 Copilot。
+- 视觉和文本模型都只生成候选建议；候选分数不是最终成绩，尚无经充分验证的真实教学作业评分质量，也没有自动发布成绩和教师 Copilot。
 - 当前视觉评测集由合成样本构成；合成结果不能代表真实学生作业表现。
 
 ## 项目文档
@@ -103,6 +109,7 @@ API 文档位于 <http://127.0.0.1:8000/docs>，存活检查为 `GET /api/v1/hea
 - [架构与模块边界](docs/architecture.md)
 - [本地开发指南](docs/development/README.md)
 - [评分输入准备指南](docs/development/grade-input.md)
+- [Rubric 候选评分 CLI 指南](docs/development/grade-proposals.md)
 - [路线图](docs/roadmap.md)
 - [视觉证据评测方法与基线](docs/evaluation/visual-evidence.md)
 - [题目来源对齐评测说明](docs/evaluation/answer-alignment.md)

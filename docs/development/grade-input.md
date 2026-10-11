@@ -66,7 +66,7 @@ uv run python -m huipi_cloud.workers.prepare_grade_input prepare \
 
 确认事务在 COMMIT 前回滚后，服务会尽力删除该次对象。COMMIT 结果未知时会保留对象，并要求用同一个 request ID 重试。对象存储和 PostgreSQL 没有共享事务；进程崩溃、网络中断或取消同步 S3 上传仍可能留下孤立对象。当前没有自动对账清理任务。
 
-后续消费者可调用 `huipi_cloud.modules.grading.service.read_grade_input_artifact()` 读取对象。该函数重新检查当前人工复核与评分输入摘要，然后校验对象字节数、SHA-256、协议和 PostgreSQL 索引。新复核修订会使旧包不能作为当前输入读取。P3-B 仍必须在实际评分时检查最新来源状态。
+消费者可调用 `huipi_cloud.modules.grading.service.read_grade_input_artifact()` 读取对象。该函数重新检查当前人工复核与评分输入摘要，然后校验对象字节数、SHA-256、协议和 PostgreSQL 索引。新复核修订会使旧包不能作为当前输入读取。P3-B 的 `grade_input_artifact()` 已在模型调用前、调用后和 PostgreSQL 登记事务内重复校验来源；详见[候选评分指南](grade-proposals.md)。
 
 ## 配置和隐私
 

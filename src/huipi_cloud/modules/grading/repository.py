@@ -52,7 +52,7 @@ async def find_current_request(
 
     async with session_factory() as session:
         async with session.begin():
-            await _lock_and_validate_sources(session, core)
+            await lock_and_validate_sources(session, core)
             record = await session.scalar(
                 select(GradeInputArtifact).where(
                     GradeInputArtifact.submission_id == core.submission_id,
@@ -87,7 +87,7 @@ async def register_success(
         async with session_factory() as session:
             transaction = await session.begin()
             try:
-                await _lock_and_validate_sources(session, core)
+                await lock_and_validate_sources(session, core)
                 existing = await session.scalar(
                     select(GradeInputArtifact).where(
                         GradeInputArtifact.submission_id == core.submission_id,
@@ -178,7 +178,7 @@ async def get_artifact(
     )
 
 
-async def _lock_and_validate_sources(session: AsyncSession, core: GradeInputCore) -> None:
+async def lock_and_validate_sources(session: AsyncSession, core: GradeInputCore) -> None:
     """Use the same Submission/Assignment lock order as review and assignment writes."""
 
     submission = await session.scalar(

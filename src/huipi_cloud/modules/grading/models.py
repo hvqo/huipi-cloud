@@ -115,3 +115,70 @@ class GradeInputArtifact(Base):
         default=utc_now,
         server_default=func.now(),
     )
+
+
+class GradeProposalArtifact(Base):
+    """Small index for a private immutable LLM scoring proposal."""
+
+    __tablename__ = "grade_proposal_artifacts"
+    __table_args__ = (
+        UniqueConstraint("request_id", name="uq_grade_proposals_request_id"),
+        UniqueConstraint("bucket", "object_key", name="uq_grade_proposals_bucket_object_key"),
+        CheckConstraint(
+            "length(grade_input_sha256) = 64 AND length(request_fingerprint) = 64 "
+            "AND length(generation_config_digest) = 64 AND length(object_sha256) = 64",
+            name="ck_grade_proposals_digests",
+        ),
+        CheckConstraint(
+            "grading_status IN ('completed_candidate', 'grading_abstained') "
+            "AND length(trim(provider)) > 0 AND length(trim(model_id)) > 0 "
+            "AND length(trim(prompt_version)) > 0 AND length(trim(bucket)) > 0 "
+            "AND length(trim(object_key)) > 0 AND object_size_bytes > 0 "
+            "AND model_elapsed_ms >= 0",
+            name="ck_grade_proposals_metadata",
+        ),
+        CheckConstraint(
+            "(prompt_tokens IS NULL OR prompt_tokens >= 0) "
+            "AND (completion_tokens IS NULL OR completion_tokens >= 0)",
+            name="ck_grade_proposals_usage",
+        ),
+        Index("ix_grade_proposals_input_created", "grade_input_artifact_id", "created_at"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    request_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
+    grade_input_artifact_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("grade_input_artifacts.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    grade_input_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    submission_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("submissions.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    question_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("questions.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    provider: Mapped[str] = mapped_column(String(32), nullable=False)
+    model_id: Mapped[str] = mapped_column(String(200), nullable=False)
+    prompt_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    generation_config_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    request_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    grading_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    bucket: Mapped[str] = mapped_column(String(63), nullable=False)
+    object_key: Mapped[str] = mapped_column(String(1024), nullable=False)
+    object_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    object_size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    prompt_tokens: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    completion_tokens: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    model_elapsed_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=utc_now,
+        server_default=func.now(),
+    )
