@@ -1,8 +1,8 @@
 """Application settings loaded from environment variables or a local .env file."""
 
-from typing import Self
+from typing import Literal, Self
 
-from pydantic import Field, model_validator
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -64,6 +64,37 @@ class Settings(BaseSettings):
         ge=1024,
         le=8 * 1024 * 1024,
     )
+    visual_evidence_enabled: bool = False
+    visual_evidence_provider: Literal["openai_compatible", "ollama_native"] = (
+        "openai_compatible"
+    )
+    visual_evidence_base_url: str = "http://127.0.0.1:11434/v1"
+    visual_evidence_model: str = "qwen3.5:4b"
+    visual_evidence_api_key: SecretStr | None = None
+    visual_evidence_allow_remote: bool = False
+    visual_evidence_external_data_authorized: bool = False
+    visual_evidence_timeout_seconds: float = Field(default=90.0, gt=0, le=300)
+    visual_evidence_max_retries: int = Field(default=1, ge=0, le=3)
+    visual_evidence_max_output_tokens: int = Field(default=1200, ge=64, le=4096)
+    visual_evidence_max_pages_per_question: int = Field(default=5, ge=1, le=20)
+    visual_evidence_max_original_bytes: int = Field(
+        default=20 * 1024 * 1024, ge=1024, le=50 * 1024 * 1024
+    )
+    visual_evidence_max_source_pdf_pages: int = Field(default=200, ge=1, le=500)
+    visual_evidence_max_image_pixels: int = Field(
+        default=12_000_000, ge=1_000_000, le=24_000_000
+    )
+    visual_evidence_render_dpi: int = Field(default=120, ge=36, le=180)
+    visual_evidence_max_render_edge: int = Field(default=2048, ge=512, le=4096)
+    visual_evidence_max_page_image_bytes: int = Field(
+        default=3 * 1024 * 1024, ge=64 * 1024, le=8 * 1024 * 1024
+    )
+    visual_evidence_max_total_input_bytes: int = Field(
+        default=12 * 1024 * 1024, ge=256 * 1024, le=24 * 1024 * 1024
+    )
+    visual_evidence_max_proposal_bytes: int = Field(
+        default=2 * 1024 * 1024, ge=1024, le=4 * 1024 * 1024
+    )
 
     @model_validator(mode="after")
     def validate_parsing_timing(self) -> Self:
@@ -73,6 +104,8 @@ class Settings(BaseSettings):
             raise ValueError("PARSING_RETRY_BASE_SECONDS cannot exceed PARSING_RETRY_MAX_SECONDS")
         if self.mineru_tier != "basic":
             raise ValueError("当前只支持经过本地ONNX模型验证的MINERU_TIER=basic")
+        if not self.visual_evidence_model.strip():
+            raise ValueError("VISUAL_EVIDENCE_MODEL cannot be blank")
         return self
 
 
