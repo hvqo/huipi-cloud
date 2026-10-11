@@ -1,0 +1,42 @@
+{
+  "alignment_sha256": "e7aed570b4b164108d961c92b858280b252cfea6e52d74f6632b3d9607e93647",
+  "answer_review_count_unchanged": true,
+  "canonical_sha256": "8b18979afc4602b1b6da6a4615599588cb9e72727c35c0db2622b72f4855ef66",
+  "canonical_source_parsed_artifact_id": "18fe7df8-deda-4435-979c-78e725897237",
+  "end_to_end_elapsed_ms": 11551,
+  "mineru_schema": "docvortex.middle 2.0",
+  "mineru_version": "4.0.10",
+  "model_elapsed_ms": 7793,
+  "model_id": "qwen3.5:4b",
+  "model_outcome": "candidate_response_present",
+  "parsed_artifact_id": "18fe7df8-deda-4435-979c-78e725897237",
+  "proposal_sha256": "0de882d35820fa185347cddd9e3fa80793230c5653eb37e5f99356315a66e3af",
+  "proposal_size_bytes": 1989,
+  "provider_usage": {
+    "completion_tokens": 119,
+    "prompt_tokens": 1748,
+    "total_tokens": 1867
+  },
+  "sample_kind": "programmatically generated vector PDF; not real student work",
+  "source_pdf_sha256": "a2050e79871be6bb23662ffb0a315ed9e4706a760dc7fe00ce83db3da170a5be",
+  "source_pointers_are_from_mineru_canonical": true,
+  "status": "completed",
+  "target_question_source_region_count": 1,
+  "target_question_status": "aligned",
+  "visual_regions": [
+    {
+      "attribution_status": "unresolved",
+      "evidence_type": "geometry_mark",
+      "reason_codes": [
+        "source_mapping_unavailable"
+      ],
+      "source_bbox_iou": 0.0,
+      "visual_bbox": [
+        0.315,
+        0.428,
+        0.679,
+        0.515
+      ]
+    }
+  ]
+}

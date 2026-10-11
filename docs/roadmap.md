@@ -1,6 +1,6 @@
 # 项目路线图
 
-本页区分已经合并的功能、当前 PR 分支改动和未来计划。P1-A 至 P2-D2A 已合并到 `main`；P2-D2B 位于独立功能分支，尚未合并。
+本页区分已经合并的功能、当前 PR 分支改动和未来计划。P1-A 至 P2-D2B 已合并到 `main`；P2-D2C 位于当前独立功能分支。
 
 ## P0：工程骨架与基础设施
 
@@ -71,7 +71,7 @@
 - 边界：`alignment_status` 与人工 `decision` 分开保存；无记录是 unreviewed。`response_present` 不等于可评分，系统没有 `ready_for_grading`。纯文本合成数据不验证笔迹识别，也不代表真实作业准确率。
 - 后续仍需收集经许可、脱敏的真实作业，建立双人标注/仲裁与复核者认证权限。
 
-### P2-D2B：基于 VLM 的视觉作答证据辅助识别（当前功能分支）
+### P2-D2B：基于 VLM 的视觉作答证据辅助识别（已合并）
 
 - 实现范围：本地受控 CLI 读取私有 S3 原始提交文件，只渲染 P2-D1 已关联到目标 Question 的页面。PDF 使用 PDFium；JPG/PNG 用 Pillow 检查尺寸和 EXIF。输入 SHA、MIME、文件签名、页数、像素、DPI、页面数和渲染图大小均有校验或上限。
 - VLM：实现 OpenAI-compatible Vision Provider，并提供仅 loopback 的 Ollama 原生适配器。默认禁用且 endpoint 默认只允许 loopback；访问外部 HTTPS 同时要求显式允许 endpoint 和学生数据授权。有限重试只用于网络、429、5xx 和超时；非法 JSON、越界 bbox、未知字段不重试。Ollama 原生端显式关闭思考，避免思考 token 占满本地上下文而没有 JSON 正文。
@@ -81,6 +81,14 @@
 - 测试边界：GitHub CI 测协议、资源限制、来源归属和 Fake Provider 下的真实 PostgreSQL + MinIO 持久化；CI 不下载模型。五个按需生成样本用于本地真实 VLM 请求合同检查，不代表真实学生手写准确率。实际本地模型结果应与 CI 测试分开报告；还需用许可的真实标注样本评估 Precision/Recall、校准和成本。
 - 本地观测：2026-10-10 五个生成页面均通过严格响应协议，但几何标记被误判为仅印刷题干。2026-10-11 的真实 Ollama + PostgreSQL + MinIO 业务闭环使用合成 Canonical/Alignment fixture，模型仍把几何标记判断为 printed_prompt；该区域与合成答案框 IoU 0.952。程序现保留 BBox/IoU 并拒绝来源 pointer。此结果不是 MinerU E2E 或真实作业准确率。
 - 尚未实现：HTTP 查询/写接口、教师界面、认证、RBAC、人工标注回流、全局推理并发限额、系统级内存硬隔离、孤立 S3 proposal 对账和真实作业精度评估。模型建议不会修改 P2-D2A 记录，也不产生 `ready_for_grading`。
+
+### P2-D2C：视觉作答证据质量评测与真实解析闭环（当前功能分支）
+
+- 当前分支新增：26 个案例、27 页的版本化合成图像评测集；图像文件引用、类型、尺寸、像素上限和 SHA-256 校验；按需调用现有 VLM Provider 的评测 CLI；可从相同预测 JSON 重算指标。
+- 指标分开报告作答存在性、response 区域候选检测和目标视觉区域定位，包含计数、分母、覆盖率、弃权、延迟和 token。视觉集没有 Canonical/Alignment 指针真值，Question Link 与 Automatic Accept 指标为 `not_evaluated`。
+- 本地 qwen3.5:4b 合成基线：26/26 JSON 协议通过；21 个确定标签案例作答存在性 TP=8、FP=0、FN=6、TN=7；IoU=0.5 response 区域检测 TP=0、FP=8、FN=14。该样本集不是实际教学作业准确率。
+- 已尝试真实 MinerU 4.0.10 Basic/ONNX → Canonical → AnswerAlignment → Ollama → S3/PG 专项链路。测试样本由程序生成；实际 alignment 状态为 `aligned`，VLM Proposal 上传与 SHA 校验成功，但该次视觉区域来源映射为 `unresolved`，IoU=0.0。
+- 尚未实现：真实学生作业授权标注集、人工标注分歧仲裁、真实数据准确率及校准评测、模型微调、自动评分。不得把 synthetic 结果用于真实作业质量承诺。
 
 ## P3：标准答案管理、Rubric 评分、AI 自动批改 Agent
 

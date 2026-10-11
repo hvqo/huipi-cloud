@@ -1,0 +1,976 @@
+{
+  "answer_presence": {
+    "abstention_rate": {
+      "denominator": 26,
+      "numerator": 0,
+      "reason": null,
+      "status": "evaluated",
+      "value": 0.0
+    },
+    "accepted_subset_count": 21,
+    "automatic_coverage": {
+      "denominator": 21,
+      "numerator": 21,
+      "reason": null,
+      "status": "evaluated",
+      "value": 1.0
+    },
+    "confusion_counts": {
+      "abstained_negative_truth": 0,
+      "abstained_positive_truth": 0,
+      "fn": 6,
+      "fp": 0,
+      "tn": 7,
+      "tp": 8,
+      "uncertain_manual_truth_excluded": 5
+    },
+    "eligible_case_count": 21,
+    "false_negative_rate": {
+      "denominator": 14,
+      "numerator": 6,
+      "reason": null,
+      "status": "evaluated",
+      "value": 0.42857142857142855
+    },
+    "false_positive_rate": {
+      "denominator": 7,
+      "numerator": 0,
+      "reason": null,
+      "status": "evaluated",
+      "value": 0.0
+    },
+    "negative_class": "candidate_prompt_only -> response_absent_candidate (not a human absence decision)",
+    "positive_class": "response_present",
+    "precision": {
+      "denominator": 8,
+      "numerator": 8,
+      "reason": null,
+      "status": "evaluated",
+      "value": 1.0
+    },
+    "quality_scope": "precision/recall/FPR/FNR use only decisive model outputs on non-uncertain manual labels",
+    "recall": {
+      "denominator": 14,
+      "numerator": 8,
+      "reason": null,
+      "status": "evaluated",
+      "value": 0.5714285714285714
+    }
+  },
+  "automatic_accept": {
+    "counts": null,
+    "precision": null,
+    "reason": "the provider only returns candidates; the dataset has no verified Canonical/AnswerAlignment source mapping labels",
+    "recall": null,
+    "status": "not_evaluated"
+  },
+  "candidate_detection": {
+    "counts": {
+      "eligible_case_count": 21,
+      "fn": 14,
+      "fp": 8,
+      "ground_truth_response_regions": 14,
+      "predicted_candidate_regions": 8,
+      "tp": 0,
+      "uncertain_manual_case_count": 5
+    },
+    "iou_threshold": 0.5,
+    "matched_iou_mean": {
+      "denominator": 0,
+      "numerator_sum": null,
+      "reason": "没有达到IoU阈值的候选匹配",
+      "status": "not_evaluated",
+      "value": null
+    },
+    "precision": {
+      "denominator": 8,
+      "numerator": 0,
+      "reason": null,
+      "status": "evaluated",
+      "value": 0.0
+    },
+    "recall": {
+      "denominator": 14,
+      "numerator": 0,
+      "reason": null,
+      "status": "evaluated",
+      "value": 0.0
+    },
+    "scope": "target-question response regions only; uncertain manual cases excluded"
+  },
+  "candidate_question_link": {
+    "counts": null,
+    "precision": null,
+    "reason": "visual-only dataset has no Canonical/AnswerAlignment Question-link output or trusted source-pointer labels",
+    "recall": null,
+    "status": "not_evaluated"
+  },
+  "dataset": {
+    "case_count": 26,
+    "dataset_id": "synthetic_visual_evidence_baseline",
+    "dataset_kind": "synthetic",
+    "dataset_version": "1.0.0",
+    "manual_label_counts": {
+      "response_absent": 7,
+      "response_present": 14,
+      "uncertain": 5
+    },
+    "region_label_counts": {
+      "geometry_mark": 3,
+      "handwritten_formula": 4,
+      "handwritten_text": 8,
+      "printed_prompt": 39,
+      "student_filled_table": 1,
+      "unclear": 4
+    },
+    "source_image_count": 27
+  },
+  "failures": [
+    {
+      "case_id": "baseline_print_only",
+      "categories": [
+        "visual_region_not_detected",
+        "unmatched_visual_region"
+      ],
+      "error_code": null,
+      "model_outcome": "candidate_prompt_only",
+      "region_details": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "status": "ok"
+    },
+    {
+      "case_id": "baseline_mixed_ink",
+      "categories": [
+        "visual_region_not_detected",
+        "unmatched_visual_region"
+      ],
+      "error_code": null,
+      "model_outcome": "candidate_response_present",
+      "region_details": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "handwritten_text"
+        ]
+      },
+      "status": "ok"
+    },
+    {
+      "case_id": "baseline_formula_ink",
+      "categories": [
+        "visual_region_not_detected",
+        "unmatched_visual_region"
+      ],
+      "error_code": null,
+      "model_outcome": "candidate_response_present",
+      "region_details": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "handwritten_formula"
+        ]
+      },
+      "status": "ok"
+    },
+    {
+      "case_id": "baseline_geometry_mark",
+      "categories": [
+        "visual_model_presence_mismatch",
+        "visual_region_not_detected",
+        "unmatched_visual_region"
+      ],
+      "error_code": null,
+      "model_outcome": "candidate_prompt_only",
+      "region_details": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 3,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "status": "ok"
+    },
+    {
+      "case_id": "baseline_blank_with_print",
+      "categories": [
+        "visual_region_not_detected",
+        "unmatched_visual_region"
+      ],
+      "error_code": null,
+      "model_outcome": "candidate_prompt_only",
+      "region_details": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "status": "ok"
+    },
+    {
+      "case_id": "blank_answer_area",
+      "categories": [
+        "visual_region_not_detected",
+        "unmatched_visual_region"
+      ],
+      "error_code": null,
+      "model_outcome": "candidate_prompt_only",
+      "region_details": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 1,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "status": "ok"
+    },
+    {
+      "case_id": "dense_print_only",
+      "categories": [
+        "visual_region_not_detected",
+        "unmatched_visual_region"
+      ],
+      "error_code": null,
+      "model_outcome": "candidate_prompt_only",
+      "region_details": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 4,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "status": "ok"
+    },
+    {
+      "case_id": "simulated_sparse_four",
+      "categories": [
+        "visual_region_not_detected",
+        "unmatched_visual_region"
+      ],
+      "error_code": null,
+      "model_outcome": "candidate_response_present",
+      "region_details": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "handwritten_text"
+        ]
+      },
+      "status": "ok"
+    },
+    {
+      "case_id": "unclear_single_dash",
+      "categories": [
+        "visual_region_not_detected",
+        "unmatched_visual_region"
+      ],
+      "error_code": null,
+      "model_outcome": "candidate_prompt_only",
+      "region_details": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "status": "ok"
+    },
+    {
+      "case_id": "simulated_fraction_formula",
+      "categories": [
+        "visual_model_presence_mismatch",
+        "visual_region_not_detected",
+        "unmatched_visual_region"
+      ],
+      "error_code": null,
+      "model_outcome": "candidate_prompt_only",
+      "region_details": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "status": "ok"
+    },
+    {
+      "case_id": "table_with_fill",
+      "categories": [
+        "visual_model_presence_mismatch",
+        "visual_region_not_detected",
+        "unmatched_visual_region"
+      ],
+      "error_code": null,
+      "model_outcome": "candidate_prompt_only",
+      "region_details": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "status": "ok"
+    },
+    {
+      "case_id": "blank_table",
+      "categories": [
+        "visual_region_not_detected",
+        "unmatched_visual_region"
+      ],
+      "error_code": null,
+      "model_outcome": "candidate_prompt_only",
+      "region_details": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "status": "ok"
+    },
+    {
+      "case_id": "two_questions_target_one",
+      "categories": [
+        "visual_region_not_detected",
+        "unmatched_visual_region"
+      ],
+      "error_code": null,
+      "model_outcome": "candidate_response_present",
+      "region_details": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "handwritten_text"
+        ]
+      },
+      "status": "ok"
+    },
+    {
+      "case_id": "other_question_answer_only",
+      "categories": [
+        "visual_region_not_detected",
+        "unmatched_visual_region"
+      ],
+      "error_code": null,
+      "model_outcome": "candidate_prompt_only",
+      "region_details": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 1,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "status": "ok"
+    },
+    {
+      "case_id": "shared_geometry_uncertain",
+      "categories": [
+        "visual_region_not_detected",
+        "unmatched_visual_region"
+      ],
+      "error_code": null,
+      "model_outcome": "candidate_prompt_only",
+      "region_details": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "status": "ok"
+    },
+    {
+      "case_id": "blurred_response_uncertain",
+      "categories": [
+        "visual_region_not_detected",
+        "unmatched_visual_region"
+      ],
+      "error_code": null,
+      "model_outcome": "candidate_response_present",
+      "region_details": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "handwritten_text"
+        ]
+      },
+      "status": "ok"
+    },
+    {
+      "case_id": "answer_near_prompt",
+      "categories": [
+        "visual_region_not_detected",
+        "unmatched_visual_region"
+      ],
+      "error_code": null,
+      "model_outcome": "candidate_response_present",
+      "region_details": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "handwritten_text"
+        ]
+      },
+      "status": "ok"
+    },
+    {
+      "case_id": "cross_page_response",
+      "categories": [
+        "visual_region_not_detected",
+        "unmatched_visual_region"
+      ],
+      "error_code": null,
+      "model_outcome": "candidate_response_present",
+      "region_details": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 3,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "handwritten_text"
+        ]
+      },
+      "status": "ok"
+    },
+    {
+      "case_id": "visible_geometry_no_text",
+      "categories": [
+        "visual_model_presence_mismatch",
+        "visual_region_not_detected",
+        "unmatched_visual_region"
+      ],
+      "error_code": null,
+      "model_outcome": "candidate_prompt_only",
+      "region_details": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "status": "ok"
+    },
+    {
+      "case_id": "printed_solution_distractor",
+      "categories": [
+        "visual_region_not_detected",
+        "unmatched_visual_region"
+      ],
+      "error_code": null,
+      "model_outcome": "candidate_prompt_only",
+      "region_details": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "status": "ok"
+    },
+    {
+      "case_id": "crossed_out_simulated_answer",
+      "categories": [
+        "visual_region_not_detected",
+        "unmatched_visual_region"
+      ],
+      "error_code": null,
+      "model_outcome": "candidate_response_present",
+      "region_details": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "handwritten_text"
+        ]
+      },
+      "status": "ok"
+    },
+    {
+      "case_id": "low_contrast_formula",
+      "categories": [
+        "visual_model_presence_mismatch",
+        "visual_region_not_detected",
+        "unmatched_visual_region"
+      ],
+      "error_code": null,
+      "model_outcome": "candidate_prompt_only",
+      "region_details": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "status": "ok"
+    },
+    {
+      "case_id": "ambiguous_shared_step",
+      "categories": [
+        "visual_region_not_detected",
+        "unmatched_visual_region"
+      ],
+      "error_code": null,
+      "model_outcome": "candidate_response_present",
+      "region_details": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "handwritten_text"
+        ]
+      },
+      "status": "ok"
+    },
+    {
+      "case_id": "formula_equals_only",
+      "categories": [
+        "visual_model_presence_mismatch",
+        "visual_region_not_detected",
+        "unmatched_visual_region"
+      ],
+      "error_code": null,
+      "model_outcome": "candidate_prompt_only",
+      "region_details": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "status": "ok"
+    },
+    {
+      "case_id": "two_questions_target_two",
+      "categories": [
+        "visual_region_not_detected",
+        "unmatched_visual_region"
+      ],
+      "error_code": null,
+      "model_outcome": "candidate_response_present",
+      "region_details": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "handwritten_text"
+        ]
+      },
+      "status": "ok"
+    },
+    {
+      "case_id": "tiny_mark_uncertain",
+      "categories": [
+        "visual_region_not_detected",
+        "unmatched_visual_region"
+      ],
+      "error_code": null,
+      "model_outcome": "candidate_prompt_only",
+      "region_details": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "status": "ok"
+    }
+  ],
+  "limitations": [
+    "程序绘制的蓝色笔画不是人类真实笔迹。",
+    "合成样本基线不代表真实教学作业准确率。",
+    "模型候选和人工复核决定是不同数据；评测不写入 AnswerReviewDecision。"
+  ],
+  "metric_definitions": {
+    "accepted_subset": "仅用确定输出与确定人工标签计算；同时报告覆盖率和弃权率。",
+    "bbox_coordinates": "页面宽高归一化的半开矩形坐标 [x0,y0,x1,y1]。",
+    "candidate_detection": "目标 Question 的人工 response 区域与非 printed_prompt 模型区域按页面和 IoU 阈值做确定性一对一匹配；uncertain 人工案例不计入分母。",
+    "candidate_prompt_only": "映射为模型候选负类，仅用于该分类评测；不等于人工确认 response_absent。",
+    "candidate_question_link_and_automatic_accept": "当前视觉数据集没有 Canonical/AnswerAlignment 来源指针真值；即使视觉区域与目标题一致，也不据此推断来源链接正确，故两项为 not_evaluated。",
+    "candidate_response_present": "映射为模型候选正类。",
+    "labels_are_predictions": false,
+    "manual_answer_presence": "是否存在属于该案例目标 Question 的学生作答证据；response_absent 不表示整页无印刷内容。",
+    "region_matching": "每个案例内只比较目标 Question 的人工区域与全部模型区域；按 IoU 从高到低排序，再按预测下标、标签下标打破平局，一对一贪心匹配。",
+    "source_attribution": "必须有运行时 Canonical/AnswerAlignment 上下文；本视觉样本集没有该上下文，所以来源归属指标为 not_evaluated。",
+    "uncertain_or_request_failure": "弃权；不计为正确负类。"
+  },
+  "question_source_attribution": {
+    "coordinate_transform_refusals": null,
+    "correct_mappings": null,
+    "reason": "visual-only dataset has no Canonical/AnswerAlignment runtime context",
+    "shared_figure_abstentions": null,
+    "status": "not_evaluated",
+    "successful_candidate_mappings": null,
+    "unmapped_regions": null,
+    "wrong_question_attributions": null
+  },
+  "run_quality": {
+    "elapsed_ms": {
+      "mean": 2927.576923076923,
+      "observed_count": 26,
+      "p50": 2661,
+      "p95": 3224
+    },
+    "input_failure_count": 0,
+    "json_protocol_pass_rate": {
+      "denominator": 26,
+      "numerator": 26,
+      "reason": null,
+      "status": "evaluated",
+      "value": 1.0
+    },
+    "model_request_failure_rate": {
+      "denominator": 26,
+      "numerator": 0,
+      "reason": null,
+      "status": "evaluated",
+      "value": 0.0
+    },
+    "protocol_failure_count": 0,
+    "rendered_image_count": 27,
+    "rendered_pixels_total": 37800000,
+    "request_count": 26,
+    "request_failure_count": 0,
+    "source_bytes_total": 584736,
+    "source_image_count": 27,
+    "token_usage": {
+      "completion_tokens_sum": 2005,
+      "observed_count": 26,
+      "prompt_tokens_sum": 46153
+    },
+    "total_failure_count": 0
+  },
+  "schema_name": "huipi.visual.evidence.evaluation",
+  "schema_version": "1.0",
+  "visual_regions": {
+    "bbox_iou_mean_on_matches": {
+      "denominator": 0,
+      "numerator_sum": null,
+      "reason": "没有达到指定IoU阈值的匹配区域",
+      "status": "not_evaluated",
+      "value": null
+    },
+    "best_iou_mean_per_ground_truth": {
+      "denominator": 54,
+      "numerator_sum": 1.5840779945282009,
+      "reason": null,
+      "status": "evaluated",
+      "value": 0.029334777676448164
+    },
+    "case_details": {
+      "ambiguous_shared_step": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "handwritten_text"
+        ]
+      },
+      "answer_near_prompt": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "handwritten_text"
+        ]
+      },
+      "baseline_blank_with_print": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "baseline_formula_ink": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "handwritten_formula"
+        ]
+      },
+      "baseline_geometry_mark": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 3,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "baseline_mixed_ink": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "handwritten_text"
+        ]
+      },
+      "baseline_print_only": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "blank_answer_area": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 1,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "blank_table": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "blurred_response_uncertain": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "handwritten_text"
+        ]
+      },
+      "cross_page_response": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 3,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "handwritten_text"
+        ]
+      },
+      "crossed_out_simulated_answer": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "handwritten_text"
+        ]
+      },
+      "dense_print_only": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 4,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "formula_equals_only": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "low_contrast_formula": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "other_question_answer_only": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 1,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "printed_solution_distractor": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "shared_geometry_uncertain": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "simulated_fraction_formula": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "simulated_sparse_four": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "handwritten_text"
+        ]
+      },
+      "table_with_fill": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "tiny_mark_uncertain": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "two_questions_target_one": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "handwritten_text"
+        ]
+      },
+      "two_questions_target_two": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "handwritten_text"
+        ]
+      },
+      "unclear_single_dash": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      },
+      "visible_geometry_no_text": {
+        "matched_region_count": 0,
+        "missing_ground_truth_count": 2,
+        "region_type_error_count": 0,
+        "unmatched_prediction_count": 1,
+        "unmatched_prediction_types": [
+          "printed_prompt"
+        ]
+      }
+    },
+    "counts": {
+      "matched_regions_tp": 0,
+      "missing_ground_truth_fn": 54,
+      "region_type_error_count": 0,
+      "unmatched_prediction_count": 26,
+      "unmatched_prediction_types": {
+        "handwritten_formula": 1,
+        "handwritten_text": 9,
+        "printed_prompt": 16
+      },
+      "unmatched_predictions_fp": 26
+    },
+    "iou_threshold": 0.5,
+    "localization_precision": {
+      "denominator": 26,
+      "numerator": 0,
+      "reason": null,
+      "status": "evaluated",
+      "value": 0.0
+    },
+    "localization_recall": {
+      "denominator": 54,
+      "numerator": 0,
+      "reason": null,
+      "status": "evaluated",
+      "value": 0.0
+    },
+    "matching_method": "per-case deterministic global IoU-descending greedy one-to-one matching"
+  }
+}

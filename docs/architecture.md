@@ -1,6 +1,6 @@
 # 架构与模块边界
 
-慧批云端采用 src 布局的模块化单体。P1-A、P1-B、P2-A、P2-B、P2-C、P2-D1 和 P2-D2A 已合并到 `main`。P2-D2B 的视觉作答建议位于当前独立功能分支，尚未合并。自动批改、教师 Copilot、完整认证和 RBAC 仍未实现。
+慧批云端采用 src 布局的模块化单体。P1-A 至 P2-D2B 已合并到 `main`。当前 P2-D2C 功能分支增加视觉评测数据集和离线评测工具，不改变线上视觉建议协议。自动批改、教师 Copilot、完整认证和 RBAC 仍未实现。
 
 ## 模块职责
 
@@ -12,7 +12,8 @@
 - `modules/canonical_documents`：Canonical Document v1 DTO、MiddleJson 适配转换、有界内容验证、稳定标识、S3/PG 持久化、状态与页面查询。
 - `modules/answer_alignment`：P2-D1 新增模块。按 Canonical 阅读顺序识别题号候选、切分可追溯来源区域、与 Assignment 的真实 Question 对齐，并读写版本化结果索引。该模块不读取 AnswerKey，也不判断学生作答存在性。
 - `modules/answer_review`：独立人工判断协议。校验 Canonical 节点与 Unicode 码点范围，按当前 Canonical/Alignment/Question 集合版本追加作答存在性决定，并校验合成标注基线。该模块不修改 Answer Alignment，不生成自动作答预测或评分结果。
-- `modules/visual_evidence`：当前分支新增的严格版本化机器建议协议、幂等请求索引和来源版本复核。proposal 写私有 S3，PostgreSQL 保存轻量索引；不修改人工复核表。
+- `modules/visual_evidence`：严格版本化机器建议协议、幂等请求索引和来源版本复核。proposal 写私有 S3，PostgreSQL 保存轻量索引；不修改人工复核表。
+- `modules/visual_evaluation`：版本化合成视觉标签协议、图像引用/hash/尺寸验证、作答存在性与区域定位统计。它消费 Provider 已保存的预测，不访问数据库，也不把 Canonical 映射当作标签。
 - `workers`：独立于 FastAPI 的解析任务轮询进程，管理领取、解析调用、heartbeat、结果提交和受控退出；另含规范化、答案对齐、人工复核和 VLM 建议 CLI。
 - `infrastructure/database`：共享 Engine 工厂与按请求/操作创建的 AsyncSession；Alembic 管理结构，应用启动不会调用 `create_all`。
 - `infrastructure/storage`：boto3 S3 兼容适配器。本地对象存储使用 PGSTY SILO。
@@ -24,7 +25,7 @@
 
 ## 数据关系
 
-## P2-D2A 学生作答证据与人工复核（本功能分支）
+## P2-D2A 学生作答证据与人工复核（已合并）
 
 本分支在 PostgreSQL 新增 `answer_review_decisions`，每行表示某个 Submission / Question 的一次人工决定和一个修订号。`decision` 只取 `response_present`、`response_absent`、`uncertain`。没有对应行表示 `unreviewed`，绝不映射成 `response_absent`。`alignment_status` 是读取并绑定的 P2-D1 状态，两种信息各自保留。当前协议没有 `grading_readiness`，`response_present` 也不会放行批改。
 
@@ -38,7 +39,7 @@ revision 的排序不依赖时间戳。写入前锁住 `Submission` 行，同一
 
 `tests/fixtures/answer_presence_synthetic_v1.json` 包含 13 个合成复核范围，含仅印刷题干、普通文本、跨页、无题号、公式、图像/几何、表格、OCR 遗漏、共享图形、多区域、歧义及未复核。评测脚本验证标注一致性并统计人工覆盖率、不确定比例；当前没有自动作答检测器，模型 Precision/Recall/FPR 均为 `not_evaluated`，不会把人工标签当作预测。纯文本合成协议不能验证真实手写识别。还需收集经许可且脱敏的真实样本，制定双人标注与仲裁规则，并在开放教师界面前实现认证和审计访问控制。
 
-## P2-D2B 视觉作答证据建议（当前功能分支）
+## P2-D2B 视觉作答证据建议（已合并）
 
 此流程只接受已有的 `SubmissionFile`、成功 Canonical、当前 AnswerAlignment 和真实 Assignment Question。服务先调用 `load_verified_alignment_bundle` 验证 Canonical/Alignment 对象 SHA、索引、作业归属和 Question digest，再在独立只读 Session 中读取原始文件元数据。原始 bucket 必须等于当前 S3 适配器 bucket；分块下载写到权限受限临时目录，并同时验证索引大小、`MAX_UPLOAD_SIZE_BYTES`、P2-D2B 文件上限和 SHA-256。MIME、扩展名和 PDF/JPEG/PNG magic bytes 必须一致。
 
@@ -57,6 +58,18 @@ Provider 有两个显式选项：`openai_compatible` 使用 `/v1/chat/completion
 VLM 调用没有打开数据库事务。生成结果后，系统先上传至私有 S3 每次 UUID 独立的不可变 proposal Key，再在 PostgreSQL 一个短事务中锁定 Submission、Assignment 和当前来源行，重新检查源文件、题目文字、Canonical 与 Alignment ID/SHA，然后用 `(submission_id, question_id, request_id)` 唯一约束登记。相同 request ID + 相同输入摘要返回既有记录；同 request ID 但摘要不同冲突。Repository 在发出 COMMIT 前失败时显式回滚并标为确定失败，此时服务可核验并删除未索引对象。COMMIT 一旦开始后若客户端确认丢失或会话关闭失败，则标为结果未知；不论幂等查询返回已有行、空结果或暂时不可用，都不删除本次 S3 对象。若已确认有其他不可变对象登记为唯一赢家，输家对象可作尽力清理。无法确认时会保留孤儿以避免删掉已提交对象。取消等待中的 boto3 `asyncio.to_thread` 不会中止同步线程；取消路径不发删除操作，上传可能继续完成为无索引对象。进程崩溃及 S3/PG 非原子性仍可能留下孤儿，后续需有保留期的 S3/PG 对账清理。
 
 机器 JSON 保存完整 proposal；PostgreSQL 不保存图像或原始 OCR 文本。数据表通过外键绑定 Submission、Assignment、Question、CanonicalArtifact 和 AnswerAlignmentArtifact，并记录文件/模型/版本/输入摘要。当前没有 proposal HTTP 查询或匿名写接口，只有本地 `analyze_visual_evidence` CLI；CLI dry-run 会下载、校验并渲染，但不会发模型调用或写结果。建议不会写入 `answer_review_decisions`，不会改 Canonical/Alignment，也不能作为评分状态。数据留存、访问认证、对象孤儿清理和真实样本质量评测仍是上线前置工作。
+
+## P2-D2C 视觉作答证据质量评测（当前功能分支）
+
+`modules/visual_evaluation/protocol.py` 解析严格版本化 JSON 标注。每页图像必须位于数据集目录内，并通过文件大小、实际格式、尺寸、像素和 SHA-256 校验。人工标签与模型预测分开保存。合成数据生成器生成 26 个案例和 27 页；标签依据确定性生成配方及图片人工核对，所有蓝色笔迹或几何标记均由程序绘制，不是真实学生手写。
+
+`scripts/evaluate_visual_evidence.py` 默认执行 dry-run。`--run-model` 复用 P2-D2B Provider 和页面预处理；`--evaluate-predictions` 可以从同一数据集 digest 对已有输出重算，不再次调用模型。输出记录模型、Prompt/预处理版本、输入 SHA、结构化建议、耗时、token 和错误类别，不记录图像字节或 Base64。外部 endpoint 需要显式确认外部数据授权。
+
+指标区分案例级作答存在性、目标题作答区域候选检测和全部目标 Question 区域定位。区域在同一案例和页面内按 IoU 0.5 确定性一对一匹配；报告 TP/FP/FN/TN、各分母、覆盖率和弃权率。`candidate_prompt_only` 仅作为离线分类中的候选负类，不表示人工作答缺失；uncertain 人工案例不计入确定标签分类分母。视觉集没有 Canonical/AnswerAlignment 来源 pointer 真值，因此 Candidate Question Link 和 Automatic Accept 的 Precision/Recall 是 `not_evaluated`，不依据输入 Question 号推断关联正确。
+
+qwen3.5:4b 的本地基线对 26 个案例的 JSON 协议通过率为 26/26。21 个确定标签案例的作答存在性计数为 TP=8、FP=0、FN=6、TN=7；IoU=0.5 的作答区域候选检测为 TP=0、FP=8、FN=14。所有目标区域（含印刷题干）的定位为 TP=0、FP=26、FN=54。几何标记样本被判为 `candidate_prompt_only`，而人工标签是 `response_present`；原始预测及每例失败列表留在评测 JSON。平均/P50/P95 延迟为 2927.6/2661/3224 ms，prompt/completion token 合计 46153/2005。该 26 例合成集不衡量真实作业准确率、模型校准或推理成本。
+
+专项 opt-in 测试使用真实 MinerU 4.0.10 Basic/ONNX 子进程解析标记过的合成 PDF，接着持久化 Canonical、生成真实 AnswerAlignment、用 qwen3.5:4b 调用 VLM，并保存 proposal 到测试 MinIO/PostgreSQL。测试只在 P2-D1 实际状态为 `aligned` 时继续；Canonical 关联本次真实 ParsedArtifact，不设置或伪造对齐状态。Proposal 下载后 SHA-256 和大小正确，人工复核行数未变化。当前样本模型返回 `geometry_mark` 候选，来源 bbox IoU 为 0.0，最终映射为 `unresolved/source_mapping_unavailable`；这验证真实链路，不证明来源映射正确或模型准确率。默认 CI 不启动 MinerU/Ollama。
 
 ## 数据关系
 
