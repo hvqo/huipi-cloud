@@ -89,9 +89,19 @@
 
 ## P3：标准答案管理、Rubric 评分、AI 自动批改 Agent
 
-- 计划支持标准答案与 Rubric 版本。
-- 计划实现可追踪、可解释的自动批改 Agent 和失败回退。
-- 当前标准答案由教师 API 手工设置；模型生成答案和自动批改尚未实现。
+### P3-A：可信评分输入构建与 Rubric 快照
+
+- 已实现：只有作业已发布、教师 AnswerKey 存在、Rubric 分值总和与题目满分一致、Canonical/Alignment 当前且最新人工决定为 `response_present` 时，才准备评分输入。
+- 已实现：按人工选择的 Canonical `content_pointer` 和 Unicode 码点半开区间还原纯文本片段；保存页码、Block、阅读顺序和范围 trace。印刷题干、公式文本、图片/公式图像、表格和其他模态有分离的提取或拒绝规则。
+- 已实现：AnswerKey 与 Rubric 形成不可变快照，以 `Decimal` 校验分值；Canonical、Alignment、Question digest、复核 revision 和原始文件 SHA-256 共同绑定输入版本。
+- 已实现：受控本地 CLI、私有 S3 不可变 JSON、PostgreSQL 轻索引、SHA-256、同 request ID 幂等、并发唯一约束和提交结果未知时保留对象。尚无 HTTP 写接口、认证或 RBAC。
+- 边界：只构建可供后续文本评分消费的输入，不调用评分模型，不产生分数。`ready_text` 不证明人工标签绝对正确、OCR 完整或评分结果经过教学审核；不支持的必要模态会阻止创建文本包。
+
+### P3-B：自动评分 Agent（规划中）
+
+- 计划在评分前重新确认 GradeInput 仍绑定当前人工决定和来源版本。
+- 计划基于版本化标准答案与 Rubric 生成可追溯评分建议，并提供失败处理和人工复核入口。
+- 当前尚未实现评分模型调用、自动分数、评分解释或教师 Copilot。
 
 ## P4：教师 Copilot、检索与工具调用
 
