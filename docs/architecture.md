@@ -230,3 +230,11 @@ opt-in 本机 E2E 对三个合成样本均通过；三个文件都为一页，�
 proposal JSON 以每次执行不同的不可变 Key 上传到私有 S3，`grade_proposal_artifacts` 仅保存 request/input/provider/model/version/hash/usage 等索引元数据。同一 `request_id` 全局唯一，并通过请求指纹绑定 GradeInput SHA、provider、model、prompt 版本和生成配置。并发请求可多次调用模型，但只能登记一个有效索引；并发输家对象在确认赢家后尽力删除。COMMIT 结果未知、取消中的 S3 上传或数据库暂不可用时保留对象，因此仍可能产生孤立对象，S3 与 PostgreSQL 不具备跨系统原子性。
 
 服务在模型调用前、调用后以及登记事务中重新检查来源；最后一次检查以短 PostgreSQL 事务行锁定来源。若人工复核、Rubric、AnswerKey、题目或 Canonical/Alignment 在调用期间变化，则拒绝登记。模型建议保持在 `grade_proposal_artifacts`，不更新 AnswerReview，不创建最终成绩，也不自动转成零分。CLI 仅本地运行，没有 HTTP 评分写 API、认证或 RBAC；默认禁用模型调用。输入字节数是 tokenizer 缺失时采用的保守上界，不是精确 token 计数或模型上下文保证。
+
+## P3-C1 Rubric 候选评分离线评测
+
+`scripts/evaluate_grade_proposals.py` 与 `modules/grading/evaluation.py` 为 P3-B 的结构、分值、引用和覆盖率建立独立离线评测。版本化 JSON 数据集只包含合成题目，严格校验 Decimal 分值、Rubric Criterion 集合、引用片段和参考标签来源，并由旁置 SHA-256 文件固定。参考标签和预测保存在不同文件；预测记录还绑定数据集版本及文件 SHA，因此标签变更后不能静默重用旧预测。
+
+评测器按案例构造短生命周期、仅内存的 `GradeInputDocument`，只保留既有 P3-B `build_user_prompt()`、`GradeModelReply`、`_call_and_validate()` 和 `_validate_candidate_scores()`；不创建 PostgreSQL/S3 GradeInputArtifact，不登记 GradeProposal，也不触碰人工作答复核表。默认 CLI 只验证数据并报告输入大小；只有显式 `--run-model` 才调用已经配置的 Provider。真实预测文件分别保存原始合成模型回复、协议/验证状态、usage、延迟、Provider、模型、Prompt 版本、配置摘要和数据集 SHA。离线重算会重新校验保存的回复，而不是信任旧 `status` 字段。
+
+分数 MAE 与 exact 只使用通过现有 P3-B 确定性校验的候选；无效协议、无效 Rubric、无效证据、弃权和 Provider 失败分别保留为失败与覆盖数据。总分相同但 Criterion 逐项抵消的情况单独统计。证据范围重叠只衡量文本字符定位；它不证明 quote 在教学语义上足以支持分数。合成参考由 `synthetic_curated_reference` 标注，不代表教师独立评分，不能用于推断真实学生作业准确率。真实教师双人评分、仲裁和经许可的数据集仍是后续质量评测的前提。

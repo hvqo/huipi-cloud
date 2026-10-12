@@ -80,3 +80,30 @@ uv run pytest -q -s -m grade_llm_e2e
 专项验收使用合成作业、合成答案和合成 Rubric。它验证 Provider 调用、严格结果校验及 PostgreSQL/S3 持久化，不表示真实教学作业的准确率。
 
 实现位置：[候选评分服务](../../src/huipi_cloud/modules/grading/proposal_service.py)、[协议](../../src/huipi_cloud/modules/grading/proposal_protocol.py)、[PostgreSQL 登记](../../src/huipi_cloud/modules/grading/proposal_repository.py)、[Provider](../../src/huipi_cloud/infrastructure/grading/provider.py)、[本地 CLI](../../src/huipi_cloud/workers/grade_submission.py)。
+
+## Rubric 候选评分离线评测
+
+评测工具使用 `data/evaluation/grading/rubric-cases-v1.json` 中的合成题目和参考标签。默认 dry-run 不会请求模型：
+
+```bash
+uv run python scripts/evaluate_grade_proposals.py --dry-run
+```
+
+如果要运行本机模型，先确认 Ollama 已启动并且模型已安装，再显式传 `--run-model`。命令最多处理 30 个纳入评测的案例，每个请求设置有限超时，当前基线关闭格式重试：
+
+```bash
+uv run python scripts/evaluate_grade_proposals.py \
+  --run-model --model qwen3.5:4b --max-requests 24 --timeout-seconds 90 \
+  --output data/evaluation/grading/predictions-qwen3.5-4b-v1.json \
+  --report-output data/evaluation/grading/report-qwen3.5-4b-v1.json
+```
+
+用已保存预测离线重新计算时，不会调用 Provider；评测器会先核对数据集版本和 SHA，再重新校验每条模型回复：
+
+```bash
+uv run python scripts/evaluate_grade_proposals.py \
+  --evaluate-predictions data/evaluation/grading/predictions-qwen3.5-4b-v1.json \
+  --report-output data/evaluation/grading/report-qwen3.5-4b-v1.json
+```
+
+此路径只构造内存中的合成 `GradeInputDocument`，不访问 PostgreSQL、MinIO 或候选结果索引。每个模型请求只会看到题干、答案标准、Rubric 和合成学生片段，不会看到参考分数、标注理由或标签来源。报告中的分数指标只使用通过 P3-B 现有协议、分值和引用验证的候选；协议失败、弃权和请求故障都保留在覆盖和逐例失败统计中。详见[Rubric 候选评分评测定义与基线](../evaluation/rubric-candidate-grading.md)。

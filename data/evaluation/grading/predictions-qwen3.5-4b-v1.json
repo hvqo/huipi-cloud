@@ -1,0 +1,249 @@
+{
+  "cases": [
+    {
+      "case_id": "linear-correct",
+      "completion_tokens": 199,
+      "elapsed_ms": 3093,
+      "error_code": "model_evidence_protocol_invalid",
+      "prompt_tokens": 676,
+      "response_content": "{\n  \"schema_version\": \"1.0\",\n  \"outcome\": \"candidate\",\n  \"total_score\": \"10.00\",\n  \"criterion_scores\": [\n    {\n      \"criterion_id\": \"65b7dd25-c9bc-5794-9c29-664024c8f32b\",\n      \"awarded_points\": \"10.00\",\n      \"rationale\": \"学生正确求出了 x=3，符合标准答案。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 0,\n          \"text_end\": 4,\n          \"quote\": \"x = 3\"\n        }\n      ]\n    }\n  ],\n  \"reason_codes\": []\n}",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "linear-wrong-answer",
+      "completion_tokens": 223,
+      "elapsed_ms": 3345,
+      "error_code": "model_evidence_protocol_invalid",
+      "prompt_tokens": 673,
+      "response_content": "{\n  \"schema_version\": \"1.0\",\n  \"outcome\": \"candidate\",\n  \"total_score\": \"3.00\",\n  \"criterion_scores\": [\n    {\n      \"criterion_id\": \"45e23927-61b2-5edb-8eee-da13241e62a7\",\n      \"awarded_points\": \"3.00\",\n      \"rationale\": \"学生给出了一个等式，但结果不正确且未展示求解过程。根据Rubric要求正确求得x=3为满分标准，此处给予部分分以承认尝试了计算但未达目标。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 0,\n          \"text_end\": 4,\n          \"quote\": \"x = 5\"\n        }\n      ]\n    }\n  ],\n  \"reason_codes\": []\n}",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "linear-missing-step",
+      "completion_tokens": 461,
+      "elapsed_ms": 6577,
+      "error_code": "model_evidence_protocol_invalid",
+      "prompt_tokens": 818,
+      "response_content": "{\n  \"schema_version\": \"1.0\",\n  \"outcome\": \"candidate\",\n  \"total_score\": \"7.00\",\n  \"criterion_scores\": [\n    {\n      \"criterion_id\": \"55fb4f4b-845c-56ab-83d9-3d2c18fb89a7\",\n      \"awarded_points\": \"3.00\",\n      \"rationale\": \"学生正确写出了原方程。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 0,\n          \"text_end\": 7,\n          \"quote\": \"x + 2 = 7\"\n        }\n      ]\n    },\n    {\n      \"criterion_id\": \"efc78878-4bfc-5f60-aadf-5cb400c3f66d\",\n      \"awarded_points\": \"1.00\",\n      \"rationale\": \"学生未展示两边同时减去2的中间步骤，直接给出了结果。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"no_evidence\",\n          \"reason\": \"作答中缺少说明或执行'两边同时减去2'的具体过程文本\"\n        }\n      ]\n    },\n    {\n      \"criterion_id\": \"bef1ed95-9aa3-5e28-b2c4-ae55455df587\",\n      \"awarded_points\": \"3.00\",\n      \"rationale\": \"学生正确写出了最终解 x=5。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 1,\n          \"text_start\": 0,\n          \"text_end\": 4,\n          \"quote\": \"x = 5\"\n        }\n      ]\n    }\n  ],\n  \"reason_codes\": []\n}",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "equivalent-fraction",
+      "completion_tokens": 234,
+      "elapsed_ms": 3642,
+      "error_code": null,
+      "prompt_tokens": 678,
+      "response_content": "{\n  \"schema_version\": \"1.0\",\n  \"outcome\": \"candidate\",\n  \"total_score\": \"5.00\",\n  \"criterion_scores\": [\n    {\n      \"criterion_id\": \"98f77d7f-1578-5343-8bd3-b59275e14bf6\",\n      \"awarded_points\": \"5.00\",\n      \"rationale\": \"学生给出的答案 0.5 在数值上等于标准答案 1/2，且作为最简分数形式（分母为整数）符合题目要求。虽然未以分数格式书写，但提供了等值的最简表示。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 0,\n          \"text_end\": 3,\n          \"quote\": \"0.5\"\n        }\n      ]\n    }\n  ],\n  \"reason_codes\": []\n}",
+      "status": "candidate"
+    },
+    {
+      "case_id": "linear-sign-error",
+      "completion_tokens": 368,
+      "elapsed_ms": 5455,
+      "error_code": "model_evidence_protocol_invalid",
+      "prompt_tokens": 752,
+      "response_content": "{\n  \"schema_version\": \"1.0\",\n  \"outcome\": \"candidate\",\n  \"total_score\": \"5.00\",\n  \"criterion_scores\": [\n    {\n      \"criterion_id\": \"9f93420b-72c9-5397-87d5-a92f34c64def\",\n      \"awarded_points\": \"5.00\",\n      \"rationale\": \"学生正确移项得到 2x=11+3，符合'正确移项得到 2x=8'的要求。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 0,\n          \"text_end\": 5,\n          \"quote\": \"2x = 11 + 3\"\n        }\n      ]\n    },\n    {\n      \"criterion_id\": \"597061a1-1283-5e42-adcc-337f3d3d7161\",\n      \"awarded_points\": \"5.00\",\n      \"rationale\": \"学生正确计算得到 x=7，符合'正确得到 x=4'的要求。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 6,\n          \"text_end\": 9,\n          \"quote\": \"x = 7\"\n        }\n      ]\n    }\n  ],\n  \"reason_codes\": []\n}",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "physics-missing-unit",
+      "completion_tokens": 416,
+      "elapsed_ms": 5978,
+      "error_code": "model_evidence_protocol_invalid",
+      "prompt_tokens": 743,
+      "response_content": "{\n  \"schema_version\": \"1.0\",\n  \"outcome\": \"candidate\",\n  \"total_score\": \"6.00\",\n  \"criterion_scores\": [\n    {\n      \"criterion_id\": \"db1b9cbd-0737-5142-b16c-a8f6be75bf95\",\n      \"awarded_points\": \"6.00\",\n      \"rationale\": \"学生正确应用公式 F=ma 并计算出数值结果。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 4,\n          \"text_end\": 12,\n          \"quote\": \"= ma\"\n        },\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 8,\n          \"text_end\": 9,\n          \"quote\": \"=\"\n        }\n      ]\n    },\n    {\n      \"criterion_id\": \"0eab3af8-3bee-578a-bc2e-cb8f733cc815\",\n      \"awarded_points\": \"4.00\",\n      \"rationale\": \"学生计算出的数值正确，但未在作答中明确写出单位 N。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 12,\n          \"text_end\": 13,\n          \"quote\": \"=\"\n        },\n        {\n          \"kind\": \"no_evidence\",\n          \"reason\": \"学生作答片段中未出现单位'N'或类似符号。\"\n        }\n      ]\n    }\n  ],\n  \"reason_codes\": []\n}",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "chemistry-balanced",
+      "completion_tokens": 358,
+      "elapsed_ms": 5199,
+      "error_code": "model_evidence_protocol_invalid",
+      "prompt_tokens": 757,
+      "response_content": "{\n  \"schema_version\": \"1.0\",\n  \"outcome\": \"candidate\",\n  \"total_score\": \"8.00\",\n  \"criterion_scores\": [\n    {\n      \"criterion_id\": \"e7662307-50fa-5f96-af39-8b72e63b563a\",\n      \"awarded_points\": \"3.00\",\n      \"rationale\": \"学生作答中反应前后各元素原子数守恒。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 0,\n          \"text_end\": 12,\n          \"quote\": \"2H₂ + O₂ → 2H₂O\"\n        }\n      ]\n    },\n    {\n      \"criterion_id\": \"8c8249fc-7cad-5c3e-9360-3b7bba6e2f03\",\n      \"awarded_points\": \"5.00\",\n      \"rationale\": \"学生作答中系数为 2、1、2。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 0,\n          \"text_end\": 12,\n          \"quote\": \"2H₂ + O₂ → 2H₂O\"\n        }\n      ]\n    }\n  ],\n  \"reason_codes\": []\n}",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "biology-incomplete",
+      "completion_tokens": 338,
+      "elapsed_ms": 5197,
+      "error_code": "model_evidence_protocol_invalid",
+      "prompt_tokens": 745,
+      "response_content": "{\n  \"schema_version\": \"1.0\",\n  \"outcome\": \"candidate\",\n  \"total_score\": \"6.00\",\n  \"criterion_scores\": [\n    {\n      \"criterion_id\": \"2293b776-3036-5ff6-9b0b-0171788bdfa2\",\n      \"awarded_points\": \"3.00\",\n      \"rationale\": \"学生明确指出了细胞核储存遗传信息的作用。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 0,\n          \"text_end\": 13,\n          \"quote\": \"细胞核储存遗传信息\"\n        }\n      ]\n    },\n    {\n      \"criterion_id\": \"df8ca0ab-1269-5eb6-8a1d-d9760c70ab63\",\n      \"awarded_points\": \"3.00\",\n      \"rationale\": \"学生明确指出了细胞核调控细胞活动的作用。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 14,\n          \"text_end\": 29,\n          \"quote\": \"并调控细胞活动\"\n        }\n      ]\n    }\n  ],\n  \"reason_codes\": []\n}",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "geometry-cross-page",
+      "completion_tokens": 489,
+      "elapsed_ms": 7193,
+      "error_code": "model_evidence_protocol_invalid",
+      "prompt_tokens": 822,
+      "response_content": "{\n  \"schema_version\": \"1.0\",\n  \"outcome\": \"candidate\",\n  \"total_score\": \"7.00\",\n  \"criterion_scores\": [\n    {\n      \"criterion_id\": \"36a59399-d2cd-556c-b7d2-dce44ef9d5c9\",\n      \"awarded_points\": \"4.00\",\n      \"rationale\": \"学生正确列出了勾股定理公式。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 0,\n          \"text_end\": 13,\n          \"quote\": \"c² = 3² + 4²\"\n        }\n      ]\n    },\n    {\n      \"criterion_id\": \"c3daa021-ddc0-5b4c-881f-b54ce3efe942\",\n      \"awarded_points\": \"3.00\",\n      \"rationale\": \"学生正确计算了平方和并开方得到结果。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 1,\n          \"text_start\": 24,\n          \"text_end\": 37,\n          \"quote\": \"c² = 25，所以 c = 5\"\n        }\n      ]\n    },\n    {\n      \"criterion_id\": \"f61ed3af-8516-5d2a-8f4f-784c086b3359\",\n      \"awarded_points\": \"3.00\",\n      \"rationale\": \"学生得出的最终答案与标准答案一致。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 1,\n          \"text_start\": 42,\n          \"text_end\": 43,\n          \"quote\": \"5\"\n        }\n      ]\n    }\n  ],\n  \"reason_codes\": []\n}",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "photosynthesis-omission",
+      "completion_tokens": 320,
+      "elapsed_ms": 4880,
+      "error_code": "model_evidence_protocol_invalid",
+      "prompt_tokens": 722,
+      "response_content": "{\n  \"schema_version\": \"1.0\",\n  \"outcome\": \"candidate\",\n  \"total_score\": \"4.00\",\n  \"criterion_scores\": [\n    {\n      \"criterion_id\": \"6a987c1e-9273-53bc-8c05-af058c276d8e\",\n      \"awarded_points\": \"2.00\",\n      \"rationale\": \"学生正确指出了葡萄糖。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 0,\n          \"text_end\": 4,\n          \"quote\": \"葡萄糖\"\n        }\n      ]\n    },\n    {\n      \"criterion_id\": \"a815b913-40fe-5efe-915f-4098a5d4658b\",\n      \"awarded_points\": \"2.00\",\n      \"rationale\": \"学生正确指出了氧气。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 4,\n          \"text_end\": 5,\n          \"quote\": \"\"\n        }\n      ]\n    }\n  ],\n  \"reason_codes\": []\n}",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "off-topic-zero",
+      "completion_tokens": 194,
+      "elapsed_ms": 3165,
+      "error_code": "positive_score_without_quote",
+      "prompt_tokens": 675,
+      "response_content": "{\n  \"schema_version\": \"1.0\",\n  \"outcome\": \"candidate\",\n  \"total_score\": \"5.00\",\n  \"criterion_scores\": [\n    {\n      \"criterion_id\": \"a5a6088b-53d4-557f-aba8-59ca5531d1c4\",\n      \"awarded_points\": \"5.00\",\n      \"rationale\": \"学生作答中未包含标准答案要求的数值。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"no_evidence\",\n          \"reason\": \"学生回答'我喜欢夏天的天气。'不包含任何关于水沸点的信息，无法确认是否给出了100摄氏度这一关键事实。\"\n        }\n      ]\n    }\n  ],\n  \"reason_codes\": []\n}",
+      "status": "invalid_evidence"
+    },
+    {
+      "case_id": "prompt-injection-data",
+      "completion_tokens": 422,
+      "elapsed_ms": 6227,
+      "error_code": "model_evidence_protocol_invalid",
+      "prompt_tokens": 747,
+      "response_content": "{\n  \"schema_version\": \"1.0\",\n  \"outcome\": \"candidate\",\n  \"total_score\": \"5.00\",\n  \"criterion_scores\": [\n    {\n      \"criterion_id\": \"a51d997d-5fe1-5dd0-839e-8c55b71853cb\",\n      \"awarded_points\": \"2.50\",\n      \"rationale\": \"学生未展示具体的代数变形步骤，仅给出了最终答案。虽然意图正确（减去2），但缺乏过程证据。然而，考虑到题目要求写出变形过程且学生直接给出结果x=3，这通常意味着完成了整个求解逻辑，但在严格评分标准下，缺少显式的'两边同时减2'的文字描述或等式推导步骤应扣分。此处判定为部分分：指出了目标但未展示过程。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"no_evidence\",\n          \"reason\": \"学生作答中未出现任何关于‘减去2’的代数变形文字、符号或等式推导步骤，仅直接给出了结果x=3。\"\n        }\n      ]\n    },\n    {\n      \"criterion_id\": \"3311a1ee-74ea-5a70-86ac-413e56b54f31\",\n      \"awarded_points\": \"2.50\",\n      \"rationale\": \"学生正确写出了最终结果 x=3，符合该评分项的要求。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 19,\n          \"text_end\": 24,\n          \"quote\": \"x=3\"\n        }\n      ]\n    }\n  ],\n  \"reason_codes\": []\n}",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "corrected-redundant-work",
+      "completion_tokens": 336,
+      "elapsed_ms": 5082,
+      "error_code": "model_evidence_protocol_invalid",
+      "prompt_tokens": 742,
+      "response_content": "{\n  \"schema_version\": \"1.0\",\n  \"outcome\": \"candidate\",\n  \"total_score\": \"6.00\",\n  \"criterion_scores\": [\n    {\n      \"criterion_id\": \"01acff2e-2009-5250-803c-f746599fa93b\",\n      \"awarded_points\": \"2.00\",\n      \"rationale\": \"学生正确列出了乘法算式。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 14,\n          \"text_end\": 23,\n          \"quote\": \"3 × 4\"\n        }\n      ]\n    },\n    {\n      \"criterion_id\": \"340bdde5-6a5b-57e1-b6ad-01eaaf677bc1\",\n      \"awarded_points\": \"4.00\",\n      \"rationale\": \"学生最终给出了正确答案 12。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 35,\n          \"text_end\": 46,\n          \"quote\": \"3 × 4 = 12\"\n        }\n      ]\n    }\n  ],\n  \"reason_codes\": []\n}",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "answer-only-no-method",
+      "completion_tokens": 464,
+      "elapsed_ms": 7078,
+      "error_code": "model_evidence_protocol_invalid",
+      "prompt_tokens": 734,
+      "response_content": "{\n  \"schema_version\": \"1.0\",\n  \"outcome\": \"candidate\",\n  \"total_score\": \"6.00\",\n  \"criterion_scores\": [\n    {\n      \"criterion_id\": \"7339e85c-1215-54be-bd47-9beb1ab82c27\",\n      \"awarded_points\": \"4.00\",\n      \"rationale\": \"学生给出了正确的最终解 x=3。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 0,\n          \"text_end\": 2,\n          \"quote\": \"x\"\n        },\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 3,\n          \"text_end\": 4,\n          \"quote\": \"=\"\n        }\n      ]\n    },\n    {\n      \"criterion_id\": \"1e29d143-6eb4-57f6-8fd7-80bd1ca443e3\",\n      \"awarded_points\": \"2.00\",\n      \"rationale\": \"学生未展示移项过程，但给出了正确结果。根据规则，缺失步骤需引用 no_evidence 并说明原因；此处结合部分分逻辑（有最终解但未显式写出减2的过程），给予一半分数以体现对过程的预期要求未被满足，同时承认结果的准确性。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 3,\n          \"text_end\": 4,\n          \"quote\": \"=\"\n        },\n        {\n          \"kind\": \"no_evidence\",\n          \"reason\": \"学生作答中未出现'两边减2'或类似移项过程的文字描述。\"\n        }\n      ]\n    }\n  ],\n  \"reason_codes\": []\n}",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "correct-transform-wrong-result",
+      "completion_tokens": 370,
+      "elapsed_ms": 5680,
+      "error_code": "model_evidence_protocol_invalid",
+      "prompt_tokens": 740,
+      "response_content": "{\n  \"schema_version\": \"1.0\",\n  \"outcome\": \"candidate\",\n  \"total_score\": \"5.00\",\n  \"criterion_scores\": [\n    {\n      \"criterion_id\": \"ca6877d7-c84e-542d-81d3-e7885b26657b\",\n      \"awarded_points\": \"5.00\",\n      \"rationale\": \"学生保留了原始方程。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 0,\n          \"text_end\": 3,\n          \"quote\": \"3x = 12\"\n        }\n      ]\n    },\n    {\n      \"criterion_id\": \"10766000-c28d-5bcf-be6f-e656dddf5657\",\n      \"awarded_points\": \"0.00\",\n      \"rationale\": \"学生未正确求解方程，且计算结果错误。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 4,\n          \"text_end\": 12,\n          \"quote\": \"x = 5\"\n        },\n        {\n          \"kind\": \"no_evidence\",\n          \"reason\": \"学生未展示除以3的步骤，且最终答案与标准答案不符。\"\n        }\n      ]\n    }\n  ],\n  \"reason_codes\": []\n}",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "ratio-simplification",
+      "completion_tokens": 196,
+      "elapsed_ms": 3229,
+      "error_code": null,
+      "prompt_tokens": 674,
+      "response_content": "{\n  \"schema_version\": \"1.0\",\n  \"outcome\": \"candidate\",\n  \"total_score\": \"6.00\",\n  \"criterion_scores\": [\n    {\n      \"criterion_id\": \"f8be7b71-10f7-52c9-90ed-b363c1dfa662\",\n      \"awarded_points\": \"6.00\",\n      \"rationale\": \"学生作答完全符合教师标准答案，给出了正确的最简比。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 0,\n          \"text_end\": 3,\n          \"quote\": \"2:3\"\n        }\n      ]\n    }\n  ],\n  \"reason_codes\": []\n}",
+      "status": "candidate"
+    },
+    {
+      "case_id": "pythagorean-proof",
+      "completion_tokens": 490,
+      "elapsed_ms": 7412,
+      "error_code": "model_evidence_protocol_invalid",
+      "prompt_tokens": 825,
+      "response_content": "{\n  \"schema_version\": \"1.0\",\n  \"outcome\": \"candidate\",\n  \"total_score\": \"6.50\",\n  \"criterion_scores\": [\n    {\n      \"criterion_id\": \"9605333a-c562-572f-8c8d-d07127b3b038\",\n      \"awarded_points\": \"4.00\",\n      \"rationale\": \"学生明确引用了勾股定理公式进行计算。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 0,\n          \"text_end\": 13,\n          \"quote\": \"c² = 3² + 4²\"\n        }\n      ]\n    },\n    {\n      \"criterion_id\": \"3529f0fe-32c3-51ad-b850-216f19823577\",\n      \"awarded_points\": \"3.00\",\n      \"rationale\": \"学生正确计算了平方和得到 25。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 14,\n          \"text_end\": 36,\n          \"quote\": \"= 25\"\n        }\n      ]\n    },\n    {\n      \"criterion_id\": \"505a0434-6e92-55c3-8fb2-1cd510dae0d4\",\n      \"awarded_points\": \"3.00\",\n      \"rationale\": \"学生正确得出斜边长度为 5。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 41,\n          \"text_end\": 62,\n          \"quote\": \"c = 5\"\n        }\n      ]\n    }\n  ],\n  \"reason_codes\": []\n}",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "physics-substitution",
+      "completion_tokens": 484,
+      "elapsed_ms": 7318,
+      "error_code": "model_evidence_protocol_invalid",
+      "prompt_tokens": 808,
+      "response_content": "{\n  \"schema_version\": \"1.0\",\n  \"outcome\": \"candidate\",\n  \"total_score\": \"8.00\",\n  \"criterion_scores\": [\n    {\n      \"criterion_id\": \"fe5e1967-cd55-557f-b3de-3a023e2bae42\",\n      \"awarded_points\": \"3.00\",\n      \"rationale\": \"学生正确使用了公式 v=u+at。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 0,\n          \"text_end\": 13,\n          \"quote\": \"v = u + at\"\n        }\n      ]\n    },\n    {\n      \"criterion_id\": \"e1945fc0-d8ed-58af-92f1-b37de685d5ca\",\n      \"awarded_points\": \"3.00\",\n      \"rationale\": \"学生正确代入参数 2, 3, 4 并计算出结果。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 15,\n          \"text_end\": 37,\n          \"quote\": \"= 2 + 3 × 4 = 14\"\n        }\n      ]\n    },\n    {\n      \"criterion_id\": \"da7f3f89-9eec-5ca7-ab76-65154da44e80\",\n      \"awarded_points\": \"2.00\",\n      \"rationale\": \"学生正确写出了单位 m/s。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 38,\n          \"text_end\": 42,\n          \"quote\": \"m/s\"\n        }\n      ]\n    }\n  ],\n  \"reason_codes\": []\n}",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "neutralization-products",
+      "completion_tokens": 452,
+      "elapsed_ms": 6795,
+      "error_code": "model_evidence_protocol_invalid",
+      "prompt_tokens": 794,
+      "response_content": "{\n  \"schema_version\": \"1.0\",\n  \"outcome\": \"candidate\",\n  \"total_score\": \"8.00\",\n  \"criterion_scores\": [\n    {\n      \"criterion_id\": \"9fc4afe2-4d35-57e1-a9c7-6b056b5da20d\",\n      \"awarded_points\": \"3.00\",\n      \"rationale\": \"学生正确写出了氯化钠。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 4,\n          \"text_end\": 8,\n          \"quote\": \"NaCl\"\n        }\n      ]\n    },\n    {\n      \"criterion_id\": \"c063a344-0ccd-514b-9ea1-3115fc6ddaa6\",\n      \"awarded_points\": \"2.00\",\n      \"rationale\": \"学生正确写出了水。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 13,\n          \"text_end\": 16,\n          \"quote\": \"H₂O\"\n        }\n      ]\n    },\n    {\n      \"criterion_id\": \"f099cec2-b84f-50af-b63b-e6f18634fd6e\",\n      \"awarded_points\": \"3.00\",\n      \"rationale\": \"方程式已配平。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 17,\n          \"text_end\": 24,\n          \"quote\": \"\"\n        }\n      ]\n    }\n  ],\n  \"reason_codes\": []\n}",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "two-segment-evidence",
+      "completion_tokens": 333,
+      "elapsed_ms": 5166,
+      "error_code": "model_evidence_protocol_invalid",
+      "prompt_tokens": 757,
+      "response_content": "{\n  \"schema_version\": \"1.0\",\n  \"outcome\": \"candidate\",\n  \"total_score\": \"5.00\",\n  \"criterion_scores\": [\n    {\n      \"criterion_id\": \"7fab7a96-fda6-5b07-b088-65297f26fb17\",\n      \"awarded_points\": \"5.00\",\n      \"rationale\": \"学生明确写出了除以 2 的操作步骤。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 0,\n          \"text_end\": 6,\n          \"quote\": \"两边同时除以\"\n        }\n      ]\n    },\n    {\n      \"criterion_id\": \"73a1193a-2775-576a-9288-e9c603d4eac7\",\n      \"awarded_points\": \"5.00\",\n      \"rationale\": \"学生正确写出了最终结果 x=4。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 1,\n          \"text_start\": 0,\n          \"text_end\": 3,\n          \"quote\": \"x = 4\"\n        }\n      ]\n    }\n  ],\n  \"reason_codes\": []\n}",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "quadratic-factorization",
+      "completion_tokens": 482,
+      "elapsed_ms": 7257,
+      "error_code": "model_evidence_protocol_invalid",
+      "prompt_tokens": 816,
+      "response_content": "{\n  \"schema_version\": \"1.0\",\n  \"outcome\": \"candidate\",\n  \"total_score\": \"9.00\",\n  \"criterion_scores\": [\n    {\n      \"criterion_id\": \"e74cd75a-327a-59c9-80da-f4d9ccd31586\",\n      \"awarded_points\": \"3.00\",\n      \"rationale\": \"学生明确指出了两数乘积为 6。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 1,\n          \"text_end\": 3,\n          \"quote\": \"乘积\"\n        }\n      ]\n    },\n    {\n      \"criterion_id\": \"7e35f9bd-1739-51ca-a154-7445f261509e\",\n      \"awarded_points\": \"3.00\",\n      \"rationale\": \"学生明确指出了两数之和为 -5。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 4,\n          \"text_end\": 6,\n          \"quote\": \",和\"\n        }\n      ]\n    },\n    {\n      \"criterion_id\": \"0db840e0-1681-5c8b-867c-e83dce74f6dc\",\n      \"awarded_points\": \"4.00\",\n      \"rationale\": \"学生写出了正确的因式分解结果 (x-2)(x-3)。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 7,\n          \"text_end\": 14,\n          \"quote\": \"(x-2)(x-3)\"\n        }\n      ]\n    }\n  ],\n  \"reason_codes\": []\n}",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "fraction-partial",
+      "completion_tokens": 761,
+      "elapsed_ms": 10942,
+      "error_code": "model_evidence_protocol_invalid",
+      "prompt_tokens": 817,
+      "response_content": "{\n  \"schema_version\": \"1.0\",\n  \"outcome\": \"candidate\",\n  \"total_score\": \"7.00\",\n  \"criterion_scores\": [\n    {\n      \"criterion_id\": \"d59489b5-5794-584a-8c36-185faec83d84\",\n      \"awarded_points\": \"2.00\",\n      \"rationale\": \"学生正确执行了通分操作，将 1/3 转换为 2/6。但仅展示了结果而未明确写出转换后的中间步骤（即未展示'1/3 = 2/6'这一等式），因此无法完全确认其是否主动进行了通分思考过程或存在其他隐含错误，故给予部分分。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 12,\n          \"text_end\": 16,\n          \"quote\": \"= 2/6\"\n        },\n        {\n          \"kind\": \"no_evidence\",\n          \"reason\": \"学生作答中缺少'1/3 = 2/6'这一显式步骤，无法确认通分意图的明确表达。\"\n        }\n      ]\n    },\n    {\n      \"criterion_id\": \"7f00d6a1-af51-57b1-b4f4-8daf145bb21a\",\n      \"awarded_points\": \"3.00\",\n      \"rationale\": \"学生正确计算了通分后的分数之和（2/6 + 1/6 = 3/6）。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 4,\n          \"text_end\": 8,\n          \"quote\": \"= 2/6 + 1/6\"\n        },\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 9,\n          \"text_end\": 13,\n          \"quote\": \"= 3/6\"\n        }\n      ]\n    },\n    {\n      \"criterion_id\": \"3bc305ea-9c93-586e-80f3-095c58f3581b\",\n      \"awarded_points\": \"2.00\",\n      \"rationale\": \"学生得出的结果 3/6 并非最简分数（应为 1/2），因此该项得分为零分。但考虑到前两项的得分，此处仅说明未满足要求即可判定为零分。根据规则，若结果为非最简，则不得该分项的正分。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 14,\n          \"text_end\": 23,\n          \"quote\": \"= 3/6\"\n        },\n        {\n          \"kind\": \"no_evidence\",\n          \"reason\": \"学生作答中的最终结果'3/6'不是最简分数，不符合该评分标准。\"\n        }\n      ]\n    }\n  ],\n  \"reason_codes\": []\n}",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "zero-evidence-absence",
+      "completion_tokens": 445,
+      "elapsed_ms": 6568,
+      "error_code": "model_evidence_protocol_invalid",
+      "prompt_tokens": 677,
+      "response_content": "{\n  \"schema_version\": \"1.0\",\n  \"outcome\": \"candidate\",\n  \"total_score\": \"5.00\",\n  \"criterion_scores\": [\n    {\n      \"criterion_id\": \"d0974149-0ffe-58ef-8945-011165ec43b6\",\n      \"awarded_points\": \"5.00\",\n      \"rationale\": \"学生明确承认未学习该题目，表明其无法提供所需答案。根据Rubric要求给出约365天，由于缺乏有效回答内容且无证据支持任何数值或陈述，本项应判为满分（此处逻辑修正：因完全缺失正确信息，实际应为0分；但依据指令'零分可以仅使用no_evidence'及'evidence不足则弃权'的冲突处理。重新评估：学生说没学过，意味着没有给出答案365天。Rubric要求是'给出约365天'。学生未给出此内容。因此应为0分或弃权。根据规则'无法可靠评分时必须弃权'以及'零分可以仅使用no_evidence'。这里证据缺失（即没给对的答案），所以判0分更合理，因为不是不知道怎么评，而是确实没有满足条件的回答。但再次检查指令：如果必要步骤没有出现...使用kind=no_evidence并写明原因。学生说没学过，这本身是一个陈述，但没有提供Rubric要求的'约365天'这个信息。因此证据缺失。判0分。）\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"no_evidence\",\n          \"segment_index\": 0,\n          \"reason\": \"学生作答中未包含符合Rubric要求的答案（约365天），仅陈述未学习该题，缺乏有效证据支持得分。\"\n        }\n      ]\n    }\n  ],\n  \"reason_codes\": [\n    \"insufficient_evidence\",\n    \"missing_correct_answer\"\n  ]\n}",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "literature-two-criteria",
+      "completion_tokens": 337,
+      "elapsed_ms": 5018,
+      "error_code": "model_evidence_protocol_invalid",
+      "prompt_tokens": 759,
+      "response_content": "{\n  \"schema_version\": \"1.0\",\n  \"outcome\": \"candidate\",\n  \"total_score\": \"8.00\",\n  \"criterion_scores\": [\n    {\n      \"criterion_id\": \"5c74ff7e-9946-5a46-ba4d-5c66d828493e\",\n      \"awarded_points\": \"4.00\",\n      \"rationale\": \"学生正确识别了拟人修辞。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 0,\n          \"text_end\": 2,\n          \"quote\": \"拟人\"\n        }\n      ]\n    },\n    {\n      \"criterion_id\": \"9c7c1e14-8651-5828-b7c5-89dfe2293bb5\",\n      \"awarded_points\": \"4.00\",\n      \"rationale\": \"学生正确说明了月光照亮河面的表达效果。\",\n      \"evidence_references\": [\n        {\n          \"kind\": \"quote\",\n          \"segment_index\": 0,\n          \"text_start\": 2,\n          \"text_end\": 14,\n          \"quote\": \"写出月光照亮河面的景象\"\n        }\n      ]\n    }\n  ],\n  \"reason_codes\": []\n}",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "ambiguous-handwriting-excluded",
+      "completion_tokens": null,
+      "elapsed_ms": null,
+      "error_code": null,
+      "prompt_tokens": null,
+      "response_content": null,
+      "status": "excluded_uncertain"
+    },
+    {
+      "case_id": "ambiguous-rubric-excluded",
+      "completion_tokens": null,
+      "elapsed_ms": null,
+      "error_code": null,
+      "prompt_tokens": null,
+      "response_content": null,
+      "status": "excluded_uncertain"
+    }
+  ],
+  "created_at": "2026-10-12T09:51:08.778845Z",
+  "dataset_sha256": "e9a7959e2ad8ff479073b870c468b0155e7e1395662697f4b8c4324dbbb8e6b5",
+  "dataset_version": "1.0",
+  "generation_config_digest": "1ce3936eda4e4492c70f8047fe628105ebe48c270685bb8b892575182d0ad283",
+  "invalid_response_retries": 0,
+  "model_id": "qwen3.5:4b",
+  "prompt_version": "rubric-candidate-v3",
+  "provider": "ollama_native",
+  "schema_name": "huipi.grading.evaluation.predictions",
+  "schema_version": "1.0",
+  "timeout_seconds": 90.0
+}
