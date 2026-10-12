@@ -30,13 +30,13 @@
 
 **简洁解释**：引用必须精确匹配指定 GradeInput 片段中的 Unicode 码点半开区间。
 
-**约 30 秒回答**：每个 quote 带 segment index、起止偏移和文本。服务检查片段存在、偏移在范围内、起止差等于 Python 字符串长度，并比较切片与引用文本完全相同。模型不能靠编造一个看似合理的引文通过检查。没有证据时，协议要求使用 `no_evidence` 并说明原因。
+**约 30 秒回答**：每个 quote 带 segment index、起止偏移和文本。服务检查片段存在、偏移在范围内、起止差等于 Python 字符串长度，并比较切片与引用文本完全相同。每个正分项还必须至少有一条通过这些检查的 quote；只带 `no_evidence` 的正分会被拒绝。零分可只用 `no_evidence`，部分分可同时带 quote 和缺失说明。
 
-**约 2 分钟深入回答**：P3-A 保留每段回答的来源 pointer、页码、Block、阅读顺序、偏移和 SHA。P3-B 的 quote 偏移局限在某一个 `SelectedAnswerSegment.text`，采用 Python Unicode codepoint 的 `[start,end)` 语义，不是 UTF-8 byte offset。代码先检查 `segment_index`，再比较边界与原文切片。可验证性不代表引用能证明评分理由正确，但让每项候选分数可以回到具体输入文本。对缺失步骤使用明确 `no_evidence`，不能虚构 quote 或把缺失自动解释为零分。
+**约 2 分钟深入回答**：P3-A 保留每段回答的来源 pointer、页码、Block、阅读顺序、偏移和 SHA。P3-B 的 quote 偏移局限在某一个 `SelectedAnswerSegment.text`，采用 Python Unicode codepoint 的 `[start,end)` 语义，不是 UTF-8 byte offset。代码先检查 `segment_index`，再比较边界与原文切片。通过校验后，服务把该 Criterion 标记为存在至少一个有效 quote；如果该 Criterion 得分大于零而没有 quote，就以 `positive_score_without_quote` 拒绝，不会替模型把分数调成零，也不会伪造引用。可验证性只证明文字确实来自输入，不能证明该文字在教学上足以支持模型分数。对缺失步骤使用明确 `no_evidence`，不能把缺失自动解释为零分。
 
 **连续追问**：精确引用是否证明模型分数正确？不能。它只证明引用来自输入文本，不证明模型解释合理或 Rubric 被正确理解。
 
-**代码与演示**：[proposal_service.py](../../src/huipi_cloud/modules/grading/proposal_service.py) `_validate_quote_reference()`；[proposal_protocol.py](../../src/huipi_cloud/modules/grading/proposal_protocol.py) `QuoteEvidenceReference`；单测 `test_fabricated_or_out_of_bounds_quote_is_rejected`。
+**代码与演示**：[proposal_service.py](../../src/huipi_cloud/modules/grading/proposal_service.py) `_validate_quote_reference()`、`_validate_candidate_scores()`；[proposal_protocol.py](../../src/huipi_cloud/modules/grading/proposal_protocol.py) `QuoteEvidenceReference`；单测 `test_fabricated_or_out_of_bounds_quote_is_rejected`、`test_positive_score_requires_at_least_one_valid_quote` 和 `test_partial_score_can_combine_valid_quote_and_no_evidence`；PostgreSQL/MinIO 集成测试 `test_positive_score_without_quote_is_rejected_before_proposal_storage`。
 
 ## 4. 怎样处理提示注入和学生答案里的指令？
 

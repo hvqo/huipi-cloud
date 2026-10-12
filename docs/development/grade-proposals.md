@@ -56,9 +56,11 @@ uv run python -m huipi_cloud.workers.grade_submission grade \
 
 ## 结果含义与限制
 
-候选协议 `huipi.grading.proposal` 1.0 保存每项分数、理由、精确引用或 `no_evidence`。引用偏移是对应已选片段内的 Unicode 码点半开区间 `[start, end)`；服务确认区间与原文一致。程序还检查每项分数不超过可信 Rubric 分值、Criterion 清单完整且唯一、逐项分数之和与模型总分相等。
+候选协议 `huipi.grading.proposal` 1.0 保存每项分数、理由、精确引用或 `no_evidence`。引用偏移是对应已选片段内的 Unicode 码点半开区间 `[start, end)`；服务确认区间与原文一致。每个正分 Criterion 至少需要一条经原文和范围校验的 quote；仅有 `no_evidence` 的正分会以 `positive_score_without_quote` 拒绝。零分可只引用 `no_evidence`，部分分可同时引用有效 quote 和 `no_evidence`。服务还检查每项分数不超过可信 Rubric 分值、Criterion 清单完整且唯一、逐项分数之和与模型总分相等。
 
-模型输出仍可能错误、偏见或受提示注入影响。系统分隔系统规则与学生数据并限制分值、证据和输出，但这不能消除模型风险。严格协议通过不代表评分正确。`grading_abstained` 是模型明确弃权，不是零分；无 `no_evidence` 也不能解释为学生未作答。没有教师复核与发布流程，不得将 proposal 当作正式成绩。
+本规则改变新模型输出的接收门禁，不改变 `GradeProposalDocument` 1.0 字段，因此无需数据库迁移或协议版本升级。新提示词版本为 `rubric-candidate-v3`，它参与请求指纹；新旧提示词不会共用同一请求指纹。输入来源仍有效时，已保存的不可变历史 proposal 继续按它自身保存的 prompt 版本、数据库索引、SHA 和 1.0 协议读取；本次新门禁不会追溯改写历史对象，也不会把旧对象重新判定为新输出。
+
+模型输出仍可能错误、偏见或受提示注入影响。结构门禁只能证明正分项附带了可追溯的作答文字，不能证明该文字在教学语义上足以支持分数，也不能发现所有评分幻觉。系统分隔系统规则与学生数据并限制分值、证据和输出，但这不能消除模型风险。严格协议通过不代表评分正确。`grading_abstained` 是模型明确弃权，不是零分；无 `no_evidence` 也不能解释为学生未作答。没有教师复核与发布流程，不得将 proposal 当作正式成绩。
 
 PostgreSQL 与 S3 不共享事务。确定的数据库回滚会触发尽力删除；已确认的并发输家也会清理。COMMIT 结果未知或上传协程被取消时保留对象，避免删掉数据库可能已引用的数据；进程崩溃仍可能留下孤立对象。当前没有自动对账清理器。
 

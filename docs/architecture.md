@@ -223,7 +223,9 @@ opt-in 本机 E2E 对三个合成样本均通过；三个文件都为一页，�
 
 ## P3-B Rubric 候选评分
 
-`workers/grade_submission.py` 只接受已有的 `GradeInputArtifact` ID。评分前先读取并验证不可变 S3 输入和当前复核/Canonical/Alignment/Question/AnswerKey/Rubric 版本；调用 Ollama 或经显式授权的 OpenAI-compatible 文本模型时不持有数据库事务。模型结果必须符合 `huipi.grading.model-reply` 1.0 协议，代码再校验 Criterion 集合恰好匹配、分值在每项 Rubric 范围内、Decimal 总分等于逐项分数，并验证引用是所选回答片段中的精确 Unicode 码点半开范围。模型无法提供原文证据时，必须使用显式 `no_evidence`，不得伪造引用。
+`workers/grade_submission.py` 只接受已有的 `GradeInputArtifact` ID。评分前先读取并验证不可变 S3 输入和当前复核/Canonical/Alignment/Question/AnswerKey/Rubric 版本；调用 Ollama 或经显式授权的 OpenAI-compatible 文本模型时不持有数据库事务。模型结果必须符合 `huipi.grading.model-reply` 1.0 协议，代码再校验 Criterion 集合恰好匹配、分值在每项 Rubric 范围内、Decimal 总分等于逐项分数，并验证引用是所选回答片段中的精确 Unicode 码点半开范围。每项正分必须至少有一条经原文与偏移验证的 quote；仅有 `no_evidence` 不能支持正分，零分可只带 `no_evidence`，部分分可同时带有效 quote 与缺失说明。校验只证明引用可追溯，不证明评分语义正确。模型无法提供原文证据时，必须使用显式 `no_evidence`，不得伪造引用。
+
+新增的证据一致性门禁不改变 proposal 1.0 文档字段或数据库结构。新模型调用使用 `rubric-candidate-v3` 提示词版本，该版本进入请求指纹；已有不可变 proposal 按原记录的 prompt 版本与协议校验读取，不会被追溯修改。
 
 proposal JSON 以每次执行不同的不可变 Key 上传到私有 S3，`grade_proposal_artifacts` 仅保存 request/input/provider/model/version/hash/usage 等索引元数据。同一 `request_id` 全局唯一，并通过请求指纹绑定 GradeInput SHA、provider、model、prompt 版本和生成配置。并发请求可多次调用模型，但只能登记一个有效索引；并发输家对象在确认赢家后尽力删除。COMMIT 结果未知、取消中的 S3 上传或数据库暂不可用时保留对象，因此仍可能产生孤立对象，S3 与 PostgreSQL 不具备跨系统原子性。
 

@@ -30,6 +30,7 @@ from huipi_cloud.modules.grading.proposal_errors import (
     GradeProposalCommitOutcomeUnknownError,
     GradeProposalIdempotencyConflictError,
     GradeProposalInputStaleError,
+    GradeProposalInvalidEvidenceError,
     GradeProposalRegistrationRolledBackError,
 )
 from huipi_cloud.modules.grading.proposal_protocol import GradeProposalDocument
@@ -252,6 +253,115 @@ async def test_real_postgres_minio_candidate_proposal_round_trip_and_human_revie
     assert hashlib.sha256(body).hexdigest() == row.object_sha256
     assert len(body) == row.object_size_bytes
     assert document.selected_answer_segments[0].text in body.decode("utf-8")
+
+
+@pytest.mark.anyio
+async def test_positive_score_without_quote_is_rejected_before_proposal_storage(
+    submission_client: httpx.AsyncClient,
+    recording_minio_storage,
+    postgres_engine: AsyncEngine,
+) -> None:
+    factory, submission_id, _, _, prepared, _, valid_reply = await _ready_grade_input(
+        submission_client, recording_minio_storage, postgres_engine
+    )
+    invalid_reply = json.loads(json.dumps(valid_reply))
+    invalid_reply["total_score"] = "5.00"
+    invalid_reply["criterion_scores"][0]["awarded_points"] = "5.00"
+    invalid_reply["criterion_scores"][0]["evidence_references"] = [
+        {"kind": "no_evidence", "reason": "未见检验步骤"}
+    ]
+    uploaded_keys_before = set(recording_minio_storage.uploaded_keys)
+    async with factory() as session:
+        review_before = [
+            (row.id, row.revision, row.decision)
+            for row in (
+                await session.scalars(
+                    select(AnswerReviewDecision).where(
+                        AnswerReviewDecision.submission_id == submission_id
+                    )
+                )
+            ).all()
+        ]
+
+    provider = _CandidateProvider(postgres_engine, invalid_reply)
+    with pytest.raises(GradeProposalInvalidEvidenceError) as captured:
+        await grade_input_artifact(
+            factory,
+            recording_minio_storage,
+            grade_input_artifact_id=prepared.artifact_id,
+            request_id=uuid4(),
+            config=Settings(),
+            provider=provider,
+        )
+
+    assert captured.value.reason_code == "positive_score_without_quote"
+    assert provider.calls == 1
+    assert set(recording_minio_storage.uploaded_keys) == uploaded_keys_before
+    assert not any(
+        "/grading/proposals/" in key
+        for key in set(recording_minio_storage.uploaded_keys) - uploaded_keys_before
+    )
+    async with factory() as session:
+        proposal_count = await session.scalar(
+            select(func.count())
+            .select_from(GradeProposalArtifact)
+            .where(GradeProposalArtifact.grade_input_artifact_id == prepared.artifact_id)
+        )
+        review_after = [
+            (row.id, row.revision, row.decision)
+            for row in (
+                await session.scalars(
+                    select(AnswerReviewDecision).where(
+                        AnswerReviewDecision.submission_id == submission_id
+                    )
+                )
+            ).all()
+        ]
+    assert proposal_count == 0
+    assert review_after == review_before
+
+
+@pytest.mark.anyio
+async def test_provider_abstention_persists_no_candidate_scores(
+    submission_client: httpx.AsyncClient,
+    recording_minio_storage,
+    postgres_engine: AsyncEngine,
+) -> None:
+    factory, _, _, _, prepared, _, _ = await _ready_grade_input(
+        submission_client, recording_minio_storage, postgres_engine
+    )
+    provider = _CandidateProvider(
+        postgres_engine,
+        {
+            "schema_version": "1.0",
+            "outcome": "abstain",
+            "abstention_reason": "无法从当前文本确认评分依据。",
+            "reason_codes": ["insufficient_evidence"],
+            "total_score": None,
+            "criterion_scores": [],
+        },
+    )
+
+    result = await grade_input_artifact(
+        factory,
+        recording_minio_storage,
+        grade_input_artifact_id=prepared.artifact_id,
+        request_id=uuid4(),
+        config=Settings(),
+        provider=provider,
+    )
+    proposal, _ = await read_grade_proposal_artifact(
+        factory,
+        recording_minio_storage,
+        result.proposal_id,
+        config=Settings(),
+    )
+
+    assert result.status == "grading_abstained"
+    assert result.total_score is None
+    assert proposal.grading_status == "grading_abstained"
+    assert proposal.criterion_scores == []
+    assert proposal.total_score is None
 
 
 @pytest.mark.anyio

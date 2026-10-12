@@ -40,7 +40,7 @@ class QuoteEvidenceReference(BaseModel):
 
 
 class NoEvidenceReference(BaseModel):
-    """An explicit explanation for a missing step; it does not invent a quote."""
+    """Explain a missing step; positive scores still require a validated quote."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 

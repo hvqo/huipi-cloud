@@ -377,11 +377,15 @@ def _validate_candidate_scores(
             raise GradeProposalInvalidRubricScoresError("criterion_score_out_of_range")
         if len(draft.rationale) > config.grading_max_rationale_characters:
             raise GradeProposalInvalidRubricScoresError("criterion_rationale_too_long")
+        has_valid_quote = False
         for evidence in draft.evidence_references:
             if isinstance(evidence, QuoteEvidenceReference):
                 _validate_quote_reference(evidence, document, config)
+                has_valid_quote = True
             elif not isinstance(evidence, NoEvidenceReference):
                 raise GradeProposalInvalidEvidenceError("evidence_reference_kind_invalid")
+        if draft.awarded_points > 0 and not has_valid_quote:
+            raise GradeProposalInvalidEvidenceError("positive_score_without_quote")
         validated.append(
             CriterionScore(
                 criterion_id=criterion.criterion_id,
