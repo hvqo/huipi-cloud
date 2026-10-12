@@ -8,5 +8,6 @@
 - [运行视觉作答证据建议](visual-evidence.md)
 - [人工复核 CLI 与脱敏导出](answer-review.md)
 - [可信评分输入检查与生成 CLI](grade-input.md)
+- [Rubric 候选评分 CLI](grade-proposals.md)
 
 所有示例默认用于本地受控环境。项目尚未实现登录、RBAC 或租户隔离。

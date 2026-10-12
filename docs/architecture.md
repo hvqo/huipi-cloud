@@ -12,10 +12,11 @@
 - `modules/canonical_documents`：Canonical Document v1 DTO、MiddleJson 适配转换、有界内容验证、稳定标识、S3/PG 持久化、状态与页面查询。
 - `modules/answer_alignment`：P2-D1 新增模块。按 Canonical 阅读顺序识别题号候选、切分可追溯来源区域、与 Assignment 的真实 Question 对齐，并读写版本化结果索引。该模块不读取 AnswerKey，也不判断学生作答存在性。
 - `modules/answer_review`：独立人工判断协议。校验 Canonical 节点与 Unicode 码点范围，按当前 Canonical/Alignment/Question 集合版本追加作答存在性决定，并校验合成标注基线。该模块不修改 Answer Alignment，不生成自动作答预测或评分结果。
-- `modules/grading`：从当前版本的人工 `response_present` 证据、Canonical 和 Alignment 中构建版本化评分输入；校验已发布作业、教师标准答案、Rubric 总分和来源版本。它只准备输入，不调用评分模型或生成分数。
+- `modules/grading`：从当前版本的人工 `response_present` 证据、Canonical 和 Alignment 中构建版本化评分输入；校验已发布作业、教师标准答案、Rubric 总分和来源版本。P3-B 的本地评分服务只生成独立的 Rubric 候选评分，不写最终成绩或人工复核决定。
 - `modules/visual_evidence`：严格版本化机器建议协议、幂等请求索引和来源版本复核。proposal 写私有 S3，PostgreSQL 保存轻量索引；不修改人工复核表。
 - `modules/visual_evaluation`：版本化合成视觉标签协议、图像引用/hash/尺寸验证、作答存在性与区域定位统计。它消费 Provider 已保存的预测，不访问数据库，也不把 Canonical 映射当作标签。
-- `workers`：独立于 FastAPI 的解析任务轮询进程，管理领取、解析调用、heartbeat、结果提交和受控退出；另含规范化、答案对齐、人工复核和 VLM 建议 CLI。
+- `workers`：独立于 FastAPI 的解析任务轮询进程，管理领取、解析调用、heartbeat、结果提交和受控退出；另含规范化、答案对齐、人工复核、VLM 建议、GradeInput 准备和 Rubric 候选评分 CLI。
+- `infrastructure/grading`：本地 Ollama 原生及受显式数据授权保护的 OpenAI-compatible 文本模型客户端；限制 endpoint、请求超时、回复大小和输出 token，并只记录安全错误类别。
 - `infrastructure/database`：共享 Engine 工厂与按请求/操作创建的 AsyncSession；Alembic 管理结构，应用启动不会调用 `create_all`。
 - `infrastructure/storage`：boto3 S3 兼容适配器。本地对象存储使用 PGSTY SILO。
 - `infrastructure/parsing`：隔离的 MinerU 4.x 子进程启动、PDF 预检、输出归档校验和不可变解析产物上传。
@@ -90,10 +91,16 @@ erDiagram
     ANSWER_ALIGNMENT_ARTIFACT ||--o{ ANSWER_REVIEW_DECISION : binds
     CANONICAL_ARTIFACT ||--o{ ANSWER_REVIEW_DECISION : cites
     ANSWER_REVIEW_DECISION ||--o| ANSWER_REVIEW_DECISION : supersedes
+    SUBMISSION ||--o{ GRADE_INPUT_ARTIFACT : binds
+    QUESTION ||--o{ GRADE_INPUT_ARTIFACT : snapshots
+    ANSWER_REVIEW_DECISION ||--o{ GRADE_INPUT_ARTIFACT : authorizes
+    GRADE_INPUT_ARTIFACT ||--o{ GRADE_PROPOSAL_ARTIFACT : scores
     SUBMISSION ||--o{ VISUAL_EVIDENCE_ARTIFACT : suggests
     QUESTION ||--o{ VISUAL_EVIDENCE_ARTIFACT : concerns
     CANONICAL_ARTIFACT ||--o{ VISUAL_EVIDENCE_ARTIFACT : references
     ANSWER_ALIGNMENT_ARTIFACT ||--o{ VISUAL_EVIDENCE_ARTIFACT : binds
+    SUBMISSION ||--o{ GRADE_PROPOSAL_ARTIFACT : proposes
+    QUESTION ||--o{ GRADE_PROPOSAL_ARTIFACT : concerns
 ```
 
 同一 `Submission` 有一份 `SubmissionFile` 元数据与唯一的 `ParsingTask`。提交、对象定位信息和初始 `pending` 任务在一个 PostgreSQL 事务内写入。原文件放在私有 S3 兼容存储，数据库只保存 bucket、服务端生成的 `object_key`、MIME、大小和 SHA-256。
@@ -134,7 +141,7 @@ P2-D1 从已持久化的 Canonical Document 读取学生内容，不重新运行
 
 对齐由 `python -m huipi_cloud.workers.align_answers --submission-id UUID` 在 FastAPI 请求之外运行。两个 GET API 只查询已写入的结果，不隐式运行识别。摘要不包含 S3 Key；单题接口检查当前 Canonical 和 Question digest，并对对象大小、SHA-256 和版本合同做校验。`ANSWER_ALIGNMENT_MAX_DOCUMENT_BYTES` 默认最多 32 MiB、硬上限 64 MiB；`ANSWER_ALIGNMENT_MAX_QUESTION_RESPONSE_BYTES` 默认最多 2 MiB、硬上限 8 MiB。读取单题仍会将整份有界 JSON 解码成对象，内存峰值高于对象字节数，并随并发请求增加；当前没有全局并发读取配额。当前接口没有认证、RBAC、归属检查或租户隔离，只适用于本地或受控环境。
 
-离线人工标注集当前为 13 个合成 Canonical 案例，保留原 12 个案例标签，并增加“明确题号 + 仅有印刷题干、没有确认学生回应”的负样本。指标定义版本 2.1 使用 `(case_id, Question, content_pointer, start, end)` 作为答案范围键。`content_pointer` 指向具体的 Canonical ContentNode；偏移相对该节点文本，使用 Python Unicode 码点和半开区间。脚本只归并同一节点内重叠或相邻范围，不让不同节点的相同偏移匹配。候选检测和候选到 Question 关联指标也包含完整节点路径。原 13 个顶层案例仍使用旧标注并推导顶层 pointer；嵌套标注必须显式给出且通过节点路径和范围验证。嵌套专项样本单独报告，不混入原 13 案例统计。脚本分别输出候选检测、候选到 Question 关联、来源映射的自动接受 Precision/Recall、字符区间交并、精确边界和素材引用保留。`aligned` 自动接受指标只衡量来源到 Question 的映射，不衡量作答存在或批改就绪。分子、分母和定义都会输出；没有预测时 Precision 为 `null`，不伪报为高分。这些数字只描述小型合成集，不代表真实学生手写作业质量。当前没有真实手写评测集、学生作答检测、人工修订流程、概率校准、OCR、自动评分或 P2-D2。
+离线人工标注集当前为 13 个合成 Canonical 案例，保留原 12 个案例标签，并增加“明确题号 + 仅有印刷题干、没有确认学生回应”的负样本。指标定义版本 2.1 使用 `(case_id, Question, content_pointer, start, end)` 作为答案范围键。`content_pointer` 指向具体的 Canonical ContentNode；偏移相对该节点文本，使用 Python Unicode 码点和半开区间。脚本只归并同一节点内重叠或相邻范围，不让不同节点的相同偏移匹配。候选检测和候选到 Question 关联指标也包含完整节点路径。原 13 个顶层案例仍使用旧标注并推导顶层 pointer；嵌套标注必须显式给出且通过节点路径和范围验证。嵌套专项样本单独报告，不混入原 13 案例统计。脚本分别输出候选检测、候选到 Question 关联、来源映射的自动接受 Precision/Recall、字符区间交并、精确边界和素材引用保留。`aligned` 自动接受指标只衡量来源到 Question 的映射，不衡量作答存在或批改就绪。分子、分母和定义都会输出；没有预测时 Precision 为 `null`，不伪报为高分。这些数字只描述小型合成集，不代表真实学生手写作业质量。当前没有真实手写评测集、教师评分发布流程、概率校准、自动发布成绩或 P2-D2。
 
 ## 任务状态与执行边界
 
@@ -212,4 +219,14 @@ opt-in 本机 E2E 对三个合成样本均通过；三个文件都为一页，�
 
 上传对象使用每次尝试独立的不可变 Key。写 PostgreSQL 前以 `Submission → Assignment → Question` 的顺序加锁，与人工复核、作业写入路径保持一致；再锁定并重新核对 Canonical、Alignment、最新 Review、AnswerKey 和 Rubric。唯一约束 `(submission_id, question_id, request_id)` 保护并发重放。同 request ID 与相同 `input_sha256` 返回既有包；内容不同返回冲突。只有确认事务在 COMMIT 前失败或确认其他对象已登记为赢家后，服务才尽力删除本次对象；COMMIT 结果未知时保留对象。S3 与 PostgreSQL 不共享事务，进程中断或上传取消仍可能留下孤立对象，当前没有对账清理器。
 
-`read_grade_input_artifact()` 重新计算当前输入摘要，拒绝已被新复核修订替代的旧包；随后校验对象大小、SHA-256、严格 Pydantic 协议和索引字段。P3-B 消费者仍必须在实际评分前读取当前包，不应把历史对象状态当作永久有效授权。CLI 位于 `workers/prepare_grade_input.py`，只支持本地 `inspect` 与 `prepare`，没有匿名 HTTP 写 API。项目没有认证或 RBAC，原始作业、复核证据和评分输入只适用于受控环境。
+`read_grade_input_artifact()` 重新计算当前输入摘要，拒绝已被新复核修订替代的旧包；随后校验对象大小、SHA-256、严格 Pydantic 协议和索引字段。CLI 位于 `workers/prepare_grade_input.py`，只支持本地 `inspect` 与 `prepare`，没有匿名 HTTP 写 API。项目没有认证或 RBAC，原始作业、复核证据和评分输入只适用于受控环境。
+
+## P3-B Rubric 候选评分
+
+`workers/grade_submission.py` 只接受已有的 `GradeInputArtifact` ID。评分前先读取并验证不可变 S3 输入和当前复核/Canonical/Alignment/Question/AnswerKey/Rubric 版本；调用 Ollama 或经显式授权的 OpenAI-compatible 文本模型时不持有数据库事务。模型结果必须符合 `huipi.grading.model-reply` 1.0 协议，代码再校验 Criterion 集合恰好匹配、分值在每项 Rubric 范围内、Decimal 总分等于逐项分数，并验证引用是所选回答片段中的精确 Unicode 码点半开范围。每项正分必须至少有一条经原文与偏移验证的 quote；仅有 `no_evidence` 不能支持正分，零分可只带 `no_evidence`，部分分可同时带有效 quote 与缺失说明。校验只证明引用可追溯，不证明评分语义正确。模型无法提供原文证据时，必须使用显式 `no_evidence`，不得伪造引用。
+
+新增的证据一致性门禁不改变 proposal 1.0 文档字段或数据库结构。新模型调用使用 `rubric-candidate-v3` 提示词版本，该版本进入请求指纹；已有不可变 proposal 按原记录的 prompt 版本与协议校验读取，不会被追溯修改。
+
+proposal JSON 以每次执行不同的不可变 Key 上传到私有 S3，`grade_proposal_artifacts` 仅保存 request/input/provider/model/version/hash/usage 等索引元数据。同一 `request_id` 全局唯一，并通过请求指纹绑定 GradeInput SHA、provider、model、prompt 版本和生成配置。并发请求可多次调用模型，但只能登记一个有效索引；并发输家对象在确认赢家后尽力删除。COMMIT 结果未知、取消中的 S3 上传或数据库暂不可用时保留对象，因此仍可能产生孤立对象，S3 与 PostgreSQL 不具备跨系统原子性。
+
+服务在模型调用前、调用后以及登记事务中重新检查来源；最后一次检查以短 PostgreSQL 事务行锁定来源。若人工复核、Rubric、AnswerKey、题目或 Canonical/Alignment 在调用期间变化，则拒绝登记。模型建议保持在 `grade_proposal_artifacts`，不更新 AnswerReview，不创建最终成绩，也不自动转成零分。CLI 仅本地运行，没有 HTTP 评分写 API、认证或 RBAC；默认禁用模型调用。输入字节数是 tokenizer 缺失时采用的保守上界，不是精确 token 计数或模型上下文保证。
