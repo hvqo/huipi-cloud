@@ -13,6 +13,11 @@ from urllib.parse import urlparse
 import httpx
 
 from huipi_cloud.core.config import Settings, settings
+from huipi_cloud.infrastructure.llm.deepseek import (
+    deepseek_options,
+    finish_reason_error,
+    is_deepseek_endpoint,
+)
 from huipi_cloud.modules.grading.proposal_errors import (
     GradeProposalInvalidModelResponseError,
     GradeProposalProviderError,
@@ -27,6 +32,9 @@ MAX_PROVIDER_RESPONSE_BYTES = 128 * 1024
 class ProviderUsage:
     prompt_tokens: int | None = None
     completion_tokens: int | None = None
+    reasoning_tokens: int | None = None
+    cache_hit_tokens: int | None = None
+    cache_miss_tokens: int | None = None
 
 
 @dataclass(frozen=True)
@@ -35,6 +43,15 @@ class TextGradingResponse:
     model_id: str
     elapsed_ms: int
     usage: ProviderUsage
+    finish_reason: str | None = None
+
+
+class GradeProviderEndedResponseError(GradeProposalInvalidModelResponseError):
+    """Preserve safe billing metadata and the raw final content for offline audit."""
+
+    def __init__(self, reason_code: str, response: TextGradingResponse) -> None:
+        super().__init__(reason_code)
+        self.response = response
 
 
 class TextGradingProvider(Protocol):
@@ -73,7 +90,15 @@ class _HttpTextGradingProvider:
         self._max_tokens = config.grading_max_output_tokens
         self._transport = transport
         self._native_ollama = native_ollama
+        self._deepseek_options = (
+            deepseek_options(
+                endpoint, config.grading_deepseek_thinking,
+                config.grading_deepseek_reasoning_effort,
+            ) if not native_ollama else {}
+        )
         api_key = config.grading_api_key.get_secret_value() if config.grading_api_key else None
+        if self._deepseek_options and (not api_key or not api_key.strip()):
+            raise GradeProposalProviderError("deepseek_api_key_missing")
         self._headers = {"Accept": "application/json", "Content-Type": "application/json"}
         if api_key:
             self._headers["Authorization"] = f"Bearer {api_key}"
@@ -83,7 +108,17 @@ class _HttpTextGradingProvider:
                     "provider": self.provider_name,
                     "endpoint_sha256": hashlib.sha256(endpoint.encode()).hexdigest(),
                     "model": self._model,
-                    "temperature": 0,
+                    "temperature": (
+                        None if self._deepseek_options.get("thinking") == {"type": "enabled"}
+                        else 0
+                    ),
+                    **(
+                        {
+                            "deepseek_options": self._deepseek_options,
+                            "configured_reasoning_effort": config.grading_deepseek_reasoning_effort,
+                        }
+                        if self._deepseek_options else {}
+                    ),
                     "max_output_tokens": self._max_tokens,
                     "max_input_tokens": config.grading_max_input_tokens,
                     "timeout_seconds": config.grading_timeout_seconds,
@@ -119,6 +154,9 @@ class _HttpTextGradingProvider:
                 "max_tokens": self._max_tokens,
                 "response_format": {"type": "json_object"},
             }
+            body.update(self._deepseek_options)
+            if self._deepseek_options.get("thinking") == {"type": "enabled"}:
+                body.pop("temperature")
 
         response_body = await _post_bounded(
             self._endpoint,
@@ -134,34 +172,56 @@ class _HttpTextGradingProvider:
                 response_model = outer.get("model")
                 prompt_tokens = outer.get("prompt_eval_count")
                 completion_tokens = outer.get("eval_count")
+                finish_reason = outer.get("done_reason")
+                usage = {}
             else:
-                content = outer["choices"][0]["message"]["content"]
+                choice = outer["choices"][0]
+                content = choice["message"]["content"]
+                finish_reason = choice.get("finish_reason")
                 response_model = outer.get("model")
                 usage = outer.get("usage")
                 usage = usage if isinstance(usage, dict) else {}
                 prompt_tokens = usage.get("prompt_tokens")
                 completion_tokens = usage.get("completion_tokens")
+            if finish_reason is not None and not isinstance(finish_reason, str):
+                raise ValueError
+            reason = finish_reason_error(
+                finish_reason, required=is_deepseek_endpoint(self._endpoint)
+            )
+            if content is None and reason is not None:
+                content = ""
             if (
                 not isinstance(content, str)
                 or len(content.encode("utf-8")) > MAX_PROVIDER_RESPONSE_BYTES
             ):
                 raise ValueError
             model_id = response_model if isinstance(response_model, str) else self._model
+            if self._deepseek_options and not isinstance(response_model, str):
+                raise ValueError
             if not model_id.strip() or len(model_id) > 200:
                 raise ValueError
-            return TextGradingResponse(
+            details = usage.get("completion_tokens_details")
+            details = details if isinstance(details, dict) else {}
+            result = TextGradingResponse(
                 content=content,
                 model_id=model_id,
                 elapsed_ms=max(0, round((time.perf_counter() - started) * 1000)),
                 usage=ProviderUsage(
                     prompt_tokens=_optional_nonnegative_int(prompt_tokens),
                     completion_tokens=_optional_nonnegative_int(completion_tokens),
+                    reasoning_tokens=_optional_nonnegative_int(details.get("reasoning_tokens")),
+                    cache_hit_tokens=_optional_nonnegative_int(usage.get("prompt_cache_hit_tokens")),
+                    cache_miss_tokens=_optional_nonnegative_int(usage.get("prompt_cache_miss_tokens")),
                 ),
+                finish_reason=finish_reason if isinstance(finish_reason, str) else None,
             )
         except (KeyError, IndexError, TypeError, ValueError, json.JSONDecodeError) as error:
             raise GradeProposalInvalidModelResponseError(
                 "provider_response_envelope_invalid"
             ) from error
+        if reason is not None:
+            raise GradeProviderEndedResponseError(reason, result)
+        return result
 
 
 class OllamaTextGradingProvider(_HttpTextGradingProvider):
@@ -262,6 +322,10 @@ async def _post_bounded(
                     raise GradeProposalProviderTimeoutError("provider_timeout")
                 if response.status_code >= 500:
                     raise GradeProposalProviderError("provider_unavailable")
+                if response.status_code == 401:
+                    raise GradeProposalProviderError("provider_authentication_failed")
+                if response.status_code == 404:
+                    raise GradeProposalProviderError("provider_model_or_endpoint_not_found")
                 if response.status_code >= 400:
                     raise GradeProposalProviderError("provider_request_rejected")
                 payload = bytearray()

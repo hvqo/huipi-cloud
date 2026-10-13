@@ -18,7 +18,12 @@ from uuid import UUID, uuid5
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from huipi_cloud.core.config import Settings
-from huipi_cloud.infrastructure.grading.provider import TextGradingProvider, TextGradingResponse
+from huipi_cloud.infrastructure.grading.provider import (
+    GradeProviderEndedResponseError,
+    TextGradingProvider,
+    TextGradingResponse,
+)
+from huipi_cloud.infrastructure.llm.deepseek import finish_reason_error, is_deepseek_endpoint
 from huipi_cloud.modules.grading.prompts import PROMPT_VERSION
 from huipi_cloud.modules.grading.proposal_errors import (
     GradeProposalError,
@@ -211,6 +216,11 @@ class EvaluationPredictionCase(BaseModel):
     prompt_tokens: int | None = Field(default=None, ge=0)
     completion_tokens: int | None = Field(default=None, ge=0)
     elapsed_ms: int | None = Field(default=None, ge=0)
+    response_model_id: str | None = Field(default=None, min_length=1, max_length=200)
+    finish_reason: str | None = Field(default=None, max_length=64)
+    reasoning_tokens: int | None = Field(default=None, ge=0)
+    cache_hit_tokens: int | None = Field(default=None, ge=0)
+    cache_miss_tokens: int | None = Field(default=None, ge=0)
 
     @model_validator(mode="after")
     def validate_shape(self) -> Self:
@@ -247,6 +257,10 @@ class RubricEvaluationPredictions(BaseModel):
     model_id: str = Field(min_length=1, max_length=200)
     prompt_version: str = Field(min_length=1, max_length=64)
     generation_config_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
+    thinking_mode: Literal["disabled", "enabled"] | None = None
+    reasoning_effort: Literal["low", "high", "max"] | None = None
+    configured_reasoning_effort: Literal["low", "high", "max"] | None = None
+    max_output_tokens: int | None = Field(default=None, ge=64, le=16384)
     invalid_response_retries: int = Field(ge=0, le=1)
     timeout_seconds: float = Field(gt=0, le=180)
     created_at: datetime
@@ -656,7 +670,7 @@ def evaluate_predictions(
         dataset, derived, selected_config
     )
     semantic_score_risks = _semantic_score_risk_cases(dataset, by_case_id)
-    return {
+    report = {
         "dataset_version": dataset.dataset_version,
         "dataset_sha256": dataset_sha256,
         "prediction_model": {
@@ -807,6 +821,27 @@ def evaluate_predictions(
         "failure_cases": failure_cases,
         "per_case": per_case,
     }
+    if predictions.max_output_tokens is not None:
+        report["prediction_model"].update({
+            "max_output_tokens": predictions.max_output_tokens,
+            "thinking_mode": predictions.thinking_mode,
+            "reasoning_effort": predictions.reasoning_effort,
+            "configured_reasoning_effort": predictions.configured_reasoning_effort,
+        })
+    if any(item.response_model_id is not None for item in predictions.cases):
+        report["provider_call_metadata"] = [
+            {
+                "case_id": item.case_id,
+                "actual_model_id": item.response_model_id,
+                "finish_reason": item.finish_reason,
+                "reasoning_tokens": item.reasoning_tokens,
+                "cache_hit_tokens": item.cache_hit_tokens,
+                "cache_miss_tokens": item.cache_miss_tokens,
+            }
+            for item in predictions.cases
+            if item.response_model_id is not None
+        ]
+    return report
 
 
 def _is_json_parseable(content: str | None) -> bool:
@@ -1374,6 +1409,15 @@ def _derive_prediction(
         if prediction.status not in {"provider_timeout", "provider_error", "input_too_large"}:
             raise ValueError("failed_prediction_missing_response_content")
         return prediction.status, None, prediction.error_code
+    ended_reason = finish_reason_error(
+        prediction.finish_reason,
+        required=prediction.error_code == "provider_finish_reason_missing",
+    )
+    if ended_reason is not None:
+        _require_status_match(prediction.status, "provider_error")
+        if prediction.error_code != ended_reason:
+            raise ValueError("prediction_finish_reason_error_mismatch")
+        return "provider_error", None, ended_reason
     try:
         reply = GradeModelReply.model_validate_json(prediction.response_content)
     except ValidationError as error:
@@ -1419,6 +1463,11 @@ def _status_for_error(error: GradeProposalError) -> str:
 
 
 def _status_for_model_call_error(error: GradeProposalError) -> str:
+    if error.reason_code in {
+        "provider_response_truncated", "provider_generation_incomplete",
+        "provider_finish_reason_missing",
+    }:
+        return "provider_error"
     if error.reason_code in {
         "model_evidence_protocol_invalid",
         "model_score_protocol_invalid",
@@ -1604,6 +1653,11 @@ class _CaptureProvider:
         self.prompt_tokens: int | None = None
         self.completion_tokens: int | None = None
         self.elapsed_ms: int | None = None
+        self.response_model_id: str | None = None
+        self.finish_reason: str | None = None
+        self.reasoning_tokens: int | None = None
+        self.cache_hit_tokens: int | None = None
+        self.cache_miss_tokens: int | None = None
 
     async def complete(
         self,
@@ -1611,14 +1665,25 @@ class _CaptureProvider:
         system_prompt: str,
         user_prompt: str,
     ) -> TextGradingResponse:
-        response = await self.provider.complete(
-            system_prompt=system_prompt,
-            user_prompt=user_prompt,
-        )
+        ended_error = None
+        try:
+            response = await self.provider.complete(
+                system_prompt=system_prompt, user_prompt=user_prompt,
+            )
+        except GradeProviderEndedResponseError as error:
+            response = error.response
+            ended_error = error
         self.response_content = response.content
         self.prompt_tokens = response.usage.prompt_tokens
         self.completion_tokens = response.usage.completion_tokens
         self.elapsed_ms = response.elapsed_ms
+        self.response_model_id = response.model_id
+        self.finish_reason = response.finish_reason
+        self.reasoning_tokens = response.usage.reasoning_tokens
+        self.cache_hit_tokens = response.usage.cache_hit_tokens
+        self.cache_miss_tokens = response.usage.cache_miss_tokens
+        if ended_error is not None:
+            raise ended_error
         return response
 
 
@@ -1638,6 +1703,11 @@ async def request_prediction(
         values.setdefault("response_content", captured.response_content)
         values.setdefault("prompt_tokens", captured.prompt_tokens)
         values.setdefault("completion_tokens", captured.completion_tokens)
+        for name in (
+            "response_model_id", "finish_reason", "reasoning_tokens",
+            "cache_hit_tokens", "cache_miss_tokens",
+        ):
+            values.setdefault(name, getattr(captured, name))
         values.setdefault(
             "elapsed_ms",
             captured.elapsed_ms
@@ -1685,6 +1755,20 @@ def create_predictions_document(
         model_id=provider.model_id,
         prompt_version=PROMPT_VERSION,
         generation_config_digest=provider.generation_config_digest,
+        thinking_mode=(
+            config.grading_deepseek_thinking
+            if is_deepseek_endpoint(config.grading_base_url) else None
+        ),
+        reasoning_effort=(
+            config.grading_deepseek_reasoning_effort
+            if is_deepseek_endpoint(config.grading_base_url)
+            and config.grading_deepseek_thinking == "enabled" else None
+        ),
+        configured_reasoning_effort=(
+            config.grading_deepseek_reasoning_effort
+            if is_deepseek_endpoint(config.grading_base_url) else None
+        ),
+        max_output_tokens=config.grading_max_output_tokens,
         invalid_response_retries=config.grading_invalid_response_retries,
         timeout_seconds=config.grading_timeout_seconds,
         created_at=datetime.now(UTC),

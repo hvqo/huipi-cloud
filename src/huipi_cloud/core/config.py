@@ -77,8 +77,10 @@ class Settings(BaseSettings):
     grading_api_key: SecretStr | None = None
     grading_allow_remote: bool = False
     grading_external_data_authorized: bool = False
+    grading_deepseek_thinking: Literal["disabled", "enabled"] = "disabled"
+    grading_deepseek_reasoning_effort: Literal["low", "high", "max"] = "max"
     grading_timeout_seconds: float = Field(default=90.0, gt=0, le=180)
-    grading_max_output_tokens: int = Field(default=1200, ge=64, le=4096)
+    grading_max_output_tokens: int = Field(default=1200, ge=64, le=16384)
     grading_max_input_bytes: int = Field(default=32 * 1024, ge=1024, le=256 * 1024)
     grading_max_input_tokens: int = Field(default=48 * 1024, ge=1024, le=256 * 1024)
     grading_max_proposal_bytes: int = Field(default=512 * 1024, ge=4096, le=2 * 1024 * 1024)
@@ -94,9 +96,11 @@ class Settings(BaseSettings):
     visual_evidence_api_key: SecretStr | None = None
     visual_evidence_allow_remote: bool = False
     visual_evidence_external_data_authorized: bool = False
+    visual_evidence_deepseek_thinking: Literal["disabled", "enabled"] = "disabled"
+    visual_evidence_deepseek_reasoning_effort: Literal["low", "high", "max"] = "max"
     visual_evidence_timeout_seconds: float = Field(default=90.0, gt=0, le=300)
     visual_evidence_max_retries: int = Field(default=1, ge=0, le=3)
-    visual_evidence_max_output_tokens: int = Field(default=1200, ge=64, le=4096)
+    visual_evidence_max_output_tokens: int = Field(default=1200, ge=64, le=16384)
     visual_evidence_max_pages_per_question: int = Field(default=5, ge=1, le=20)
     visual_evidence_max_original_bytes: int = Field(
         default=20 * 1024 * 1024, ge=1024, le=50 * 1024 * 1024

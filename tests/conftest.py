@@ -35,6 +35,30 @@ def anyio_backend() -> str:
     return "asyncio"
 
 
+@pytest.fixture(autouse=True)
+def isolated_model_defaults(monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest):
+    """A developer's paid-provider .env must not change ordinary Mock tests."""
+    live_markers = {
+        "deepseek_e2e": "RUN_DEEPSEEK_SMOKE",
+        "grade_llm_e2e": "RUN_GRADE_LLM_E2E",
+        "visual_evidence_e2e": "VISUAL_EVIDENCE_E2E",
+    }
+    if any(
+        request.node.get_closest_marker(marker) is not None and os.getenv(flag) == "1"
+        for marker, flag in live_markers.items()
+    ):
+        return
+    for prefix in ("grading", "visual_evidence"):
+        for name, field in Settings.model_fields.items():
+            if name.startswith(prefix + "_"):
+                default = field.default
+                monkeypatch.setenv(
+                    name.upper(),
+                    "" if default is None else str(default).lower()
+                    if isinstance(default, bool) else str(default),
+                )
+
+
 @pytest.fixture(scope="session")
 def migrated_test_database_url() -> str:
     settings = Settings()

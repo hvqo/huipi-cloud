@@ -24,7 +24,7 @@
 
 **连续追问**：是否可以把 2/2 的有效候选说成 100% 准确？不能。有效覆盖仅 2/24，且两个都是简单合成案例，无法推断真实作业表现。
 
-**代码与演示**：[rubric-cases-v1.json](../../data/evaluation/grading/rubric-cases-v1.json)、[SHA-256 清单](../../data/evaluation/grading/rubric-cases-v1.json.sha256)；执行 `uv run python scripts/evaluate_grade_proposals.py --dry-run` 可查看固定 SHA 和纳入/排除计数。
+**代码与演示**：[rubric-cases-v1.json](../../data/evaluation/grading/rubric-cases-v1.json)、[SHA-256 清单](../../data/evaluation/grading/rubric-cases-v1.json.sha256)；执行 `uv run python scripts/evaluate_grade_proposals.py --dataset data/evaluation/grading/rubric-cases-v1.json --dry-run` 可查看固定 SHA 和纳入/排除计数。
 
 ## 3. 为什么只对验证通过的候选计算 MAE？
 
