@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 import sys
+from decimal import Decimal
 from pathlib import Path
 from uuid import UUID, uuid4
 
@@ -88,6 +89,7 @@ async def _ready_grade_input(
     *,
     middle_content: str = "第1题 计算题干：2+2。学生作答：4。",
     response_text: str = "学生作答：4。",
+    rubric_items: list[tuple[str, str]] | None = None,
 ):
     factory, submission_id, question, review = await _prepared_review(
         client,
@@ -102,11 +104,30 @@ async def _ready_grade_input(
             .where(AnswerKey.question_id == question.id)
             .values(answer_content="4")
         )
-        await connection.execute(
-            RubricCriterion.__table__.update()
-            .where(RubricCriterion.question_id == question.id)
-            .values(description="正确计算并给出答案 x=4")
-        )
+        if rubric_items is None:
+            await connection.execute(
+                RubricCriterion.__table__.update()
+                .where(RubricCriterion.question_id == question.id)
+                .values(description="正确计算并给出答案 x=4")
+            )
+        else:
+            await connection.execute(
+                RubricCriterion.__table__.delete().where(
+                    RubricCriterion.question_id == question.id
+                )
+            )
+            await connection.execute(
+                RubricCriterion.__table__.insert(),
+                [
+                    {
+                        "question_id": question.id,
+                        "description": description,
+                        "points": points,
+                        "sort_order": index,
+                    }
+                    for index, (description, points) in enumerate(rubric_items, start=1)
+                ],
+            )
     prepared = await prepare_grade_input(
         factory,
         storage,
@@ -117,28 +138,31 @@ async def _ready_grade_input(
     assert prepared.artifact_id is not None
     document = await read_grade_input_artifact(factory, storage, prepared.artifact_id)
     segment = document.selected_answer_segments[0]
-    criterion = document.rubric_snapshot[0]
     quote = segment.text
+    criterion_scores = [
+        {
+            "criterion_id": str(criterion.criterion_id),
+            "awarded_points": str(criterion.points),
+            "rationale": "合成集成样例符合评分细则。",
+            "evidence_references": [
+                {
+                    "kind": "quote",
+                    "segment_index": 0,
+                    "text_start": 0,
+                    "text_end": len(quote),
+                    "quote": quote,
+                }
+            ],
+        }
+        for criterion in document.rubric_snapshot
+    ]
     reply = {
         "schema_version": "1.0",
         "outcome": "candidate",
-        "total_score": str(criterion.points),
-        "criterion_scores": [
-            {
-                "criterion_id": str(criterion.criterion_id),
-                "awarded_points": str(criterion.points),
-                "rationale": "合成集成样例符合评分细则。",
-                "evidence_references": [
-                    {
-                        "kind": "quote",
-                        "segment_index": 0,
-                        "text_start": 0,
-                        "text_end": len(quote),
-                        "quote": quote,
-                    }
-                ],
-            }
-        ],
+        "total_score": str(
+            sum((criterion.points for criterion in document.rubric_snapshot), Decimal("0.00"))
+        ),
+        "criterion_scores": criterion_scores,
     }
     return factory, submission_id, question, review, prepared, document, reply
 

@@ -12,10 +12,10 @@
 - `modules/canonical_documents`：Canonical Document v1 DTO、MiddleJson 适配转换、有界内容验证、稳定标识、S3/PG 持久化、状态与页面查询。
 - `modules/answer_alignment`：P2-D1 新增模块。按 Canonical 阅读顺序识别题号候选、切分可追溯来源区域、与 Assignment 的真实 Question 对齐，并读写版本化结果索引。该模块不读取 AnswerKey，也不判断学生作答存在性。
 - `modules/answer_review`：独立人工判断协议。校验 Canonical 节点与 Unicode 码点范围，按当前 Canonical/Alignment/Question 集合版本追加作答存在性决定，并校验合成标注基线。该模块不修改 Answer Alignment，不生成自动作答预测或评分结果。
-- `modules/grading`：从当前版本的人工 `response_present` 证据、Canonical 和 Alignment 中构建版本化评分输入；校验已发布作业、教师标准答案、Rubric 总分和来源版本。P3-B 的本地评分服务只生成独立的 Rubric 候选评分，不写最终成绩或人工复核决定。
+- `modules/grading`：从当前版本的人工 `response_present` 证据、Canonical 和 Alignment 中构建版本化评分输入；校验已发布作业、教师标准答案、Rubric 总分和来源版本。P3-B 生成独立的 Rubric 候选评分；P3-C2 以追加方式记录对候选分数的人工接受、修订、拒绝或重新评分要求，不写最终成绩，也不修改作答复核记录。
 - `modules/visual_evidence`：严格版本化机器建议协议、幂等请求索引和来源版本复核。proposal 写私有 S3，PostgreSQL 保存轻量索引；不修改人工复核表。
 - `modules/visual_evaluation`：版本化合成视觉标签协议、图像引用/hash/尺寸验证、作答存在性与区域定位统计。它消费 Provider 已保存的预测，不访问数据库，也不把 Canonical 映射当作标签。
-- `workers`：独立于 FastAPI 的解析任务轮询进程，管理领取、解析调用、heartbeat、结果提交和受控退出；另含规范化、答案对齐、人工复核、VLM 建议、GradeInput 准备和 Rubric 候选评分 CLI。
+- `workers`：独立于 FastAPI 的解析任务轮询进程，管理领取、解析调用、heartbeat、结果提交和受控退出；另含规范化、答案对齐、作答复核、VLM 建议、GradeInput 准备、Rubric 候选评分和候选评分人工复核 CLI。
 - `infrastructure/grading`：本地 Ollama 原生及受显式数据授权保护的 OpenAI-compatible 文本模型客户端；限制 endpoint、请求超时、回复大小和输出 token，并只记录安全错误类别。
 - `infrastructure/database`：共享 Engine 工厂与按请求/操作创建的 AsyncSession；Alembic 管理结构，应用启动不会调用 `create_all`。
 - `infrastructure/storage`：boto3 S3 兼容适配器。本地对象存储使用 PGSTY SILO。
@@ -101,6 +101,11 @@ erDiagram
     ANSWER_ALIGNMENT_ARTIFACT ||--o{ VISUAL_EVIDENCE_ARTIFACT : binds
     SUBMISSION ||--o{ GRADE_PROPOSAL_ARTIFACT : proposes
     QUESTION ||--o{ GRADE_PROPOSAL_ARTIFACT : concerns
+    GRADE_PROPOSAL_ARTIFACT ||--o{ GRADE_REVIEW_REVISION : reviewed
+    GRADE_INPUT_ARTIFACT ||--o{ GRADE_REVIEW_REVISION : binds
+    SUBMISSION ||--o{ GRADE_REVIEW_REVISION : reviews
+    QUESTION ||--o{ GRADE_REVIEW_REVISION : concerns
+    GRADE_REVIEW_REVISION ||--o| GRADE_REVIEW_REVISION : supersedes
 ```
 
 同一 `Submission` 有一份 `SubmissionFile` 元数据与唯一的 `ParsingTask`。提交、对象定位信息和初始 `pending` 任务在一个 PostgreSQL 事务内写入。原文件放在私有 S3 兼容存储，数据库只保存 bucket、服务端生成的 `object_key`、MIME、大小和 SHA-256。
@@ -238,3 +243,11 @@ proposal JSON 以每次执行不同的不可变 Key 上传到私有 S3，`grade_
 评测器按案例构造短生命周期、仅内存的 `GradeInputDocument`，只保留既有 P3-B `build_user_prompt()`、`GradeModelReply`、`_call_and_validate()` 和 `_validate_candidate_scores()`；不创建 PostgreSQL/S3 GradeInputArtifact，不登记 GradeProposal，也不触碰人工作答复核表。默认 CLI 只验证数据并报告输入大小；只有显式 `--run-model` 才调用已经配置的 Provider。真实预测文件分别保存原始合成模型回复、协议/验证状态、usage、延迟、Provider、模型、Prompt 版本、配置摘要和数据集 SHA。离线重算会重新校验保存的回复，而不是信任旧 `status` 字段。
 
 分数 MAE 与 exact 只使用通过现有 P3-B 确定性校验的候选；无效协议、无效 Rubric、无效证据、弃权和 Provider 失败分别保留为失败与覆盖数据。总分相同但 Criterion 逐项抵消的情况单独统计。证据范围重叠只衡量文本字符定位；它不证明 quote 在教学语义上足以支持分数。合成参考由 `synthetic_curated_reference` 标注，不代表教师独立评分，不能用于推断真实学生作业准确率。真实教师双人评分、仲裁和经许可的数据集仍是后续质量评测的前提。
+
+## P3-C2 Rubric 候选评分人工复核
+
+`grade_review_revisions` 保存对单个不可变 `GradeProposalArtifact` 的人工判断。状态为 `accepted`、`revised`、`rejected` 或 `regrading_required`。前两种状态包含与 Rubric Criterion 一一对应的 reviewed score；后两种状态不包含人工复核分数。接受只能逐项保留候选分数，修订由程序校验每项上限、计算总分，并要求变化项提供理由和指向当前 GradeInput 的证据。正分需要通过原文与 Unicode 码点范围校验的 quote。来源合法只证明证据可追溯，不证明评分语义正确。
+
+记录绑定 Proposal/GradeInput ID 与 SHA、Submission、Question、request 摘要、review revision 和 supersedes ID。写入前读取并验证私有 S3 对象、索引和来源；PostgreSQL 事务再锁 Proposal 行，以串行分配 revision，并调用 GradeInput 来源校验重新确认 Canonical、Alignment、Question、AnswerKey、Rubric 与最新 AnswerReview。相同 request ID 和内容返回既有记录，不同内容冲突；expected revision 不匹配时返回业务冲突。数据库唯一约束保护 revision、request 和单一后继关系，数据库触发器拒绝 UPDATE/DELETE。COMMIT 确认不明时使用原 request ID 重试，服务先查已有记录以恢复结果。
+
+人工记录直接保存在 PostgreSQL JSONB 中，因此该流程没有 S3/PG 双写。记录保存模型候选与复核分数、理由、引用、原因码和自声明 `reviewer_ref`，这些字段按敏感数据管理。受控 CLI 的 inspect/history 输出经过筛选，不显示学生原文、AnswerKey、模型完整理由、对象 Key 或评论。当前没有 HTTP 写 API、登录、RBAC 或正式成绩表；`reviewer_ref` 不是认证身份，`accepted`/`revised` 也不表示成绩发布。单条人工复核可用于未来分歧分析，但不能直接作为高可信参考标签，需经过授权、独立评分和仲裁。

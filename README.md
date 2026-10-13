@@ -15,6 +15,7 @@
 - **人工复核与评测**：记录版本化的人工作答判断；提供合成数据评测工具，用于检查协议、作答判断和区域定位表现。
 - **评分输入准备**：从当前人工确认的 Canonical 文本范围构建不可变输入包，并快照教师标准答案与 Rubric；不调用评分模型或产生分数。
 - **Rubric 候选评分**：受控本地 CLI 可调用配置的文本模型，为每个评分项生成候选分数、理由和可核验的原文引用；不会发布成绩，也不会修改人工复核记录。
+- **候选评分人工复核**：受控本地 CLI 可接受、修订、拒绝候选分数或标记需要重新评分，并保留不可变修订历史；记录不等于正式成绩。
 
 ## 系统架构
 
@@ -43,6 +44,8 @@ flowchart LR
     Assignment --> ScoreCLI
     ScoreCLI --> TextModel[本地 Ollama 或经授权的兼容文本模型]
     TextModel --> ScoreProposal[私有候选评分对象与 PostgreSQL 索引]
+    ScoreProposal --> GradeReviewCLI[候选评分人工复核 CLI]
+    GradeReviewCLI --> PG
 
     Original[私有原始作业文件] --> Visual[VisualEvidence]
     Alignment --> Visual
@@ -50,7 +53,7 @@ flowchart LR
     Visual --> Proposal[私有模型建议对象与 PostgreSQL 索引]
 ```
 
-`VisualEvidence` 保存独立的模型建议，不会自动写入 `AnswerReview` 人工决定。PostgreSQL 保存业务记录和索引；对象存储保存原始文件及大型不可变产物。
+`VisualEvidence` 保存独立的模型建议，不会自动写入 `AnswerReview` 人工决定。候选评分人工复核单独追加到 PostgreSQL，不会改写模型 Proposal 或发布成绩。PostgreSQL 保存业务记录和索引；对象存储保存原始文件及大型不可变产物。
 
 ## 技术栈
 
@@ -78,7 +81,7 @@ API 文档位于 <http://127.0.0.1:8000/docs>，存活检查为 `GET /api/v1/hea
 
 ## 基本使用
 
-基本流程是：创建并发布作业 → 上传一份学生作业 → 运行解析 Worker → 标准化文档 → 对齐题目来源 → 可选地生成视觉建议 → 人工复核 → 准备文本评分输入 → 可选地生成待人工检查的 Rubric 候选评分。
+基本流程是：创建并发布作业 → 上传一份学生作业 → 运行解析 Worker → 标准化文档 → 对齐题目来源 → 可选地生成视觉建议 → 人工作答复核 → 准备文本评分输入 → 可选地生成并人工复核 Rubric 候选评分。
 
 最小可执行 API 示例和完整本地处理步骤见[作业处理教程](docs/development/basic-workflow.md)。MinerU 和 Ollama 需要单独配置，快速启动不会自动安装模型或启动解析 Worker。
 
@@ -110,6 +113,7 @@ API 文档位于 <http://127.0.0.1:8000/docs>，存活检查为 `GET /api/v1/hea
 - [本地开发指南](docs/development/README.md)
 - [评分输入准备指南](docs/development/grade-input.md)
 - [Rubric 候选评分 CLI 指南](docs/development/grade-proposals.md)
+- [候选评分人工复核 CLI 指南](docs/development/grade-review.md)
 - [路线图](docs/roadmap.md)
 - [视觉证据评测方法与基线](docs/evaluation/visual-evidence.md)
 - [题目来源对齐评测说明](docs/evaluation/answer-alignment.md)

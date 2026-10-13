@@ -1319,10 +1319,13 @@ class _VisualFakeProvider:
 
     async def analyze(self, *, question_number, question_stem, source_regions, pages):
         self.calls += 1
-        assert self.engine.sync_engine.pool.checkedout() == 0
         assert [page.page_index for page in pages] == [0]
         if self.barrier is not None:
             await asyncio.wait_for(self.barrier.wait(), timeout=10)
+        # In concurrent calls the other invocation may still be completing its
+        # pre-provider reads. Check after both calls reach this boundary, so the
+        # pool-wide count only detects a connection held across provider work.
+        assert self.engine.sync_engine.pool.checkedout() == 0
         reply = VisualEvidenceModelReply.model_validate(
             {
                 "outcome": "candidate_response_present",
