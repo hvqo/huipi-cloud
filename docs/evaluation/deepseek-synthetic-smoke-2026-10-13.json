@@ -1,0 +1,78 @@
+{
+  "record_version": "1.0",
+  "test_run_finished_at_utc": "2026-10-13T13:39:12.063592+00:00",
+  "timestamp_scope": "test log completion; individual HTTP wall-clock timestamps were not captured",
+  "validated_code_head": "3debeee6e18069ab6259875c66090e6e4f9a13f5",
+  "command": "RUN_DEEPSEEK_SMOKE=1 GRADING_ALLOW_REMOTE=true GRADING_EXTERNAL_DATA_AUTHORIZED=true VISUAL_EVIDENCE_ALLOW_REMOTE=true VISUAL_EVIDENCE_EXTERNAL_DATA_AUTHORIZED=true uv run pytest -q -s -m deepseek_e2e",
+  "local_env_modified": false,
+  "test_result": {
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0
+  },
+  "input_scope": "synthetic_only; Canonical/Alignment fixtures, not live MinerU",
+  "thinking": {
+    "mode": "disabled",
+    "configured_effort": "max",
+    "sent_reasoning_effort": null
+  },
+  "text_budget": {
+    "max_output_tokens": 4096,
+    "timeout_seconds": 120,
+    "retries": 0
+  },
+  "visual_budget": {
+    "max_output_tokens": 2048,
+    "timeout_seconds": 90,
+    "retries": 0
+  },
+  "text": {
+    "actual_model_id": "deepseek-flash",
+    "finish_reason": "stop",
+    "status": "completed_candidate",
+    "prompt_tokens": 688,
+    "completion_tokens": 122,
+    "reasoning_tokens": null,
+    "latency_ms": 907,
+    "proposal_sha256_verified": "f22a632a8bc350b0813e21e6d6a70142e7be361847c14ab7f2707fe1ccbaff7c",
+    "provider_requests": 1,
+    "input_scope": "synthetic_only"
+  },
+  "visual": {
+    "actual_model_id": "deepseek-flash",
+    "outcome": "candidate_prompt_only",
+    "mapping_statuses": [
+      "unresolved",
+      "unresolved"
+    ],
+    "provider_usage": {
+      "prompt_tokens": 1449,
+      "completion_tokens": 113,
+      "total_tokens": 1562
+    },
+    "latency_ms": 1342,
+    "provider_requests": 1,
+    "canonical_source": "synthetic Canonical/Alignment fixture; not real MinerU",
+    "input_scope": "synthetic_only"
+  },
+  "acceptance_checks": {
+    "real_deepseek_calls": 2,
+    "strict_json_schema_passed": 2,
+    "text_rubric_and_quote_validated": true,
+    "postgres_and_s3_roundtrip_passed": 2,
+    "human_answer_review_unchanged": true,
+    "confirmed_visual_question_attributions": 0,
+    "visual_unresolved_regions": 2
+  },
+  "cost_estimate": {
+    "currency": "USD",
+    "pricing_source": "https://api-docs.deepseek.com/quick_start/pricing/",
+    "basis": "conservative peak cache-miss rates; not a platform bill; cache details unavailable in saved smoke output",
+    "input_usd_per_million": 0.3,
+    "output_usd_per_million": 1.2,
+    "prompt_tokens": 2137,
+    "completion_tokens": 235,
+    "estimated_upper_cost_usd": 0.0009231
+  },
+  "v2_baseline_requests": 0
+}

@@ -16,6 +16,7 @@ import httpx
 from pydantic import ValidationError
 
 from huipi_cloud.core.config import Settings, settings
+from huipi_cloud.infrastructure.llm.deepseek import deepseek_options, finish_reason_error
 from huipi_cloud.infrastructure.visual_evidence.render import RenderedPage
 from huipi_cloud.modules.visual_evidence.errors import (
     VisualEvidenceConfigurationError,
@@ -42,6 +43,8 @@ class VisionProviderResponse:
     reply: VisualEvidenceModelReply
     elapsed_ms: int
     usage: ProviderUsage | None
+    model_id: str | None = None
+    finish_reason: str | None = None
 
 
 class VisionProvider:
@@ -71,6 +74,7 @@ async def _post_with_bounded_retries(
     timeout_seconds: float,
     retries: int,
     transport: httpx.AsyncBaseTransport | None,
+    deepseek: bool = False,
 ) -> bytes:
     last_error: Exception | None = None
     for attempt in range(retries + 1):
@@ -85,6 +89,10 @@ async def _post_with_bounded_retries(
             if status_code == 429 or status_code >= 500:
                 raise _RetryableProviderResponse(status_code)
             if status_code >= 400:
+                if status_code == 401:
+                    raise VisualEvidenceProviderError("model_authentication_failed")
+                if status_code == 404:
+                    raise VisualEvidenceProviderError("model_or_endpoint_not_found")
                 raise VisualEvidenceProviderError("model_http_error")
             return response_body
         except _RetryableProviderResponse as error:
@@ -99,6 +107,11 @@ async def _post_with_bounded_retries(
         if attempt < retries:
             await asyncio.sleep(min(0.25 * (2**attempt), 1.0))
     logger.warning("Visual provider exhausted bounded retries (%s)", type(last_error).__name__)
+    if deepseek:
+        if isinstance(last_error, httpx.TimeoutException):
+            raise VisualEvidenceProviderError("model_timeout") from last_error
+        if isinstance(last_error, _RetryableProviderResponse) and last_error.status_code == 429:
+            raise VisualEvidenceProviderError("model_rate_limited") from last_error
     raise VisualEvidenceProviderError("model_request_failed_after_retries") from last_error
 
 
@@ -142,6 +155,10 @@ class OpenAICompatibleVisionProvider(VisionProvider):
         self._endpoint = endpoint.rstrip("/") + "/chat/completions"
         self._model = config.visual_evidence_model.strip()
         self.model_id = self._model
+        self._deepseek_options = deepseek_options(
+            self._endpoint, config.visual_evidence_deepseek_thinking,
+            config.visual_evidence_deepseek_reasoning_effort,
+        )
         self.configuration_fingerprint = hashlib.sha256(
             f"{self._endpoint}\n{self._model}".encode("utf-8")
         ).hexdigest()
@@ -150,6 +167,20 @@ class OpenAICompatibleVisionProvider(VisionProvider):
             if config.visual_evidence_api_key is not None
             else None
         )
+        if self._deepseek_options and (not self._api_key or not self._api_key.strip()):
+            raise VisualEvidenceConfigurationError("deepseek_api_key_missing")
+        if self._deepseek_options:
+            self.configuration_fingerprint = hashlib.sha256(
+                json.dumps({
+                    "endpoint_sha256": hashlib.sha256(self._endpoint.encode()).hexdigest(),
+                    "model": self._model,
+                    "deepseek_options": self._deepseek_options,
+                    "configured_reasoning_effort": config.visual_evidence_deepseek_reasoning_effort,
+                    "max_output_tokens": config.visual_evidence_max_output_tokens,
+                    "timeout_seconds": config.visual_evidence_timeout_seconds,
+                    "max_retries": config.visual_evidence_max_retries,
+                }, sort_keys=True, separators=(",", ":")).encode()
+            ).hexdigest()
         self._timeout = config.visual_evidence_timeout_seconds
         self._retries = config.visual_evidence_max_retries
         self._max_tokens = config.visual_evidence_max_output_tokens
@@ -209,6 +240,9 @@ class OpenAICompatibleVisionProvider(VisionProvider):
             "max_tokens": self._max_tokens,
             "response_format": {"type": "json_object"},
         }
+        body.update(self._deepseek_options)
+        if self._deepseek_options.get("thinking") == {"type": "enabled"}:
+            body.pop("temperature")
         headers = {"Accept": "application/json", "Content-Type": "application/json"}
         if self._api_key:
             headers["Authorization"] = f"Bearer {self._api_key}"
@@ -220,12 +254,17 @@ class OpenAICompatibleVisionProvider(VisionProvider):
             timeout_seconds=self._timeout,
             retries=self._retries,
             transport=self._transport,
+            deepseek=bool(self._deepseek_options),
         )
-        reply, usage = _decode_reply(response_body)
+        reply, usage, response_model, finish_reason = _decode_reply(
+            response_body, require_completion=bool(self._deepseek_options)
+        )
         return VisionProviderResponse(
             reply=reply,
             elapsed_ms=max(0, round((time.perf_counter() - started) * 1000)),
             usage=usage,
+            model_id=response_model,
+            finish_reason=finish_reason,
         )
 
 
@@ -394,10 +433,27 @@ def _build_prompt(
     )
 
 
-def _decode_reply(payload: bytes) -> tuple[VisualEvidenceModelReply, ProviderUsage | None]:
+def _decode_reply(
+    payload: bytes, *, require_completion: bool = False
+) -> tuple[VisualEvidenceModelReply, ProviderUsage | None, str | None, str | None]:
     try:
         response = json.loads(payload)
-        content = response["choices"][0]["message"]["content"]
+        choice = response["choices"][0]
+        finish_reason = choice.get("finish_reason")
+        if finish_reason is not None and not isinstance(finish_reason, str):
+            raise ValueError
+        reason = finish_reason_error(finish_reason, required=require_completion)
+        if reason:
+            raise VisualEvidenceProviderError(reason)
+        response_model = response.get("model")
+        if response_model is not None and (
+            not isinstance(response_model, str) or not response_model.strip()
+            or len(response_model) > 200
+        ):
+            raise ValueError
+        if require_completion and response_model is None:
+            raise ValueError
+        content = choice["message"]["content"]
         if not isinstance(content, str) or len(content) > 64 * 1024:
             raise ValueError
         reply = VisualEvidenceModelReply.model_validate_json(content)
@@ -418,7 +474,7 @@ def _decode_reply(payload: bytes) -> tuple[VisualEvidenceModelReply, ProviderUsa
             ):
                 if any(value is not None for value in values.values()):
                     usage = ProviderUsage.model_validate(values)
-        return reply, usage
+        return reply, usage, response_model, finish_reason
     except (
         KeyError,
         IndexError,
@@ -433,6 +489,9 @@ def _decode_reply(payload: bytes) -> tuple[VisualEvidenceModelReply, ProviderUsa
 def _decode_ollama_reply(payload: bytes) -> tuple[VisualEvidenceModelReply, ProviderUsage | None]:
     try:
         response = json.loads(payload)
+        reason = finish_reason_error(response.get("done_reason"))
+        if reason:
+            raise VisualEvidenceProviderError(reason)
         content = response["message"]["content"]
         if not isinstance(content, str) or len(content) > 64 * 1024:
             raise ValueError

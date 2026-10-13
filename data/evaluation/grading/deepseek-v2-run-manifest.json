@@ -1,0 +1,139 @@
+{
+  "actual_text_model_id": null,
+  "actual_token_usage": null,
+  "actual_visual_model_id": null,
+  "cases": [
+    {
+      "case_id": "ambiguous-handwriting-excluded",
+      "status": "excluded_uncertain"
+    },
+    {
+      "case_id": "ambiguous-rubric-excluded",
+      "status": "excluded_uncertain"
+    },
+    {
+      "case_id": "answer-only-no-method",
+      "status": "not_requested"
+    },
+    {
+      "case_id": "biology-incomplete",
+      "status": "not_requested"
+    },
+    {
+      "case_id": "chemistry-balanced",
+      "status": "not_requested"
+    },
+    {
+      "case_id": "correct-transform-wrong-result-v2",
+      "status": "not_requested"
+    },
+    {
+      "case_id": "corrected-redundant-work",
+      "status": "not_requested"
+    },
+    {
+      "case_id": "equivalent-fraction-equivalent-form-allowed",
+      "status": "not_requested"
+    },
+    {
+      "case_id": "equivalent-fraction-strict-format",
+      "status": "not_requested"
+    },
+    {
+      "case_id": "fraction-partial",
+      "status": "not_requested"
+    },
+    {
+      "case_id": "geometry-cross-page",
+      "status": "not_requested"
+    },
+    {
+      "case_id": "linear-correct",
+      "status": "not_requested"
+    },
+    {
+      "case_id": "linear-missing-step-v2",
+      "status": "not_requested"
+    },
+    {
+      "case_id": "linear-sign-error",
+      "status": "not_requested"
+    },
+    {
+      "case_id": "linear-wrong-answer",
+      "status": "not_requested"
+    },
+    {
+      "case_id": "literature-two-criteria",
+      "status": "not_requested"
+    },
+    {
+      "case_id": "neutralization-products",
+      "status": "not_requested"
+    },
+    {
+      "case_id": "off-topic-zero",
+      "status": "not_requested"
+    },
+    {
+      "case_id": "photosynthesis-omission",
+      "status": "not_requested"
+    },
+    {
+      "case_id": "physics-missing-unit",
+      "status": "not_requested"
+    },
+    {
+      "case_id": "physics-substitution",
+      "status": "not_requested"
+    },
+    {
+      "case_id": "prompt-injection-data",
+      "status": "not_requested"
+    },
+    {
+      "case_id": "pythagorean-proof",
+      "status": "not_requested"
+    },
+    {
+      "case_id": "quadratic-factorization",
+      "status": "not_requested"
+    },
+    {
+      "case_id": "ratio-simplification",
+      "status": "not_requested"
+    },
+    {
+      "case_id": "two-segment-evidence",
+      "status": "not_requested"
+    },
+    {
+      "case_id": "zero-evidence-absence",
+      "status": "not_requested"
+    }
+  ],
+  "configured_reasoning_effort": "max",
+  "dataset_sha256": "0da5948b79a15839d6abb939f134948e8d58dad101b66862ed7d4abaac40b26d",
+  "dataset_version": "2.0",
+  "effective_reasoning_effort": null,
+  "not_executed_reason_codes": [
+    "api_key_missing",
+    "remote_data_authorization_not_configured"
+  ],
+  "note": "未发真实API请求。这是未请求清单，不是模型预测，也不代表评分验证通过。",
+  "provider": "openai_compatible",
+  "provider_requests_sent": 0,
+  "real_api_failures": 0,
+  "real_api_successes": 0,
+  "retries": 0,
+  "schema_name": "huipi.grading.deepseek.run-manifest",
+  "schema_version": "1.0",
+  "text_max_output_tokens": 4096,
+  "text_model_configured": "deepseek-flash",
+  "text_timeout_seconds": 120,
+  "thinking_mode": "disabled",
+  "this_run_api_cost_usd": "0",
+  "visual_max_output_tokens": 2048,
+  "visual_model_configured": "deepseek-flash",
+  "visual_timeout_seconds": 90
+}

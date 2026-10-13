@@ -2,9 +2,35 @@
 
 本工具从原始提交和当前 AnswerAlignment 读取目标页面，并调用已配置的视觉模型 Provider。它生成私有、版本化的候选建议，不写 `AnswerReview` 决定。
 
-## 本地 Provider 配置
+## 主要服务：DeepSeek Flash
 
-默认配置使用仅 loopback 的 Ollama 原生 Provider。需要开发者自行安装并启动 Ollama、获取一个支持图像输入的模型，然后在 `.env` 设置：
+现有 OpenAI-compatible Vision Provider 支持官方 DeepSeek Chat Completions，不需要第二套 HTTP 客户端。官方 `deepseek-flash` 支持用户消息中的 base64 图片；原始提交先经现有 PDF/图片渲染、SHA校验、页面和像素限制，向模型发送渲染后的页面，不传私有对象URL。
+
+```dotenv
+VISUAL_EVIDENCE_ENABLED=false
+VISUAL_EVIDENCE_PROVIDER=openai_compatible
+VISUAL_EVIDENCE_BASE_URL=https://api.deepseek.com
+VISUAL_EVIDENCE_MODEL=deepseek-flash
+VISUAL_EVIDENCE_ALLOW_REMOTE=false
+VISUAL_EVIDENCE_EXTERNAL_DATA_AUTHORIZED=false
+VISUAL_EVIDENCE_DEEPSEEK_THINKING=disabled
+VISUAL_EVIDENCE_DEEPSEEK_REASONING_EFFORT=max
+VISUAL_EVIDENCE_MAX_OUTPUT_TOKENS=2048
+VISUAL_EVIDENCE_TIMEOUT_SECONDS=90
+VISUAL_EVIDENCE_MAX_RETRIES=0
+```
+
+Key 仅填写在本地 `VISUAL_EVIDENCE_API_KEY`。操作者明确批准合成图像传输后才开启 enabled 和两个授权开关；真实学生资料需要另行确认适用授权。首次 Smoke 显式关闭思考且没有重试，最多一张合成页面和一次视觉请求。只有官方域名接收 thinking/effort 参数；JSON object 输出要求保留。
+
+当前配置档位max，Thinking关闭。effort参数本身可能开启思考，因此非思考请求不发送effort字段，不能声称max推理已生效。若将来明确开启Thinking，需另行核对输出、超时和费用预算。思考和最终JSON共享输出预算，应用上限16384 tokens。配置/实际参数、Token预算、超时和重试设置进入 Provider fingerprint，进而进入输入摘要，同一 request ID 不能复用不同模式的结果。
+
+length 和其他未正常完成的输出不会成为 proposal，非法JSON和越界页面也不会登记成功索引。成功对象记录服务实际返回模型ID。模型建议的BBox仍通过原有保守来源映射；空间候选不是确定归属，unresolved 不会为了完成验收而改为成功。
+
+真实合成验收记录及复现方法见[DeepSeek验收文档](../evaluation/deepseek-provider-validation.md)。API Key 缺失时只运行 MockTransport 配合真实 PostgreSQL/S3 的集成测试，不称为真实模型端到端验收。
+
+## 可选开发服务：本地 Ollama
+
+业务默认使用云端API，失败时不会降级至Ollama。历史Ollama适配器只在开发者显式选择时使用。需要自行安装并启动Ollama、获取一个支持图像输入的模型，然后在 `.env` 设置：
 
 ```dotenv
 VISUAL_EVIDENCE_PROVIDER=ollama_native

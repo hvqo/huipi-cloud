@@ -2,6 +2,8 @@
 
 慧批云端采用 src 布局的模块化单体，围绕作业提交、文档解析、来源对齐、视觉建议和人工复核建立可追溯的数据流。离线视觉评测与线上视觉建议使用同一严格回复协议，但评测工具不修改线上 Provider 行为。自动批改、教师 Copilot、完整认证和 RBAC 仍未实现。
 
+业务推理默认使用云端DeepSeek API（文本评分与视觉建议均为 `deepseek-flash`），无密钥、无授权或服务失败时不降级到本地模型。Ollama仅保留显式开发兼容能力。DeepSeek非思考请求显式设置 `thinking.type=disabled`，不发送会开启思考的 `reasoning_effort`；配置档位max不表示实际启用max推理。正常结束、JSON协议、Rubric和Quote来源是独立门禁；截断响应不能登记成功结果。真实合成验收与后续基线计划见[DeepSeek验收文档](evaluation/deepseek-provider-validation.md)。
+
 ## 模块职责
 
 - `api/v1`：HTTP 路由、请求校验、响应结构和错误码。

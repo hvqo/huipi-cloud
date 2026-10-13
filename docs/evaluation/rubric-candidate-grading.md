@@ -44,7 +44,7 @@ P3-B 的候选分数不是准确率、教学效果或真实学生评分质量指
 
 ### 命令
 
-默认运行是无模型请求的 dry-run：
+默认运行是无模型请求的 v2 dry-run；历史 v1 复算必须显式指定数据集：
 
 ```bash
 uv run python scripts/evaluate_grade_proposals.py --dry-run
@@ -54,13 +54,15 @@ uv run python scripts/evaluate_grade_proposals.py --dry-run
 
 ```bash
 uv run python scripts/evaluate_grade_proposals.py \
+  --dataset data/evaluation/grading/rubric-cases-v1.json \
   --run-model --model qwen3.5:4b --max-requests 24 --timeout-seconds 90 \
   --output data/evaluation/grading/predictions-qwen3.5-4b-v1-reproduction.json \
   --report-output data/evaluation/grading/report-qwen3.5-4b-v1-reproduction.json
 
 uv run python scripts/evaluate_grade_proposals.py \
+  --dataset data/evaluation/grading/rubric-cases-v1.json \
   --evaluate-predictions data/evaluation/grading/predictions-qwen3.5-4b-v1.json \
-  --report-output data/evaluation/grading/report-qwen3.5-4b-v1-audited.json
+  --report-output /tmp/huipi-v1-audited-new.json
 ```
 
 不要用离线重算覆盖 `report-qwen3.5-4b-v1.json`。对真实模型重跑也必须使用新的预测文件名；当前 v1 预测文件是不可变历史基线。

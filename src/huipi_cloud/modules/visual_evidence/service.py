@@ -228,6 +228,7 @@ async def analyze_question_visual_evidence(
             reply = provider_result.reply
             model_elapsed_ms = provider_result.elapsed_ms
             provider_usage = provider_result.usage
+            model_id = provider_result.model_id or model_id
         elif isinstance(provider_result, VisualEvidenceModelReply):
             reply = provider_result
             model_elapsed_ms = None

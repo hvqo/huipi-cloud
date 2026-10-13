@@ -8,7 +8,33 @@
 
 评分只接受已准备的 `GradeInputArtifact` UUID，不从 API 直接读取学生提交。服务会在模型调用前、调用后，以及 PostgreSQL 登记事务内重新验证输入来源。调用期间不持有数据库事务；源版本发生变化时，不登记候选结果。
 
-## 默认使用本地 Ollama
+## 主要服务：DeepSeek
+
+业务默认使用云端API，未授权或调用失败时不会降级至Ollama。使用现有OpenAI-compatible Chat Completions适配器，不需要新增SDK。先在被Git忽略的本地 `.env` 中配置以下非敏感值，并自行填写 `GRADING_API_KEY`：
+
+```dotenv
+GRADING_ENABLED=false
+GRADING_PROVIDER=openai_compatible
+GRADING_BASE_URL=https://api.deepseek.com
+GRADING_MODEL=deepseek-flash
+GRADING_ALLOW_REMOTE=false
+GRADING_EXTERNAL_DATA_AUTHORIZED=false
+GRADING_DEEPSEEK_THINKING=disabled
+GRADING_DEEPSEEK_REASONING_EFFORT=max
+GRADING_MAX_OUTPUT_TOKENS=4096
+GRADING_TIMEOUT_SECONDS=120
+GRADING_INVALID_RESPONSE_RETRIES=0
+```
+
+操作者明确批准合成数据传输后，才将 enabled 和两个授权开关设为 true。没有 Key 或授权时，Provider 在发 HTTP 前拒绝运行。首次验收仅使用合成数据；这些开关不能代替真实学生资料所需的数据传输授权。密钥不要放进命令行、日志或 Git。
+
+DeepSeek 默认开启思考，本项目向官方 `https://api.deepseek.com`（可带 `/v1`）显式发送 `thinking.type=disabled`。非思考模式保留 temperature=0；显式开启思考时发送 `thinking.type=enabled` 及 low/high/max effort，并不发送在该模式下无效的 temperature。仅官方域名匹配时注入这些参数，其他兼容服务和 Ollama 不接收 DeepSeek 参数。
+
+当前两模块统一使用 Flash，配置档位max、Thinking关闭。官方接口中effort本身也能启用思考，所以非思考请求不发送effort字段；报告把配置max和实际effort未生效分开记录。不能称为“非思考max推理”。将来显式开启Thinking属于独立实验，需重新核对成本、输出及超时预算。应用输出硬上限16384 tokens，思考与最终输出共享预算；这不是 DeepSeek 平台的最大能力。保持单次格式重试为0。Thinking、配置/实际effort、输出预算和超时参与 generation config digest 与请求指纹；旧 Proposal 协议及不可变对象不改写。
+
+结束原因为 length 时使用 `provider_response_truncated`，即使正文恰好能解析也不接受。其他非正常结束、401、404、429和超时均为安全失败；日志不包含服务端错误正文、密钥或 reasoning_content。离线预测保留实际返回模型ID、finish_reason、用量及可用的思考/缓存Token计数。completion_tokens 已含思考Token，估算费用时不能再相加。
+
+## 可选开发服务：本地 Ollama
 
 在本机安装并启动 Ollama，先确认本机模型已存在。编辑忽略跟踪的 `.env`，设置本地模型名称：
 
@@ -83,27 +109,31 @@ uv run pytest -q -s -m grade_llm_e2e
 
 ## Rubric 候选评分离线评测
 
-评测工具使用 `data/evaluation/grading/rubric-cases-v1.json` 中的合成题目和参考标签。默认 dry-run 不会请求模型：
+评测工具默认使用 v2 的27个合成案例，其中25个纳入评分，2个不确定案例不调用模型。默认 dry-run 不会请求模型：
 
 ```bash
 uv run python scripts/evaluate_grade_proposals.py --dry-run
 ```
 
-如果要运行本机模型，先确认 Ollama 已启动并且模型已安装，再显式传 `--run-model`。命令最多处理 30 个纳入评测的案例，每个请求设置有限超时，当前基线关闭格式重试：
+先完成 DeepSeek 合成 Smoke，再进行 v2 基线。远程评测必须显式传 `--run-model`、新输出文件和自行核对的当前单价。未缓存输入单价用于保守估算；程序在发请求前检查整轮输入预算与输出Token上限是否超过费用预算。它不是账户级限额，单价变动和服务器计数差异仍需核对。完整命令和未请求状态见[DeepSeek验收与评测计划](../evaluation/deepseek-provider-validation.md)。
+
+如需复现历史本地 v1 基线，必须显式指定 v1，使用全新的文件名：
 
 ```bash
 uv run python scripts/evaluate_grade_proposals.py \
+  --dataset data/evaluation/grading/rubric-cases-v1.json \
   --run-model --model qwen3.5:4b --max-requests 24 --timeout-seconds 90 \
-  --output data/evaluation/grading/predictions-qwen3.5-4b-v1.json \
-  --report-output data/evaluation/grading/report-qwen3.5-4b-v1.json
+  --output data/evaluation/grading/predictions-qwen3.5-4b-v1-new-run.json \
+  --report-output data/evaluation/grading/report-qwen3.5-4b-v1-new-run.json
 ```
 
 用已保存预测离线重新计算时，不会调用 Provider；评测器会先核对数据集版本和 SHA，再重新校验每条模型回复：
 
 ```bash
 uv run python scripts/evaluate_grade_proposals.py \
+  --dataset data/evaluation/grading/rubric-cases-v1.json \
   --evaluate-predictions data/evaluation/grading/predictions-qwen3.5-4b-v1.json \
-  --report-output data/evaluation/grading/report-qwen3.5-4b-v1.json
+  --report-output /tmp/huipi-v1-recalculated-new.json
 ```
 
 此路径只构造内存中的合成 `GradeInputDocument`，不访问 PostgreSQL、MinIO 或候选结果索引。每个模型请求只会看到题干、答案标准、Rubric 和合成学生片段，不会看到参考分数、标注理由或标签来源。报告中的分数指标只使用通过 P3-B 现有协议、分值和引用验证的候选；协议失败、弃权和请求故障都保留在覆盖和逐例失败统计中。详见[Rubric 候选评分评测定义与基线](../evaluation/rubric-candidate-grading.md)。
