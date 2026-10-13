@@ -43,7 +43,9 @@ uv run python -m huipi_cloud.workers.review_grade_proposal record \
 
 若因网络或数据库错误无法确认结果，使用相同 `request_id` 和相同 JSON 重试。相同请求返回已提交记录；同 ID 不同内容会冲突。若其他操作者先写入新 revision，旧 `expected_revision` 会返回冲突，先运行 `inspect` 和 `history` 再决定下一步。
 
-`revised` 必须为每个 Rubric Criterion 提供且仅提供一个分数，分数使用十进制字符串。总分由服务计算。分数变化的项目必须附理由和证据引用；引用的 segment、Unicode 码点半开范围和原文必须属于当前 GradeInput。正分至少需要一个有效 Quote。未变化的项目不允许覆盖原候选的理由和证据。请从已授权的原始材料和 GradeInput 中人工取得真实引用，不能使用占位引用。
+`revised` 每次都必须提交**完整 Rubric 评分快照**：每个 Criterion 恰好一项 `reviewed_points`，包括本次没有变化的项目；不能只提交相对上次复核的增量。分数使用十进制字符串，总分由服务计算。`changed` 表示本次分数是否不同于**原始模型 Proposal**，不表示它是否不同于上一条人工修订。因此，继续沿用上次人工修订分数、但该分数不同于原 Proposal 时，该 Criterion 仍属于 changed 项，需在新的完整快照中再次提供理由和有效证据引用。引用的 segment、Unicode 码点半开范围和原文必须属于当前 GradeInput；正分至少需要一个有效 Quote。未变化于原 Proposal 的项目不允许覆盖原候选理由和证据。请从已授权的原始材料和 GradeInput 中人工取得真实引用，不能使用占位引用。
+
+`expected_revision` 是乐观并发控制：服务仅在它等于当前最新 revision 时接受请求；它不会把 `criterion_reviews` 解释为增量补丁。若要在先前人工修订的基础上继续编辑，先读取最新 `history`，再构造并提交包含全部 Criterion 的新快照。`accepted` 始终表示确认原始模型 Proposal 的逐项分数；它不会自动接受上一条人工修订。要确认一份已经修订的分数，应继续提交完整的 `revised` 快照，并按原 Proposal 计算 `changed`。
 
 `rejected` 与 `regrading_required` 必须提供原因码，但没有 reviewed score。`regrading_required` 只记录后续动作要求，不会自动调用模型、创建新 Proposal 或修改旧记录。模型弃权 Proposal 只能被拒绝或标记需要重新评分。
 

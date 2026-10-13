@@ -33,7 +33,10 @@ from huipi_cloud.modules.grading.grade_review_protocol import (
     GRADE_REVIEW_SCHEMA_VERSION,
     GradeReviewDecisionCreate,
 )
-from huipi_cloud.modules.grading.grade_review_service import record_grade_review
+from huipi_cloud.modules.grading.grade_review_service import (
+    grade_review_history,
+    record_grade_review,
+)
 from huipi_cloud.modules.grading.models import GradeInputArtifact, GradeProposalArtifact
 from huipi_cloud.modules.grading.proposal_service import (
     grade_input_artifact,
@@ -69,7 +72,14 @@ def _review_payload(
     )
 
 
-async def _make_candidate(client, storage, engine, *, reply_override: dict | None = None):
+async def _make_candidate(
+    client,
+    storage,
+    engine,
+    *,
+    reply_override: dict | None = None,
+    rubric_items: list[tuple[str, str]] | None = None,
+):
     (
         factory,
         submission_id,
@@ -78,7 +88,7 @@ async def _make_candidate(client, storage, engine, *, reply_override: dict | Non
         prepared,
         grade_input,
         reply,
-    ) = await _ready_grade_input(client, storage, engine)
+    ) = await _ready_grade_input(client, storage, engine, rubric_items=rubric_items)
     if reply_override is not None:
         reply = reply_override
     provider = _CandidateProvider(engine, reply)
@@ -375,6 +385,165 @@ async def test_pg_minio_accept_revise_history_keeps_sources_immutable_and_cli_re
     assert reread_proposal == proposal
     assert reread_input.input_sha256 == grade_input.input_sha256
     assert proposal_result.proposal_sha256 == proposal_sha
+
+
+@pytest.mark.anyio
+async def test_revisions_store_full_rubric_snapshots_against_original_proposal(
+    submission_client: httpx.AsyncClient,
+    recording_minio_storage,
+    postgres_engine: AsyncEngine,
+    capsys,
+) -> None:
+    factory, _, _, _, _, grade_input, proposal, _, _, _ = await _make_candidate(
+        submission_client,
+        recording_minio_storage,
+        postgres_engine,
+        rubric_items=[("Criterion A", "5.00"), ("Criterion B", "5.00")],
+    )
+    criterion_a, criterion_b = [item.criterion_id for item in grade_input.rubric_snapshot]
+    assert [item.awarded_points for item in proposal.criterion_scores] == [5, 5]
+    assert [item.criterion_id for item in proposal.criterion_scores] == [criterion_a, criterion_b]
+    quote = grade_input.selected_answer_segments[0].text
+
+    def changed_criterion(criterion_id, points: str, rationale: str) -> dict:
+        return {
+            "criterion_id": str(criterion_id),
+            "reviewed_points": points,
+            "rationale": rationale,
+            "evidence_references": [
+                {
+                    "kind": "quote",
+                    "segment_index": 0,
+                    "text_start": 0,
+                    "text_end": len(quote),
+                    "quote": quote,
+                }
+            ],
+        }
+
+    revision_one_payload = _review_payload(
+        "revised",
+        criterion_reviews=[
+            changed_criterion(criterion_a, "3.00", "A项按原文证据修订为3分。"),
+            {"criterion_id": str(criterion_b), "reviewed_points": "5.00"},
+        ],
+    )
+    revision_one = await record_grade_review(
+        factory,
+        recording_minio_storage,
+        proposal_id=proposal.proposal_id,
+        request_id=uuid4(),
+        expected_revision=0,
+        payload=revision_one_payload,
+        config=Settings(),
+    )
+    assert revision_one.review.review_revision == 1
+    assert revision_one.review.supersedes_review_id is None
+    assert [item.reviewed_points for item in revision_one.review.criterion_reviews] == [3, 5]
+    assert [item.proposed_points for item in revision_one.review.criterion_reviews] == [5, 5]
+    assert [item.changed for item in revision_one.review.criterion_reviews] == [True, False]
+
+    with pytest.raises(GradeReviewInvalidDecisionError) as missing_criterion:
+        await record_grade_review(
+            factory,
+            recording_minio_storage,
+            proposal_id=proposal.proposal_id,
+            request_id=uuid4(),
+            expected_revision=1,
+            payload=_review_payload(
+                "revised",
+                criterion_reviews=[
+                    changed_criterion(criterion_b, "4.00", "B项按原文证据修订为4分。")
+                ],
+            ),
+            config=Settings(),
+        )
+    assert missing_criterion.value.reason_code == "criterion_set_must_match_rubric_exactly"
+
+    revision_two_payload = _review_payload(
+        "revised",
+        criterion_reviews=[
+            changed_criterion(criterion_a, "3.00", "A项沿用复核分数，并保留完整快照。"),
+            changed_criterion(criterion_b, "4.00", "B项按原文证据修订为4分。"),
+        ],
+    )
+    revision_two = await record_grade_review(
+        factory,
+        recording_minio_storage,
+        proposal_id=proposal.proposal_id,
+        request_id=uuid4(),
+        expected_revision=1,
+        payload=revision_two_payload,
+        config=Settings(),
+    )
+    assert revision_two.review.review_revision == 2
+    assert revision_two.review.supersedes_review_id == revision_one.review.review_id
+    assert [item.criterion_id for item in revision_two.review.criterion_reviews] == [
+        criterion_a,
+        criterion_b,
+    ]
+    assert [item.reviewed_points for item in revision_two.review.criterion_reviews] == [3, 4]
+    assert [item.proposed_points for item in revision_two.review.criterion_reviews] == [5, 5]
+    # changed is relative to the original model proposal, not the prior human revision.
+    assert [item.changed for item in revision_two.review.criterion_reviews] == [True, True]
+    assert revision_two.review.proposed_total_score == 10
+    assert revision_two.review.reviewed_total_score == 7
+
+    async with factory() as session:
+        rows = list(
+            (
+                await session.scalars(
+                    select(GradeReviewRevision)
+                    .where(GradeReviewRevision.proposal_id == proposal.proposal_id)
+                    .order_by(GradeReviewRevision.review_revision)
+                )
+            ).all()
+        )
+    assert len(rows) == 2
+    assert rows[0].review_revision == 1
+    assert rows[0].supersedes_review_id is None
+    assert rows[0].criterion_reviews == [
+        item.model_dump(mode="json") for item in revision_one.review.criterion_reviews
+    ]
+    assert rows[1].review_revision == 2
+    assert rows[1].supersedes_review_id == rows[0].review_id
+    assert rows[1].criterion_reviews == [
+        item.model_dump(mode="json") for item in revision_two.review.criterion_reviews
+    ]
+
+    history = await grade_review_history(
+        factory,
+        recording_minio_storage,
+        proposal_id=proposal.proposal_id,
+        config=Settings(),
+    )
+    assert [item.review_revision for item in history] == [1, 2]
+    assert history[0].supersedes_review_id is None
+    assert history[1].supersedes_review_id == history[0].review_id
+    assert [
+        (item.criterion_id, item.proposed_points, item.reviewed_points, item.changed)
+        for item in history[0].criterion_scores
+    ] == [(criterion_a, 5, 3, True), (criterion_b, 5, 5, False)]
+    assert [
+        (item.criterion_id, item.proposed_points, item.reviewed_points, item.changed)
+        for item in history[1].criterion_scores
+    ] == [(criterion_a, 5, 3, True), (criterion_b, 5, 4, True)]
+
+    exit_code = await review_cli._run(
+        argparse.Namespace(command="history", proposal_id=proposal.proposal_id),
+        factory=factory,
+        storage=recording_minio_storage,
+    )
+    assert exit_code == 0
+    rendered_history = json.loads(capsys.readouterr().out)
+    assert [item["review_revision"] for item in rendered_history] == [1, 2]
+    assert [
+        [score["reviewed_points"] for score in item["criterion_scores"]]
+        for item in rendered_history
+    ] == [["3.00", "5.00"], ["3.00", "4.00"]]
+    assert rendered_history[1]["supersedes_review_id"] == str(
+        revision_one.review.review_id
+    )
 
 
 @pytest.mark.anyio
