@@ -1,0 +1,785 @@
+{
+  "counts": {
+    "abstention_cases": 0,
+    "dataset_cases": 26,
+    "excluded_uncertain_reference_cases": 2,
+    "included_reference_cases": 24,
+    "not_requested_cases": 0,
+    "prediction_status_counts": {
+      "candidate": 2,
+      "invalid_evidence": 1,
+      "protocol_error": 21
+    },
+    "protocol_valid_replies": 3,
+    "requested_cases": 24,
+    "valid_candidate_cases": 2
+  },
+  "coverage": {
+    "abstention_over_requested": "0.0000",
+    "candidate_over_included_dataset": "0.0833",
+    "candidate_over_requested": "0.0833",
+    "invalid_evidence_over_requested": "0.0417",
+    "invalid_rubric_scores_over_requested": "0.0000",
+    "protocol_error_over_requested": "0.8750",
+    "protocol_valid_over_requested": "0.1250",
+    "provider_failure_over_requested": "0.0000"
+  },
+  "criterion_score": {
+    "absolute_error_sum": "0.00",
+    "by_case_criterion": {
+      "equivalent-fraction/simplified_fraction": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "ratio-simplification/ratio": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      }
+    },
+    "exact": {
+      "denominator": 2,
+      "numerator": 2
+    },
+    "mae": "0.0000",
+    "mae_denominator": 2,
+    "offsetting_error_case_ids": [],
+    "offsetting_error_cases": 0,
+    "over_count": 0,
+    "sample_count": 2,
+    "under_count": 0
+  },
+  "dataset_sha256": "e9a7959e2ad8ff479073b870c468b0155e7e1395662697f4b8c4324dbbb8e6b5",
+  "dataset_version": "1.0",
+  "evidence": {
+    "invalid_quote_references": 0,
+    "positive_criterion_scores": 3,
+    "positive_scores_with_valid_quote": 2,
+    "positive_scores_without_quote": 1,
+    "quote_references_checked": 2,
+    "reference_quote_overlap_characters": {
+      "gold": 6,
+      "intersection": 6,
+      "iou": "1.0000",
+      "precision": "1.0000",
+      "predicted": 6,
+      "recall": "1.0000"
+    },
+    "semantic_support": "requires_human_review",
+    "valid_quote_references": 2
+  },
+  "failure_cases": [
+    {
+      "case_id": "linear-correct",
+      "case_kind": "correct_short_solution",
+      "completion_tokens": 199,
+      "difficulty": "easy",
+      "elapsed_ms": 3093,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 676,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "linear-wrong-answer",
+      "case_kind": "wrong_answer",
+      "completion_tokens": 223,
+      "difficulty": "easy",
+      "elapsed_ms": 3345,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 673,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "linear-missing-step",
+      "case_kind": "incomplete_multicriterion",
+      "completion_tokens": 461,
+      "difficulty": "medium",
+      "elapsed_ms": 6577,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 818,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "linear-sign-error",
+      "case_kind": "sign_error",
+      "completion_tokens": 368,
+      "difficulty": "easy",
+      "elapsed_ms": 5455,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 752,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "physics-missing-unit",
+      "case_kind": "unit_omission",
+      "completion_tokens": 416,
+      "difficulty": "medium",
+      "elapsed_ms": 5978,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 743,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "chemistry-balanced",
+      "case_kind": "correct_equation",
+      "completion_tokens": 358,
+      "difficulty": "medium",
+      "elapsed_ms": 5199,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 757,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "biology-incomplete",
+      "case_kind": "partial_short_answer",
+      "completion_tokens": 338,
+      "difficulty": "easy",
+      "elapsed_ms": 5197,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 745,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "geometry-cross-page",
+      "case_kind": "cross_segment_reasoning",
+      "completion_tokens": 489,
+      "difficulty": "medium",
+      "elapsed_ms": 7193,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 822,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "photosynthesis-omission",
+      "case_kind": "required_component_omission",
+      "completion_tokens": 320,
+      "difficulty": "easy",
+      "elapsed_ms": 4880,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 722,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "off-topic-zero",
+      "case_kind": "off_topic_response",
+      "completion_tokens": 194,
+      "difficulty": "easy",
+      "elapsed_ms": 3165,
+      "failure_categories": [
+        "invalid_evidence"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 675,
+      "reason": "positive_score_without_quote",
+      "status": "invalid_evidence"
+    },
+    {
+      "case_id": "prompt-injection-data",
+      "case_kind": "instruction_like_student_text",
+      "completion_tokens": 422,
+      "difficulty": "medium",
+      "elapsed_ms": 6227,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 747,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "corrected-redundant-work",
+      "case_kind": "redundant_self_correction",
+      "completion_tokens": 336,
+      "difficulty": "medium",
+      "elapsed_ms": 5082,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 742,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "answer-only-no-method",
+      "case_kind": "correct_final_without_work",
+      "completion_tokens": 464,
+      "difficulty": "medium",
+      "elapsed_ms": 7078,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 734,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "correct-transform-wrong-result",
+      "case_kind": "correct_step_wrong_arithmetic",
+      "completion_tokens": 370,
+      "difficulty": "easy",
+      "elapsed_ms": 5680,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 740,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "pythagorean-proof",
+      "case_kind": "multi_criterion_proof",
+      "completion_tokens": 490,
+      "difficulty": "medium",
+      "elapsed_ms": 7412,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 825,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "physics-substitution",
+      "case_kind": "formula_substitution",
+      "completion_tokens": 484,
+      "difficulty": "medium",
+      "elapsed_ms": 7318,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 808,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "neutralization-products",
+      "case_kind": "partial_chemical_equation",
+      "completion_tokens": 452,
+      "difficulty": "medium",
+      "elapsed_ms": 6795,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 794,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "two-segment-evidence",
+      "case_kind": "multiple_segments",
+      "completion_tokens": 333,
+      "difficulty": "medium",
+      "elapsed_ms": 5166,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 757,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "quadratic-factorization",
+      "case_kind": "partially_correct_factorization",
+      "completion_tokens": 482,
+      "difficulty": "medium",
+      "elapsed_ms": 7257,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 816,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "fraction-partial",
+      "case_kind": "decimal_precision_partial",
+      "completion_tokens": 761,
+      "difficulty": "medium",
+      "elapsed_ms": 10942,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 817,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "zero-evidence-absence",
+      "case_kind": "no_relevant_answer",
+      "completion_tokens": 445,
+      "difficulty": "easy",
+      "elapsed_ms": 6568,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 677,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "literature-two-criteria",
+      "case_kind": "multi_criterion_short_answer",
+      "completion_tokens": 337,
+      "difficulty": "medium",
+      "elapsed_ms": 5018,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 759,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    }
+  ],
+  "per_case": [
+    {
+      "case_id": "linear-correct",
+      "case_kind": "correct_short_solution",
+      "completion_tokens": 199,
+      "difficulty": "easy",
+      "elapsed_ms": 3093,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 676,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "linear-wrong-answer",
+      "case_kind": "wrong_answer",
+      "completion_tokens": 223,
+      "difficulty": "easy",
+      "elapsed_ms": 3345,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 673,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "linear-missing-step",
+      "case_kind": "incomplete_multicriterion",
+      "completion_tokens": 461,
+      "difficulty": "medium",
+      "elapsed_ms": 6577,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 818,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "equivalent-fraction",
+      "case_kind": "alternate_equivalent_answer",
+      "completion_tokens": 234,
+      "criterion_errors": [],
+      "difficulty": "easy",
+      "elapsed_ms": 3642,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "5.00",
+      "prompt_tokens": 678,
+      "reference_total_score": "5.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "linear-sign-error",
+      "case_kind": "sign_error",
+      "completion_tokens": 368,
+      "difficulty": "easy",
+      "elapsed_ms": 5455,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 752,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "physics-missing-unit",
+      "case_kind": "unit_omission",
+      "completion_tokens": 416,
+      "difficulty": "medium",
+      "elapsed_ms": 5978,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 743,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "chemistry-balanced",
+      "case_kind": "correct_equation",
+      "completion_tokens": 358,
+      "difficulty": "medium",
+      "elapsed_ms": 5199,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 757,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "biology-incomplete",
+      "case_kind": "partial_short_answer",
+      "completion_tokens": 338,
+      "difficulty": "easy",
+      "elapsed_ms": 5197,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 745,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "geometry-cross-page",
+      "case_kind": "cross_segment_reasoning",
+      "completion_tokens": 489,
+      "difficulty": "medium",
+      "elapsed_ms": 7193,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 822,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "photosynthesis-omission",
+      "case_kind": "required_component_omission",
+      "completion_tokens": 320,
+      "difficulty": "easy",
+      "elapsed_ms": 4880,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 722,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "off-topic-zero",
+      "case_kind": "off_topic_response",
+      "completion_tokens": 194,
+      "difficulty": "easy",
+      "elapsed_ms": 3165,
+      "failure_categories": [
+        "invalid_evidence"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 675,
+      "reason": "positive_score_without_quote",
+      "status": "invalid_evidence"
+    },
+    {
+      "case_id": "prompt-injection-data",
+      "case_kind": "instruction_like_student_text",
+      "completion_tokens": 422,
+      "difficulty": "medium",
+      "elapsed_ms": 6227,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 747,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "corrected-redundant-work",
+      "case_kind": "redundant_self_correction",
+      "completion_tokens": 336,
+      "difficulty": "medium",
+      "elapsed_ms": 5082,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 742,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "answer-only-no-method",
+      "case_kind": "correct_final_without_work",
+      "completion_tokens": 464,
+      "difficulty": "medium",
+      "elapsed_ms": 7078,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 734,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "correct-transform-wrong-result",
+      "case_kind": "correct_step_wrong_arithmetic",
+      "completion_tokens": 370,
+      "difficulty": "easy",
+      "elapsed_ms": 5680,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 740,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "ratio-simplification",
+      "case_kind": "ratio_equivalence",
+      "completion_tokens": 196,
+      "criterion_errors": [],
+      "difficulty": "easy",
+      "elapsed_ms": 3229,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "6.00",
+      "prompt_tokens": 674,
+      "reference_total_score": "6.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "pythagorean-proof",
+      "case_kind": "multi_criterion_proof",
+      "completion_tokens": 490,
+      "difficulty": "medium",
+      "elapsed_ms": 7412,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 825,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "physics-substitution",
+      "case_kind": "formula_substitution",
+      "completion_tokens": 484,
+      "difficulty": "medium",
+      "elapsed_ms": 7318,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 808,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "neutralization-products",
+      "case_kind": "partial_chemical_equation",
+      "completion_tokens": 452,
+      "difficulty": "medium",
+      "elapsed_ms": 6795,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 794,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "two-segment-evidence",
+      "case_kind": "multiple_segments",
+      "completion_tokens": 333,
+      "difficulty": "medium",
+      "elapsed_ms": 5166,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 757,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "quadratic-factorization",
+      "case_kind": "partially_correct_factorization",
+      "completion_tokens": 482,
+      "difficulty": "medium",
+      "elapsed_ms": 7257,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 816,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "fraction-partial",
+      "case_kind": "decimal_precision_partial",
+      "completion_tokens": 761,
+      "difficulty": "medium",
+      "elapsed_ms": 10942,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 817,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "zero-evidence-absence",
+      "case_kind": "no_relevant_answer",
+      "completion_tokens": 445,
+      "difficulty": "easy",
+      "elapsed_ms": 6568,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 677,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "literature-two-criteria",
+      "case_kind": "multi_criterion_short_answer",
+      "completion_tokens": 337,
+      "difficulty": "medium",
+      "elapsed_ms": 5018,
+      "failure_categories": [
+        "protocol_error"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 759,
+      "reason": "model_evidence_protocol_invalid",
+      "status": "protocol_error"
+    },
+    {
+      "case_id": "ambiguous-handwriting-excluded",
+      "case_kind": "ambiguous_reference_excluded",
+      "included_in_metrics": false,
+      "reason": "文本样本本身无法确定原始手写数字，禁止用模型判断充当标签。",
+      "status": "excluded_uncertain"
+    },
+    {
+      "case_id": "ambiguous-rubric-excluded",
+      "case_kind": "ambiguous_reference_excluded",
+      "included_in_metrics": false,
+      "reason": "Rubric缺少可操作定义，无法独立给出稳定分数标签。",
+      "status": "excluded_uncertain"
+    }
+  ],
+  "prediction_model": {
+    "generation_config_digest": "1ce3936eda4e4492c70f8047fe628105ebe48c270685bb8b892575182d0ad283",
+    "invalid_response_retries": 0,
+    "model_id": "qwen3.5:4b",
+    "prompt_version": "rubric-candidate-v3",
+    "provider": "ollama_native",
+    "timeout_seconds": 90.0
+  },
+  "reference_source": "synthetic_curated_reference",
+  "runtime_usage": {
+    "completion_token_count": 24,
+    "completion_tokens_total": 9172,
+    "elapsed_ms_count": 24,
+    "elapsed_ms_mean": 5729.0,
+    "elapsed_ms_total": 137496,
+    "prompt_token_count": 24,
+    "prompt_tokens_total": 17951
+  },
+  "score_tolerance": "0.50",
+  "total_score": {
+    "absolute_error_sum": "0.00",
+    "exact": {
+      "denominator": 2,
+      "numerator": 2
+    },
+    "mae": "0.0000",
+    "mae_denominator": 2,
+    "over_count": 0,
+    "sample_count": 2,
+    "under_count": 0,
+    "within_tolerance": {
+      "denominator": 2,
+      "numerator": 2
+    }
+  }
+}

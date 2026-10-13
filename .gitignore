@@ -27,6 +27,20 @@ dist/
 
 # Local student submissions and generated processing data
 /data/
+!/data/
+/data/*
+!/data/evaluation/
+/data/evaluation/*
+!/data/evaluation/grading/
+/data/evaluation/grading/*
+!/data/evaluation/grading/rubric-cases-v1.json
+!/data/evaluation/grading/rubric-cases-v1.json.sha256
+!/data/evaluation/grading/predictions-qwen3.5-4b-v1.json
+!/data/evaluation/grading/report-qwen3.5-4b-v1.json
+!/data/evaluation/grading/rubric-cases-v2.json
+!/data/evaluation/grading/rubric-cases-v2.json.sha256
+!/data/evaluation/grading/rubric-cases-v2-run-manifest.json
+!/data/evaluation/grading/report-qwen3.5-4b-v1-audited.json
 /uploads/
 /raw-submissions/
 /submission-files/
