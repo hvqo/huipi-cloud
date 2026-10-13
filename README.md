@@ -11,7 +11,7 @@
 - **文档解析**：通过独立配置的 MinerU 4.x Basic/ONNX 运行时生成 Markdown 和结构化解析产物。
 - **文档标准化**：将 MinerU 结果转换为带来源信息的 Canonical Document。
 - **题目来源对齐**：识别题号候选、切分可追溯内容区域，并与作业题目进行保守匹配。
-- **视觉作答证据建议**：调用本地 Ollama 或经授权的兼容视觉模型，生成与人工复核分离的视觉建议。
+- **视觉作答证据建议**：调用经授权的云端视觉模型，生成与人工复核分离的视觉建议。
 - **人工复核与评测**：记录版本化的人工作答判断；提供合成数据评测工具，用于检查协议、作答判断和区域定位表现。
 - **评分输入准备**：从当前人工确认的 Canonical 文本范围构建不可变输入包，并快照教师标准答案与 Rubric；不调用评分模型或产生分数。
 - **Rubric 候选评分**：受控本地 CLI 可调用配置的文本模型，为每个评分项生成候选分数、理由和可核验的原文引用；不会发布成绩，也不会修改人工复核记录。
@@ -42,14 +42,14 @@ flowchart LR
 
     GradeS3 --> ScoreCLI[本地候选评分 CLI]
     Assignment --> ScoreCLI
-    ScoreCLI --> TextModel[本地 Ollama 或经授权的兼容文本模型]
+    ScoreCLI --> TextModel[经授权的云端文本模型]
     TextModel --> ScoreProposal[私有候选评分对象与 PostgreSQL 索引]
     ScoreProposal --> GradeReviewCLI[候选评分人工复核 CLI]
     GradeReviewCLI --> PG
 
     Original[私有原始作业文件] --> Visual[VisualEvidence]
     Alignment --> Visual
-    Visual --> Model[本地 Ollama 或经授权的视觉模型]
+    Visual --> Model[经授权的云端视觉模型]
     Visual --> Proposal[私有模型建议对象与 PostgreSQL 索引]
 ```
 
@@ -83,7 +83,7 @@ API 文档位于 <http://127.0.0.1:8000/docs>，存活检查为 `GET /api/v1/hea
 
 基本流程是：创建并发布作业 → 上传一份学生作业 → 运行解析 Worker → 标准化文档 → 对齐题目来源 → 可选地生成视觉建议 → 人工作答复核 → 准备文本评分输入 → 可选地生成并人工复核 Rubric 候选评分。
 
-最小可执行 API 示例和完整本地处理步骤见[作业处理教程](docs/development/basic-workflow.md)。MinerU 和 Ollama 需要单独配置，快速启动不会自动安装模型或启动解析 Worker。
+最小可执行 API 示例和完整本地处理步骤见[作业处理教程](docs/development/basic-workflow.md)。MinerU和云端模型API需要单独配置，快速启动不会自动安装模型或启动解析 Worker。
 
 ## 主要接口
 

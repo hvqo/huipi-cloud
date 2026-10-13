@@ -38,6 +38,28 @@ from huipi_cloud.modules.visual_evidence.errors import (
 from scripts.evaluate_grade_proposals import _cost_preflight
 
 
+def test_clean_configuration_defaults_to_disabled_cloud_without_local_fallback(monkeypatch):
+    for name in Settings.model_fields:
+        if name.startswith(("grading_", "visual_evidence_")):
+            monkeypatch.delenv(name.upper(), raising=False)
+    config = Settings(_env_file=None)
+    for prefix in ("grading", "visual_evidence"):
+        assert getattr(config, prefix + "_provider") == "openai_compatible"
+        assert getattr(config, prefix + "_base_url") == "https://api.deepseek.com"
+        assert getattr(config, prefix + "_model") == "deepseek-flash"
+        assert not getattr(config, prefix + "_enabled")
+        assert not getattr(config, prefix + "_allow_remote")
+        assert not getattr(config, prefix + "_external_data_authorized")
+        assert getattr(config, prefix + "_api_key") is None
+        assert getattr(config, prefix + "_deepseek_thinking") == "disabled"
+
+    # Explicit cloud failures are returned; a builder never switches to Ollama.
+    from huipi_cloud.infrastructure.grading.provider import build_text_grading_provider
+
+    with pytest.raises(GradeProposalProviderError, match="model_endpoint_not_permitted"):
+        build_text_grading_provider(config.model_copy(update={"grading_enabled": True}))
+
+
 def _config(**updates) -> Settings:
     values = {
         "_env_file": None,

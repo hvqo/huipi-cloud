@@ -26,11 +26,11 @@ Key 仅填写在本地 `VISUAL_EVIDENCE_API_KEY`。操作者明确批准合成�
 
 length 和其他未正常完成的输出不会成为 proposal，非法JSON和越界页面也不会登记成功索引。成功对象记录服务实际返回模型ID。模型建议的BBox仍通过原有保守来源映射；空间候选不是确定归属，unresolved 不会为了完成验收而改为成功。
 
-首次验收方法及当前阻塞状态见[DeepSeek验收文档](../evaluation/deepseek-provider-validation.md)。API Key 缺失时只运行 MockTransport 配合真实 PostgreSQL/S3 的集成测试，不称为真实模型端到端验收。
+真实合成验收记录及复现方法见[DeepSeek验收文档](../evaluation/deepseek-provider-validation.md)。API Key 缺失时只运行 MockTransport 配合真实 PostgreSQL/S3 的集成测试，不称为真实模型端到端验收。
 
 ## 可选开发服务：本地 Ollama
 
-默认配置使用仅 loopback 的 Ollama 原生 Provider。需要开发者自行安装并启动 Ollama、获取一个支持图像输入的模型，然后在 `.env` 设置：
+业务默认使用云端API，失败时不会降级至Ollama。历史Ollama适配器只在开发者显式选择时使用。需要自行安装并启动Ollama、获取一个支持图像输入的模型，然后在 `.env` 设置：
 
 ```dotenv
 VISUAL_EVIDENCE_PROVIDER=ollama_native

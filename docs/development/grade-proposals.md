@@ -10,7 +10,7 @@
 
 ## 主要服务：DeepSeek
 
-使用现有 OpenAI-compatible Chat Completions 适配器，不需要新增 SDK。先在被 Git 忽略的本地 `.env` 中配置以下非敏感值，并自行填写 `GRADING_API_KEY`：
+业务默认使用云端API，未授权或调用失败时不会降级至Ollama。使用现有OpenAI-compatible Chat Completions适配器，不需要新增SDK。先在被Git忽略的本地 `.env` 中配置以下非敏感值，并自行填写 `GRADING_API_KEY`：
 
 ```dotenv
 GRADING_ENABLED=false

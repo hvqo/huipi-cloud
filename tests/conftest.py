@@ -48,10 +48,20 @@ def isolated_model_defaults(monkeypatch: pytest.MonkeyPatch, request: pytest.Fix
         for marker, flag in live_markers.items()
     ):
         return
+    # Existing local-provider contract tests opt into the legacy endpoint explicitly.
+    # These fixture values do not provide a production fallback or paid requests.
+    local_contract_defaults = {
+        "grading_provider": "ollama_native",
+        "grading_base_url": "http://127.0.0.1:11434",
+        "grading_model": "",
+        "visual_evidence_provider": "openai_compatible",
+        "visual_evidence_base_url": "http://127.0.0.1:11434/v1",
+        "visual_evidence_model": "qwen3.5:4b",
+    }
     for prefix in ("grading", "visual_evidence"):
         for name, field in Settings.model_fields.items():
             if name.startswith(prefix + "_"):
-                default = field.default
+                default = local_contract_defaults.get(name, field.default)
                 monkeypatch.setenv(
                     name.upper(),
                     "" if default is None else str(default).lower()

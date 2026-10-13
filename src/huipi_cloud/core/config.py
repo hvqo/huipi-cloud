@@ -71,9 +71,9 @@ class Settings(BaseSettings):
         le=16 * 1024 * 1024,
     )
     grading_enabled: bool = False
-    grading_provider: Literal["openai_compatible", "ollama_native"] = "ollama_native"
-    grading_base_url: str = "http://127.0.0.1:11434"
-    grading_model: str = ""
+    grading_provider: Literal["openai_compatible", "ollama_native"] = "openai_compatible"
+    grading_base_url: str = "https://api.deepseek.com"
+    grading_model: str = "deepseek-flash"
     grading_api_key: SecretStr | None = None
     grading_allow_remote: bool = False
     grading_external_data_authorized: bool = False
@@ -91,8 +91,8 @@ class Settings(BaseSettings):
     visual_evidence_provider: Literal["openai_compatible", "ollama_native"] = (
         "openai_compatible"
     )
-    visual_evidence_base_url: str = "http://127.0.0.1:11434/v1"
-    visual_evidence_model: str = "qwen3.5:4b"
+    visual_evidence_base_url: str = "https://api.deepseek.com"
+    visual_evidence_model: str = "deepseek-flash"
     visual_evidence_api_key: SecretStr | None = None
     visual_evidence_allow_remote: bool = False
     visual_evidence_external_data_authorized: bool = False

@@ -2,13 +2,25 @@
 
 ## 验收范围和当前事实
 
-本次复用已有 HTTPX OpenAI-compatible Chat Completions Provider，评分目标名称为 `deepseek-flash`，视觉目标名称为 `deepseek-flash`，Base URL 为 `https://api.deepseek.com`。目标名称是配置值；没有真实回复就没有可确认的实际返回模型ID。
+本次复用已有HTTPX OpenAI-compatible Chat Completions Provider，两模块配置均为 `deepseek-flash`，Base URL为 `https://api.deepseek.com`。2026-10-13恢复现场后，确认两个Key已能安全加载；用户先前成功调用是现场信息，未找到足以复核其请求内容的历史记录，因此只补做两次获授权的真实合成Smoke，没有执行25案例评测。
 
-2026-10-13 检查本地配置时，两个 API Key 均缺失，两个模块的远程传输授权也没有启用。本轮没有发出 DeepSeek 请求，没有实际模型Token或费用，没有真实 DeepSeek 成功/失败样本。v2 的25个评分案例全部保持 `not_requested`，另2个案例因参考标签不确定而排除；见[独立未请求清单](../../data/evaluation/grading/deepseek-v2-run-manifest.json)。旧 qwen v1 预测不能充当 DeepSeek 预测，v1/v2 标签和历史报告保持原样。
+本地 `.env` 没有修改。其远程授权仍关闭；本次授权只通过测试进程环境变量临时开启，范围仅限合成数据。密钥没有进入命令行、输出、Git或验收文件。PostgreSQL与S3服务健康；使用独立 `_test` 数据库和专用私有测试桶，测试结束仅清理本轮对象前缀和测试数据。
 
-默认测试使用 MockTransport 验证官方请求形状，并用真实独立 PostgreSQL 测试库、私有S3测试桶完成评分和视觉产物登记、大小/SHA回读、幂等及参数变化冲突。它们验证工程合同，不能证明 DeepSeek 服务已联通或模型质量提高。视觉输入来自合成图片和人工构造的 Canonical/Alignment fixture，未运行真实 MinerU。模型建议和人工作答复核记录保持隔离。
+### 本轮真实结果
 
-本次本地默认套件为499 passed、9 skipped。新增44项测试通过，其中7项使用真实PostgreSQL/S3和Mock HTTP；2项收费DeepSeek Smoke未执行，另7项为已有按需模型测试。Ruff、锁定依赖、Compose配置、diff及133个文档相对链接检查通过。真实请求成功0、失败0表示没有执行，不能解释成真实服务全部通过；也没有本轮真实模型Token统计。
+验收于2026-10-13 13:39:12 UTC（北京时间21:39:12）结束。该时间来自测试日志完成时间，不是逐请求精确墙钟时间。可复核的脱敏记录见[合成Smoke证据](deepseek-synthetic-smoke-2026-10-13.json)。两次真实请求，无自动重试，2项测试通过，无失败或跳过。
+
+- 文本实际响应 `model=deepseek-flash`、`finish_reason=stop`。688输入Token、122输出Token，Provider耗时907毫秒。JSON及严格评分协议、Rubric/Decimal分数和Quote来源全部通过；状态为 `completed_candidate`；真实PostgreSQL登记和私有S3回读/SHA校验通过。
+- 视觉实际响应 `model=deepseek-flash`。1449输入Token、113输出Token、总量1562，Provider耗时1342毫秒。图片来自合成PNG，经实际渲染后传输；Canonical/Alignment为合法测试fixture，不是本轮MinerU结果。严格输出及页码协议通过，建议为 `candidate_prompt_only`，两处来源均为 `unresolved`。真实PostgreSQL登记、S3下载、SHA和Proposal回读通过；没有确认的Question归属。
+- 两条链路都验证人工AnswerReview记录数没有变化。工程闭环成功不等于视觉来源匹配成功，更不等于教学评分正确。单个文本样本不能证明候选覆盖率或评分准确率。
+- 思考模式显式关闭。配置保留max，但请求未发送 `reasoning_effort`；没有声称max推理生效。文本4096输出Token/120秒、视觉2048输出Token/90秒，均无重试。文本回复没有提供reasoning_tokens；保存的Smoke摘要没有缓存拆分，不把缺失用量解释成0。
+- 两次累计2137输入Token和235输出Token。按运行日官方Flash峰时未缓存输入$0.30/百万、输出$1.20/百万估算保守费用为$0.0009231；缓存命中与非峰时可降低费用。这不是平台账单或账户扣费证明。
+
+新安装默认配置和 `.env.example` 均采用关闭状态的云端DeepSeek，不会静默降级至本地模型。Ollama兼容适配器保留，仅可显式选择；CI中的历史本地合同测试使用明确的测试配置，没有业务回退语义。新增清洁配置回归测试先在旧默认值下失败，再通过修复。没有改写Provider HTTP实现、评分协议、数据库模型或历史产物。
+
+默认套件仍以MockTransport验证请求和异常合同，以真实独立PostgreSQL/S3验证持久化。真实Smoke是单独opt-in验收；默认CI不会调用收费API，也不下载模型。本轮没有运行真实MinerU、Ollama或25案例DeepSeek基线。本轮默认完整测试为500 passed、9 skipped；新增清洁云端配置测试通过。独立测试库upgrade head和Alembic check通过（无模型漂移），锁定依赖、Ruff、Compose配置和diff检查通过，135个文档相对链接有效。没有新增迁移。
+
+v2的25个纳入案例全部保持 `not_requested`，另2个参考标签不确定案例排除。SHA为 `0da5948b79a15839d6abb939f134948e8d58dad101b66862ed7d4abaac40b26d`，dry-run确认25个Prompt可构建；[原始未请求清单](../../data/evaluation/grading/deepseek-v2-run-manifest.json)保留，不把两次Smoke伪装为数据集预测。旧qwen v1数据、预测、报告和SHA均未覆盖。
 
 ## 官方接口依据
 
@@ -23,12 +35,15 @@
 
 ## 两次合成 Smoke
 
-先在被忽略的 `.env` 填写对应Key，并由操作者显式开启两组远程授权。授权范围先限于合成数据；不要把真实学生数据混入此验收。Key不写入命令行或Git。
+先在被忽略的 `.env` 填写对应Key，并由操作者明确授权合成数据传输。可以只在本次进程中开启两组远程授权，不必修改 `.env`；不要把真实学生数据混入验收。Key不写入命令行或Git。
 
 在独立的 `_test` PostgreSQL 数据库和专用私有S3测试桶中运行：
 
 ```bash
-RUN_DEEPSEEK_SMOKE=1 uv run pytest -q -s -m deepseek_e2e
+RUN_DEEPSEEK_SMOKE=1 \
+GRADING_ALLOW_REMOTE=true GRADING_EXTERNAL_DATA_AUTHORIZED=true \
+VISUAL_EVIDENCE_ALLOW_REMOTE=true VISUAL_EVIDENCE_EXTERNAL_DATA_AUTHORIZED=true \
+uv run pytest -q -s -m deepseek_e2e
 ```
 
 最多两次真实请求，无重试：一次“4”合成文本评分，经原有JSON、Decimal、Rubric和Quote门禁后登记/回读Proposal；一次合成图像视觉请求，经页码协议和保守来源映射后登记/回读。输出只含模型ID、状态、用量、耗时、SHA验证和候选/unresolved状态，不含完整答案或理由。视觉映射不一定成功，不因单个空间候选而确认真实Question归属。
@@ -37,7 +52,7 @@ RUN_DEEPSEEK_SMOKE=1 uv run pytest -q -s -m deepseek_e2e
 
 ## v2 DeepSeek 基线
 
-先完成两次真实Smoke，再对固定 v2 数据集运行A组。默认dry-run不调用模型：
+真实合成Smoke已通过，下一阶段对固定v2数据集单独运行A组。默认dry-run不调用模型：
 
 ```bash
 uv run python scripts/evaluate_grade_proposals.py --dry-run
@@ -70,6 +85,6 @@ uv run python scripts/evaluate_grade_proposals.py \
 
 ## 后续 A/B 的前提
 
-P3-D1的未完成Quote实验保留在原分支和stash，未混入本次Provider改动。完成真实DeepSeek Smoke与A组基线、独立审查后，才恢复B组实验：模型选择原文，程序在指定segment内唯一精确定位，并再运行原有严格Quote与评分验证。A/B都使用同一25案例、模型、Thinking/effort、输出预算和生成配置，分开保存原始响应，不修改教师参考标签。
+P3-D1的未完成Quote实验保留在原分支和stash，未混入本次Provider改动。真实Smoke已通过；完成A组基线并独立审查后，才恢复B组实验：模型选择原文，程序在指定segment内唯一精确定位，并再运行原有严格Quote与评分验证。A/B都使用同一25案例、模型、Thinking/effort、输出预算和生成配置，分开保存原始响应，不修改教师参考标签。
 
 需要分别报告协议通过、有效覆盖、来源有效、总分/Criterion误差、高估风险、实际用量和费用估算；还要报告两组共同成功、仅A成功、仅B成功及都失败的配对案例。引用定位成功不代表引用语义充分，有效候选增加也不代表评分准确率提高。当前既没有DeepSeek基线，也没有实际A/B提升结论。
