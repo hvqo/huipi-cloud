@@ -7,9 +7,10 @@ copied into the in-memory GradeInputDocument sent to the existing P3-B prompt.
 from __future__ import annotations
 
 import hashlib
+import json
 from collections import Counter
 from datetime import UTC, datetime
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Literal, Self
 from uuid import UUID, uuid5
@@ -62,6 +63,20 @@ _PREDICTION_STATUSES = Literal[
     "not_requested",
     "excluded_uncertain",
 ]
+_PROTOCOL_DIAGNOSTIC_CATEGORIES = (
+    "invalid_json",
+    "missing_required_field",
+    "unexpected_field",
+    "invalid_outcome",
+    "invalid_quote_length",
+    "invalid_quote_offsets",
+    "invalid_quote_text",
+    "empty_quote",
+    "invalid_no_evidence_shape",
+    "invalid_score_value",
+    "invalid_criterion_structure",
+    "other_protocol_error",
+)
 
 
 class EvaluationRubricCriterion(BaseModel):
@@ -550,7 +565,7 @@ def evaluate_predictions(
                 "status": status,
                 "included_in_metrics": True,
                 "failure_categories": ["model_abstained_on_scored_reference"],
-                "reason": reply.abstention_reason if reply is not None else None,
+                "reason": "model_abstention_reason_redacted",
                 **_runtime_detail(prediction),
             }
             failure_cases.append(entry)
@@ -602,6 +617,45 @@ def evaluate_predictions(
         }
         for key, values in sorted(criterion_metrics.items())
     }
+    requested_prediction_cases = [
+        by_case_id[case.case_id]
+        for case in active_cases
+        if by_case_id[case.case_id].status != "not_requested"
+    ]
+    response_predictions = [
+        prediction
+        for prediction in requested_prediction_cases
+        if prediction.response_content is not None
+    ]
+    json_parseable_count = sum(
+        _is_json_parseable(prediction.response_content)
+        for prediction in response_predictions
+    )
+    candidate_outcome_pairs = [
+        (case, reply)
+        for case in active_cases
+        for status, reply, _ in [derived[case.case_id]]
+        if reply is not None and reply.outcome == "candidate"
+    ]
+    rubric_valid_pairs = [
+        (case, reply)
+        for case, reply in candidate_outcome_pairs
+        if _rubric_score_constraints_valid(case, reply)
+    ]
+    quote_valid_case_count = 0
+    stage_quote_refs_checked = 0
+    stage_quote_refs_valid = 0
+    for case, reply in candidate_outcome_pairs:
+        valid, checked, valid_count = _candidate_quote_sources_valid(case, reply, selected_config)
+        quote_valid_case_count += int(valid)
+        stage_quote_refs_checked += checked
+        stage_quote_refs_valid += valid_count
+
+    protocol_failure_diagnostics = _protocol_failure_diagnostics(dataset, by_case_id)
+    source_quote_failure_diagnostics = _source_quote_failure_diagnostics(
+        dataset, derived, selected_config
+    )
+    semantic_score_risks = _semantic_score_risk_cases(dataset, by_case_id)
     return {
         "dataset_version": dataset.dataset_version,
         "dataset_sha256": dataset_sha256,
@@ -626,6 +680,53 @@ def evaluate_predictions(
             "protocol_valid_replies": protocol_valid_count,
             "prediction_status_counts": dict(sorted(status_counts.items())),
         },
+        "evaluation_stages": {
+            "provider_response_received": {
+                "numerator": len(response_predictions),
+                "denominator": requested_count,
+            },
+            "json_parseable": {
+                "numerator": json_parseable_count,
+                "denominator": len(response_predictions),
+            },
+            "strict_grade_model_reply_valid": {
+                "numerator": protocol_valid_count,
+                "denominator": len(response_predictions),
+                "definition": "GradeModelReply结构协议通过，尚不代表Rubric、quote或语义检查通过。",
+            },
+            "rubric_score_constraints_valid": {
+                "numerator": len(rubric_valid_pairs),
+                "denominator": len(candidate_outcome_pairs),
+                "definition": "只诊断Criterion集合、分值范围和总分算术；不替代P3-B接受校验。",
+            },
+            "source_quote_validation": {
+                "valid_candidate_outcome_cases": quote_valid_case_count,
+                "candidate_outcome_cases": len(candidate_outcome_pairs),
+                "valid_quote_references": stage_quote_refs_valid,
+                "quote_references_checked": stage_quote_refs_checked,
+                "definition": (
+                    "按P3-B原文和Unicode码点半开区间校验；"
+                    "正分还必须至少有一条有效quote。"
+                ),
+            },
+            "final_usable_candidate": {
+                "numerator": candidate_count,
+                "denominator": requested_count,
+            },
+            "candidate_total_score_comparison": {
+                "exact_numerator": exact_total_score_count,
+                "denominator": score_denominator,
+                "mae": total_mae,
+                "semantic_accuracy_claim": False,
+            },
+            "rationale_semantic_adequacy": {
+                "automated_result": "not_evaluated",
+                "human_review_required": True,
+            },
+        },
+        "protocol_failure_diagnostics": protocol_failure_diagnostics,
+        "source_quote_failure_diagnostics": source_quote_failure_diagnostics,
+        "semantic_score_risk_review": semantic_score_risks,
         "runtime_usage": {
             "elapsed_ms_total": elapsed_total_ms,
             "elapsed_ms_count": elapsed_count,
@@ -706,6 +807,558 @@ def evaluate_predictions(
         "failure_cases": failure_cases,
         "per_case": per_case,
     }
+
+
+def _is_json_parseable(content: str | None) -> bool:
+    if content is None:
+        return False
+    try:
+        json.loads(content)
+    except (json.JSONDecodeError, TypeError):
+        return False
+    return True
+
+
+def _rubric_score_constraints_valid(
+    case: RubricEvaluationCase,
+    reply: GradeModelReply,
+) -> bool:
+    if reply.outcome != "candidate" or reply.total_score is None:
+        return False
+    expected = {_criterion_uuid(case, item.criterion_key): item for item in case.rubric}
+    actual = {item.criterion_id: item for item in reply.criterion_scores}
+    if len(actual) != len(reply.criterion_scores) or set(actual) != set(expected):
+        return False
+    total = Decimal("0.00")
+    for criterion_id, score in actual.items():
+        points = expected[criterion_id].max_points
+        if score.awarded_points < 0 or score.awarded_points > points:
+            return False
+        total += score.awarded_points
+    return total == reply.total_score and total <= case.max_score
+
+
+def _candidate_quote_sources_valid(
+    case: RubricEvaluationCase,
+    reply: GradeModelReply,
+    config: Settings,
+) -> tuple[bool, int, int]:
+    if reply.outcome != "candidate":
+        return False, 0, 0
+    document = build_grade_input(case)
+    all_valid = True
+    checked = valid_count = 0
+    for score in reply.criterion_scores:
+        has_valid_quote = False
+        for evidence in score.evidence_references:
+            if not isinstance(evidence, QuoteEvidenceReference):
+                continue
+            checked += 1
+            try:
+                _validate_quote_reference(evidence, document, config)
+            except GradeProposalInvalidEvidenceError:
+                all_valid = False
+            else:
+                valid_count += 1
+                has_valid_quote = True
+        if score.awarded_points > 0 and not has_valid_quote:
+            all_valid = False
+    return all_valid, checked, valid_count
+
+
+def _protocol_failure_diagnostics(
+    dataset: RubricEvaluationDataset,
+    predictions_by_id: dict[str, EvaluationPredictionCase],
+) -> dict[str, object]:
+    category_case_ids: dict[str, set[str]] = {
+        category: set() for category in _PROTOCOL_DIAGNOSTIC_CATEGORIES
+    }
+    category_occurrences: Counter[str] = Counter()
+    case_diagnostics: list[dict[str, object]] = []
+    for case in dataset.cases:
+        prediction = predictions_by_id[case.case_id]
+        if case.reference_status != "included" or prediction.status != "protocol_error":
+            continue
+        diagnosed = _diagnose_protocol_reply(case, prediction.response_content)
+        for category, occurrences in diagnosed["category_occurrences"].items():
+            if occurrences > 0:
+                category_case_ids[category].add(case.case_id)
+                category_occurrences[category] += occurrences
+        case_diagnostics.append(
+            {
+                "case_id": case.case_id,
+                "categories": sorted(diagnosed["category_occurrences"]),
+                "occurrences_by_category": dict(sorted(diagnosed["category_occurrences"].items())),
+                "quote_checks": diagnosed["quote_checks"],
+            }
+        )
+    return {
+        "case_count": len(case_diagnostics),
+        "occurrence_count": sum(category_occurrences.values()),
+        "count_definition": {
+            "case_count": "一个案例在某类别中最多计一次。",
+            "occurrence_count": "该类别中独立字段或引用位置的次数；类别之间可重叠。",
+        },
+        "diagnostic_categories": {
+            category: {
+                "case_count": len(category_case_ids[category]),
+                "occurrence_count": category_occurrences[category],
+            }
+            for category in _PROTOCOL_DIAGNOSTIC_CATEGORIES
+        },
+        "quote_source_match_summary": _quote_match_summary(case_diagnostics),
+        "cases": case_diagnostics,
+        "raw_quote_text_included": False,
+    }
+
+
+def _source_quote_failure_diagnostics(
+    dataset: RubricEvaluationDataset,
+    derived: dict[str, tuple[str, GradeModelReply | None, str | None]],
+    config: Settings,
+) -> dict[str, object]:
+    categories = (
+        "invalid_quote_offsets",
+        "invalid_quote_text",
+        "positive_score_without_quote",
+    )
+    case_ids: dict[str, set[str]] = {category: set() for category in categories}
+    occurrences: Counter[str] = Counter()
+    cases: list[dict[str, object]] = []
+    for case in dataset.cases:
+        if case.reference_status != "included":
+            continue
+        status, reply, _ = derived[case.case_id]
+        if reply is None or reply.outcome != "candidate":
+            continue
+        local_counts: Counter[str] = Counter()
+        quote_checks: list[dict[str, object]] = []
+        document = build_grade_input(case)
+        for criterion_index, score in enumerate(reply.criterion_scores):
+            has_valid_quote = False
+            for evidence_index, evidence in enumerate(score.evidence_references):
+                if not isinstance(evidence, QuoteEvidenceReference):
+                    continue
+                try:
+                    _validate_quote_reference(evidence, document, config)
+                except GradeProposalInvalidEvidenceError as error:
+                    if error.reason_code in {
+                        "evidence_segment_not_found",
+                        "evidence_range_out_of_bounds",
+                    }:
+                        category = "invalid_quote_offsets"
+                        match_count = None
+                    elif error.reason_code == "evidence_quote_mismatch":
+                        segment = document.selected_answer_segments[evidence.segment_index]
+                        match_count = _count_overlapping_occurrences(segment.text, evidence.quote)
+                        category = "invalid_quote_offsets" if match_count else "invalid_quote_text"
+                    else:
+                        category = "invalid_quote_text"
+                        match_count = None
+                    local_counts[category] += 1
+                    quote_checks.append(
+                        {
+                            "criterion_index": criterion_index,
+                            "evidence_index": evidence_index,
+                            "segment_index": evidence.segment_index,
+                            "quote_codepoints": len(evidence.quote),
+                            "claimed_span_codepoints": evidence.text_end - evidence.text_start,
+                            "source_exact_match_count": match_count,
+                            "matches_claimed_offsets": False,
+                        }
+                    )
+                else:
+                    has_valid_quote = True
+                    quote_checks.append(
+                        {
+                            "criterion_index": criterion_index,
+                            "evidence_index": evidence_index,
+                            "segment_index": evidence.segment_index,
+                            "quote_codepoints": len(evidence.quote),
+                            "claimed_span_codepoints": evidence.text_end - evidence.text_start,
+                            "source_exact_match_count": 1,
+                            "matches_claimed_offsets": True,
+                        }
+                    )
+            if score.awarded_points > 0 and not has_valid_quote:
+                local_counts["positive_score_without_quote"] += 1
+        for category, count in local_counts.items():
+            if count:
+                case_ids[category].add(case.case_id)
+                occurrences[category] += count
+        if local_counts:
+            cases.append(
+                {
+                    "case_id": case.case_id,
+                    "stored_status": status,
+                    "categories": sorted(local_counts),
+                    "occurrences_by_category": dict(sorted(local_counts.items())),
+                    "quote_checks": quote_checks,
+                }
+            )
+    return {
+        "case_count": len(cases),
+        "occurrence_count": sum(occurrences.values()),
+        "count_definition": {
+            "case_count": "具有至少一项来源证据问题的不同案例数。",
+            "occurrence_count": "问题引用或正分 Criterion 的个数；类别之间可重叠。",
+        },
+        "diagnostic_categories": {
+            category: {
+                "case_count": len(case_ids[category]),
+                "occurrence_count": occurrences[category],
+            }
+            for category in categories
+        },
+        "quote_source_match_summary": _quote_match_summary(cases),
+        "cases": cases,
+        "raw_quote_text_included": False,
+    }
+
+
+def _diagnose_protocol_reply(
+    case: RubricEvaluationCase,
+    response_content: str | None,
+) -> dict[str, object]:
+    counts: Counter[str] = Counter()
+    seen: set[tuple[str, str]] = set()
+    quote_checks: list[dict[str, object]] = []
+
+    def add(category: str, occurrence_key: str) -> None:
+        if category not in counts and category not in _PROTOCOL_DIAGNOSTIC_CATEGORIES:
+            category = "other_protocol_error"
+        identity = (category, occurrence_key)
+        if identity not in seen:
+            seen.add(identity)
+            counts[category] += 1
+
+    try:
+        raw = json.loads(response_content) if response_content is not None else None
+    except (json.JSONDecodeError, TypeError):
+        add("invalid_json", "response")
+        return {"category_occurrences": counts, "quote_checks": quote_checks}
+    if not isinstance(raw, dict):
+        add("other_protocol_error", "root_not_object")
+        return {"category_occurrences": counts, "quote_checks": quote_checks}
+
+    try:
+        GradeModelReply.model_validate(raw)
+    except ValidationError as error:
+        for detail in error.errors(include_input=False):
+            location = tuple(detail.get("loc", ()))
+            error_type = str(detail.get("type", ""))
+            if "evidence_references" in location:
+                continue
+            if error_type == "extra_forbidden":
+                # Root and nested extras are collected from the parsed object
+                # below so one extra key is one diagnostic occurrence.
+                continue
+            if error_type == "missing" and (
+                "criterion_scores" in location
+                or location in {("schema_version",), ("outcome",)}
+            ):
+                continue
+            if error_type == "missing":
+                category = "missing_required_field"
+            elif error_type == "extra_forbidden":
+                category = "unexpected_field"
+            elif "outcome" in location:
+                category = "invalid_outcome"
+            elif not location and error_type == "value_error":
+                # The root validator's exact missing/contradictory fields are
+                # diagnosed from the parsed object below.
+                continue
+            elif "awarded_points" in location or "total_score" in location:
+                category = "invalid_score_value"
+            elif "criterion_scores" in location or "criterion_id" in location:
+                category = "invalid_criterion_structure"
+            else:
+                category = "other_protocol_error"
+            add(category, f"schema:{'.'.join(map(str, location))}:{error_type}")
+
+    outcome = raw.get("outcome")
+    if not isinstance(outcome, str) or outcome not in {"candidate", "abstain"}:
+        add("invalid_outcome", "outcome")
+    if "schema_version" not in raw:
+        add("missing_required_field", "schema_version")
+    if "outcome" not in raw:
+        add("missing_required_field", "outcome")
+    if outcome == "candidate":
+        if "total_score" not in raw or raw.get("total_score") is None:
+            add("missing_required_field", "total_score")
+        if "criterion_scores" not in raw:
+            add("missing_required_field", "criterion_scores")
+        elif raw.get("criterion_scores") == []:
+            add("invalid_criterion_structure", "criterion_scores:empty_candidate")
+        if raw.get("abstention_reason") is not None:
+            add("invalid_outcome", "candidate_with_abstention_reason")
+    elif outcome == "abstain":
+        reason = raw.get("abstention_reason")
+        if not isinstance(reason, str) or not reason.strip():
+            add("missing_required_field", "abstention_reason")
+        if raw.get("total_score") is not None or raw.get("criterion_scores"):
+            add("invalid_outcome", "abstain_with_scores")
+    allowed_reply_fields = {
+        "schema_version",
+        "outcome",
+        "total_score",
+        "criterion_scores",
+        "abstention_reason",
+        "reason_codes",
+    }
+    for field_name in raw.keys() - allowed_reply_fields:
+        add("unexpected_field", f"root:{field_name}")
+
+    criterion_scores = raw.get("criterion_scores", [])
+    if not isinstance(criterion_scores, list):
+        add("invalid_criterion_structure", "criterion_scores:not_list")
+        criterion_scores = []
+    for criterion_index, criterion in enumerate(criterion_scores):
+        criterion_path = f"criterion:{criterion_index}"
+        if not isinstance(criterion, dict):
+            add("invalid_criterion_structure", criterion_path)
+            continue
+        allowed_criterion_fields = {
+            "criterion_id",
+            "awarded_points",
+            "rationale",
+            "evidence_references",
+        }
+        for field_name in criterion.keys() - allowed_criterion_fields:
+            add("unexpected_field", f"{criterion_path}:{field_name}")
+        for required in ("criterion_id", "awarded_points", "rationale", "evidence_references"):
+            if required not in criterion:
+                add("missing_required_field", f"{criterion_path}:{required}")
+        references = criterion.get("evidence_references", [])
+        if not isinstance(references, list):
+            add("invalid_criterion_structure", f"{criterion_path}:evidence_not_list")
+            continue
+        if not references or len(references) > 50:
+            add("invalid_criterion_structure", f"{criterion_path}:evidence_count")
+        for reference_index, reference in enumerate(references):
+            reference_path = f"{criterion_path}:reference:{reference_index}"
+            if not isinstance(reference, dict):
+                add("invalid_criterion_structure", reference_path)
+                continue
+            kind = reference.get("kind")
+            if kind == "no_evidence":
+                allowed = {"kind", "reason"}
+                reason = reference.get("reason")
+                if (
+                    set(reference) != allowed
+                    or not isinstance(reason, str)
+                    or not reason.strip()
+                    or len(reason) > 1000
+                ):
+                    add("invalid_no_evidence_shape", reference_path)
+                continue
+            if kind != "quote" and not ({"quote", "text_start", "text_end"} & set(reference)):
+                add("invalid_criterion_structure", reference_path)
+                continue
+            if kind != "quote":
+                add("invalid_criterion_structure", f"{reference_path}:kind")
+            allowed_quote_fields = {
+                "kind",
+                "segment_index",
+                "text_start",
+                "text_end",
+                "quote",
+            }
+            for field_name in reference.keys() - allowed_quote_fields:
+                add("unexpected_field", f"{reference_path}:{field_name}")
+            for required in ("kind", "segment_index", "text_start", "text_end", "quote"):
+                if required not in reference:
+                    add("missing_required_field", f"{reference_path}:{required}")
+            quote = reference.get("quote")
+            if isinstance(quote, str) and not quote:
+                add("empty_quote", reference_path)
+            elif not isinstance(quote, str):
+                add("invalid_quote_text", reference_path)
+            elif len(quote) > 2000:
+                add("invalid_quote_text", reference_path)
+            segment_index = reference.get("segment_index")
+            if type(segment_index) is not int or not 0 <= segment_index < len(
+                case.student_segments
+            ):
+                add("invalid_quote_offsets", reference_path)
+                source_text = None
+            else:
+                source_text = case.student_segments[segment_index].text
+            text_start = reference.get("text_start")
+            text_end = reference.get("text_end")
+            coordinates_valid = type(text_start) is int and type(text_end) is int
+            span_length: int | None = None
+            if not coordinates_valid:
+                if "text_start" in reference or "text_end" in reference:
+                    add("invalid_quote_offsets", reference_path)
+            else:
+                span_length = text_end - text_start
+                if text_start < 0 or text_end <= text_start or (
+                    source_text is not None and text_end > len(source_text)
+                ):
+                    add("invalid_quote_offsets", reference_path)
+                if isinstance(quote, str) and quote and span_length != len(quote):
+                    add("invalid_quote_length", reference_path)
+            source_matches = 0
+            matches_at_offsets: bool | None = None
+            if isinstance(quote, str) and quote and source_text is not None:
+                source_matches = _count_overlapping_occurrences(source_text, quote)
+                if coordinates_valid and 0 <= text_start < text_end <= len(source_text):
+                    matches_at_offsets = source_text[text_start:text_end] == quote
+                    if not matches_at_offsets and span_length == len(quote):
+                        add(
+                            "invalid_quote_offsets" if source_matches else "invalid_quote_text",
+                            reference_path,
+                        )
+                elif source_matches == 0:
+                    add("invalid_quote_text", reference_path)
+            quote_checks.append(
+                {
+                    "criterion_index": criterion_index,
+                    "evidence_index": reference_index,
+                    "segment_index": segment_index if type(segment_index) is int else None,
+                    "quote_codepoints": len(quote) if isinstance(quote, str) else None,
+                    "claimed_span_codepoints": span_length,
+                    "source_exact_match_count": source_matches if source_text is not None else None,
+                    "matches_claimed_offsets": matches_at_offsets,
+                }
+            )
+
+    if not counts:
+        add("other_protocol_error", "unclassified_validation_failure")
+    return {"category_occurrences": counts, "quote_checks": quote_checks}
+
+
+def _count_overlapping_occurrences(text: str, needle: str) -> int:
+    if not needle:
+        return 0
+    count = start = 0
+    while True:
+        found = text.find(needle, start)
+        if found < 0:
+            return count
+        count += 1
+        start = found + 1
+
+
+def _quote_match_summary(case_diagnostics: list[dict[str, object]]) -> dict[str, int]:
+    checks = [
+        item
+        for case in case_diagnostics
+        for item in case["quote_checks"]
+    ]
+    return {
+        "quote_references_checked": len(checks),
+        "exact_at_claimed_offsets": sum(item["matches_claimed_offsets"] is True for item in checks),
+        "exact_text_present_in_claimed_segment": sum(
+            item["source_exact_match_count"] is not None
+            and item["source_exact_match_count"] > 0
+            for item in checks
+        ),
+        "exact_text_found_elsewhere": sum(
+            item["source_exact_match_count"] is not None
+            and item["source_exact_match_count"] > 0
+            and item["matches_claimed_offsets"] is False
+            for item in checks
+        ),
+        "exact_text_not_found_in_claimed_segment": sum(
+            item["source_exact_match_count"] == 0 for item in checks
+        ),
+        "claimed_offsets_uncheckable": sum(
+            item["matches_claimed_offsets"] is None for item in checks
+        ),
+        "source_segment_unavailable": sum(
+            item["source_exact_match_count"] is None for item in checks
+        ),
+    }
+
+
+def _semantic_score_risk_cases(
+    dataset: RubricEvaluationDataset,
+    predictions_by_id: dict[str, EvaluationPredictionCase],
+) -> dict[str, object]:
+    cases: list[dict[str, object]] = []
+    for case in dataset.cases:
+        prediction = predictions_by_id[case.case_id]
+        if case.reference_status != "included" or prediction.response_content is None:
+            continue
+        try:
+            raw = json.loads(prediction.response_content)
+        except (json.JSONDecodeError, TypeError):
+            continue
+        if not isinstance(raw, dict) or raw.get("outcome") != "candidate":
+            continue
+        scores = raw.get("criterion_scores")
+        if not isinstance(scores, list):
+            continue
+        reference_by_key = {item.criterion_key: item for item in case.reference_criterion_scores}
+        criterion_by_id = {
+            str(_criterion_uuid(case, criterion.criterion_key)): criterion.criterion_key
+            for criterion in case.rubric
+        }
+        mismatches: list[dict[str, str]] = []
+        for score in scores:
+            if not isinstance(score, dict):
+                continue
+            try:
+                awarded = Decimal(str(score.get("awarded_points")))
+            except (InvalidOperation, ValueError, TypeError):
+                continue
+            awarded_text = _bounded_decimal_text(awarded)
+            if awarded_text is None:
+                continue
+            criterion_key = criterion_by_id.get(str(score.get("criterion_id")))
+            reference = reference_by_key.get(criterion_key) if criterion_key else None
+            if reference is not None and awarded != reference.awarded_points:
+                mismatches.append(
+                    {
+                        "criterion_key": criterion_key,
+                        "reference_points": _decimal_text(reference.awarded_points),
+                        "unvalidated_response_points": awarded_text,
+                    }
+                )
+        if not mismatches:
+            continue
+        try:
+            raw_total = Decimal(str(raw.get("total_score")))
+            raw_total_text = _bounded_decimal_text(raw_total)
+        except (InvalidOperation, ValueError, TypeError):
+            raw_total_text = None
+        cases.append(
+            {
+                "case_id": case.case_id,
+                "stored_status": prediction.status,
+                "reference_total_score": _decimal_text(case.reference_total_score),
+                "unvalidated_response_total_score": raw_total_text,
+                "criterion_score_differences": mismatches,
+                "included_in_candidate_score_metrics": prediction.status == "candidate",
+                "human_semantic_review_required": True,
+            }
+        )
+    return {
+        "case_count": len(cases),
+        "interpretation": (
+            "这些是未经完整P3-B验证的原始候选输出与合成参考标签的"
+            "数值差异，不是自动判定的教学错误。"
+        ),
+        "cases": cases,
+        "rationales_and_quotes_included": False,
+    }
+
+
+def _bounded_decimal_text(value: Decimal) -> str | None:
+    parts = value.as_tuple()
+    if (
+        not value.is_finite()
+        or len(parts.digits) > 32
+        or abs(parts.exponent) > 12
+        or abs(value.adjusted()) > 20
+    ):
+        return None
+    try:
+        return _decimal_text(value)
+    except InvalidOperation:
+        return None
 
 
 def _derive_prediction(

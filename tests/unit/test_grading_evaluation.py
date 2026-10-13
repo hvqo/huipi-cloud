@@ -16,6 +16,7 @@ from huipi_cloud.modules.grading.evaluation import (
     RubricEvaluationCase,
     RubricEvaluationDataset,
     RubricEvaluationPredictions,
+    _diagnose_protocol_reply,
     build_grade_input,
     evaluate_predictions,
     load_dataset,
@@ -25,6 +26,9 @@ from huipi_cloud.modules.grading.evaluation import (
 DATASET_PATH = Path(__file__).resolve().parents[2] / (
     "data/evaluation/grading/rubric-cases-v1.json"
 )
+V2_DATASET_PATH = DATASET_PATH.with_name("rubric-cases-v2.json")
+V1_PREDICTIONS_PATH = DATASET_PATH.with_name("predictions-qwen3.5-4b-v1.json")
+V1_REPORT_PATH = DATASET_PATH.with_name("report-qwen3.5-4b-v1.json")
 
 
 def _metric_case(
@@ -187,6 +191,309 @@ def test_dataset_has_twenty_four_included_cases_and_two_uncertain_cases():
     assert {case.label_provenance for case in dataset.cases} == {"synthetic_curated_reference"}
 
 
+def test_v1_dataset_original_prediction_and_report_bytes_remain_immutable():
+    expected_hashes = {
+        DATASET_PATH: "e9a7959e2ad8ff479073b870c468b0155e7e1395662697f4b8c4324dbbb8e6b5",
+        V1_PREDICTIONS_PATH: "12792766ad918a61468b5797d70a3eca2335bee7b9b853574136dbd7cde2ccdd",
+        V1_REPORT_PATH: "75cbb75dda8e33ca7f44ecf37a7b37b011dca20853ee4f875c98b6670b27c8cb",
+    }
+    for path, expected in expected_hashes.items():
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == expected
+
+
+def test_v2_reference_audit_splits_fraction_policy_and_clarifies_process_credit():
+    dataset, digest = load_dataset(V2_DATASET_PATH)
+    assert dataset.dataset_version == "2.0"
+    assert len(dataset.cases) == 27
+    assert sum(case.reference_status == "included" for case in dataset.cases) == 25
+    by_id = {case.case_id: case for case in dataset.cases}
+    assert by_id["equivalent-fraction-strict-format"].reference_total_score == Decimal("0.00")
+    assert (
+        by_id["equivalent-fraction-equivalent-form-allowed"].reference_total_score
+        == Decimal("5.00")
+    )
+    assert by_id["linear-missing-step-v2"].reference_total_score == Decimal("3.00")
+    assert by_id["correct-transform-wrong-result-v2"].reference_total_score == Decimal("0.00")
+    manifest_path = V2_DATASET_PATH.with_name("rubric-cases-v2-run-manifest.json")
+    manifest = json.loads(manifest_path.read_text())
+    assert manifest["dataset_sha256"] == digest
+    assert manifest["provider_requests"] == 0
+    assert {item["status"] for item in manifest["cases"]} == {
+        "not_requested",
+        "excluded_uncertain",
+    }
+    assert all(
+        item["status"] == "not_requested"
+        for item in manifest["cases"]
+        if item["case_id"] in {
+            "linear-missing-step-v2",
+            "correct-transform-wrong-result-v2",
+            "equivalent-fraction-strict-format",
+            "equivalent-fraction-equivalent-form-allowed",
+        }
+    )
+
+
+def test_v1_predictions_cannot_be_relabelled_as_v2_predictions():
+    dataset_v1, digest_v1 = load_dataset(DATASET_PATH)
+    _, digest_v2 = load_dataset(V2_DATASET_PATH)
+    predictions_v1 = RubricEvaluationPredictions.model_validate_json(
+        V1_PREDICTIONS_PATH.read_bytes()
+    )
+    assert predictions_v1.dataset_version == dataset_v1.dataset_version
+    with pytest.raises(ValueError, match="prediction_dataset_version_mismatch"):
+        evaluate_predictions(
+            dataset_v1.model_copy(update={"dataset_version": "2.0"}),
+            digest_v2,
+            predictions_v1,
+        )
+
+
+def test_protocol_diagnostic_counts_quote_length_errors_without_text():
+    case = _metric_case()
+    payload = json.loads(_reply_content(case, ("6.00", "4.00")))
+    first = payload["criterion_scores"][0]["evidence_references"][0]
+
+    first["text_end"] = 4
+    length_diagnostic = _diagnose_protocol_reply(case, json.dumps(payload))
+    assert length_diagnostic["category_occurrences"]["invalid_quote_length"] == 1
+
+
+def test_diagnostic_distinguishes_fabricated_text_empty_quote_and_no_evidence_shape():
+    case = _metric_case()
+    payload = json.loads(_reply_content(case, ("6.00", "4.00")))
+    reference = payload["criterion_scores"][0]["evidence_references"][0]
+
+    reference["quote"] = ""
+    reference["text_end"] = 0
+    empty = _diagnose_protocol_reply(case, json.dumps(payload))
+    assert empty["category_occurrences"]["empty_quote"] == 1
+
+    reference.clear()
+    reference.update({"kind": "no_evidence", "reason": "无证据。", "segment_index": 0})
+    no_evidence = _diagnose_protocol_reply(case, json.dumps(payload))
+    assert no_evidence["category_occurrences"]["invalid_no_evidence_shape"] == 1
+
+
+@pytest.mark.parametrize(
+    ("payload", "expected_category"),
+    [
+        ("not json", "invalid_json"),
+        (json.dumps({"outcome": "candidate"}), "missing_required_field"),
+        (
+            json.dumps({"schema_version": "1.0", "outcome": "maybe"}),
+            "invalid_outcome",
+        ),
+    ],
+)
+def test_diagnostic_categorizes_json_missing_fields_and_outcome(payload, expected_category):
+    case = _metric_case()
+    diagnostic = _diagnose_protocol_reply(case, payload)
+    assert diagnostic["category_occurrences"][expected_category] >= 1
+
+
+def test_diagnostic_counts_unexpected_fields_invalid_scores_and_criterion_shape():
+    case = _metric_case()
+    payload = json.loads(_reply_content(case, ("6.00", "4.00")))
+    payload["unexpected"] = True
+    payload["criterion_scores"][0]["awarded_points"] = "NaN"
+    diagnostic = _diagnose_protocol_reply(case, json.dumps(payload))
+    assert diagnostic["category_occurrences"]["unexpected_field"] == 1
+    assert diagnostic["category_occurrences"]["invalid_score_value"] == 1
+
+    payload["criterion_scores"] = {"not": "a list"}
+    malformed = _diagnose_protocol_reply(case, json.dumps(payload))
+    assert malformed["category_occurrences"]["invalid_criterion_structure"] >= 1
+
+
+def test_multiple_protocol_errors_count_cases_and_occurrences_separately_and_keep_input_bytes(
+    tmp_path,
+):
+    case = _metric_case()
+    dataset, digest = _dataset(case)
+    payload = json.loads(_reply_content(case, ("6.00", "4.00")))
+    payload["criterion_scores"][0]["evidence_references"][0]["text_end"] = 4
+    payload["criterion_scores"][1]["evidence_references"][0]["text_end"] = 9
+    prediction = EvaluationPredictionCase(
+        case_id=case.case_id,
+        status="protocol_error",
+        error_code="model_evidence_protocol_invalid",
+        response_content=json.dumps(payload),
+    )
+    predictions = _prediction_document(dataset, digest, [prediction])
+    path = tmp_path / "saved-prediction.json"
+    path.write_bytes(predictions.model_dump_json().encode())
+    original_bytes = path.read_bytes()
+    report = evaluate_predictions(dataset, digest, predictions)
+    diagnostic = report["protocol_failure_diagnostics"]
+    assert diagnostic["case_count"] == 1
+    assert diagnostic["diagnostic_categories"]["invalid_quote_length"] == {
+        "case_count": 1,
+        "occurrence_count": 2,
+    }
+    assert report["counts"]["valid_candidate_cases"] == 0
+    assert report["counts"]["prediction_status_counts"] == {"protocol_error": 1}
+    assert path.read_bytes() == original_bytes
+    serialized_report = json.dumps(report, ensure_ascii=False)
+    assert "alpha" not in serialized_report and "beta" not in serialized_report
+
+
+def test_v1_audited_report_separates_pipeline_stages_and_keeps_semantic_risks():
+    dataset, digest = load_dataset(DATASET_PATH)
+    predictions = RubricEvaluationPredictions.model_validate_json(V1_PREDICTIONS_PATH.read_bytes())
+    prediction_bytes = V1_PREDICTIONS_PATH.read_bytes()
+    report = evaluate_predictions(dataset, digest, predictions)
+    assert V1_PREDICTIONS_PATH.read_bytes() == prediction_bytes
+    assert report["evaluation_stages"]["provider_response_received"] == {
+        "numerator": 24,
+        "denominator": 24,
+    }
+    assert report["evaluation_stages"]["json_parseable"] == {
+        "numerator": 24,
+        "denominator": 24,
+    }
+    assert report["evaluation_stages"]["strict_grade_model_reply_valid"]["numerator"] == 3
+    assert report["evaluation_stages"]["final_usable_candidate"] == {
+        "numerator": 2,
+        "denominator": 24,
+    }
+    assert report["evaluation_stages"]["candidate_total_score_comparison"] == {
+        "exact_numerator": 2,
+        "denominator": 2,
+        "mae": "0.0000",
+        "semantic_accuracy_claim": False,
+    }
+    old_report = json.loads(V1_REPORT_PATH.read_text())
+    for field in (
+        "counts",
+        "coverage",
+        "runtime_usage",
+        "total_score",
+        "criterion_score",
+        "evidence",
+        "failure_cases",
+        "per_case",
+    ):
+        assert report[field] == old_report[field]
+    assert "ratio-simplification" not in {
+        item["case_id"] for item in report["protocol_failure_diagnostics"]["cases"]
+    }
+    diagnostics = report["protocol_failure_diagnostics"]
+    assert diagnostics["case_count"] == 21
+    assert diagnostics["diagnostic_categories"]["invalid_quote_length"] == {
+        "case_count": 19,
+        "occurrence_count": 33,
+    }
+    assert diagnostics["diagnostic_categories"]["invalid_quote_offsets"] == {
+        "case_count": 11,
+        "occurrence_count": 21,
+    }
+    length_or_offset_case_ids = {
+        item["case_id"]
+        for item in diagnostics["cases"]
+        if {"invalid_quote_length", "invalid_quote_offsets"} & set(item["categories"])
+    }
+    assert len(length_or_offset_case_ids) == 20
+    assert diagnostics["diagnostic_categories"]["empty_quote"] == {
+        "case_count": 2,
+        "occurrence_count": 2,
+    }
+    assert diagnostics["diagnostic_categories"]["invalid_no_evidence_shape"] == {
+        "case_count": 1,
+        "occurrence_count": 1,
+    }
+    assert report["semantic_score_risk_review"]["case_count"] == 12
+    assert report["source_quote_failure_diagnostics"]["diagnostic_categories"][
+        "positive_score_without_quote"
+    ] == {"case_count": 1, "occurrence_count": 1}
+    assert next(
+        case for case in dataset.cases if case.case_id == "equivalent-fraction"
+    ).reference_total_score == Decimal("5.00")
+    risks = report["semantic_score_risk_review"]
+    risk_ids = {item["case_id"] for item in risks["cases"]}
+    assert "linear-wrong-answer" in risk_ids
+    assert "off-topic-zero" in risk_ids
+    assert "zero-evidence-absence" in risk_ids
+    assert all(not item["included_in_candidate_score_metrics"] for item in risks["cases"])
+    assert risks["rationales_and_quotes_included"] is False
+
+
+def test_valid_quotes_create_no_protocol_or_source_failure_diagnostic():
+    case = _metric_case()
+    dataset, digest = _dataset(case)
+    prediction = _candidate_prediction(case, ("6.00", "4.00"))
+    report = evaluate_predictions(
+        dataset,
+        digest,
+        _prediction_document(dataset, digest, [prediction]),
+    )
+    assert report["protocol_failure_diagnostics"]["case_count"] == 0
+    assert report["source_quote_failure_diagnostics"]["case_count"] == 0
+    assert report["counts"]["valid_candidate_cases"] == 1
+
+
+def test_other_protocol_error_is_a_safe_fallback_category():
+    diagnostic = _diagnose_protocol_reply(_metric_case(), "[]")
+    assert diagnostic["category_occurrences"]["other_protocol_error"] == 1
+
+
+def test_protocol_diagnostics_do_not_raise_candidate_coverage_for_malformed_quote():
+    case = _metric_case()
+    dataset, digest = _dataset(case)
+    payload = json.loads(_reply_content(case, ("6.00", "4.00")))
+    payload["criterion_scores"][0]["evidence_references"][0]["quote"] = "gamma"
+    prediction = EvaluationPredictionCase(
+        case_id=case.case_id,
+        status="invalid_evidence",
+        error_code="evidence_quote_mismatch",
+        response_content=json.dumps(payload),
+    )
+    report = evaluate_predictions(
+        dataset,
+        digest,
+        _prediction_document(dataset, digest, [prediction]),
+    )
+    assert report["counts"]["valid_candidate_cases"] == 0
+    assert report["total_score"]["mae"] is None
+    assert report["source_quote_failure_diagnostics"]["diagnostic_categories"][
+        "invalid_quote_offsets"
+    ]["case_count"] == 0
+    assert report["source_quote_failure_diagnostics"]["diagnostic_categories"][
+        "invalid_quote_text"
+    ] == {"case_count": 1, "occurrence_count": 1}
+
+
+@pytest.mark.parametrize(("text_start", "text_end"), [(1, 6), (4, 9)])
+def test_source_quote_diagnostics_locate_misoffset_text_without_accepting_candidate(
+    text_start, text_end
+):
+    case = _metric_case()
+    dataset, digest = _dataset(case)
+    payload = json.loads(_reply_content(case, ("6.00", "4.00")))
+    evidence = payload["criterion_scores"][0]["evidence_references"][0]
+    evidence["text_start"], evidence["text_end"] = text_start, text_end
+    prediction = EvaluationPredictionCase(
+        case_id=case.case_id,
+        status="invalid_evidence",
+        error_code="evidence_quote_mismatch",
+        response_content=json.dumps(payload),
+    )
+    report = evaluate_predictions(
+        dataset,
+        digest,
+        _prediction_document(dataset, digest, [prediction]),
+    )
+    assert report["counts"]["valid_candidate_cases"] == 0
+    diagnostic = report["source_quote_failure_diagnostics"]
+    assert diagnostic["diagnostic_categories"]["invalid_quote_offsets"] == {
+        "case_count": 1,
+        "occurrence_count": 1,
+    }
+    quote_check = diagnostic["cases"][0]["quote_checks"][0]
+    assert quote_check["source_exact_match_count"] == 1
+    assert quote_check["matches_claimed_offsets"] is False
+
+
 def test_perfect_scores_and_evidence_match_are_counted_exactly():
     report = _report(("6.00", "4.00"))
     assert report["total_score"]["exact"] == {"numerator": 1, "denominator": 1}
@@ -251,7 +558,7 @@ def test_abstention_is_reported_as_coverage_failure_not_zero_score():
     reply = {
         "schema_version": "1.0",
         "outcome": "abstain",
-        "abstention_reason": "证据不足。",
+        "abstention_reason": "PRIVATE_SYNTHETIC_SOURCE_CONTENT，证据不足。",
         "reason_codes": ["insufficient_evidence"],
         "total_score": None,
         "criterion_scores": [],
@@ -275,6 +582,7 @@ def test_abstention_is_reported_as_coverage_failure_not_zero_score():
     assert report["failure_cases"][0]["failure_categories"] == [
         "model_abstained_on_scored_reference"
     ]
+    assert "PRIVATE_SYNTHETIC_SOURCE_CONTENT" not in json.dumps(report, ensure_ascii=False)
 
 
 def test_timeout_is_counted_and_never_converted_to_a_score():

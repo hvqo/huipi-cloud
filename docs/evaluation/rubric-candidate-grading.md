@@ -30,6 +30,8 @@ P3-B 的候选分数不是准确率、教学效果或真实学生评分质量指
 
 `data/evaluation/grading/rubric-cases-v1.json` 是版本 `1.0` 的纯合成数据集，SHA-256 由同目录 `.sha256` 清单固定。数据集中有 26 个案例：24 个参考标签明确、进入统计；2 个因手写内容或 Rubric 不确定而排除。所有纳入标签的来源标记为 `synthetic_curated_reference`，由规则明确的合成案例整理，不是教师独立评分，也不是模型输出。正分参考项必须附能在学生片段中唯一定位的引用；不确定参考不得作为零分样本。
 
+2026-10-13 对26个 v1 案例做了逐项参考标签审计。发现 `equivalent-fraction` 的“最简分数”与“接受等值小数”口径不一致，另有两个过程题给复写题干中的方程计分。v1 数据、SHA、qwen 预测和原始报告全部保留。新建的 v2 将等值小数拆为严格形式与明确允许等值形式，并修订两个过程 Rubric；详见[参考标签审计记录](rubric-reference-audit.md)。v2 有25个纳入案例、2个不确定案例，SHA 为 `0da5948b79a15839d6abb939f134948e8d58dad101b66862ed7d4abaac40b26d`。v2 没有模型调用，运行清单把所有纳入案例明确标为 `not_requested`。
+
 评测器只把题干、AnswerKey、Rubric 和学生片段构造成内存中的 `GradeInputDocument`。参考分数、参考理由、标签来源、难度和参考引用不进入 P3-B Prompt。它不是已保存的 GradeInputArtifact，不写 PostgreSQL 或 S3。预测 JSON 与参考数据分开保存；预测绑定数据集版本和 SHA。离线重算时会重新验证模型回复协议、Rubric 分数和 quote 来源，并拒绝重复、缺失或额外案例、SHA 不匹配和伪造的保存状态。默认 CLI 只验证数据，不发送 Provider 请求。
 
 ### 指标定义
@@ -53,13 +55,15 @@ uv run python scripts/evaluate_grade_proposals.py --dry-run
 ```bash
 uv run python scripts/evaluate_grade_proposals.py \
   --run-model --model qwen3.5:4b --max-requests 24 --timeout-seconds 90 \
-  --output data/evaluation/grading/predictions-qwen3.5-4b-v1.json \
-  --report-output data/evaluation/grading/report-qwen3.5-4b-v1.json
+  --output data/evaluation/grading/predictions-qwen3.5-4b-v1-reproduction.json \
+  --report-output data/evaluation/grading/report-qwen3.5-4b-v1-reproduction.json
 
 uv run python scripts/evaluate_grade_proposals.py \
   --evaluate-predictions data/evaluation/grading/predictions-qwen3.5-4b-v1.json \
-  --report-output data/evaluation/grading/report-qwen3.5-4b-v1.json
+  --report-output data/evaluation/grading/report-qwen3.5-4b-v1-audited.json
 ```
+
+不要用离线重算覆盖 `report-qwen3.5-4b-v1.json`。对真实模型重跑也必须使用新的预测文件名；当前 v1 预测文件是不可变历史基线。
 
 模型名必须已在本机安装；CLI 不下载模型。预测文件仅包含合成作答的原始模型回复、状态、usage、延迟和生成配置摘要，不包含真实学生内容或 Provider 密钥。
 
@@ -85,5 +89,9 @@ uv run python scripts/evaluate_grade_proposals.py \
 两个通过的案例是 `equivalent-fraction` 与 `ratio-simplification`，两例各一项分数均与合成参考相同。由于仅 2 个有效候选且覆盖率很低，不能把 2/2 或零 MAE 称为评分准确率。
 
 其余失败逐例列在版本化报告和预测文件中。21 个协议失败均使用 `model_evidence_protocol_invalid`：保存的模型回复包含 33 处 Unicode quote 长度与半开偏移不一致、2 处空 quote、1 处 `no_evidence` 多带 `segment_index`。`off-topic-zero` 的回复本身通过协议，但给了正分且只提供 `no_evidence`，因此被 P3-B 以 `positive_score_without_quote` 拒绝。没有通过修补偏移、改写输出或调整人工参考来改善结果。
+
+新增审计报告将案例数和发生次数分开：19个协议失败案例有33处 quote 长度/跨度问题；11个案例有21处声明位置不匹配，但精确文本在同一片段其他位置存在；2个案例有2处文本无法在片段找到；空 quote 为2例2处；`no_evidence` 多字段为1例1处。这些类别可以在同一案例重叠。匹配诊断只比较原始字符串并记录次数/范围是否吻合；它不会修正偏移、改写引用或放宽 Quote 门禁。
+
+审计报告还分开展示请求响应、JSON解析、严格回复协议、Rubric/分数约束、Quote来源、可用候选和候选分数比较。原始 qwen 输出中有12个案例的未验证分项分数与 v1 标签存在差异，其中包括错误答案或未满足 Criterion 时仍给分的情况。它们仍是未验证的模型输出，不进入 MAE/Exact 分母；报告保留案例供人工判断，且不包含原文 Quote 或理由。v1原始报告中的分数指标没有变化。评分理由的教学语义仍需人工判断。
 
 预测、指标和逐例报告位于 `data/evaluation/grading/`。该测试使用合成题目和答案，不包含真实 MinerU、真实教师标注或学生作业；它只展示当前 Prompt/模型的协议可用度与严格验证后的候选覆盖，不能推出真实教学作业的分数质量。
