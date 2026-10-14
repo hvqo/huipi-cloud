@@ -1,8 +1,10 @@
-# DeepSeek Provider 验收与 v2 基线计划
+# DeepSeek Provider 验收与评分基线
 
-## 验收范围和当前事实
+## Provider Smoke 历史记录（2026-10-13）
 
-本次复用已有HTTPX OpenAI-compatible Chat Completions Provider，两模块配置均为 `deepseek-flash`，Base URL为 `https://api.deepseek.com`。2026-10-13恢复现场后，确认两个Key已能安全加载；用户先前成功调用是现场信息，未找到足以复核其请求内容的历史记录，因此只补做两次获授权的真实合成Smoke，没有执行25案例评测。
+本节记录 PR #18 阶段的 Provider 联通性验收。它是该次运行的历史快照，不代表本分支当前的测试数量或 v2 评测状态；v2 最新 A/B 实验见后文。
+
+当时复用已有HTTPX OpenAI-compatible Chat Completions Provider，两模块配置均为 `deepseek-flash`，Base URL为 `https://api.deepseek.com`。2026-10-13恢复现场后，确认两个Key已能安全加载；用户先前成功调用是现场信息，未找到足以复核其请求内容的历史记录，因此只补做两次获授权的真实合成Smoke，没有执行25案例评测。
 
 本地 `.env` 没有修改。其远程授权仍关闭；本次授权只通过测试进程环境变量临时开启，范围仅限合成数据。密钥没有进入命令行、输出、Git或验收文件。PostgreSQL与S3服务健康；使用独立 `_test` 数据库和专用私有测试桶，测试结束仅清理本轮对象前缀和测试数据。
 
@@ -50,41 +52,12 @@ uv run pytest -q -s -m deepseek_e2e
 
 没有Key或授权时不要设置opt-in。默认CI只使用MockTransport，不下载模型、不调用收费API；普通测试隔离开发者模型配置。401、404/模型或端点不存在、429、超时、截断、无效JSON、错误Quote及正分无Quote均有回归测试。
 
-## v2 DeepSeek 基线
+## v2 DeepSeek 基线与 Quote-selection 实验
 
-真实合成Smoke已通过，下一阶段对固定v2数据集单独运行A组。默认dry-run不调用模型：
+2026-10-14 已对固定 v2 数据实际执行 A 组 DeepSeek Flash 严格 Quote 基线，并完成同一模型和生成配置的 B 组确定性定位对照。此前的[deepseek-v2-run-manifest.json](../../data/evaluation/grading/deepseek-v2-run-manifest.json)是实验前的历史 `not_requested` 清单，仍保留作审计；它不代表最新运行状态。真实请求数量、原始文件 SHA、失败分类、成本和配对结果以[P3-D1 实验报告](p3d1-deepseek-quote-selection-2026-10-14.md)为准。
 
-```bash
-uv run python scripts/evaluate_grade_proposals.py --dry-run
-```
+实验脚本默认只验证数据和构造 Prompt，不发送模型请求。报告中的预测文件可离线重新校验；重新运行真实模型属于新的收费实验，必须使用新的输出目录、先检查官方单价并满足合成数据远程传输授权。不要复用历史输出路径。协议细节、受控运行命令及产物链接见[评分开发指南](../development/grade-proposals.md)。
 
-为避免固化过期价格，以下两个单价变量需由操作者从官方页面核对并填写；它们不是API Key：
+## 结果解释边界
 
-```bash
-uv run python scripts/evaluate_grade_proposals.py \
-  --dataset data/evaluation/grading/rubric-cases-v2.json \
-  --run-model --model deepseek-flash --max-requests 25 \
-  --timeout-seconds 120 --max-output-tokens 4096 \
-  --input-usd-per-million "$DEEPSEEK_INPUT_USD_PER_MILLION" \
-  --output-usd-per-million "$DEEPSEEK_OUTPUT_USD_PER_MILLION" \
-  --max-estimated-cost-usd 0.50 \
-  --output data/evaluation/grading/predictions-deepseek-v2-new-run.json \
-  --report-output data/evaluation/grading/report-deepseek-v2-new-run.json
-```
-
-新输出文件必须不存在。DeepSeek运行缺少单价、单价非有限/非正或估算超过预算时，在请求前拒绝。UTF-8字节与协议开销作为保守输入token预算，输出按总token上限估算，未缓存输入单价用于上界；这是预检和可复算估算，不是平台账单保证或账户级硬限额。网络失败缺少usage时费用标记未知，不当成0。思考配置、输出上限、实际响应模型ID及可用的缓存/思考Token在预测和报告中单独记录。
-
-离线重算不调用API，也不覆盖已有文件：
-
-```bash
-uv run python scripts/evaluate_grade_proposals.py \
-  --dataset data/evaluation/grading/rubric-cases-v2.json \
-  --evaluate-predictions data/evaluation/grading/predictions-deepseek-v2-new-run.json \
-  --report-output /tmp/huipi-deepseek-v2-recalculated-new.json
-```
-
-## 后续 A/B 的前提
-
-P3-D1的未完成Quote实验保留在原分支和stash，未混入本次Provider改动。真实Smoke已通过；完成A组基线并独立审查后，才恢复B组实验：模型选择原文，程序在指定segment内唯一精确定位，并再运行原有严格Quote与评分验证。A/B都使用同一25案例、模型、Thinking/effort、输出预算和生成配置，分开保存原始响应，不修改教师参考标签。
-
-需要分别报告协议通过、有效覆盖、来源有效、总分/Criterion误差、高估风险、实际用量和费用估算；还要报告两组共同成功、仅A成功、仅B成功及都失败的配对案例。引用定位成功不代表引用语义充分，有效候选增加也不代表评分准确率提高。当前既没有DeepSeek基线，也没有实际A/B提升结论。
+A/B实验产物是不可变文件，使用同一数据集、DeepSeek模型和生成参数；Prompt及响应协议不同。严格偏移组的偏移/长度失败较多，足以说明确定性精确定位值得继续研究。B组覆盖率提高，但24个候选的条件分数比较不等于真实教学准确率；只有独立教师评阅、扩大样本和真实作业双评/仲裁才能回答评分语义质量问题。所有失败候选继续经过原P3-B校验，生产评分入口和历史Proposal协议均未改变。完整结论见[P3-D1实验报告](p3d1-deepseek-quote-selection-2026-10-14.md)。

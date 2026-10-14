@@ -32,6 +32,8 @@ P3-B 的候选分数不是准确率、教学效果或真实学生评分质量指
 
 2026-10-13 对26个 v1 案例做了逐项参考标签审计。发现 `equivalent-fraction` 的“最简分数”与“接受等值小数”口径不一致，另有两个过程题给复写题干中的方程计分。v1 数据、SHA、qwen 预测和原始报告全部保留。新建的 v2 将等值小数拆为严格形式与明确允许等值形式，并修订两个过程 Rubric；详见[参考标签审计记录](rubric-reference-audit.md)。v2 有25个纳入案例、2个不确定案例，SHA 为 `0da5948b79a15839d6abb939f134948e8d58dad101b66862ed7d4abaac40b26d`。v2 没有模型调用，运行清单把所有纳入案例明确标为 `not_requested`。
 
+之后以同一 v2 数据建立了 DeepSeek Flash 严格 Quote 基线和确定性定位实验。预测、数据 SHA、配对结果、Quote 失败归因、评分风险与成本见[P3-D1 对照报告](p3d1-deepseek-quote-selection-2026-10-14.md)。参考数据及标签保持不变；结果只描述合成案例。
+
 评测器只把题干、AnswerKey、Rubric 和学生片段构造成内存中的 `GradeInputDocument`。参考分数、参考理由、标签来源、难度和参考引用不进入 P3-B Prompt。它不是已保存的 GradeInputArtifact，不写 PostgreSQL 或 S3。预测 JSON 与参考数据分开保存；预测绑定数据集版本和 SHA。离线重算时会重新验证模型回复协议、Rubric 分数和 quote 来源，并拒绝重复、缺失或额外案例、SHA 不匹配和伪造的保存状态。默认 CLI 只验证数据，不发送 Provider 请求。
 
 ### 指标定义
