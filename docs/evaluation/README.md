@@ -9,4 +9,6 @@
 - [P3-D2A 独立评分质量留出集与准入门槛](p3d2a-grading-quality-v3.md)
 - [P3-D2A v3参考标签审计、Quote口径与评分失败归因](p3d2a-v3-audit.md)
 
+- [Rubric语义一致性Prompt实验与独立留出验证](p3d2a-rubric-semantics.md)
+
 评测报告必须区分合成数据与真实作业、模型协议通过与识别正确、视觉候选与 Canonical 来源映射。没有可信来源标注时，应使用 `not_evaluated`，不能推算准确率。

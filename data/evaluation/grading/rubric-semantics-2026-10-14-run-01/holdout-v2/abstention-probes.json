@@ -1,0 +1,48 @@
+{
+  "cases": [
+    {
+      "cache_hit_tokens": 640,
+      "cache_miss_tokens": 614,
+      "case_id": "h4-missing-triangle",
+      "completion_tokens": 104,
+      "elapsed_ms": 809,
+      "error_code": null,
+      "finish_reason": "stop",
+      "input_sha256": "9ff54c61ed6d2e0585dd2e385a8ee14db122b9b3a4ef962b6cf8fbf50977c719",
+      "prompt_sha256": "7b2a9e982b2b4c7f716a4fa15190158ecef1d890057f7b9cd76220ed647af7df",
+      "prompt_tokens": 1254,
+      "provider_attempted": true,
+      "reasoning_tokens": null,
+      "request_id": "345ba66b-d96c-4b11-8a79-ff5770008755",
+      "response_content": "{\"schema_version\":\"1.0\",\"outcome\":\"abstain\",\"abstention_reason\":\"教师标准答案明确说明关键材料不完整，无法建立可核验标准答案；学生作答也说明附图资源无法取得，缺少判断两三角形相似所需的图形或题目数据，无法可靠评分。\",\"reason_codes\":[\"insufficient_evidence\",\"missing_source_material\"],\"total_score\":null,\"criterion_scores\":[],\"schema_name\":\"huipi.grading.quote-selection\"}",
+      "response_model_id": "deepseek-flash",
+      "status": "abstain"
+    },
+    {
+      "cache_hit_tokens": 640,
+      "cache_miss_tokens": 616,
+      "case_id": "h4-cropped-proof",
+      "completion_tokens": 120,
+      "elapsed_ms": 1120,
+      "error_code": null,
+      "finish_reason": "stop",
+      "input_sha256": "49e8836a9e7d7b79b34d1c09945ec3d19927f4fe557569aa66b9b2064c435544",
+      "prompt_sha256": "181dfae927ee5078d858abdc6fadbcf604ac02204b597b824557ac83093de0ac",
+      "prompt_tokens": 1256,
+      "provider_attempted": true,
+      "reasoning_tokens": null,
+      "request_id": "96a4254b-8ae3-4a96-9f93-733f4777d5f8",
+      "response_content": "{\"schema_version\":\"1.0\",\"outcome\":\"abstain\",\"abstention_reason\":\"教师标准答案明确说明关键材料不完整，无法建立可核验标准答案；题干仅称“根据上页给定的定义证明此结论”，但未提供上页定义或结论内容，无法可靠判断学生作答是否满足“依据题目提供的完整材料给出正确论证”。\",\"reason_codes\":[\"insufficient_evidence\",\"missing_source_material\"],\"total_score\":null,\"criterion_scores\":[],\"schema_name\":\"huipi.grading.quote-selection\"}",
+      "response_model_id": "deepseek-flash",
+      "status": "abstain"
+    }
+  ],
+  "dataset_sha256": "3fbfbf97d8fb2495b9dd5ebb02f17809877a50a86553accfad17b3e595753c9d",
+  "dataset_version": "4.0",
+  "expected_behavior": "abstain",
+  "model_id": "deepseek-flash",
+  "prompt_version": "rubric-quote-selection-v2",
+  "schema_name": "huipi.grading.abstention-probes",
+  "schema_version": "1.0",
+  "score_metrics_included": false
+}

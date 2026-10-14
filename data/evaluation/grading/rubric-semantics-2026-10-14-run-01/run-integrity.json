@@ -1,0 +1,149 @@
+{
+  "schema_version": "1.0",
+  "data_classification": "synthetic_only",
+  "freeze_commit": "3dd11cd488e41880f289cac2b2a1842626493ac7",
+  "new_requests": 64,
+  "automatic_retries": 0,
+  "historical_a_new_requests": 0,
+  "request_windows_observed": {
+    "regression-v2": {
+      "started_at_or_after": "2026-10-14T13:58:55.364919+00:00",
+      "completed_by": "2026-10-14T13:59:30.947752Z",
+      "response_model_id": "deepseek-flash",
+      "provider_generation_digest": "8193583eec6fb7c8df492b9d7d529c56f24fdc4e04de12325ee514aff7a19040",
+      "experiment_config_digest": "dfbed2b3f9c2d063fb0fbc775f5697db7456a9fc6fc40fe030eece316819bb6d",
+      "prompt_version": "rubric-quote-selection-v2"
+    },
+    "holdout-v1": {
+      "started_at_or_after": "2026-10-14T14:02:53.941283+00:00",
+      "completed_by": "2026-10-14T14:03:28.871058Z",
+      "response_model_id": "deepseek-flash",
+      "provider_generation_digest": "8193583eec6fb7c8df492b9d7d529c56f24fdc4e04de12325ee514aff7a19040",
+      "experiment_config_digest": "6af6f992ca7e65fffebdd743f01875c888da3516fed023ee62c881b586467bf3",
+      "prompt_version": "rubric-quote-selection-v1"
+    },
+    "holdout-v2": {
+      "started_at_or_after": "2026-10-14T14:04:25.550691+00:00",
+      "completed_by": "2026-10-14T14:04:59.999875Z",
+      "response_model_id": "deepseek-flash",
+      "provider_generation_digest": "8193583eec6fb7c8df492b9d7d529c56f24fdc4e04de12325ee514aff7a19040",
+      "experiment_config_digest": "dfbed2b3f9c2d063fb0fbc775f5697db7456a9fc6fc40fe030eece316819bb6d",
+      "prompt_version": "rubric-quote-selection-v2"
+    }
+  },
+  "window_basis": "客户端运行清单写入到最终预测快照时间，不是服务端时间戳。",
+  "artifacts": {
+    "experiment-freeze.json": {
+      "sha256": "c88458d48e31c9c16320367f2cf95c2a6e02e3f4b6bca91425280a320733a0bb",
+      "size_bytes": 2519
+    },
+    "experiment-freeze.json.sha256": {
+      "sha256": "f91b9f1f75d8ae17f226b69e8aa766b32ca8e11c41d509f6d4aa1328b860af93",
+      "size_bytes": 89
+    },
+    "holdout-v1/abstention-probe-report.json": {
+      "sha256": "998fe49126b6b610769c3b9bcb43b0a1c4e85205fc2760e94376ebd018d71516",
+      "size_bytes": 908
+    },
+    "holdout-v1/abstention-probes.json": {
+      "sha256": "97aa67777fe74c116ef8478fcb58e168b7356a055fe214805f48df4e64c86054",
+      "size_bytes": 2563
+    },
+    "holdout-v1/quote_selection-predictions.json": {
+      "sha256": "6f6fd5981c1b55a36f633156bdcb07cb060b0a6180a3ba8fe437629d2235b3cd",
+      "size_bytes": 31485
+    },
+    "holdout-v1/quote_selection-report.json": {
+      "sha256": "65ec5297f570423a1d2b857f5646293926333a9510dd9afe2fbf21e33e7041ec",
+      "size_bytes": 31216
+    },
+    "holdout-v1/run-manifest.json": {
+      "sha256": "5a49014ae0bb8f49f46d20830382037332e224f5cd1824588bd8f83c4245a08c",
+      "size_bytes": 1325
+    },
+    "holdout-v1/run-order.json": {
+      "sha256": "1599bbabb3724f852830ddc94d4558df433f30ccb0c8d969cc88efbddb532d7d",
+      "size_bytes": 2671
+    },
+    "holdout-v1-console-summary.json": {
+      "sha256": "16b56f98457da6df3dced77bfa4ca01ae805343689b9022f6cdd19cfdac540ff",
+      "size_bytes": 14658
+    },
+    "holdout-v2/abstention-probe-report.json": {
+      "sha256": "1d41be6ef2f2ce992b08dafcef67cbd1e4734d98ca4ccce3132329c006a4c644",
+      "size_bytes": 910
+    },
+    "holdout-v2/abstention-probes.json": {
+      "sha256": "2d49fd9492970fb57f5eb9107a14268d5c1af6f19ef0f7f2aa5f0cd5be2b0905",
+      "size_bytes": 2710
+    },
+    "holdout-v2/quote_selection-predictions.json": {
+      "sha256": "c2351768aad2c853db2882a04aa96834986b89a95563460226fc45502f0307ff",
+      "size_bytes": 32255
+    },
+    "holdout-v2/quote_selection-report.json": {
+      "sha256": "82b268a2f7632117d7e840d398ea44f38f9df12ee62fd914b2485c18ae33f09f",
+      "size_bytes": 32732
+    },
+    "holdout-v2/run-manifest.json": {
+      "sha256": "ddd9a35070522ba7c54d0a63cb89b440af663a320a26c781c4fc8ed48303fc2c",
+      "size_bytes": 1326
+    },
+    "holdout-v2/run-order.json": {
+      "sha256": "1599bbabb3724f852830ddc94d4558df433f30ccb0c8d969cc88efbddb532d7d",
+      "size_bytes": 2671
+    },
+    "holdout-v2-console-summary.json": {
+      "sha256": "6985e2ad1228810e181f108c498a94030b2c584c8b03ebfad80eb1649787d9a5",
+      "size_bytes": 14659
+    },
+    "preflight-holdout-v1.json": {
+      "sha256": "3c609024ee2dc61c8e4fa8cf933539819eb4ea9bbe985264f0c34b486e51ef68",
+      "size_bytes": 1076
+    },
+    "preflight-holdout-v2.json": {
+      "sha256": "9bc76edd31a1e3a08b6578049a1731045436e05f9675edad9e94e3a52fafa979",
+      "size_bytes": 1077
+    },
+    "preflight-regression-v2.json": {
+      "sha256": "cbe50130e2ac109daf4b361ff91bc612d1380ed4f12bcc29f8b7666e9cb426e8",
+      "size_bytes": 1087
+    },
+    "regression-v2/quote_selection-predictions.json": {
+      "sha256": "0a32c8e7fa7ff1af9a3e1d7b559565023b8f0808fb8d2572670c1545b9ea7af2",
+      "size_bytes": 32716
+    },
+    "regression-v2/quote_selection-report.json": {
+      "sha256": "022023e554ad2870f977db78d6fa752e47360c90199ba1081625e7c7c0a2aeca",
+      "size_bytes": 37762
+    },
+    "regression-v2/run-manifest.json": {
+      "sha256": "08b1b58f33d0cf2b516623bbc8163a3392b1f6b73f76ba35b52cedcc6ca43341",
+      "size_bytes": 1277
+    },
+    "regression-v2/run-order.json": {
+      "sha256": "d85fd82209b1101aac0c604fb5fcf12b5fdff60b40dafb508cfff9f0b7010025",
+      "size_bytes": 2397
+    },
+    "regression-v2-console-summary.json": {
+      "sha256": "bfc991ebabc65614f52cdd28c9303d05e8c1dc016691d8479b3910994bd1df38",
+      "size_bytes": 16315
+    },
+    "semantic-human-review.json": {
+      "sha256": "57a25c5f67e89213f20b40ab39c1c6aba1a0c5c12d4bb9c9f4122d885c4c2217",
+      "size_bytes": 213503
+    },
+    "semantic-human-review.json.sha256": {
+      "sha256": "44aa96018bdd928717acdd0f8764f1b48387d26661cba9d91136c001ec899d13",
+      "size_bytes": 93
+    },
+    "semantics-summary.json": {
+      "sha256": "b290b4695810858a1da791da02d20b989e4684ebaa19028147ff159f14eab373",
+      "size_bytes": 165808
+    },
+    "semantics-summary.json.sha256": {
+      "sha256": "d37e2c201585716fb37d06d0c639ad093a134495fc764162753e6c0332137270",
+      "size_bytes": 89
+    }
+  }
+}

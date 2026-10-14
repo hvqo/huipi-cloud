@@ -478,7 +478,11 @@ def evaluate_experiment(
     expected_config_digest = hashlib.sha256(
         (predictions.generation_config_digest + "\0" + predictions.prompt_version).encode()
     ).hexdigest()
-    if predictions.experiment_config_digest not in {None, expected_config_digest}:
+    if predictions.experiment_config_digest not in {None, expected_config_digest} or (
+        predictions.mode == "quote_selection"
+        and predictions.prompt_version != QUOTE_SELECTION_PROMPT_VERSION
+        and predictions.experiment_config_digest is None
+    ):
         raise ValueError("experiment_config_digest_mismatch")
     by_case_id = {case.case_id: case for case in dataset.cases}
     for prediction in predictions.cases:

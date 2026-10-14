@@ -1,0 +1,48 @@
+{
+  "cases": [
+    {
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 517,
+      "case_id": "h4-missing-triangle",
+      "completion_tokens": 93,
+      "elapsed_ms": 1175,
+      "error_code": null,
+      "finish_reason": "stop",
+      "input_sha256": "9ff54c61ed6d2e0585dd2e385a8ee14db122b9b3a4ef962b6cf8fbf50977c719",
+      "prompt_sha256": "9f452ef65e28e08de545807c96eacce29ccc835a0e6539b64d633127b0b7beb0",
+      "prompt_tokens": 773,
+      "provider_attempted": true,
+      "reasoning_tokens": null,
+      "request_id": "847a657f-53c6-483a-91f0-c3c0428eb908",
+      "response_content": "{\"schema_version\":\"1.0\",\"outcome\":\"abstain\",\"abstention_reason\":\"教师标准答案说明关键材料不完整，无法建立可核验标准答案；学生作答仅说明附图资源无法取得，缺少可据以评分的完整论证证据。\",\"reason_codes\":[\"insufficient_evidence\"],\"total_score\":null,\"criterion_scores\":[],\"schema_name\":\"huipi.grading.quote-selection\"}",
+      "response_model_id": "deepseek-flash",
+      "status": "abstain"
+    },
+    {
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 519,
+      "case_id": "h4-cropped-proof",
+      "completion_tokens": 110,
+      "elapsed_ms": 1059,
+      "error_code": null,
+      "finish_reason": "stop",
+      "input_sha256": "49e8836a9e7d7b79b34d1c09945ec3d19927f4fe557569aa66b9b2064c435544",
+      "prompt_sha256": "c715e1816bbca099b129a0f416cafe86d19700a2ed87cb195f12fd5ba3d738f9",
+      "prompt_tokens": 775,
+      "provider_attempted": true,
+      "reasoning_tokens": null,
+      "request_id": "9de6505c-5e9c-4b5a-9d84-c1106ddd0470",
+      "response_content": "{\"schema_version\":\"1.0\",\"outcome\":\"abstain\",\"abstention_reason\":\"教师标准答案明确说明关键材料不完整，无法建立可核验标准答案；学生作答仅笼统声称由上页定义推出结论，未给出可核验的完整论证，因此无法按Rubric可靠评分。\",\"reason_codes\":[\"insufficient_evidence\",\"teacher_answer_key_incomplete\"],\"total_score\":null,\"criterion_scores\":[],\"schema_name\":\"huipi.grading.quote-selection\"}",
+      "response_model_id": "deepseek-flash",
+      "status": "abstain"
+    }
+  ],
+  "dataset_sha256": "3fbfbf97d8fb2495b9dd5ebb02f17809877a50a86553accfad17b3e595753c9d",
+  "dataset_version": "4.0",
+  "expected_behavior": "abstain",
+  "model_id": "deepseek-flash",
+  "prompt_version": "rubric-quote-selection-v1",
+  "schema_name": "huipi.grading.abstention-probes",
+  "schema_version": "1.0",
+  "score_metrics_included": false
+}

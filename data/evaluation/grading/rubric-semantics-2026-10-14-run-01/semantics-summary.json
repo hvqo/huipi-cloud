@@ -1,0 +1,5758 @@
+{
+  "report_version": "1.0",
+  "data_classification": "synthetic_only",
+  "freeze_commit": "3dd11cd488e41880f289cac2b2a1842626493ac7",
+  "dataset_sha256": {
+    "regression": "f769ccef257d11393e6b5b7ddfc088a6c7859ba6fe88f909a9ec9647191aedbf",
+    "holdout": "3fbfbf97d8fb2495b9dd5ebb02f17809877a50a86553accfad17b3e595753c9d"
+  },
+  "criteria_sha256": "e3bdd99c1cd80bbfaa2098c4ad18cc1250b7e0418cc5cf8e3c3e64b38cbb7b47",
+  "historical_v3_prediction_sha256": "9b141f5af5a962ec988476ab4722c14319b48264292a037dba9a0d163b24eedf",
+  "groups": {
+    "regression_a_historical_v1": {
+      "prompt_version": "rubric-quote-selection-v1",
+      "generation_config_digest": "8193583eec6fb7c8df492b9d7d529c56f24fdc4e04de12325ee514aff7a19040",
+      "experiment_config_digest": null,
+      "new_requests": 0,
+      "provider_success": {
+        "numerator": 20,
+        "denominator": 20
+      },
+      "json_valid": {
+        "numerator": 20,
+        "denominator": 20
+      },
+      "protocol_valid": {
+        "numerator": 20,
+        "denominator": 20
+      },
+      "candidate_coverage": {
+        "numerator": 19,
+        "denominator": 20
+      },
+      "all_raw_quotes": {
+        "numerator": 38,
+        "denominator": 39,
+        "failures": [
+          {
+            "case_id": "v3-quote-short-duplicate",
+            "reason_code": "quote_ambiguous"
+          }
+        ]
+      },
+      "accepted_candidate_quotes": {
+        "numerator": 37,
+        "denominator": 37
+      },
+      "status_counts": {
+        "candidate": 19,
+        "invalid_evidence": 1
+      },
+      "scored_case_abstentions": 0,
+      "uncertain_probe_abstentions": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "total_score": {
+        "sample_count": 19,
+        "absolute_error_sum": "15.00",
+        "mae": "0.7895",
+        "mae_denominator": 19,
+        "exact": {
+          "numerator": 15,
+          "denominator": 19
+        },
+        "within_tolerance": {
+          "numerator": 15,
+          "denominator": 19
+        },
+        "over_count": 4,
+        "under_count": 0
+      },
+      "criterion_score": {
+        "sample_count": 44,
+        "absolute_error_sum": "15.00",
+        "mae": "0.3409",
+        "mae_denominator": 44,
+        "exact": {
+          "numerator": 40,
+          "denominator": 44
+        },
+        "over_count": 4,
+        "under_count": 0,
+        "by_case_criterion": {
+          "v3-bio-photosynthesis/products": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-bio-photosynthesis/site_inputs": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-chem-balanced/conservation": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-chem-balanced/equation": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-chem-unbalanced/coefficients": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-chem-unbalanced/elements": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-chinese-paraphrase/consequence": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-chinese-paraphrase/study_thinking": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-completing-square/answer": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-completing-square/root_step": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-completing-square/square": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-cross-page-proof/flood": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-cross-page-proof/habitat": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-decimal-strict/result_form": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-decimal-strict/simplification": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-english-answer-only/form": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-english-answer-only/sequence": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-english-keyword/process": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-english-keyword/product": {
+            "count": 1,
+            "absolute_error_sum": "4.00",
+            "mae": "4.0000",
+            "exact": {
+              "numerator": 0,
+              "denominator": 1
+            },
+            "over_count": 1,
+            "under_count": 0
+          },
+          "v3-eq-no-work/method": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-eq-no-work/result": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-fraction-equivalent/common_denominator": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-fraction-equivalent/form": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-fraction-equivalent/sum": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-linear-arithmetic-slip/division": {
+            "count": 1,
+            "absolute_error_sum": "3.00",
+            "mae": "3.0000",
+            "exact": {
+              "numerator": 0,
+              "denominator": 1
+            },
+            "over_count": 1,
+            "under_count": 0
+          },
+          "v3-linear-arithmetic-slip/isolation": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-linear-arithmetic-slip/result": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-linear-system/elimination": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-linear-system/substitution": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-lucky-arithmetic/multiplication": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-lucky-arithmetic/result": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-lucky-arithmetic/subtraction": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-mixed-right-wrong/division": {
+            "count": 1,
+            "absolute_error_sum": "3.00",
+            "mae": "3.0000",
+            "exact": {
+              "numerator": 0,
+              "denominator": 1
+            },
+            "over_count": 1,
+            "under_count": 0
+          },
+          "v3-mixed-right-wrong/isolation": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-mixed-right-wrong/result": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-partial-quarter/conversion": {
+            "count": 1,
+            "absolute_error_sum": "5.00",
+            "mae": "5.0000",
+            "exact": {
+              "numerator": 0,
+              "denominator": 1
+            },
+            "over_count": 1,
+            "under_count": 0
+          },
+          "v3-partial-quarter/scale": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-physics-wrong-unit/law": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-physics-wrong-unit/unit": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-physics-wrong-unit/value": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-quadratic-factor/factor": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-quadratic-factor/roots": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-rubric-boundary/result": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-rubric-boundary/transform": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          }
+        },
+        "offsetting_error_cases": 0,
+        "offsetting_error_case_ids": []
+      },
+      "zero_reference_positive_cases": [
+        "v3-english-keyword"
+      ],
+      "zero_reference_cases": 3,
+      "raw_zero_criterion_positive_intents": [
+        {
+          "case_id": "v3-linear-arithmetic-slip",
+          "criterion_key": "division",
+          "model_points": "3.00",
+          "candidate_accepted": true
+        },
+        {
+          "case_id": "v3-mixed-right-wrong",
+          "criterion_key": "division",
+          "model_points": "3.00",
+          "candidate_accepted": true
+        },
+        {
+          "case_id": "v3-partial-quarter",
+          "criterion_key": "conversion",
+          "model_points": "5.00",
+          "candidate_accepted": true
+        },
+        {
+          "case_id": "v3-english-keyword",
+          "criterion_key": "product",
+          "model_points": "4.00",
+          "candidate_accepted": true
+        }
+      ],
+      "fully_correct_reference_cases": 9,
+      "fully_correct_not_full_score_cases": [],
+      "fully_correct_without_candidate_cases": [
+        "v3-quote-short-duplicate"
+      ],
+      "cost_estimate_complete": true,
+      "semantic_review_pending_positive_criteria": 30,
+      "usage": {
+        "prompt_tokens": {
+          "total": 16958,
+          "reported_calls": 20
+        },
+        "completion_tokens": {
+          "total": 5065,
+          "reported_calls": 20
+        },
+        "cache_hit_tokens": {
+          "total": 5120,
+          "reported_calls": 20
+        },
+        "cache_miss_tokens": {
+          "total": 11838,
+          "reported_calls": 20
+        }
+      },
+      "all_call_elapsed_ms": 31019,
+      "calls_missing_elapsed": 0,
+      "peak_uncached_estimate_usd": "0.0111654",
+      "offpeak_cache_estimate_usd": "0.00483006",
+      "response_model_id_counts": {
+        "deepseek-flash": 20
+      },
+      "cases": [
+        {
+          "case_id": "v3-linear-arithmetic-slip",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "5.00",
+          "model_total": "8.00",
+          "reference_criteria": {
+            "isolation": "5.00",
+            "division": "0.00",
+            "result": "0.00"
+          },
+          "raw_model_criteria": {
+            "isolation": "5.00",
+            "division": "3.00",
+            "result": "0.00"
+          },
+          "all_scores_exact": false,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-mixed-right-wrong",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "5.00",
+          "model_total": "8.00",
+          "reference_criteria": {
+            "isolation": "5.00",
+            "division": "0.00",
+            "result": "0.00"
+          },
+          "raw_model_criteria": {
+            "isolation": "5.00",
+            "division": "3.00",
+            "result": "0.00"
+          },
+          "all_scores_exact": false,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-partial-quarter",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "5.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "scale": "5.00",
+            "conversion": "0.00"
+          },
+          "raw_model_criteria": {
+            "scale": "5.00",
+            "conversion": "5.00"
+          },
+          "all_scores_exact": false,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-english-keyword",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "0.00",
+          "model_total": "4.00",
+          "reference_criteria": {
+            "process": "0.00",
+            "product": "0.00"
+          },
+          "raw_model_criteria": {
+            "process": "0.00",
+            "product": "4.00"
+          },
+          "all_scores_exact": false,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-eq-no-work",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "4.00",
+          "model_total": "4.00",
+          "reference_criteria": {
+            "method": "0.00",
+            "result": "4.00"
+          },
+          "raw_model_criteria": {
+            "method": "0.00",
+            "result": "4.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-lucky-arithmetic",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "3.00",
+          "model_total": "3.00",
+          "reference_criteria": {
+            "multiplication": "0.00",
+            "subtraction": "0.00",
+            "result": "3.00"
+          },
+          "raw_model_criteria": {
+            "multiplication": "0.00",
+            "subtraction": "0.00",
+            "result": "3.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-quadratic-factor",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "factor": "5.00",
+            "roots": "5.00"
+          },
+          "raw_model_criteria": {
+            "factor": "5.00",
+            "roots": "5.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-completing-square",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "4.00",
+          "model_total": "4.00",
+          "reference_criteria": {
+            "square": "4.00",
+            "root_step": "0.00",
+            "answer": "0.00"
+          },
+          "raw_model_criteria": {
+            "square": "4.00",
+            "root_step": "0.00",
+            "answer": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-fraction-equivalent",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "common_denominator": "4.00",
+            "sum": "4.00",
+            "form": "2.00"
+          },
+          "raw_model_criteria": {
+            "common_denominator": "4.00",
+            "sum": "4.00",
+            "form": "2.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 3,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-decimal-strict",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "0.00",
+          "model_total": "0.00",
+          "reference_criteria": {
+            "simplification": "0.00",
+            "result_form": "0.00"
+          },
+          "raw_model_criteria": {
+            "simplification": "0.00",
+            "result_form": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 0,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-linear-system",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "elimination": "5.00",
+            "substitution": "5.00"
+          },
+          "raw_model_criteria": {
+            "elimination": "5.00",
+            "substitution": "5.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-physics-wrong-unit",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "8.00",
+          "model_total": "8.00",
+          "reference_criteria": {
+            "law": "4.00",
+            "value": "4.00",
+            "unit": "0.00"
+          },
+          "raw_model_criteria": {
+            "law": "4.00",
+            "value": "4.00",
+            "unit": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-chem-balanced",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "equation": "7.00",
+            "conservation": "3.00"
+          },
+          "raw_model_criteria": {
+            "equation": "7.00",
+            "conservation": "3.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-chem-unbalanced",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "0.00",
+          "model_total": "0.00",
+          "reference_criteria": {
+            "elements": "0.00",
+            "coefficients": "0.00"
+          },
+          "raw_model_criteria": {
+            "elements": "0.00",
+            "coefficients": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 0,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-bio-photosynthesis",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "site_inputs": "5.00",
+            "products": "5.00"
+          },
+          "raw_model_criteria": {
+            "site_inputs": "5.00",
+            "products": "5.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-chinese-paraphrase",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "study_thinking": "5.00",
+            "consequence": "5.00"
+          },
+          "raw_model_criteria": {
+            "study_thinking": "5.00",
+            "consequence": "5.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-english-answer-only",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "6.00",
+          "model_total": "6.00",
+          "reference_criteria": {
+            "form": "6.00",
+            "sequence": "0.00"
+          },
+          "raw_model_criteria": {
+            "form": "6.00",
+            "sequence": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-cross-page-proof",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "flood": "5.00",
+            "habitat": "5.00"
+          },
+          "raw_model_criteria": {
+            "flood": "5.00",
+            "habitat": "5.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-rubric-boundary",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "transform": "4.00",
+            "result": "6.00"
+          },
+          "raw_model_criteria": {
+            "transform": "4.00",
+            "result": "6.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-quote-short-duplicate",
+          "reference_status": "included",
+          "status": "invalid_evidence",
+          "error_code": "quote_ambiguous",
+          "reference_total": "10.00",
+          "model_total": null,
+          "reference_criteria": {
+            "control": "5.00",
+            "example": "5.00"
+          },
+          "raw_model_criteria": {
+            "control": "5.00",
+            "example": "5.00"
+          },
+          "all_scores_exact": false,
+          "valid_positive_criteria": 0,
+          "human_review_status": "unreviewed"
+        }
+      ],
+      "historical_requests_reused": 20
+    },
+    "regression_b_v2": {
+      "prompt_version": "rubric-quote-selection-v2",
+      "generation_config_digest": "8193583eec6fb7c8df492b9d7d529c56f24fdc4e04de12325ee514aff7a19040",
+      "experiment_config_digest": "dfbed2b3f9c2d063fb0fbc775f5697db7456a9fc6fc40fe030eece316819bb6d",
+      "new_requests": 20,
+      "provider_success": {
+        "numerator": 20,
+        "denominator": 20
+      },
+      "json_valid": {
+        "numerator": 20,
+        "denominator": 20
+      },
+      "protocol_valid": {
+        "numerator": 20,
+        "denominator": 20
+      },
+      "candidate_coverage": {
+        "numerator": 19,
+        "denominator": 20
+      },
+      "all_raw_quotes": {
+        "numerator": 35,
+        "denominator": 36,
+        "failures": [
+          {
+            "case_id": "v3-quote-short-duplicate",
+            "reason_code": "quote_ambiguous"
+          }
+        ]
+      },
+      "accepted_candidate_quotes": {
+        "numerator": 34,
+        "denominator": 34
+      },
+      "status_counts": {
+        "candidate": 19,
+        "invalid_evidence": 1
+      },
+      "scored_case_abstentions": 0,
+      "uncertain_probe_abstentions": {
+        "numerator": 0,
+        "denominator": 0
+      },
+      "total_score": {
+        "sample_count": 19,
+        "absolute_error_sum": "13.00",
+        "mae": "0.6842",
+        "mae_denominator": 19,
+        "exact": {
+          "numerator": 16,
+          "denominator": 19
+        },
+        "within_tolerance": {
+          "numerator": 16,
+          "denominator": 19
+        },
+        "over_count": 2,
+        "under_count": 1
+      },
+      "criterion_score": {
+        "sample_count": 44,
+        "absolute_error_sum": "13.00",
+        "mae": "0.2955",
+        "mae_denominator": 44,
+        "exact": {
+          "numerator": 41,
+          "denominator": 44
+        },
+        "over_count": 2,
+        "under_count": 1,
+        "by_case_criterion": {
+          "v3-bio-photosynthesis/products": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-bio-photosynthesis/site_inputs": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-chem-balanced/conservation": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-chem-balanced/equation": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-chem-unbalanced/coefficients": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-chem-unbalanced/elements": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-chinese-paraphrase/consequence": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-chinese-paraphrase/study_thinking": {
+            "count": 1,
+            "absolute_error_sum": "5.00",
+            "mae": "5.0000",
+            "exact": {
+              "numerator": 0,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 1
+          },
+          "v3-completing-square/answer": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-completing-square/root_step": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-completing-square/square": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-cross-page-proof/flood": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-cross-page-proof/habitat": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-decimal-strict/result_form": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-decimal-strict/simplification": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-english-answer-only/form": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-english-answer-only/sequence": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-english-keyword/process": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-english-keyword/product": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-eq-no-work/method": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-eq-no-work/result": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-fraction-equivalent/common_denominator": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-fraction-equivalent/form": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-fraction-equivalent/sum": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-linear-arithmetic-slip/division": {
+            "count": 1,
+            "absolute_error_sum": "3.00",
+            "mae": "3.0000",
+            "exact": {
+              "numerator": 0,
+              "denominator": 1
+            },
+            "over_count": 1,
+            "under_count": 0
+          },
+          "v3-linear-arithmetic-slip/isolation": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-linear-arithmetic-slip/result": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-linear-system/elimination": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-linear-system/substitution": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-lucky-arithmetic/multiplication": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-lucky-arithmetic/result": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-lucky-arithmetic/subtraction": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-mixed-right-wrong/division": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-mixed-right-wrong/isolation": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-mixed-right-wrong/result": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-partial-quarter/conversion": {
+            "count": 1,
+            "absolute_error_sum": "5.00",
+            "mae": "5.0000",
+            "exact": {
+              "numerator": 0,
+              "denominator": 1
+            },
+            "over_count": 1,
+            "under_count": 0
+          },
+          "v3-partial-quarter/scale": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-physics-wrong-unit/law": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-physics-wrong-unit/unit": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-physics-wrong-unit/value": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-quadratic-factor/factor": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-quadratic-factor/roots": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-rubric-boundary/result": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-rubric-boundary/transform": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          }
+        },
+        "offsetting_error_cases": 0,
+        "offsetting_error_case_ids": []
+      },
+      "zero_reference_positive_cases": [],
+      "zero_reference_cases": 3,
+      "raw_zero_criterion_positive_intents": [
+        {
+          "case_id": "v3-linear-arithmetic-slip",
+          "criterion_key": "division",
+          "model_points": "3.00",
+          "candidate_accepted": true
+        },
+        {
+          "case_id": "v3-partial-quarter",
+          "criterion_key": "conversion",
+          "model_points": "5.00",
+          "candidate_accepted": true
+        }
+      ],
+      "fully_correct_reference_cases": 9,
+      "fully_correct_not_full_score_cases": [
+        "v3-chinese-paraphrase"
+      ],
+      "fully_correct_without_candidate_cases": [
+        "v3-quote-short-duplicate"
+      ],
+      "cost_estimate_complete": true,
+      "semantic_review_pending_positive_criteria": 27,
+      "usage": {
+        "prompt_tokens": {
+          "total": 26578,
+          "reported_calls": 20
+        },
+        "completion_tokens": {
+          "total": 5219,
+          "reported_calls": 20
+        },
+        "cache_hit_tokens": {
+          "total": 12288,
+          "reported_calls": 20
+        },
+        "cache_miss_tokens": {
+          "total": 14290,
+          "reported_calls": 20
+        }
+      },
+      "all_call_elapsed_ms": 34603,
+      "calls_missing_elapsed": 0,
+      "peak_uncached_estimate_usd": "0.0142362",
+      "offpeak_cache_estimate_usd": "0.005311764",
+      "response_model_id_counts": {
+        "deepseek-flash": 20
+      },
+      "cases": [
+        {
+          "case_id": "v3-linear-arithmetic-slip",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "5.00",
+          "model_total": "8.00",
+          "reference_criteria": {
+            "isolation": "5.00",
+            "division": "0.00",
+            "result": "0.00"
+          },
+          "raw_model_criteria": {
+            "isolation": "5.00",
+            "division": "3.00",
+            "result": "0.00"
+          },
+          "all_scores_exact": false,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-mixed-right-wrong",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "5.00",
+          "model_total": "5.00",
+          "reference_criteria": {
+            "isolation": "5.00",
+            "division": "0.00",
+            "result": "0.00"
+          },
+          "raw_model_criteria": {
+            "isolation": "5.00",
+            "division": "0.00",
+            "result": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-partial-quarter",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "5.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "scale": "5.00",
+            "conversion": "0.00"
+          },
+          "raw_model_criteria": {
+            "scale": "5.00",
+            "conversion": "5.00"
+          },
+          "all_scores_exact": false,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-english-keyword",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "0.00",
+          "model_total": "0.00",
+          "reference_criteria": {
+            "process": "0.00",
+            "product": "0.00"
+          },
+          "raw_model_criteria": {
+            "process": "0.00",
+            "product": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 0,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-eq-no-work",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "4.00",
+          "model_total": "4.00",
+          "reference_criteria": {
+            "method": "0.00",
+            "result": "4.00"
+          },
+          "raw_model_criteria": {
+            "method": "0.00",
+            "result": "4.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-lucky-arithmetic",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "3.00",
+          "model_total": "3.00",
+          "reference_criteria": {
+            "multiplication": "0.00",
+            "subtraction": "0.00",
+            "result": "3.00"
+          },
+          "raw_model_criteria": {
+            "multiplication": "0.00",
+            "subtraction": "0.00",
+            "result": "3.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-quadratic-factor",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "factor": "5.00",
+            "roots": "5.00"
+          },
+          "raw_model_criteria": {
+            "factor": "5.00",
+            "roots": "5.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-completing-square",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "4.00",
+          "model_total": "4.00",
+          "reference_criteria": {
+            "square": "4.00",
+            "root_step": "0.00",
+            "answer": "0.00"
+          },
+          "raw_model_criteria": {
+            "square": "4.00",
+            "root_step": "0.00",
+            "answer": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-fraction-equivalent",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "common_denominator": "4.00",
+            "sum": "4.00",
+            "form": "2.00"
+          },
+          "raw_model_criteria": {
+            "common_denominator": "4.00",
+            "sum": "4.00",
+            "form": "2.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 3,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-decimal-strict",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "0.00",
+          "model_total": "0.00",
+          "reference_criteria": {
+            "simplification": "0.00",
+            "result_form": "0.00"
+          },
+          "raw_model_criteria": {
+            "simplification": "0.00",
+            "result_form": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 0,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-linear-system",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "elimination": "5.00",
+            "substitution": "5.00"
+          },
+          "raw_model_criteria": {
+            "elimination": "5.00",
+            "substitution": "5.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-physics-wrong-unit",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "8.00",
+          "model_total": "8.00",
+          "reference_criteria": {
+            "law": "4.00",
+            "value": "4.00",
+            "unit": "0.00"
+          },
+          "raw_model_criteria": {
+            "law": "4.00",
+            "value": "4.00",
+            "unit": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-chem-balanced",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "equation": "7.00",
+            "conservation": "3.00"
+          },
+          "raw_model_criteria": {
+            "equation": "7.00",
+            "conservation": "3.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-chem-unbalanced",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "0.00",
+          "model_total": "0.00",
+          "reference_criteria": {
+            "elements": "0.00",
+            "coefficients": "0.00"
+          },
+          "raw_model_criteria": {
+            "elements": "0.00",
+            "coefficients": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 0,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-bio-photosynthesis",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "site_inputs": "5.00",
+            "products": "5.00"
+          },
+          "raw_model_criteria": {
+            "site_inputs": "5.00",
+            "products": "5.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-chinese-paraphrase",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "5.00",
+          "reference_criteria": {
+            "study_thinking": "5.00",
+            "consequence": "5.00"
+          },
+          "raw_model_criteria": {
+            "study_thinking": "0.00",
+            "consequence": "5.00"
+          },
+          "all_scores_exact": false,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-english-answer-only",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "6.00",
+          "model_total": "6.00",
+          "reference_criteria": {
+            "form": "6.00",
+            "sequence": "0.00"
+          },
+          "raw_model_criteria": {
+            "form": "6.00",
+            "sequence": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-cross-page-proof",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "flood": "5.00",
+            "habitat": "5.00"
+          },
+          "raw_model_criteria": {
+            "flood": "5.00",
+            "habitat": "5.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-rubric-boundary",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "transform": "4.00",
+            "result": "6.00"
+          },
+          "raw_model_criteria": {
+            "transform": "4.00",
+            "result": "6.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "v3-quote-short-duplicate",
+          "reference_status": "included",
+          "status": "invalid_evidence",
+          "error_code": "quote_ambiguous",
+          "reference_total": "10.00",
+          "model_total": null,
+          "reference_criteria": {
+            "control": "5.00",
+            "example": "5.00"
+          },
+          "raw_model_criteria": {
+            "control": "5.00",
+            "example": "5.00"
+          },
+          "all_scores_exact": false,
+          "valid_positive_criteria": 0,
+          "human_review_status": "unreviewed"
+        }
+      ]
+    },
+    "holdout_a_v1": {
+      "prompt_version": "rubric-quote-selection-v1",
+      "generation_config_digest": "8193583eec6fb7c8df492b9d7d529c56f24fdc4e04de12325ee514aff7a19040",
+      "experiment_config_digest": "6af6f992ca7e65fffebdd743f01875c888da3516fed023ee62c881b586467bf3",
+      "new_requests": 22,
+      "provider_success": {
+        "numerator": 22,
+        "denominator": 22
+      },
+      "json_valid": {
+        "numerator": 22,
+        "denominator": 22
+      },
+      "protocol_valid": {
+        "numerator": 22,
+        "denominator": 22
+      },
+      "candidate_coverage": {
+        "numerator": 20,
+        "denominator": 20
+      },
+      "all_raw_quotes": {
+        "numerator": 31,
+        "denominator": 31,
+        "failures": []
+      },
+      "accepted_candidate_quotes": {
+        "numerator": 31,
+        "denominator": 31
+      },
+      "status_counts": {
+        "candidate": 20,
+        "abstain": 2
+      },
+      "scored_case_abstentions": 0,
+      "uncertain_probe_abstentions": {
+        "numerator": 2,
+        "denominator": 2
+      },
+      "total_score": {
+        "sample_count": 20,
+        "absolute_error_sum": "0.00",
+        "mae": "0.0000",
+        "mae_denominator": 20,
+        "exact": {
+          "numerator": 20,
+          "denominator": 20
+        },
+        "within_tolerance": {
+          "numerator": 20,
+          "denominator": 20
+        },
+        "over_count": 0,
+        "under_count": 0
+      },
+      "criterion_score": {
+        "sample_count": 39,
+        "absolute_error_sum": "0.00",
+        "mae": "0.0000",
+        "mae_denominator": 39,
+        "exact": {
+          "numerator": 39,
+          "denominator": 39
+        },
+        "over_count": 0,
+        "under_count": 0,
+        "by_case_criterion": {
+          "h4-acid-ionic/equation": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-acid-ionic/spectator": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-average-division-error/calculation": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-average-division-error/setup": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-average-division-error/unit": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-climate-keywords/cause": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-climate-keywords/relation": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-counterexample/example": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-counterexample/logic": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-cross-page-moles/mass": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-cross-page-moles/molar": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-domain-boundary/restriction": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-domain-boundary/set": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-equivalent-ratio/value": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-explicit-half-credit/factors": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-fraction-required/fraction": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-injection-wrong-answer/result": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-literature-evidence-only/citation": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-literature-evidence-only/effect": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-lucky-area/calculation": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-lucky-area/formula": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-lucky-area/result": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-mean-full/mean": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-mean-full/sum": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-osmosis-paraphrase/direction": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-osmosis-paraphrase/gradient": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-oxygen-unbalanced/balance": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-oxygen-unbalanced/species": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-rainshadow/down": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-rainshadow/up": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-sampling-partial/identify": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-sampling-partial/reason": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-speed-unit-missing/distance": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-speed-unit-missing/result": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-speed-unit-missing/time": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-time-conversion-missing/conversion": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-time-conversion-missing/product": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-work-wrong-unit/operation": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-work-wrong-unit/unit": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          }
+        },
+        "offsetting_error_cases": 0,
+        "offsetting_error_case_ids": []
+      },
+      "zero_reference_positive_cases": [],
+      "zero_reference_cases": 3,
+      "raw_zero_criterion_positive_intents": [],
+      "fully_correct_reference_cases": 7,
+      "fully_correct_not_full_score_cases": [],
+      "fully_correct_without_candidate_cases": [],
+      "cost_estimate_complete": true,
+      "semantic_review_pending_positive_criteria": 25,
+      "usage": {
+        "prompt_tokens": {
+          "total": 18429,
+          "reported_calls": 22
+        },
+        "completion_tokens": {
+          "total": 4655,
+          "reported_calls": 22
+        },
+        "cache_hit_tokens": {
+          "total": 5632,
+          "reported_calls": 22
+        },
+        "cache_miss_tokens": {
+          "total": 12797,
+          "reported_calls": 22
+        }
+      },
+      "all_call_elapsed_ms": 33972,
+      "calls_missing_elapsed": 0,
+      "peak_uncached_estimate_usd": "0.0111147",
+      "offpeak_cache_estimate_usd": "0.004729446",
+      "response_model_id_counts": {
+        "deepseek-flash": 22
+      },
+      "cases": [
+        {
+          "case_id": "h4-mean-full",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "sum": "4.00",
+            "mean": "6.00"
+          },
+          "raw_model_criteria": {
+            "sum": "4.00",
+            "mean": "6.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-average-division-error",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "6.00",
+          "model_total": "6.00",
+          "reference_criteria": {
+            "setup": "4.00",
+            "calculation": "0.00",
+            "unit": "2.00"
+          },
+          "raw_model_criteria": {
+            "setup": "4.00",
+            "calculation": "0.00",
+            "unit": "2.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-lucky-area",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "6.00",
+          "model_total": "6.00",
+          "reference_criteria": {
+            "formula": "3.00",
+            "calculation": "0.00",
+            "result": "3.00"
+          },
+          "raw_model_criteria": {
+            "formula": "3.00",
+            "calculation": "0.00",
+            "result": "3.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-time-conversion-missing",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "5.00",
+          "model_total": "5.00",
+          "reference_criteria": {
+            "conversion": "5.00",
+            "product": "0.00"
+          },
+          "raw_model_criteria": {
+            "conversion": "5.00",
+            "product": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-speed-unit-missing",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "4.00",
+          "model_total": "4.00",
+          "reference_criteria": {
+            "distance": "4.00",
+            "time": "0.00",
+            "result": "0.00"
+          },
+          "raw_model_criteria": {
+            "distance": "4.00",
+            "time": "0.00",
+            "result": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-equivalent-ratio",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "value": "10.00"
+          },
+          "raw_model_criteria": {
+            "value": "10.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-fraction-required",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "0.00",
+          "model_total": "0.00",
+          "reference_criteria": {
+            "fraction": "0.00"
+          },
+          "raw_model_criteria": {
+            "fraction": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 0,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-osmosis-paraphrase",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "gradient": "5.00",
+            "direction": "5.00"
+          },
+          "raw_model_criteria": {
+            "gradient": "5.00",
+            "direction": "5.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-climate-keywords",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "0.00",
+          "model_total": "0.00",
+          "reference_criteria": {
+            "cause": "0.00",
+            "relation": "0.00"
+          },
+          "raw_model_criteria": {
+            "cause": "0.00",
+            "relation": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 0,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-acid-ionic",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "equation": "6.00",
+            "spectator": "4.00"
+          },
+          "raw_model_criteria": {
+            "equation": "6.00",
+            "spectator": "4.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-oxygen-unbalanced",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "4.00",
+          "model_total": "4.00",
+          "reference_criteria": {
+            "species": "4.00",
+            "balance": "0.00"
+          },
+          "raw_model_criteria": {
+            "species": "4.00",
+            "balance": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-work-wrong-unit",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "7.00",
+          "model_total": "7.00",
+          "reference_criteria": {
+            "operation": "7.00",
+            "unit": "0.00"
+          },
+          "raw_model_criteria": {
+            "operation": "7.00",
+            "unit": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-domain-boundary",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "5.00",
+          "model_total": "5.00",
+          "reference_criteria": {
+            "restriction": "5.00",
+            "set": "0.00"
+          },
+          "raw_model_criteria": {
+            "restriction": "5.00",
+            "set": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-rainshadow",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "up": "5.00",
+            "down": "5.00"
+          },
+          "raw_model_criteria": {
+            "up": "5.00",
+            "down": "5.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-counterexample",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "example": "6.00",
+            "logic": "4.00"
+          },
+          "raw_model_criteria": {
+            "example": "6.00",
+            "logic": "4.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-literature-evidence-only",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "3.00",
+          "model_total": "3.00",
+          "reference_criteria": {
+            "citation": "3.00",
+            "effect": "0.00"
+          },
+          "raw_model_criteria": {
+            "citation": "3.00",
+            "effect": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-sampling-partial",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "4.00",
+          "model_total": "4.00",
+          "reference_criteria": {
+            "identify": "4.00",
+            "reason": "0.00"
+          },
+          "raw_model_criteria": {
+            "identify": "4.00",
+            "reason": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-explicit-half-credit",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "5.00",
+          "model_total": "5.00",
+          "reference_criteria": {
+            "factors": "5.00"
+          },
+          "raw_model_criteria": {
+            "factors": "5.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-cross-page-moles",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "molar": "4.00",
+            "mass": "6.00"
+          },
+          "raw_model_criteria": {
+            "molar": "4.00",
+            "mass": "6.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-injection-wrong-answer",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "0.00",
+          "model_total": "0.00",
+          "reference_criteria": {
+            "result": "0.00"
+          },
+          "raw_model_criteria": {
+            "result": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 0,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-missing-triangle",
+          "reference_status": "excluded_uncertain",
+          "status": "abstain",
+          "error_code": null,
+          "reference_total": null,
+          "model_total": null,
+          "reference_criteria": {},
+          "raw_model_criteria": {},
+          "all_scores_exact": false,
+          "valid_positive_criteria": 0,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-cropped-proof",
+          "reference_status": "excluded_uncertain",
+          "status": "abstain",
+          "error_code": null,
+          "reference_total": null,
+          "model_total": null,
+          "reference_criteria": {},
+          "raw_model_criteria": {},
+          "all_scores_exact": false,
+          "valid_positive_criteria": 0,
+          "human_review_status": "unreviewed"
+        }
+      ]
+    },
+    "holdout_b_v2": {
+      "prompt_version": "rubric-quote-selection-v2",
+      "generation_config_digest": "8193583eec6fb7c8df492b9d7d529c56f24fdc4e04de12325ee514aff7a19040",
+      "experiment_config_digest": "dfbed2b3f9c2d063fb0fbc775f5697db7456a9fc6fc40fe030eece316819bb6d",
+      "new_requests": 22,
+      "provider_success": {
+        "numerator": 22,
+        "denominator": 22
+      },
+      "json_valid": {
+        "numerator": 22,
+        "denominator": 22
+      },
+      "protocol_valid": {
+        "numerator": 22,
+        "denominator": 22
+      },
+      "candidate_coverage": {
+        "numerator": 20,
+        "denominator": 20
+      },
+      "all_raw_quotes": {
+        "numerator": 32,
+        "denominator": 32,
+        "failures": []
+      },
+      "accepted_candidate_quotes": {
+        "numerator": 32,
+        "denominator": 32
+      },
+      "status_counts": {
+        "candidate": 20,
+        "abstain": 2
+      },
+      "scored_case_abstentions": 0,
+      "uncertain_probe_abstentions": {
+        "numerator": 2,
+        "denominator": 2
+      },
+      "total_score": {
+        "sample_count": 20,
+        "absolute_error_sum": "5.00",
+        "mae": "0.2500",
+        "mae_denominator": 20,
+        "exact": {
+          "numerator": 19,
+          "denominator": 20
+        },
+        "within_tolerance": {
+          "numerator": 19,
+          "denominator": 20
+        },
+        "over_count": 0,
+        "under_count": 1
+      },
+      "criterion_score": {
+        "sample_count": 39,
+        "absolute_error_sum": "5.00",
+        "mae": "0.1282",
+        "mae_denominator": 39,
+        "exact": {
+          "numerator": 38,
+          "denominator": 39
+        },
+        "over_count": 0,
+        "under_count": 1,
+        "by_case_criterion": {
+          "h4-acid-ionic/equation": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-acid-ionic/spectator": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-average-division-error/calculation": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-average-division-error/setup": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-average-division-error/unit": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-climate-keywords/cause": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-climate-keywords/relation": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-counterexample/example": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-counterexample/logic": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-cross-page-moles/mass": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-cross-page-moles/molar": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-domain-boundary/restriction": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-domain-boundary/set": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-equivalent-ratio/value": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-explicit-half-credit/factors": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-fraction-required/fraction": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-injection-wrong-answer/result": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-literature-evidence-only/citation": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-literature-evidence-only/effect": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-lucky-area/calculation": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-lucky-area/formula": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-lucky-area/result": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-mean-full/mean": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-mean-full/sum": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-osmosis-paraphrase/direction": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-osmosis-paraphrase/gradient": {
+            "count": 1,
+            "absolute_error_sum": "5.00",
+            "mae": "5.0000",
+            "exact": {
+              "numerator": 0,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 1
+          },
+          "h4-oxygen-unbalanced/balance": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-oxygen-unbalanced/species": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-rainshadow/down": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-rainshadow/up": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-sampling-partial/identify": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-sampling-partial/reason": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-speed-unit-missing/distance": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-speed-unit-missing/result": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-speed-unit-missing/time": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-time-conversion-missing/conversion": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-time-conversion-missing/product": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-work-wrong-unit/operation": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-work-wrong-unit/unit": {
+            "count": 1,
+            "absolute_error_sum": "0.00",
+            "mae": "0.0000",
+            "exact": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "over_count": 0,
+            "under_count": 0
+          }
+        },
+        "offsetting_error_cases": 0,
+        "offsetting_error_case_ids": []
+      },
+      "zero_reference_positive_cases": [],
+      "zero_reference_cases": 3,
+      "raw_zero_criterion_positive_intents": [],
+      "fully_correct_reference_cases": 7,
+      "fully_correct_not_full_score_cases": [
+        "h4-osmosis-paraphrase"
+      ],
+      "fully_correct_without_candidate_cases": [],
+      "cost_estimate_complete": true,
+      "semantic_review_pending_positive_criteria": 24,
+      "usage": {
+        "prompt_tokens": {
+          "total": 29011,
+          "reported_calls": 22
+        },
+        "completion_tokens": {
+          "total": 4868,
+          "reported_calls": 22
+        },
+        "cache_hit_tokens": {
+          "total": 14080,
+          "reported_calls": 22
+        },
+        "cache_miss_tokens": {
+          "total": 14931,
+          "reported_calls": 22
+        }
+      },
+      "all_call_elapsed_ms": 33475,
+      "calls_missing_elapsed": 0,
+      "peak_uncached_estimate_usd": "0.0145449",
+      "offpeak_cache_estimate_usd": "0.00520269",
+      "response_model_id_counts": {
+        "deepseek-flash": 22
+      },
+      "cases": [
+        {
+          "case_id": "h4-mean-full",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "sum": "4.00",
+            "mean": "6.00"
+          },
+          "raw_model_criteria": {
+            "sum": "4.00",
+            "mean": "6.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-average-division-error",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "6.00",
+          "model_total": "6.00",
+          "reference_criteria": {
+            "setup": "4.00",
+            "calculation": "0.00",
+            "unit": "2.00"
+          },
+          "raw_model_criteria": {
+            "setup": "4.00",
+            "calculation": "0.00",
+            "unit": "2.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-lucky-area",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "6.00",
+          "model_total": "6.00",
+          "reference_criteria": {
+            "formula": "3.00",
+            "calculation": "0.00",
+            "result": "3.00"
+          },
+          "raw_model_criteria": {
+            "formula": "3.00",
+            "calculation": "0.00",
+            "result": "3.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-time-conversion-missing",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "5.00",
+          "model_total": "5.00",
+          "reference_criteria": {
+            "conversion": "5.00",
+            "product": "0.00"
+          },
+          "raw_model_criteria": {
+            "conversion": "5.00",
+            "product": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-speed-unit-missing",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "4.00",
+          "model_total": "4.00",
+          "reference_criteria": {
+            "distance": "4.00",
+            "time": "0.00",
+            "result": "0.00"
+          },
+          "raw_model_criteria": {
+            "distance": "4.00",
+            "time": "0.00",
+            "result": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-equivalent-ratio",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "value": "10.00"
+          },
+          "raw_model_criteria": {
+            "value": "10.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-fraction-required",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "0.00",
+          "model_total": "0.00",
+          "reference_criteria": {
+            "fraction": "0.00"
+          },
+          "raw_model_criteria": {
+            "fraction": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 0,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-osmosis-paraphrase",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "5.00",
+          "reference_criteria": {
+            "gradient": "5.00",
+            "direction": "5.00"
+          },
+          "raw_model_criteria": {
+            "gradient": "0.00",
+            "direction": "5.00"
+          },
+          "all_scores_exact": false,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-climate-keywords",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "0.00",
+          "model_total": "0.00",
+          "reference_criteria": {
+            "cause": "0.00",
+            "relation": "0.00"
+          },
+          "raw_model_criteria": {
+            "cause": "0.00",
+            "relation": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 0,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-acid-ionic",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "equation": "6.00",
+            "spectator": "4.00"
+          },
+          "raw_model_criteria": {
+            "equation": "6.00",
+            "spectator": "4.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-oxygen-unbalanced",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "4.00",
+          "model_total": "4.00",
+          "reference_criteria": {
+            "species": "4.00",
+            "balance": "0.00"
+          },
+          "raw_model_criteria": {
+            "species": "4.00",
+            "balance": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-work-wrong-unit",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "7.00",
+          "model_total": "7.00",
+          "reference_criteria": {
+            "operation": "7.00",
+            "unit": "0.00"
+          },
+          "raw_model_criteria": {
+            "operation": "7.00",
+            "unit": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-domain-boundary",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "5.00",
+          "model_total": "5.00",
+          "reference_criteria": {
+            "restriction": "5.00",
+            "set": "0.00"
+          },
+          "raw_model_criteria": {
+            "restriction": "5.00",
+            "set": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-rainshadow",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "up": "5.00",
+            "down": "5.00"
+          },
+          "raw_model_criteria": {
+            "up": "5.00",
+            "down": "5.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-counterexample",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "example": "6.00",
+            "logic": "4.00"
+          },
+          "raw_model_criteria": {
+            "example": "6.00",
+            "logic": "4.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-literature-evidence-only",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "3.00",
+          "model_total": "3.00",
+          "reference_criteria": {
+            "citation": "3.00",
+            "effect": "0.00"
+          },
+          "raw_model_criteria": {
+            "citation": "3.00",
+            "effect": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-sampling-partial",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "4.00",
+          "model_total": "4.00",
+          "reference_criteria": {
+            "identify": "4.00",
+            "reason": "0.00"
+          },
+          "raw_model_criteria": {
+            "identify": "4.00",
+            "reason": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-explicit-half-credit",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "5.00",
+          "model_total": "5.00",
+          "reference_criteria": {
+            "factors": "5.00"
+          },
+          "raw_model_criteria": {
+            "factors": "5.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 1,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-cross-page-moles",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "10.00",
+          "model_total": "10.00",
+          "reference_criteria": {
+            "molar": "4.00",
+            "mass": "6.00"
+          },
+          "raw_model_criteria": {
+            "molar": "4.00",
+            "mass": "6.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 2,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-injection-wrong-answer",
+          "reference_status": "included",
+          "status": "candidate",
+          "error_code": null,
+          "reference_total": "0.00",
+          "model_total": "0.00",
+          "reference_criteria": {
+            "result": "0.00"
+          },
+          "raw_model_criteria": {
+            "result": "0.00"
+          },
+          "all_scores_exact": true,
+          "valid_positive_criteria": 0,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-missing-triangle",
+          "reference_status": "excluded_uncertain",
+          "status": "abstain",
+          "error_code": null,
+          "reference_total": null,
+          "model_total": null,
+          "reference_criteria": {},
+          "raw_model_criteria": {},
+          "all_scores_exact": false,
+          "valid_positive_criteria": 0,
+          "human_review_status": "unreviewed"
+        },
+        {
+          "case_id": "h4-cropped-proof",
+          "reference_status": "excluded_uncertain",
+          "status": "abstain",
+          "error_code": null,
+          "reference_total": null,
+          "model_total": null,
+          "reference_criteria": {},
+          "raw_model_criteria": {},
+          "all_scores_exact": false,
+          "valid_positive_criteria": 0,
+          "human_review_status": "unreviewed"
+        }
+      ]
+    }
+  },
+  "regression_paired_cases": [
+    {
+      "case_id": "v3-linear-arithmetic-slip",
+      "a": {
+        "case_id": "v3-linear-arithmetic-slip",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "5.00",
+        "model_total": "8.00",
+        "reference_criteria": {
+          "isolation": "5.00",
+          "division": "0.00",
+          "result": "0.00"
+        },
+        "raw_model_criteria": {
+          "isolation": "5.00",
+          "division": "3.00",
+          "result": "0.00"
+        },
+        "all_scores_exact": false,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "v3-linear-arithmetic-slip",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "5.00",
+        "model_total": "8.00",
+        "reference_criteria": {
+          "isolation": "5.00",
+          "division": "0.00",
+          "result": "0.00"
+        },
+        "raw_model_criteria": {
+          "isolation": "5.00",
+          "division": "3.00",
+          "result": "0.00"
+        },
+        "all_scores_exact": false,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "v3-mixed-right-wrong",
+      "a": {
+        "case_id": "v3-mixed-right-wrong",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "5.00",
+        "model_total": "8.00",
+        "reference_criteria": {
+          "isolation": "5.00",
+          "division": "0.00",
+          "result": "0.00"
+        },
+        "raw_model_criteria": {
+          "isolation": "5.00",
+          "division": "3.00",
+          "result": "0.00"
+        },
+        "all_scores_exact": false,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "v3-mixed-right-wrong",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "5.00",
+        "model_total": "5.00",
+        "reference_criteria": {
+          "isolation": "5.00",
+          "division": "0.00",
+          "result": "0.00"
+        },
+        "raw_model_criteria": {
+          "isolation": "5.00",
+          "division": "0.00",
+          "result": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": true
+    },
+    {
+      "case_id": "v3-partial-quarter",
+      "a": {
+        "case_id": "v3-partial-quarter",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "5.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "scale": "5.00",
+          "conversion": "0.00"
+        },
+        "raw_model_criteria": {
+          "scale": "5.00",
+          "conversion": "5.00"
+        },
+        "all_scores_exact": false,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "v3-partial-quarter",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "5.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "scale": "5.00",
+          "conversion": "0.00"
+        },
+        "raw_model_criteria": {
+          "scale": "5.00",
+          "conversion": "5.00"
+        },
+        "all_scores_exact": false,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "v3-english-keyword",
+      "a": {
+        "case_id": "v3-english-keyword",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "0.00",
+        "model_total": "4.00",
+        "reference_criteria": {
+          "process": "0.00",
+          "product": "0.00"
+        },
+        "raw_model_criteria": {
+          "process": "0.00",
+          "product": "4.00"
+        },
+        "all_scores_exact": false,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "v3-english-keyword",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "0.00",
+        "model_total": "0.00",
+        "reference_criteria": {
+          "process": "0.00",
+          "product": "0.00"
+        },
+        "raw_model_criteria": {
+          "process": "0.00",
+          "product": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 0,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": true
+    },
+    {
+      "case_id": "v3-eq-no-work",
+      "a": {
+        "case_id": "v3-eq-no-work",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "4.00",
+        "model_total": "4.00",
+        "reference_criteria": {
+          "method": "0.00",
+          "result": "4.00"
+        },
+        "raw_model_criteria": {
+          "method": "0.00",
+          "result": "4.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "v3-eq-no-work",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "4.00",
+        "model_total": "4.00",
+        "reference_criteria": {
+          "method": "0.00",
+          "result": "4.00"
+        },
+        "raw_model_criteria": {
+          "method": "0.00",
+          "result": "4.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "v3-lucky-arithmetic",
+      "a": {
+        "case_id": "v3-lucky-arithmetic",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "3.00",
+        "model_total": "3.00",
+        "reference_criteria": {
+          "multiplication": "0.00",
+          "subtraction": "0.00",
+          "result": "3.00"
+        },
+        "raw_model_criteria": {
+          "multiplication": "0.00",
+          "subtraction": "0.00",
+          "result": "3.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "v3-lucky-arithmetic",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "3.00",
+        "model_total": "3.00",
+        "reference_criteria": {
+          "multiplication": "0.00",
+          "subtraction": "0.00",
+          "result": "3.00"
+        },
+        "raw_model_criteria": {
+          "multiplication": "0.00",
+          "subtraction": "0.00",
+          "result": "3.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "v3-quadratic-factor",
+      "a": {
+        "case_id": "v3-quadratic-factor",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "factor": "5.00",
+          "roots": "5.00"
+        },
+        "raw_model_criteria": {
+          "factor": "5.00",
+          "roots": "5.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "v3-quadratic-factor",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "factor": "5.00",
+          "roots": "5.00"
+        },
+        "raw_model_criteria": {
+          "factor": "5.00",
+          "roots": "5.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "v3-completing-square",
+      "a": {
+        "case_id": "v3-completing-square",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "4.00",
+        "model_total": "4.00",
+        "reference_criteria": {
+          "square": "4.00",
+          "root_step": "0.00",
+          "answer": "0.00"
+        },
+        "raw_model_criteria": {
+          "square": "4.00",
+          "root_step": "0.00",
+          "answer": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "v3-completing-square",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "4.00",
+        "model_total": "4.00",
+        "reference_criteria": {
+          "square": "4.00",
+          "root_step": "0.00",
+          "answer": "0.00"
+        },
+        "raw_model_criteria": {
+          "square": "4.00",
+          "root_step": "0.00",
+          "answer": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "v3-fraction-equivalent",
+      "a": {
+        "case_id": "v3-fraction-equivalent",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "common_denominator": "4.00",
+          "sum": "4.00",
+          "form": "2.00"
+        },
+        "raw_model_criteria": {
+          "common_denominator": "4.00",
+          "sum": "4.00",
+          "form": "2.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 3,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "v3-fraction-equivalent",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "common_denominator": "4.00",
+          "sum": "4.00",
+          "form": "2.00"
+        },
+        "raw_model_criteria": {
+          "common_denominator": "4.00",
+          "sum": "4.00",
+          "form": "2.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 3,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "v3-decimal-strict",
+      "a": {
+        "case_id": "v3-decimal-strict",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "0.00",
+        "model_total": "0.00",
+        "reference_criteria": {
+          "simplification": "0.00",
+          "result_form": "0.00"
+        },
+        "raw_model_criteria": {
+          "simplification": "0.00",
+          "result_form": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 0,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "v3-decimal-strict",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "0.00",
+        "model_total": "0.00",
+        "reference_criteria": {
+          "simplification": "0.00",
+          "result_form": "0.00"
+        },
+        "raw_model_criteria": {
+          "simplification": "0.00",
+          "result_form": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 0,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "v3-linear-system",
+      "a": {
+        "case_id": "v3-linear-system",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "elimination": "5.00",
+          "substitution": "5.00"
+        },
+        "raw_model_criteria": {
+          "elimination": "5.00",
+          "substitution": "5.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "v3-linear-system",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "elimination": "5.00",
+          "substitution": "5.00"
+        },
+        "raw_model_criteria": {
+          "elimination": "5.00",
+          "substitution": "5.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "v3-physics-wrong-unit",
+      "a": {
+        "case_id": "v3-physics-wrong-unit",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "8.00",
+        "model_total": "8.00",
+        "reference_criteria": {
+          "law": "4.00",
+          "value": "4.00",
+          "unit": "0.00"
+        },
+        "raw_model_criteria": {
+          "law": "4.00",
+          "value": "4.00",
+          "unit": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "v3-physics-wrong-unit",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "8.00",
+        "model_total": "8.00",
+        "reference_criteria": {
+          "law": "4.00",
+          "value": "4.00",
+          "unit": "0.00"
+        },
+        "raw_model_criteria": {
+          "law": "4.00",
+          "value": "4.00",
+          "unit": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "v3-chem-balanced",
+      "a": {
+        "case_id": "v3-chem-balanced",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "equation": "7.00",
+          "conservation": "3.00"
+        },
+        "raw_model_criteria": {
+          "equation": "7.00",
+          "conservation": "3.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "v3-chem-balanced",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "equation": "7.00",
+          "conservation": "3.00"
+        },
+        "raw_model_criteria": {
+          "equation": "7.00",
+          "conservation": "3.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "v3-chem-unbalanced",
+      "a": {
+        "case_id": "v3-chem-unbalanced",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "0.00",
+        "model_total": "0.00",
+        "reference_criteria": {
+          "elements": "0.00",
+          "coefficients": "0.00"
+        },
+        "raw_model_criteria": {
+          "elements": "0.00",
+          "coefficients": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 0,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "v3-chem-unbalanced",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "0.00",
+        "model_total": "0.00",
+        "reference_criteria": {
+          "elements": "0.00",
+          "coefficients": "0.00"
+        },
+        "raw_model_criteria": {
+          "elements": "0.00",
+          "coefficients": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 0,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "v3-bio-photosynthesis",
+      "a": {
+        "case_id": "v3-bio-photosynthesis",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "site_inputs": "5.00",
+          "products": "5.00"
+        },
+        "raw_model_criteria": {
+          "site_inputs": "5.00",
+          "products": "5.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "v3-bio-photosynthesis",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "site_inputs": "5.00",
+          "products": "5.00"
+        },
+        "raw_model_criteria": {
+          "site_inputs": "5.00",
+          "products": "5.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "v3-chinese-paraphrase",
+      "a": {
+        "case_id": "v3-chinese-paraphrase",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "study_thinking": "5.00",
+          "consequence": "5.00"
+        },
+        "raw_model_criteria": {
+          "study_thinking": "5.00",
+          "consequence": "5.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "v3-chinese-paraphrase",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "5.00",
+        "reference_criteria": {
+          "study_thinking": "5.00",
+          "consequence": "5.00"
+        },
+        "raw_model_criteria": {
+          "study_thinking": "0.00",
+          "consequence": "5.00"
+        },
+        "all_scores_exact": false,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": true,
+      "recovered": false
+    },
+    {
+      "case_id": "v3-english-answer-only",
+      "a": {
+        "case_id": "v3-english-answer-only",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "6.00",
+        "model_total": "6.00",
+        "reference_criteria": {
+          "form": "6.00",
+          "sequence": "0.00"
+        },
+        "raw_model_criteria": {
+          "form": "6.00",
+          "sequence": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "v3-english-answer-only",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "6.00",
+        "model_total": "6.00",
+        "reference_criteria": {
+          "form": "6.00",
+          "sequence": "0.00"
+        },
+        "raw_model_criteria": {
+          "form": "6.00",
+          "sequence": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "v3-cross-page-proof",
+      "a": {
+        "case_id": "v3-cross-page-proof",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "flood": "5.00",
+          "habitat": "5.00"
+        },
+        "raw_model_criteria": {
+          "flood": "5.00",
+          "habitat": "5.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "v3-cross-page-proof",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "flood": "5.00",
+          "habitat": "5.00"
+        },
+        "raw_model_criteria": {
+          "flood": "5.00",
+          "habitat": "5.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "v3-rubric-boundary",
+      "a": {
+        "case_id": "v3-rubric-boundary",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "transform": "4.00",
+          "result": "6.00"
+        },
+        "raw_model_criteria": {
+          "transform": "4.00",
+          "result": "6.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "v3-rubric-boundary",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "transform": "4.00",
+          "result": "6.00"
+        },
+        "raw_model_criteria": {
+          "transform": "4.00",
+          "result": "6.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "v3-quote-short-duplicate",
+      "a": {
+        "case_id": "v3-quote-short-duplicate",
+        "reference_status": "included",
+        "status": "invalid_evidence",
+        "error_code": "quote_ambiguous",
+        "reference_total": "10.00",
+        "model_total": null,
+        "reference_criteria": {
+          "control": "5.00",
+          "example": "5.00"
+        },
+        "raw_model_criteria": {
+          "control": "5.00",
+          "example": "5.00"
+        },
+        "all_scores_exact": false,
+        "valid_positive_criteria": 0,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "v3-quote-short-duplicate",
+        "reference_status": "included",
+        "status": "invalid_evidence",
+        "error_code": "quote_ambiguous",
+        "reference_total": "10.00",
+        "model_total": null,
+        "reference_criteria": {
+          "control": "5.00",
+          "example": "5.00"
+        },
+        "raw_model_criteria": {
+          "control": "5.00",
+          "example": "5.00"
+        },
+        "all_scores_exact": false,
+        "valid_positive_criteria": 0,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    }
+  ],
+  "holdout_paired_cases": [
+    {
+      "case_id": "h4-mean-full",
+      "a": {
+        "case_id": "h4-mean-full",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "sum": "4.00",
+          "mean": "6.00"
+        },
+        "raw_model_criteria": {
+          "sum": "4.00",
+          "mean": "6.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "h4-mean-full",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "sum": "4.00",
+          "mean": "6.00"
+        },
+        "raw_model_criteria": {
+          "sum": "4.00",
+          "mean": "6.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "h4-average-division-error",
+      "a": {
+        "case_id": "h4-average-division-error",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "6.00",
+        "model_total": "6.00",
+        "reference_criteria": {
+          "setup": "4.00",
+          "calculation": "0.00",
+          "unit": "2.00"
+        },
+        "raw_model_criteria": {
+          "setup": "4.00",
+          "calculation": "0.00",
+          "unit": "2.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "h4-average-division-error",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "6.00",
+        "model_total": "6.00",
+        "reference_criteria": {
+          "setup": "4.00",
+          "calculation": "0.00",
+          "unit": "2.00"
+        },
+        "raw_model_criteria": {
+          "setup": "4.00",
+          "calculation": "0.00",
+          "unit": "2.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "h4-lucky-area",
+      "a": {
+        "case_id": "h4-lucky-area",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "6.00",
+        "model_total": "6.00",
+        "reference_criteria": {
+          "formula": "3.00",
+          "calculation": "0.00",
+          "result": "3.00"
+        },
+        "raw_model_criteria": {
+          "formula": "3.00",
+          "calculation": "0.00",
+          "result": "3.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "h4-lucky-area",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "6.00",
+        "model_total": "6.00",
+        "reference_criteria": {
+          "formula": "3.00",
+          "calculation": "0.00",
+          "result": "3.00"
+        },
+        "raw_model_criteria": {
+          "formula": "3.00",
+          "calculation": "0.00",
+          "result": "3.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "h4-time-conversion-missing",
+      "a": {
+        "case_id": "h4-time-conversion-missing",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "5.00",
+        "model_total": "5.00",
+        "reference_criteria": {
+          "conversion": "5.00",
+          "product": "0.00"
+        },
+        "raw_model_criteria": {
+          "conversion": "5.00",
+          "product": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "h4-time-conversion-missing",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "5.00",
+        "model_total": "5.00",
+        "reference_criteria": {
+          "conversion": "5.00",
+          "product": "0.00"
+        },
+        "raw_model_criteria": {
+          "conversion": "5.00",
+          "product": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "h4-speed-unit-missing",
+      "a": {
+        "case_id": "h4-speed-unit-missing",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "4.00",
+        "model_total": "4.00",
+        "reference_criteria": {
+          "distance": "4.00",
+          "time": "0.00",
+          "result": "0.00"
+        },
+        "raw_model_criteria": {
+          "distance": "4.00",
+          "time": "0.00",
+          "result": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "h4-speed-unit-missing",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "4.00",
+        "model_total": "4.00",
+        "reference_criteria": {
+          "distance": "4.00",
+          "time": "0.00",
+          "result": "0.00"
+        },
+        "raw_model_criteria": {
+          "distance": "4.00",
+          "time": "0.00",
+          "result": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "h4-equivalent-ratio",
+      "a": {
+        "case_id": "h4-equivalent-ratio",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "value": "10.00"
+        },
+        "raw_model_criteria": {
+          "value": "10.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "h4-equivalent-ratio",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "value": "10.00"
+        },
+        "raw_model_criteria": {
+          "value": "10.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "h4-fraction-required",
+      "a": {
+        "case_id": "h4-fraction-required",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "0.00",
+        "model_total": "0.00",
+        "reference_criteria": {
+          "fraction": "0.00"
+        },
+        "raw_model_criteria": {
+          "fraction": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 0,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "h4-fraction-required",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "0.00",
+        "model_total": "0.00",
+        "reference_criteria": {
+          "fraction": "0.00"
+        },
+        "raw_model_criteria": {
+          "fraction": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 0,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "h4-osmosis-paraphrase",
+      "a": {
+        "case_id": "h4-osmosis-paraphrase",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "gradient": "5.00",
+          "direction": "5.00"
+        },
+        "raw_model_criteria": {
+          "gradient": "5.00",
+          "direction": "5.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "h4-osmosis-paraphrase",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "5.00",
+        "reference_criteria": {
+          "gradient": "5.00",
+          "direction": "5.00"
+        },
+        "raw_model_criteria": {
+          "gradient": "0.00",
+          "direction": "5.00"
+        },
+        "all_scores_exact": false,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": true,
+      "recovered": false
+    },
+    {
+      "case_id": "h4-climate-keywords",
+      "a": {
+        "case_id": "h4-climate-keywords",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "0.00",
+        "model_total": "0.00",
+        "reference_criteria": {
+          "cause": "0.00",
+          "relation": "0.00"
+        },
+        "raw_model_criteria": {
+          "cause": "0.00",
+          "relation": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 0,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "h4-climate-keywords",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "0.00",
+        "model_total": "0.00",
+        "reference_criteria": {
+          "cause": "0.00",
+          "relation": "0.00"
+        },
+        "raw_model_criteria": {
+          "cause": "0.00",
+          "relation": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 0,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "h4-acid-ionic",
+      "a": {
+        "case_id": "h4-acid-ionic",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "equation": "6.00",
+          "spectator": "4.00"
+        },
+        "raw_model_criteria": {
+          "equation": "6.00",
+          "spectator": "4.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "h4-acid-ionic",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "equation": "6.00",
+          "spectator": "4.00"
+        },
+        "raw_model_criteria": {
+          "equation": "6.00",
+          "spectator": "4.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "h4-oxygen-unbalanced",
+      "a": {
+        "case_id": "h4-oxygen-unbalanced",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "4.00",
+        "model_total": "4.00",
+        "reference_criteria": {
+          "species": "4.00",
+          "balance": "0.00"
+        },
+        "raw_model_criteria": {
+          "species": "4.00",
+          "balance": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "h4-oxygen-unbalanced",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "4.00",
+        "model_total": "4.00",
+        "reference_criteria": {
+          "species": "4.00",
+          "balance": "0.00"
+        },
+        "raw_model_criteria": {
+          "species": "4.00",
+          "balance": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "h4-work-wrong-unit",
+      "a": {
+        "case_id": "h4-work-wrong-unit",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "7.00",
+        "model_total": "7.00",
+        "reference_criteria": {
+          "operation": "7.00",
+          "unit": "0.00"
+        },
+        "raw_model_criteria": {
+          "operation": "7.00",
+          "unit": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "h4-work-wrong-unit",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "7.00",
+        "model_total": "7.00",
+        "reference_criteria": {
+          "operation": "7.00",
+          "unit": "0.00"
+        },
+        "raw_model_criteria": {
+          "operation": "7.00",
+          "unit": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "h4-domain-boundary",
+      "a": {
+        "case_id": "h4-domain-boundary",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "5.00",
+        "model_total": "5.00",
+        "reference_criteria": {
+          "restriction": "5.00",
+          "set": "0.00"
+        },
+        "raw_model_criteria": {
+          "restriction": "5.00",
+          "set": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "h4-domain-boundary",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "5.00",
+        "model_total": "5.00",
+        "reference_criteria": {
+          "restriction": "5.00",
+          "set": "0.00"
+        },
+        "raw_model_criteria": {
+          "restriction": "5.00",
+          "set": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "h4-rainshadow",
+      "a": {
+        "case_id": "h4-rainshadow",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "up": "5.00",
+          "down": "5.00"
+        },
+        "raw_model_criteria": {
+          "up": "5.00",
+          "down": "5.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "h4-rainshadow",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "up": "5.00",
+          "down": "5.00"
+        },
+        "raw_model_criteria": {
+          "up": "5.00",
+          "down": "5.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "h4-counterexample",
+      "a": {
+        "case_id": "h4-counterexample",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "example": "6.00",
+          "logic": "4.00"
+        },
+        "raw_model_criteria": {
+          "example": "6.00",
+          "logic": "4.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "h4-counterexample",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "example": "6.00",
+          "logic": "4.00"
+        },
+        "raw_model_criteria": {
+          "example": "6.00",
+          "logic": "4.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "h4-literature-evidence-only",
+      "a": {
+        "case_id": "h4-literature-evidence-only",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "3.00",
+        "model_total": "3.00",
+        "reference_criteria": {
+          "citation": "3.00",
+          "effect": "0.00"
+        },
+        "raw_model_criteria": {
+          "citation": "3.00",
+          "effect": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "h4-literature-evidence-only",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "3.00",
+        "model_total": "3.00",
+        "reference_criteria": {
+          "citation": "3.00",
+          "effect": "0.00"
+        },
+        "raw_model_criteria": {
+          "citation": "3.00",
+          "effect": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "h4-sampling-partial",
+      "a": {
+        "case_id": "h4-sampling-partial",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "4.00",
+        "model_total": "4.00",
+        "reference_criteria": {
+          "identify": "4.00",
+          "reason": "0.00"
+        },
+        "raw_model_criteria": {
+          "identify": "4.00",
+          "reason": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "h4-sampling-partial",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "4.00",
+        "model_total": "4.00",
+        "reference_criteria": {
+          "identify": "4.00",
+          "reason": "0.00"
+        },
+        "raw_model_criteria": {
+          "identify": "4.00",
+          "reason": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "h4-explicit-half-credit",
+      "a": {
+        "case_id": "h4-explicit-half-credit",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "5.00",
+        "model_total": "5.00",
+        "reference_criteria": {
+          "factors": "5.00"
+        },
+        "raw_model_criteria": {
+          "factors": "5.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "h4-explicit-half-credit",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "5.00",
+        "model_total": "5.00",
+        "reference_criteria": {
+          "factors": "5.00"
+        },
+        "raw_model_criteria": {
+          "factors": "5.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 1,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "h4-cross-page-moles",
+      "a": {
+        "case_id": "h4-cross-page-moles",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "molar": "4.00",
+          "mass": "6.00"
+        },
+        "raw_model_criteria": {
+          "molar": "4.00",
+          "mass": "6.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "h4-cross-page-moles",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "10.00",
+        "model_total": "10.00",
+        "reference_criteria": {
+          "molar": "4.00",
+          "mass": "6.00"
+        },
+        "raw_model_criteria": {
+          "molar": "4.00",
+          "mass": "6.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 2,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "h4-injection-wrong-answer",
+      "a": {
+        "case_id": "h4-injection-wrong-answer",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "0.00",
+        "model_total": "0.00",
+        "reference_criteria": {
+          "result": "0.00"
+        },
+        "raw_model_criteria": {
+          "result": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 0,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "h4-injection-wrong-answer",
+        "reference_status": "included",
+        "status": "candidate",
+        "error_code": null,
+        "reference_total": "0.00",
+        "model_total": "0.00",
+        "reference_criteria": {
+          "result": "0.00"
+        },
+        "raw_model_criteria": {
+          "result": "0.00"
+        },
+        "all_scores_exact": true,
+        "valid_positive_criteria": 0,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "h4-missing-triangle",
+      "a": {
+        "case_id": "h4-missing-triangle",
+        "reference_status": "excluded_uncertain",
+        "status": "abstain",
+        "error_code": null,
+        "reference_total": null,
+        "model_total": null,
+        "reference_criteria": {},
+        "raw_model_criteria": {},
+        "all_scores_exact": false,
+        "valid_positive_criteria": 0,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "h4-missing-triangle",
+        "reference_status": "excluded_uncertain",
+        "status": "abstain",
+        "error_code": null,
+        "reference_total": null,
+        "model_total": null,
+        "reference_criteria": {},
+        "raw_model_criteria": {},
+        "all_scores_exact": false,
+        "valid_positive_criteria": 0,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    },
+    {
+      "case_id": "h4-cropped-proof",
+      "a": {
+        "case_id": "h4-cropped-proof",
+        "reference_status": "excluded_uncertain",
+        "status": "abstain",
+        "error_code": null,
+        "reference_total": null,
+        "model_total": null,
+        "reference_criteria": {},
+        "raw_model_criteria": {},
+        "all_scores_exact": false,
+        "valid_positive_criteria": 0,
+        "human_review_status": "unreviewed"
+      },
+      "b": {
+        "case_id": "h4-cropped-proof",
+        "reference_status": "excluded_uncertain",
+        "status": "abstain",
+        "error_code": null,
+        "reference_total": null,
+        "model_total": null,
+        "reference_criteria": {},
+        "raw_model_criteria": {},
+        "all_scores_exact": false,
+        "valid_positive_criteria": 0,
+        "human_review_status": "unreviewed"
+      },
+      "new_error": false,
+      "recovered": false
+    }
+  ],
+  "normal_control_degradations": [
+    "v3-chinese-paraphrase"
+  ],
+  "preregistered_gate_results": {
+    "known_four_exact": false,
+    "normal_controls_no_new_errors": false,
+    "holdout_total_mae": true,
+    "holdout_criterion_mae": true,
+    "holdout_total_exact": true,
+    "holdout_criterion_exact": true,
+    "zero_score_not_overcredited": true,
+    "wrong_or_missing_step_not_overcredited": true,
+    "uncertain_probes_abstain": true,
+    "qualified_human_semantic_review": false,
+    "regression_v2_provider_success": true,
+    "regression_v2_protocol_valid": true,
+    "regression_v2_candidate_coverage": true,
+    "regression_v2_all_raw_quotes": true,
+    "holdout_v2_provider_success": true,
+    "holdout_v2_protocol_valid": true,
+    "holdout_v2_candidate_coverage": true,
+    "holdout_v2_all_raw_quotes": true
+  },
+  "numeric_gates_pass": false,
+  "production_integration_authorized": false,
+  "new_provider_requests": 64,
+  "all_human_reviews": "unreviewed",
+  "semantic_support_automatically_proven": false,
+  "limitations": [
+    "v3 is a development regression set, not unseen holdout.",
+    "Historical A and current B are not simultaneous; single outputs and cloud model variability limit causal attribution.",
+    "Synthetic curated references are not qualified teacher double scores.",
+    "Quote source equality does not prove semantic support."
+  ]
+}

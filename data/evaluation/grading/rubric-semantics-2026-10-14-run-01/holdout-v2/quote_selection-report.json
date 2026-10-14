@@ -1,0 +1,1185 @@
+{
+  "cost_estimate": {
+    "budget_usd": "0.50",
+    "definition": "UTF-8输入字节和协议开销作为保守上界；未缓存输入价与含思考输出价估算，不是账单或账户硬限额。按Provider用量估算，非最终账单。",
+    "input_token_budget_bound": 130877,
+    "input_usd_per_million": "0.30",
+    "output_token_cap": 90112,
+    "output_usd_per_million": "1.20",
+    "preflight_estimate_usd": "0.1473975",
+    "reported_completion_tokens": 4868,
+    "reported_prompt_tokens": 29011,
+    "reported_token_estimate_usd": "0.0145449",
+    "request_cap": 22,
+    "usage_complete": true
+  },
+  "counts": {
+    "abstention_cases": 0,
+    "dataset_cases": 22,
+    "excluded_uncertain_reference_cases": 2,
+    "included_reference_cases": 20,
+    "not_requested_cases": 0,
+    "prediction_status_counts": {
+      "candidate": 20
+    },
+    "protocol_valid_replies": 20,
+    "provider_requests_sent": 20,
+    "requested_cases": 20,
+    "valid_candidate_cases": 20
+  },
+  "coverage": {
+    "abstention_over_requested": "0.0000",
+    "candidate_over_included_dataset": "1.0000",
+    "candidate_over_requested": "1.0000",
+    "invalid_evidence_over_requested": "0.0000",
+    "invalid_rubric_scores_over_requested": "0.0000",
+    "protocol_error_over_requested": "0.0000",
+    "protocol_valid_over_requested": "1.0000",
+    "provider_failure_over_requested": "0.0000"
+  },
+  "criterion_score": {
+    "absolute_error_sum": "5.00",
+    "by_case_criterion": {
+      "h4-acid-ionic/equation": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-acid-ionic/spectator": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-average-division-error/calculation": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-average-division-error/setup": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-average-division-error/unit": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-climate-keywords/cause": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-climate-keywords/relation": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-counterexample/example": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-counterexample/logic": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-cross-page-moles/mass": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-cross-page-moles/molar": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-domain-boundary/restriction": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-domain-boundary/set": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-equivalent-ratio/value": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-explicit-half-credit/factors": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-fraction-required/fraction": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-injection-wrong-answer/result": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-literature-evidence-only/citation": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-literature-evidence-only/effect": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-lucky-area/calculation": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-lucky-area/formula": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-lucky-area/result": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-mean-full/mean": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-mean-full/sum": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-osmosis-paraphrase/direction": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-osmosis-paraphrase/gradient": {
+        "absolute_error_sum": "5.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 0
+        },
+        "mae": "5.0000",
+        "over_count": 0,
+        "under_count": 1
+      },
+      "h4-oxygen-unbalanced/balance": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-oxygen-unbalanced/species": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-rainshadow/down": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-rainshadow/up": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-sampling-partial/identify": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-sampling-partial/reason": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-speed-unit-missing/distance": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-speed-unit-missing/result": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-speed-unit-missing/time": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-time-conversion-missing/conversion": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-time-conversion-missing/product": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-work-wrong-unit/operation": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "h4-work-wrong-unit/unit": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      }
+    },
+    "exact": {
+      "denominator": 39,
+      "numerator": 38
+    },
+    "mae": "0.1282",
+    "mae_denominator": 39,
+    "offsetting_error_case_ids": [],
+    "offsetting_error_cases": 0,
+    "over_count": 0,
+    "sample_count": 39,
+    "under_count": 1
+  },
+  "dataset_sha256": "3fbfbf97d8fb2495b9dd5ebb02f17809877a50a86553accfad17b3e595753c9d",
+  "dataset_version": "4.0",
+  "evaluation_stages": {
+    "candidate_total_score_comparison": {
+      "denominator": 20,
+      "exact_numerator": 19,
+      "mae": "0.2500",
+      "semantic_accuracy_claim": false
+    },
+    "final_usable_candidate": {
+      "denominator": 20,
+      "numerator": 20
+    },
+    "json_parseable": {
+      "denominator": 20,
+      "numerator": 20
+    },
+    "provider_response_received": {
+      "denominator": 20,
+      "numerator": 20
+    },
+    "quote_selection_reply_valid": {
+      "definition": "独立GradeQuoteSelectionReply协议有效，尚不代表定位、分值或语义有效。",
+      "denominator": 20,
+      "numerator": 20
+    },
+    "rationale_semantic_adequacy": {
+      "automated_result": "not_evaluated",
+      "human_review_required": true
+    },
+    "rubric_score_constraints_valid": {
+      "definition": "只诊断Criterion集合、分值范围和总分算术；不替代P3-B接受校验。",
+      "denominator": 20,
+      "numerator": 20
+    },
+    "source_quote_validation": {
+      "candidate_outcome_cases": 20,
+      "definition": "指定segment唯一精确定位后再次校验；正分仍须有效quote。",
+      "quote_references_checked": 32,
+      "valid_candidate_outcome_cases": 20,
+      "valid_quote_references": 32
+    }
+  },
+  "evidence": {
+    "invalid_quote_references": 0,
+    "positive_criterion_scores": 24,
+    "positive_scores_with_valid_quote": 24,
+    "positive_scores_without_quote": 0,
+    "quote_references_checked": 32,
+    "reference_quote_overlap_characters": {
+      "gold": 201,
+      "intersection": 201,
+      "iou": "0.6814",
+      "precision": "0.6814",
+      "predicted": 295,
+      "recall": "1.0000"
+    },
+    "semantic_support": "requires_human_review",
+    "valid_quote_references": 32
+  },
+  "experiment_mode": "quote_selection",
+  "failure_cases": [
+    {
+      "case_id": "h4-osmosis-paraphrase",
+      "case_kind": "chinese_synonym",
+      "completion_tokens": 247,
+      "criterion_errors": [
+        {
+          "criterion_key": "gradient",
+          "delta": "-5.00",
+          "predicted": "0.00",
+          "reference": "5.00"
+        }
+      ],
+      "difficulty": "hard",
+      "elapsed_ms": 1525,
+      "failure_categories": [
+        "total_score_error",
+        "total_under_scored",
+        "criterion_score_error"
+      ],
+      "included_in_metrics": true,
+      "predicted_total_score": "5.00",
+      "prompt_tokens": 1334,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "5.00",
+      "within_tolerance": false
+    }
+  ],
+  "generation_options": {
+    "max_input_bytes": 32768,
+    "max_input_tokens": 49152,
+    "max_output_tokens": 4096,
+    "max_quote_characters": 400,
+    "max_rationale_characters": 1600,
+    "temperature": 0
+  },
+  "per_case": [
+    {
+      "case_id": "h4-mean-full",
+      "case_kind": "correct",
+      "completion_tokens": 212,
+      "criterion_errors": [],
+      "difficulty": "hard",
+      "elapsed_ms": 1297,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 1315,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "h4-average-division-error",
+      "case_kind": "arithmetic_credit",
+      "completion_tokens": 293,
+      "criterion_errors": [],
+      "difficulty": "hard",
+      "elapsed_ms": 1552,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "6.00",
+      "prompt_tokens": 1384,
+      "reference_total_score": "6.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "h4-lucky-area",
+      "case_kind": "independent_result",
+      "completion_tokens": 296,
+      "criterion_errors": [],
+      "difficulty": "hard",
+      "elapsed_ms": 1758,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "6.00",
+      "prompt_tokens": 1365,
+      "reference_total_score": "6.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "h4-time-conversion-missing",
+      "case_kind": "conversion_credit",
+      "completion_tokens": 220,
+      "criterion_errors": [],
+      "difficulty": "hard",
+      "elapsed_ms": 1432,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "5.00",
+      "prompt_tokens": 1329,
+      "reference_total_score": "5.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "h4-speed-unit-missing",
+      "case_kind": "unit_conversion",
+      "completion_tokens": 331,
+      "criterion_errors": [],
+      "difficulty": "hard",
+      "elapsed_ms": 1993,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "4.00",
+      "prompt_tokens": 1376,
+      "reference_total_score": "4.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "h4-equivalent-ratio",
+      "case_kind": "equivalent",
+      "completion_tokens": 144,
+      "criterion_errors": [],
+      "difficulty": "hard",
+      "elapsed_ms": 1494,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 1287,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "h4-fraction-required",
+      "case_kind": "zero_wrong_form",
+      "completion_tokens": 169,
+      "criterion_errors": [],
+      "difficulty": "hard",
+      "elapsed_ms": 1311,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "0.00",
+      "prompt_tokens": 1262,
+      "reference_total_score": "0.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "h4-osmosis-paraphrase",
+      "case_kind": "chinese_synonym",
+      "completion_tokens": 247,
+      "criterion_errors": [
+        {
+          "criterion_key": "gradient",
+          "delta": "-5.00",
+          "predicted": "0.00",
+          "reference": "5.00"
+        }
+      ],
+      "difficulty": "hard",
+      "elapsed_ms": 1525,
+      "failure_categories": [
+        "total_score_error",
+        "total_under_scored",
+        "criterion_score_error"
+      ],
+      "included_in_metrics": true,
+      "predicted_total_score": "5.00",
+      "prompt_tokens": 1334,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "5.00",
+      "within_tolerance": false
+    },
+    {
+      "case_id": "h4-climate-keywords",
+      "case_kind": "keyword_relation",
+      "completion_tokens": 257,
+      "criterion_errors": [],
+      "difficulty": "hard",
+      "elapsed_ms": 1761,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "0.00",
+      "prompt_tokens": 1325,
+      "reference_total_score": "0.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "h4-acid-ionic",
+      "case_kind": "chemistry_complete",
+      "completion_tokens": 274,
+      "criterion_errors": [],
+      "difficulty": "hard",
+      "elapsed_ms": 1585,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 1356,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "h4-oxygen-unbalanced",
+      "case_kind": "chemistry_partial",
+      "completion_tokens": 243,
+      "criterion_errors": [],
+      "difficulty": "hard",
+      "elapsed_ms": 1692,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "4.00",
+      "prompt_tokens": 1335,
+      "reference_total_score": "4.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "h4-work-wrong-unit",
+      "case_kind": "physics_partial",
+      "completion_tokens": 231,
+      "criterion_errors": [],
+      "difficulty": "hard",
+      "elapsed_ms": 1823,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "7.00",
+      "prompt_tokens": 1319,
+      "reference_total_score": "7.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "h4-domain-boundary",
+      "case_kind": "boundary_partial",
+      "completion_tokens": 219,
+      "criterion_errors": [],
+      "difficulty": "hard",
+      "elapsed_ms": 1618,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "5.00",
+      "prompt_tokens": 1322,
+      "reference_total_score": "5.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "h4-rainshadow",
+      "case_kind": "geography_synonym",
+      "completion_tokens": 256,
+      "criterion_errors": [],
+      "difficulty": "hard",
+      "elapsed_ms": 1485,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 1344,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "h4-counterexample",
+      "case_kind": "proof",
+      "completion_tokens": 239,
+      "criterion_errors": [],
+      "difficulty": "hard",
+      "elapsed_ms": 1620,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 1322,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "h4-literature-evidence-only",
+      "case_kind": "missing_explanation",
+      "completion_tokens": 243,
+      "criterion_errors": [],
+      "difficulty": "hard",
+      "elapsed_ms": 1563,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "3.00",
+      "prompt_tokens": 1327,
+      "reference_total_score": "3.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "h4-sampling-partial",
+      "case_kind": "partial_explanation",
+      "completion_tokens": 231,
+      "criterion_errors": [],
+      "difficulty": "hard",
+      "elapsed_ms": 1540,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "4.00",
+      "prompt_tokens": 1317,
+      "reference_total_score": "4.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "h4-explicit-half-credit",
+      "case_kind": "explicit_partial",
+      "completion_tokens": 178,
+      "criterion_errors": [],
+      "difficulty": "hard",
+      "elapsed_ms": 1737,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "5.00",
+      "prompt_tokens": 1279,
+      "reference_total_score": "5.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "h4-cross-page-moles",
+      "case_kind": "cross_page",
+      "completion_tokens": 229,
+      "criterion_errors": [],
+      "difficulty": "hard",
+      "elapsed_ms": 1487,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 1341,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "h4-injection-wrong-answer",
+      "case_kind": "prompt_injection",
+      "completion_tokens": 132,
+      "criterion_errors": [],
+      "difficulty": "hard",
+      "elapsed_ms": 1273,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "0.00",
+      "prompt_tokens": 1262,
+      "reference_total_score": "0.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "h4-missing-triangle",
+      "case_kind": "source_uncertain",
+      "included_in_metrics": false,
+      "reason": "关键图形不存在，不能判断学生是否正确，应弃权。",
+      "status": "excluded_uncertain"
+    },
+    {
+      "case_id": "h4-cropped-proof",
+      "case_kind": "source_uncertain",
+      "included_in_metrics": false,
+      "reason": "上页定义被裁切，证明不可核验，应弃权。",
+      "status": "excluded_uncertain"
+    }
+  ],
+  "prediction_model": {
+    "configured_reasoning_effort": "max",
+    "generation_config_digest": "8193583eec6fb7c8df492b9d7d529c56f24fdc4e04de12325ee514aff7a19040",
+    "invalid_response_retries": 0,
+    "max_output_tokens": 4096,
+    "model_id": "deepseek-flash",
+    "prompt_version": "rubric-quote-selection-v2",
+    "provider": "openai_compatible",
+    "reasoning_effort": null,
+    "thinking_mode": "disabled",
+    "timeout_seconds": 120.0
+  },
+  "protocol_failure_diagnostics": {
+    "cases": [],
+    "raw_quotes_included": false
+  },
+  "provider_call_metadata": [
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 640,
+      "cache_miss_tokens": 675,
+      "case_id": "h4-mean-full",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 640,
+      "cache_miss_tokens": 744,
+      "case_id": "h4-average-division-error",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 640,
+      "cache_miss_tokens": 725,
+      "case_id": "h4-lucky-area",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 640,
+      "cache_miss_tokens": 689,
+      "case_id": "h4-time-conversion-missing",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 640,
+      "cache_miss_tokens": 736,
+      "case_id": "h4-speed-unit-missing",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 640,
+      "cache_miss_tokens": 647,
+      "case_id": "h4-equivalent-ratio",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 640,
+      "cache_miss_tokens": 622,
+      "case_id": "h4-fraction-required",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 640,
+      "cache_miss_tokens": 694,
+      "case_id": "h4-osmosis-paraphrase",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 640,
+      "cache_miss_tokens": 685,
+      "case_id": "h4-climate-keywords",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 640,
+      "cache_miss_tokens": 716,
+      "case_id": "h4-acid-ionic",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 640,
+      "cache_miss_tokens": 695,
+      "case_id": "h4-oxygen-unbalanced",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 640,
+      "cache_miss_tokens": 679,
+      "case_id": "h4-work-wrong-unit",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 640,
+      "cache_miss_tokens": 682,
+      "case_id": "h4-domain-boundary",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 640,
+      "cache_miss_tokens": 704,
+      "case_id": "h4-rainshadow",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 640,
+      "cache_miss_tokens": 682,
+      "case_id": "h4-counterexample",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 640,
+      "cache_miss_tokens": 687,
+      "case_id": "h4-literature-evidence-only",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 640,
+      "cache_miss_tokens": 677,
+      "case_id": "h4-sampling-partial",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 640,
+      "cache_miss_tokens": 639,
+      "case_id": "h4-explicit-half-credit",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 640,
+      "cache_miss_tokens": 701,
+      "case_id": "h4-cross-page-moles",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 640,
+      "cache_miss_tokens": 622,
+      "case_id": "h4-injection-wrong-answer",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    }
+  ],
+  "quote_location": {
+    "candidate_gate_failures": [],
+    "candidate_outcome_cases": 20,
+    "location_failure_case_counts": {},
+    "location_failure_occurrences": {},
+    "location_failures": [],
+    "protocol_failure_cases": [],
+    "protocol_valid_cases": 20,
+    "provider_failure_cases": [],
+    "quote_valid_cases": 20,
+    "rubric_valid_cases": 20,
+    "selection_references": 32,
+    "unique_exact_located_references": 32
+  },
+  "reference_source": "synthetic_curated_reference",
+  "runtime_usage": {
+    "completion_token_count": 20,
+    "completion_tokens_total": 4644,
+    "elapsed_ms_count": 20,
+    "elapsed_ms_mean": 1577.3,
+    "elapsed_ms_p50": 1552,
+    "elapsed_ms_p95": 1823,
+    "elapsed_ms_total": 31546,
+    "percentile_definition": "nearest_rank; actual provider attempts including failures",
+    "prompt_token_count": 20,
+    "prompt_tokens_total": 26501
+  },
+  "score_tolerance": "0.50",
+  "semantic_score_risk_review": {
+    "case_count": 1,
+    "cases": [
+      {
+        "case_id": "h4-osmosis-paraphrase",
+        "criterion_score_differences": [
+          {
+            "criterion_key": "gradient",
+            "reference_points": "5.00",
+            "unvalidated_response_points": "0.00"
+          }
+        ],
+        "human_semantic_review_required": true,
+        "included_in_candidate_score_metrics": true,
+        "reference_total_score": "10.00",
+        "stored_status": "candidate",
+        "unvalidated_response_total_score": "5.00"
+      }
+    ],
+    "interpretation": "这些是未经完整P3-B验证的原始候选输出与合成参考标签的数值差异，不是自动判定的教学错误。",
+    "rationales_and_quotes_included": false
+  },
+  "source_quote_failure_diagnostics": {
+    "candidate_gate_failures": [],
+    "cases": [],
+    "interpretation": "定位失败不修补；每个错误引用都使完整候选失败。"
+  },
+  "total_score": {
+    "absolute_error_sum": "5.00",
+    "exact": {
+      "denominator": 20,
+      "numerator": 19
+    },
+    "mae": "0.2500",
+    "mae_denominator": 20,
+    "over_count": 0,
+    "sample_count": 20,
+    "under_count": 1,
+    "within_tolerance": {
+      "denominator": 20,
+      "numerator": 19
+    }
+  },
+  "zero_reference_positive_score_risks": {
+    "cases": [],
+    "definition": "合成参考总分为0却有正分数值意图；协议失败也保留风险。",
+    "raw_intent_case_count": 0,
+    "usable_candidate_case_count": 0
+  }
+}

@@ -238,3 +238,44 @@ def test_unknown_prompt_and_changed_config_digest_are_rejected():
         evaluate_experiment(
             ds, digest, pred.model_copy(update={"experiment_config_digest": "a" * 64})
         )
+    with pytest.raises(ValueError, match="config_digest"):
+        evaluate_experiment(ds, digest, pred.model_copy(update={"experiment_config_digest": None}))
+
+
+def test_thinking_config_changes_provider_and_experiment_fingerprints_without_calls():
+    from huipi_cloud.infrastructure.grading.provider import build_text_grading_provider
+
+    ds, digest = load_dataset(DATA / "rubric-cases-v4-semantics.json")
+    base = Settings(
+        _env_file=None,
+        grading_enabled=True,
+        grading_provider="openai_compatible",
+        grading_base_url="https://api.deepseek.com",
+        grading_model="deepseek-flash",
+        grading_api_key="synthetic-test-only",
+        grading_allow_remote=True,
+        grading_external_data_authorized=True,
+        grading_deepseek_thinking="disabled",
+        grading_deepseek_reasoning_effort="max",
+    )
+    configs = [base, base.model_copy(update={"grading_deepseek_thinking": "enabled"})]
+    documents = [
+        create_experiment_predictions(
+            ds,
+            digest,
+            "quote_selection",
+            build_text_grading_provider(c),
+            c,
+            [
+                unrequested_prediction(x, "quote_selection", SEMANTICS_PROMPT_VERSION)
+                for x in ds.cases
+            ],
+            prompt_version=SEMANTICS_PROMPT_VERSION,
+        )
+        for c in configs
+    ]
+    assert documents[0].generation_config_digest != documents[1].generation_config_digest
+    assert documents[0].experiment_config_digest != documents[1].experiment_config_digest
+    assert documents[0].reasoning_effort is None
+    assert documents[1].reasoning_effort == "max"
+    assert all(not case.provider_attempted for d in documents for case in d.cases)

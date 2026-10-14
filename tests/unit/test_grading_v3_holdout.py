@@ -45,16 +45,12 @@ def test_v3_reference_labels_are_not_sent_to_quote_selection_prompt():
     assert case.reference_rationale not in prompt
 
 
-def test_standalone_run_keeps_uncertain_abstention_probe_out_of_score_file(
-    tmp_path, monkeypatch
-):
+def test_standalone_run_keeps_uncertain_abstention_probe_out_of_score_file(tmp_path, monkeypatch):
     source_dataset, digest = load_dataset(DATASET)
     cases = [
         next(item for item in source_dataset.cases if item.reference_status == "included"),
         next(
-            item
-            for item in source_dataset.cases
-            if item.reference_status == "excluded_uncertain"
+            item for item in source_dataset.cases if item.reference_status == "excluded_uncertain"
         ),
     ]
     dataset = source_dataset.model_copy(update={"cases": cases})
@@ -93,9 +89,9 @@ def test_standalone_run_keeps_uncertain_abstention_probe_out_of_score_file(
         },
     )
 
-    async def request(case, mode, _provider, _config):
+    async def request(case, mode, _provider, _config, *, prompt_version=None):
         calls.append(case.case_id)
-        base = runner.unrequested_prediction(case, mode).model_dump()
+        base = runner.unrequested_prediction(case, mode, prompt_version).model_dump()
         base.update(
             {
                 "status": "candidate" if case.reference_status == "included" else "abstain",
@@ -115,20 +111,20 @@ def test_standalone_run_keeps_uncertain_abstention_probe_out_of_score_file(
     monkeypatch.setattr(
         runner,
         "create_experiment_predictions",
-        lambda _dataset, _digest, _mode, _provider, _config, predictions: SimpleNamespace(
-            cases=predictions,
-            model_dump=lambda mode="json": {
-                "cases": [item.model_dump(mode=mode) for item in predictions]
-            },
+        lambda _dataset, _digest, _mode, _provider, _config, predictions, *, prompt_version=None: (
+            SimpleNamespace(
+                cases=predictions,
+                model_dump=lambda mode="json": {
+                    "cases": [item.model_dump(mode=mode) for item in predictions]
+                },
+            )
         ),
     )
 
     def evaluate(_dataset, _digest, predictions):
         return {
             "counts": {
-                "provider_requests_sent": sum(
-                    item.provider_attempted for item in predictions.cases
-                )
+                "provider_requests_sent": sum(item.provider_attempted for item in predictions.cases)
             },
             "total_score": {},
             "criterion_score": {},

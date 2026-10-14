@@ -1,0 +1,36 @@
+{
+  "abstain_cases": 2,
+  "cases": [
+    {
+      "case_id": "h4-missing-triangle",
+      "completion_tokens": 104,
+      "elapsed_ms": 809,
+      "error_code": null,
+      "finish_reason": "stop",
+      "human_review_status": "unreviewed",
+      "prompt_tokens": 1254,
+      "response_model_id": "deepseek-flash",
+      "status": "abstain"
+    },
+    {
+      "case_id": "h4-cropped-proof",
+      "completion_tokens": 120,
+      "elapsed_ms": 1120,
+      "error_code": null,
+      "finish_reason": "stop",
+      "human_review_status": "unreviewed",
+      "prompt_tokens": 1256,
+      "response_model_id": "deepseek-flash",
+      "status": "abstain"
+    }
+  ],
+  "expected_behavior": "abstain",
+  "non_abstain_or_failure_cases": 0,
+  "probe_cases": 2,
+  "provider_requests_sent": 2,
+  "raw_responses_file": "abstention-probes.json",
+  "score_metrics_included": false,
+  "status_counts": {
+    "abstain": 2
+  }
+}

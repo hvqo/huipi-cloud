@@ -1,0 +1,570 @@
+{
+  "cost_estimate": {
+    "budget_usd": "0.50",
+    "definition": "UTF-8输入字节和协议开销作为保守上界；未缓存输入价与含思考输出价估算，不是账单或账户硬限额。按Provider用量估算，非最终账单。",
+    "input_token_budget_bound": 118860,
+    "input_usd_per_million": "0.30",
+    "output_token_cap": 81920,
+    "output_usd_per_million": "1.20",
+    "preflight_estimate_usd": "0.133962",
+    "reported_completion_tokens": 5219,
+    "reported_prompt_tokens": 26578,
+    "reported_token_estimate_usd": "0.0142362",
+    "request_cap": 20,
+    "usage_complete": true
+  },
+  "dataset_sha256": "f769ccef257d11393e6b5b7ddfc088a6c7859ba6fe88f909a9ec9647191aedbf",
+  "groups": {
+    "quote_selection": {
+      "counts": {
+        "abstention_cases": 0,
+        "dataset_cases": 20,
+        "excluded_uncertain_reference_cases": 0,
+        "included_reference_cases": 20,
+        "not_requested_cases": 0,
+        "prediction_status_counts": {
+          "candidate": 19,
+          "invalid_evidence": 1
+        },
+        "protocol_valid_replies": 20,
+        "provider_requests_sent": 20,
+        "requested_cases": 20,
+        "valid_candidate_cases": 19
+      },
+      "criterion_score": {
+        "absolute_error_sum": "13.00",
+        "by_case_criterion": {
+          "v3-bio-photosynthesis/products": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-bio-photosynthesis/site_inputs": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-chem-balanced/conservation": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-chem-balanced/equation": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-chem-unbalanced/coefficients": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-chem-unbalanced/elements": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-chinese-paraphrase/consequence": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-chinese-paraphrase/study_thinking": {
+            "absolute_error_sum": "5.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 0
+            },
+            "mae": "5.0000",
+            "over_count": 0,
+            "under_count": 1
+          },
+          "v3-completing-square/answer": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-completing-square/root_step": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-completing-square/square": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-cross-page-proof/flood": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-cross-page-proof/habitat": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-decimal-strict/result_form": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-decimal-strict/simplification": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-english-answer-only/form": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-english-answer-only/sequence": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-english-keyword/process": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-english-keyword/product": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-eq-no-work/method": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-eq-no-work/result": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-fraction-equivalent/common_denominator": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-fraction-equivalent/form": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-fraction-equivalent/sum": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-linear-arithmetic-slip/division": {
+            "absolute_error_sum": "3.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 0
+            },
+            "mae": "3.0000",
+            "over_count": 1,
+            "under_count": 0
+          },
+          "v3-linear-arithmetic-slip/isolation": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-linear-arithmetic-slip/result": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-linear-system/elimination": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-linear-system/substitution": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-lucky-arithmetic/multiplication": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-lucky-arithmetic/result": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-lucky-arithmetic/subtraction": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-mixed-right-wrong/division": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-mixed-right-wrong/isolation": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-mixed-right-wrong/result": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-partial-quarter/conversion": {
+            "absolute_error_sum": "5.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 0
+            },
+            "mae": "5.0000",
+            "over_count": 1,
+            "under_count": 0
+          },
+          "v3-partial-quarter/scale": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-physics-wrong-unit/law": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-physics-wrong-unit/unit": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-physics-wrong-unit/value": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-quadratic-factor/factor": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-quadratic-factor/roots": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-rubric-boundary/result": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "v3-rubric-boundary/transform": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          }
+        },
+        "exact": {
+          "denominator": 44,
+          "numerator": 41
+        },
+        "mae": "0.2955",
+        "mae_denominator": 44,
+        "offsetting_error_case_ids": [],
+        "offsetting_error_cases": 0,
+        "over_count": 2,
+        "sample_count": 44,
+        "under_count": 1
+      },
+      "runtime_usage": {
+        "completion_token_count": 20,
+        "completion_tokens_total": 5219,
+        "elapsed_ms_count": 20,
+        "elapsed_ms_mean": 1730.15,
+        "elapsed_ms_p50": 1743,
+        "elapsed_ms_p95": 2018,
+        "elapsed_ms_total": 34603,
+        "percentile_definition": "nearest_rank; actual provider attempts including failures",
+        "prompt_token_count": 20,
+        "prompt_tokens_total": 26578
+      },
+      "total_score": {
+        "absolute_error_sum": "13.00",
+        "exact": {
+          "denominator": 19,
+          "numerator": 16
+        },
+        "mae": "0.6842",
+        "mae_denominator": 19,
+        "over_count": 2,
+        "sample_count": 19,
+        "under_count": 1,
+        "within_tolerance": {
+          "denominator": 19,
+          "numerator": 16
+        }
+      }
+    }
+  },
+  "max_output_tokens": 4096,
+  "model": "deepseek-flash",
+  "output_dir": "data/evaluation/grading/rubric-semantics-2026-10-14-run-01/regression-v2",
+  "paired_outcomes": null,
+  "thinking_mode": "disabled",
+  "timeout_seconds": 120.0
+}
