@@ -84,6 +84,8 @@ uv run python scripts/evaluate_quote_selection.py \
 
 本节记录 2026-10-14 的一次冻结运行。P3-D1 PR #19 已 squash 合并到 main，Merge SHA 为 `339a8430679ec70d9032e3ce7d754805fb4dfc43`；合并后 main CI 通过（519 passed，9 skipped）。本轮运行基于随后创建的独立 v3 留出集，未读取或覆盖 v1/v2 预测，也未调用真实学生资料。
 
+**统计口径更正：**下列首轮摘要中的 Quote 准入门槛曾按全部 101 条原始 Quote 计算，因此把唯一失败引用计入“被接受候选的 Quote 全部唯一定位”门槛。预注册 v1 的文字只要求已接受候选内部的 Quote 精确定位。原始运行文件和 v1 准入文件均未改写；新生成的报告 v1.1 按文字口径显示候选内 99/99，同时保留全部模型引用 100/101 和 `quote_ambiguous` 失败。该项准入门槛由历史摘要的失败更正为通过，预注册门槛通过数由历史 7/12 更新为 8/12；分数结果没有变化。详细分析见[参考标签审计与指标口径说明](p3d2a-v3-audit.md)。
+
 - 请求窗口：2026-10-14 10:15:09 至 10:16:42 UTC。时间取自运行清单创建和最终报告文件时间，只能证明本机观察到的运行窗口，不是服务端请求时间戳。
 - 实际响应模型：60/60 为 `deepseek-flash`。Provider 为 OpenAI-compatible，Thinking disabled，`max_output_tokens=4096`，超时120秒，重试0次。环境中配置的 `reasoning_effort=max` 在 Thinking disabled 时未生效，也未传入请求。
 - Provider、JSON解析与 Quote Selection 协议：分别为60/60、60/60、60/60。55条计分案例中，54条通过候选评分与来源校验；1条因短 Quote 在同一学生片段中重复而以 `quote_ambiguous` 被拒绝。

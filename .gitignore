@@ -45,6 +45,10 @@ dist/
 !/data/evaluation/grading/rubric-cases-v3-manifest.json.sha256
 !/data/evaluation/grading/p3d2a-acceptance-criteria-v1.json
 !/data/evaluation/grading/p3d2a-acceptance-criteria-v1.json.sha256
+!/data/evaluation/grading/rubric-cases-v3-audit-v1.json
+!/data/evaluation/grading/rubric-cases-v3-audit-v1.json.sha256
+!/data/evaluation/grading/p3d2a-error-regression-v1.json
+!/data/evaluation/grading/p3d2a-error-regression-v1.json.sha256
 !/data/evaluation/grading/rubric-cases-v2-run-manifest.json
 !/data/evaluation/grading/report-qwen3.5-4b-v1-audited.json
 !/data/evaluation/grading/deepseek-v2-run-manifest.json

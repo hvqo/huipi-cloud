@@ -57,11 +57,56 @@ def _write_new(path: Path, value: object) -> None:
         stream.write(json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n")
 
 
+def _write_new_text(path: Path, value: str) -> None:
+    with path.open("x", encoding="ascii") as stream:
+        stream.write(value)
+
+
+def write_versioned_reports(
+    run_dir: Path, summary: dict[str, object], checklist: dict[str, object]
+) -> tuple[Path, Path]:
+    if summary.get("report_version") != "1.1":
+        raise ValueError("unexpected_report_version")
+    summary_path = run_dir / "quality-summary-v1.1.json"
+    checklist_path = run_dir / "human-semantic-review-v1.1.json"
+    paths = (
+        summary_path,
+        checklist_path,
+        summary_path.with_suffix(summary_path.suffix + ".sha256"),
+        checklist_path.with_suffix(checklist_path.suffix + ".sha256"),
+    )
+    if any(path.exists() for path in paths):
+        raise FileExistsError("versioned_report_already_exists")
+    _write_new(summary_path, summary)
+    _write_new(checklist_path, checklist)
+    _write_new_text(
+        summary_path.with_suffix(summary_path.suffix + ".sha256"),
+        f"{_sha(summary_path)}  {summary_path.name}\n",
+    )
+    _write_new_text(
+        checklist_path.with_suffix(checklist_path.suffix + ".sha256"),
+        f"{_sha(checklist_path)}  {checklist_path.name}\n",
+    )
+    return summary_path, checklist_path
+
+
 def _nearest_rank(values: list[int], percentile: float) -> int | None:
     if not values:
         return None
     ordered = sorted(values)
     return ordered[max(0, math.ceil(len(ordered) * percentile) - 1)]
+
+
+def _quote_location_metrics(
+    located: int, selected: int, failures: list[dict[str, str]]
+) -> dict[str, object]:
+    return {
+        "selected_quote_references": selected,
+        "unique_exactly_located": located,
+        "location_failures": failures,
+        "failure_reason_counts": dict(Counter(item["reason_code"] for item in failures)),
+        "exact_location_rate": _rate(located, selected),
+    }
 
 
 def build_report(
@@ -138,6 +183,17 @@ def build_report(
     if len(all_calls) != 60:
         raise ValueError("v3_actual_request_count_mismatch")
 
+    probe_by_id = {item.case_id: item for item in probe_records}
+    derived_by_id = {}
+    for case in dataset.cases:
+        active = probe_by_id.get(case.case_id, prediction_by_id[case.case_id])
+        derived_status, derived_error, reply = active.status, active.error_code, None
+        if active.response_content is not None:
+            derived_status, reply, derived_error = _derive_selection_prediction(
+                case, active, config
+            )
+        derived_by_id[case.case_id] = (derived_status, derived_error, reply)
+
     provider_success = sum(item.response_model_id is not None for item in all_calls)
     response_received = sum(item.response_content is not None for item in all_calls)
     json_parseable = 0
@@ -145,6 +201,9 @@ def build_report(
     quote_refs = 0
     located_refs = 0
     location_failures = []
+    accepted_quote_refs = 0
+    accepted_located_refs = 0
+    accepted_location_failures = []
     outcome_counts: Counter[str] = Counter()
     probe_outcomes: dict[str, str] = {}
 
@@ -171,20 +230,28 @@ def build_report(
                 if not isinstance(reference, QuoteSelectionReference):
                     continue
                 quote_refs += 1
+                is_accepted_candidate = (
+                    case.reference_status == "included"
+                    and derived_by_id[case.case_id][0] == "candidate"
+                )
+                if is_accepted_candidate:
+                    accepted_quote_refs += 1
                 try:
                     locate_quote(document, reference.segment_index, reference.quote, config)
                 except GradeProposalError as error:
-                    location_failures.append(
-                        {"case_id": case.case_id, "reason_code": error.reason_code}
-                    )
+                    failure = {"case_id": case.case_id, "reason_code": error.reason_code}
+                    location_failures.append(failure)
+                    if is_accepted_candidate:
+                        accepted_location_failures.append(failure)
                 else:
                     located_refs += 1
+                    if is_accepted_candidate:
+                        accepted_located_refs += 1
 
     included = [case for case in dataset.cases if case.reference_status == "included"]
     report_manifest = _json(DATA_DIR / "rubric-cases-v3-manifest.json")
     risk_by_id = {item["case_id"]: item["risk_categories"] for item in report_manifest["cases"]}
     critical_tags = set(criteria["critical_false_credit_tags"])
-    prediction_config = config
     false_total_positive = []
     critical_false_credit = []
     missing_step_false_credit = []
@@ -192,15 +259,7 @@ def build_report(
 
     for case in dataset.cases:
         prediction = prediction_by_id[case.case_id]
-        probe_prediction = next(
-            (item for item in probe_records if item.case_id == case.case_id), None
-        )
-        active = probe_prediction or prediction
-        derived_status, derived_error, reply = active.status, active.error_code, None
-        if active.response_content is not None:
-            derived_status, reply, derived_error = _derive_selection_prediction(
-                case, active, prediction_config
-            )
+        derived_status, derived_error, reply = derived_by_id[case.case_id]
 
         document = build_grade_input(case)
         key_by_id = {
@@ -359,7 +418,9 @@ def build_report(
         "provider_success_minimum": provider_success >= 59,
         "quote_selection_protocol_valid_minimum": protocol_valid >= 57,
         "candidate_coverage_minimum": candidate_count >= 44,
-        "accepted_quote_unique_exact_location": quote_refs > 0 and located_refs == quote_refs,
+        "accepted_quote_unique_exact_location": (
+            accepted_quote_refs > 0 and accepted_located_refs == accepted_quote_refs
+        ),
         "abstention_probe_expected_abstain": probe_abstentions == len(excluded),
         "candidate_total_score_mae_maximum_points": (
             total_score["mae"] is not None and Decimal(total_score["mae"]) <= Decimal("0.75")
@@ -384,6 +445,21 @@ def build_report(
         "human_semantic_gate_complete": False,
     }
     summary = {
+        "report_version": "1.1",
+        "metric_definitions": {
+            "quote_location": {
+                "all_raw_model_quote_references": (
+                    "所有通过Quote Selection协议的模型Quote；保留被拒绝候选中的定位失败。"
+                ),
+                "accepted_candidate_quotes": (
+                    "仅统计计分案例中通过完整确定性候选校验的Quote；用于按v1文字重算原准入门槛。"
+                ),
+                "pre_registered_gate_binding": "accepted_candidate_quotes",
+                "limitation": (
+                    "候选Quote定位通过是候选接受的结构条件，不代表引用在教学语义上充分。"
+                ),
+            }
+        },
         "dataset": {
             "version": dataset.dataset_version,
             "sha256": dataset_sha,
@@ -413,10 +489,19 @@ def build_report(
             "status_counts_scored_cases": fresh_report["counts"]["prediction_status_counts"],
             "status_counts_all_calls": dict(Counter(item.status for item in all_calls)),
             "quote_location": {
-                "selected_quote_references": quote_refs,
-                "unique_exactly_located": located_refs,
-                "location_failures": location_failures,
-                "exact_location_rate": _rate(located_refs, quote_refs),
+                # Retain legacy keys as aliases for all raw model references.
+                **_quote_location_metrics(located_refs, quote_refs, location_failures),
+                "all_raw_model_quote_references": _quote_location_metrics(
+                    located_refs, quote_refs, location_failures
+                ),
+                "accepted_candidate_quotes": _quote_location_metrics(
+                    accepted_located_refs,
+                    accepted_quote_refs,
+                    accepted_location_failures,
+                ),
+                "scope_note": (
+                    "有效候选Quote的唯一定位接近确定性验证器的必然结果，不能替代对所有原始Quote的监控。"
+                ),
             },
             "excluded_uncertain_probes": {
                 "probe_cases": len(excluded),
@@ -476,7 +561,7 @@ def build_report(
             ),
         },
         "human_review": {
-            "checklist_file": "human-semantic-review.json",
+            "checklist_file": "human-semantic-review-v1.1.json",
             "case_count": len(checklist_cases),
             "status": "unreviewed",
             "semantic_judgments_automated": False,
@@ -493,7 +578,8 @@ def build_report(
     }
     checklist = {
         "schema_name": "huipi.grading.synthetic-human-semantic-review",
-        "schema_version": "1.0",
+        "schema_version": "1.1",
+        "report_version": "1.1",
         "data_classification": "synthetic_only",
         "dataset_version": dataset.dataset_version,
         "dataset_sha256": dataset_sha,
@@ -514,13 +600,14 @@ def main() -> int:
     args = parser.parse_args()
     try:
         summary, checklist = build_report(args.dataset, args.run_dir, args.criteria)
-        _write_new(args.run_dir / "quality-summary.json", summary)
-        _write_new(args.run_dir / "human-semantic-review.json", checklist)
+        summary_path, checklist_path = write_versioned_reports(
+            args.run_dir, summary, checklist
+        )
         print(
             json.dumps(
                 {
-                    "summary": str(args.run_dir / "quality-summary.json"),
-                    "checklist": str(args.run_dir / "human-semantic-review.json"),
+                    "summary": str(summary_path),
+                    "checklist": str(checklist_path),
                     "dataset_sha256": summary["dataset"]["sha256"],
                     "eligible_for_later_production_integration": summary[
                         "pre_registered_gates"

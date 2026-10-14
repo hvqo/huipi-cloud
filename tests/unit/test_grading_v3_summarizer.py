@@ -6,6 +6,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from uuid import uuid4
 
+import pytest
+
 from huipi_cloud.core.config import Settings
 from huipi_cloud.modules.grading.evaluation import (
     build_grade_input,
@@ -17,7 +19,7 @@ from huipi_cloud.modules.grading.quote_evaluation import (
     evaluate_experiment,
     unrequested_prediction,
 )
-from scripts.summarize_grading_v3 import build_report
+from scripts.summarize_grading_v3 import build_report, write_versioned_reports
 
 ROOT = Path(__file__).resolve().parents[2]
 DATASET = ROOT / "data/evaluation/grading/rubric-cases-v3.json"
@@ -44,7 +46,11 @@ def _candidate_reply(case) -> str:
                     {
                         "kind": "quote_selection",
                         "segment_index": quote.segment_index,
-                        "quote": case.student_segments[quote.segment_index].text,
+                        "quote": (
+                            quote.quote
+                            if case.case_id == "v3-quote-short-duplicate"
+                            else case.student_segments[quote.segment_index].text
+                        ),
                     }
                 )
         else:
@@ -84,11 +90,14 @@ def _probe_reply() -> str:
     )
 
 
-def _prediction(case, response: str, *, status: str) -> ExperimentPredictionCase:
+def _prediction(
+    case, response: str, *, status: str, error_code: str | None = None
+) -> ExperimentPredictionCase:
     base = unrequested_prediction(case, "quote_selection").model_dump(mode="json")
     base.update(
         {
             "status": status,
+            "error_code": error_code,
             "response_content": response,
             "request_id": str(uuid4()),
             "provider_attempted": True,
@@ -115,7 +124,18 @@ def test_summarizer_recomputes_scores_and_keeps_all_human_reviews_unreviewed(tmp
         generation_config_digest="b" * 64,
     )
     scored_cases = [
-        _prediction(case, _candidate_reply(case), status="candidate")
+        _prediction(
+            case,
+            _candidate_reply(case),
+            status=(
+                "invalid_evidence"
+                if case.case_id == "v3-quote-short-duplicate"
+                else "candidate"
+            ),
+            error_code=(
+                "quote_ambiguous" if case.case_id == "v3-quote-short-duplicate" else None
+            ),
+        )
         if case.reference_status == "included"
         else unrequested_prediction(case, "quote_selection")
         for case in dataset.cases
@@ -177,9 +197,52 @@ def test_summarizer_recomputes_scores_and_keeps_all_human_reviews_unreviewed(tmp
     assert summary["score_quality"]["total_score"]["mae"] == "0.0000"
     assert summary["score_quality"]["critical_zero_reference_criterion_false_credit"] == []
     assert summary["human_review"]["status"] == "unreviewed"
+    assert summary["report_version"] == "1.1"
+    quote_metrics = summary["engineering_validity"]["quote_location"]
+    assert quote_metrics["all_raw_model_quote_references"]["exact_location_rate"][
+        "numerator"
+    ] == 93
+    assert quote_metrics["all_raw_model_quote_references"]["exact_location_rate"][
+        "denominator"
+    ] == 94
+    assert quote_metrics["all_raw_model_quote_references"]["failure_reason_counts"] == {
+        "quote_ambiguous": 1
+    }
+    assert quote_metrics["accepted_candidate_quotes"]["exact_location_rate"] == {
+        "numerator": 92,
+        "denominator": 92,
+        "rate": "1",
+    }
+    assert quote_metrics["accepted_candidate_quotes"]["location_failures"] == []
+    assert summary["pre_registered_gates"]["results"][
+        "accepted_quote_unique_exact_location"
+    ] is True
     assert checklist["review_status_default"] == "unreviewed"
+    assert checklist["report_version"] == "1.1"
     assert len(checklist["cases"]) == 60
     assert summary["pre_registered_gates"]["results"]["human_semantic_gate_complete"] is False
     assert (
         summary["pre_registered_gates"]["eligible_for_later_production_integration"] is False
     )
+
+
+def test_versioned_summary_does_not_overwrite_historical_report(tmp_path):
+    historical_summary = tmp_path / "quality-summary.json"
+    historical_checklist = tmp_path / "human-semantic-review.json"
+    historical_summary.write_bytes(b"frozen-summary\n")
+    historical_checklist.write_bytes(b"frozen-checklist\n")
+    original_summary = historical_summary.read_bytes()
+    original_checklist = historical_checklist.read_bytes()
+    summary = {"report_version": "1.1", "result": "post-hoc"}
+    checklist = {"report_version": "1.1", "review_status_default": "unreviewed"}
+
+    summary_path, checklist_path = write_versioned_reports(tmp_path, summary, checklist)
+
+    assert summary_path.name == "quality-summary-v1.1.json"
+    assert checklist_path.name == "human-semantic-review-v1.1.json"
+    assert historical_summary.read_bytes() == original_summary
+    assert historical_checklist.read_bytes() == original_checklist
+    assert summary_path.with_suffix(".json.sha256").exists()
+    assert checklist_path.with_suffix(".json.sha256").exists()
+    with pytest.raises(FileExistsError):
+        write_versioned_reports(tmp_path, summary, checklist)

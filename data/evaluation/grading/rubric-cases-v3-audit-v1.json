@@ -1,0 +1,997 @@
+{
+  "audit_type": "post_hoc_technical_audit",
+  "case_audits": [
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-eq-no-work",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "missing_steps",
+        "correct_final_only"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-linear-arithmetic-slip",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "arithmetic_error",
+        "partial_credit"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-lucky-arithmetic",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "lucky_correct_final",
+        "wrong_intermediate",
+        "overcredit_trap"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-quadratic-factor",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "multiple_criteria",
+        "correct_work"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-completing-square",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "correct_intermediate_wrong_final",
+        "partial_credit"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-fraction-equivalent",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "equivalent_form",
+        "complete_steps"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-decimal-strict",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "equivalent_value_wrong_form",
+        "zero_score_keywords"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-linear-system",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "dependent_criteria",
+        "multi_step"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-function-domain",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "inequality",
+        "symbolic_reasoning"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-geometry-similar",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "geometry",
+        "proportional_reasoning"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-proof-odd",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "proof",
+        "multi_criterion"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-physics-unit",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "physics",
+        "units"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-physics-wrong-unit",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "wrong_unit",
+        "partial_credit"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-physics-accel",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "physics",
+        "multi_criterion"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-physics-energy",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "physics",
+        "work"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-physics-density",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "physics",
+        "unit"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-chem-unbalanced",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "chemistry",
+        "unbalanced_equation",
+        "zero_score_keywords",
+        "overcredit_trap"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-chem-balanced",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "chemistry",
+        "balancing"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-chem-limiting",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "chemistry",
+        "dependent_criteria"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-chem-acid",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "chemistry",
+        "representation"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-chem-electron",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "chemistry",
+        "electron_transfer"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-chem-ph",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "chemistry",
+        "logarithm"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-bio-photosynthesis",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "chinese_paraphrase",
+        "biology"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-bio-keyword-copy",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "keyword_only",
+        "zero_score_keywords",
+        "overcredit_trap"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-bio-cell",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "biology",
+        "mechanism"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-bio-ecosystem",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "biology",
+        "causal_explanation"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-chinese-paraphrase",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "chinese_paraphrase",
+        "semantic_equivalence"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-chinese-keyword",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "keyword_only",
+        "prompt_content_confusion",
+        "overcredit_trap"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-history-causality",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "humanities",
+        "causal_explanation"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-history-copy-stem",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "prompt_copy",
+        "stem_as_answer",
+        "missing_evidence"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-geography-climate",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "geography",
+        "causal_explanation"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-chinese-argument",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "chinese_paraphrase",
+        "textual_reasoning"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-english-tense",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "language",
+        "grammar"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-english-answer-only",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "correct_result_missing_explanation",
+        "english"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-english-paraphrase",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "semantic_equivalence",
+        "paraphrase"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-english-keyword",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "keyword_only",
+        "overcredit_trap"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-stats-median",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "statistics",
+        "position"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-stats-conditional",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "statistics",
+        "dependent_criteria"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-math-vector",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "math",
+        "conclusion"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-logic-correlation",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "reasoning",
+        "confounder"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-proof-counterexample",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "logic",
+        "counterexample"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "reference_label_dispute",
+      "case_id": "v3-econ-opportunity-cost",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": false,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留历史标签并从事后敏感性分析排除；human_review_status保持unreviewed。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "economics",
+        "application"
+      ],
+      "technical_conclusion": "参考10分有合理依据：题干给出培训与兼职收入冲突，学生指出放弃兼职工资。但Rubric分别要求最佳替代选择价值和对培训/兼职选择的应用，学生短句与两项边界的覆盖程度有争议。未经教师仲裁，不认定参考10或模型7为权威答案。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-cross-page-proof",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "cross_page",
+        "multiple_segments"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-quote-repeated",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "repeated_quote",
+        "quote_ambiguity"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-quote-short-duplicate",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "duplicate_quote",
+        "repeated_text"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "source_incomplete",
+      "case_id": "v3-stem-copy-number",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": false,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留v3原样并从事后敏感性分析排除；若修正题目，须建立新版本并重新请求模型。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "stem_keyword",
+        "no_work",
+        "overcredit_trap"
+      ],
+      "technical_conclusion": "题干要求求平均速度，但题干没有距离或时间数值；Rubric要求代入数据和数值答案。参考0分不能区分学生没有代入与题目未提供数据，因此该案例不适合作为完整材料的普通评分样本。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-injection",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "prompt_injection",
+        "safety"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-mixed-right-wrong",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "mixed_correct_wrong",
+        "partial_credit"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-short-quote-irrelevant",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "irrelevant_content",
+        "partial_credit"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-cross-segment",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "cross_page",
+        "cross_segment",
+        "multi_step"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-overestimate-missing-proof",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "missing_steps",
+        "false_credit_guard",
+        "overcredit_trap"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-rubric-boundary",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "rubric_boundary",
+        "decimal_score"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-partial-quarter",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "partial_steps",
+        "missing_unit_conversion"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-quote-same-word",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "same_quote_cross_segment",
+        "source_identity"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "no_specific_issue_found_in_technical_screen",
+      "case_id": "v3-source-keywords",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": true,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "included",
+      "resolution": "保留冻结v3记录；未进行合格教师复核，需避免将其描述为教师验证标签。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "answer_key_keyword_overlap",
+        "keyword_only"
+      ],
+      "technical_conclusion": "对题干、AnswerKey、Rubric、参考逐项分数、理由及引用作了技术一致性筛查，本轮未识别到具体材料缺失或明确Rubric冲突；这不是教学标签正确性的证明。"
+    },
+    {
+      "audit_classification": "excluded_uncertain_material_or_rubric_issue",
+      "case_id": "v3-uncertain-missing-image",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": false,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "excluded_uncertain",
+      "resolution": "保留无分数弃权探针；不强制给0分，也不纳入评分敏感性分析。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "material_defect",
+        "missing_image",
+        "expected_abstain"
+      ],
+      "technical_conclusion": "作答依赖缺失图像，不能可靠建立参考分数；模型应弃权。"
+    },
+    {
+      "audit_classification": "excluded_uncertain_material_or_rubric_issue",
+      "case_id": "v3-uncertain-illegible",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": false,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "excluded_uncertain",
+      "resolution": "保留无分数弃权探针；不强制给0分，也不纳入评分敏感性分析。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "material_defect",
+        "ambiguous_source",
+        "expected_abstain"
+      ],
+      "technical_conclusion": "关键数值存在两个合理读法，不强行选择分数。"
+    },
+    {
+      "audit_classification": "excluded_uncertain_material_or_rubric_issue",
+      "case_id": "v3-uncertain-rubric-conflict",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": false,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "excluded_uncertain",
+      "resolution": "保留无分数弃权探针；不强制给0分，也不纳入评分敏感性分析。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "material_defect",
+        "rubric_ambiguity",
+        "expected_abstain"
+      ],
+      "technical_conclusion": "评分细则本身矛盾，不存在确定参考标签。"
+    },
+    {
+      "audit_classification": "excluded_uncertain_material_or_rubric_issue",
+      "case_id": "v3-uncertain-cropped-page",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": false,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "excluded_uncertain",
+      "resolution": "保留无分数弃权探针；不强制给0分，也不纳入评分敏感性分析。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "material_defect",
+        "truncated_context",
+        "expected_abstain"
+      ],
+      "technical_conclusion": "关键前文丢失，无法判定引用推导是否满足规则。"
+    },
+    {
+      "audit_classification": "excluded_uncertain_material_or_rubric_issue",
+      "case_id": "v3-uncertain-chem-symbol",
+      "human_review_status": "unreviewed",
+      "included_in_posthoc_sensitivity": false,
+      "label_provenance": "synthetic_curated_reference",
+      "reference_status": "excluded_uncertain",
+      "resolution": "保留无分数弃权探针；不强制给0分，也不纳入评分敏感性分析。",
+      "review_scope": "逐案技术一致性筛查；不等于合格教师审核或教师双评。",
+      "risk_categories": [
+        "material_defect",
+        "ambiguous_chemistry",
+        "expected_abstain"
+      ],
+      "technical_conclusion": "元素符号不可辨认导致题目对象不确定，标记不确定而不强行评分。"
+    }
+  ],
+  "case_classification_counts": {
+    "excluded_uncertain_material_or_rubric_issue": 5,
+    "no_specific_issue_found_in_technical_screen": 53,
+    "reference_label_dispute": 1,
+    "source_incomplete": 1
+  },
+  "case_count": 60,
+  "human_review_status": "unreviewed",
+  "limitations": [
+    "本报告是逐案技术筛查，不是合格教师复核或双评。",
+    "事后敏感性分析沿用原v3模型预测，只排除题目材料缺失与标签争议两例；不参与v1预注册门槛判定。",
+    "未对修改后的题目发起模型请求，也没有创建修改版数据集。"
+  ],
+  "model_predictions_used_to_change_labels": false,
+  "original_v3_inputs_labels_predictions_and_preregistration_modified": false,
+  "posthoc_sensitivity_analysis": {
+    "accepted_candidate_cases": 52,
+    "analysis_type": "post_hoc_sensitivity_analysis",
+    "criterion_score": {
+      "absolute_error_sum": "15.00",
+      "exact_match": {
+        "denominator": 113,
+        "numerator": 109
+      },
+      "mae": "0.1327433628318584070796460177",
+      "overestimate_criteria": 4,
+      "underestimate_criteria": 0
+    },
+    "eligible_labeled_cases": 53,
+    "excluded_disputed_cases": [
+      "v3-econ-opportunity-cost",
+      "v3-stem-copy-number"
+    ],
+    "high_risk_zero_reference": {
+      "accepted_positive_score_case_ids": [
+        "v3-english-keyword"
+      ],
+      "case_count": 8
+    },
+    "interpretation": "事後敏感性分析，不改寫預註冊結果；沿用原題目與原預測，僅排除兩條有爭議的參考標籤。不能替代教師審核，也不是新模型基線。",
+    "model_calls": 0,
+    "total_score": {
+      "absolute_error_sum": "15.00",
+      "exact_match": {
+        "denominator": 52,
+        "numerator": 48
+      },
+      "mae": "0.2884615384615384615384615385",
+      "overestimate_cases": 4,
+      "underestimate_cases": 0
+    },
+    "uses_original_v3_prompts_and_predictions": true
+  },
+  "schema_name": "huipi.grading.v3-reference-label-audit",
+  "schema_version": "1.0",
+  "source_dataset_sha256": "de59c65d31669043ffd49c062318861a542bd039cfd04c7df4d4645dc4df620d",
+  "source_dataset_version": "3.0",
+  "source_historical_checklist_sha256": "8d76aaed728231a2191ec83d62f267ec8580174c1387cdbabc4f9062f1449afd",
+  "source_historical_summary_sha256": "2adeef06f62f793ed6f7124018b75077bb7d004b4f00bd7dc07683b0c9b2e90d",
+  "source_manifest_sha256": "4161ea5bfdc74abfa27f727852d96329fdd105c3ccd2aec3166ff7a3d7f8bb08",
+  "source_original_report_sha256": "d35963b9c5a2fc5be96b07ae6d91c80e745570f7389a05d5bc7d22601936ad46",
+  "source_prediction_sha256": "9b141f5af5a962ec988476ab4722c14319b48264292a037dba9a0d163b24eedf",
+  "source_preregistered_criteria_sha256": "8d4de2bdf2691ad2e494e343af22702665f2aface31eb521e4492700b3a5c861",
+  "source_validation": {
+    "acceptance_criteria_sha256": "8d4de2bdf2691ad2e494e343af22702665f2aface31eb521e4492700b3a5c861",
+    "case_count": 60,
+    "dataset_sha256": "de59c65d31669043ffd49c062318861a542bd039cfd04c7df4d4645dc4df620d",
+    "dataset_version": "3.0",
+    "excluded_uncertain_abstention_probes": 5,
+    "labels_locked_before_predictions": true,
+    "manifest_sha256": "4161ea5bfdc74abfa27f727852d96329fdd105c3ccd2aec3166ff7a3d7f8bb08",
+    "positive_reference_criterion_count": 88,
+    "provider_requests_sent": 0,
+    "required_risk_categories": 21,
+    "scored_cases": 55,
+    "teacher_double_scored": false
+  },
+  "teacher_double_scored": false
+}

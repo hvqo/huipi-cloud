@@ -1,0 +1,614 @@
+{
+  "analysis_version": "v1",
+  "categories_allow_overlap": true,
+  "human_review_status": "unreviewed",
+  "model_id": "deepseek-flash",
+  "model_requests_made": 0,
+  "notes": [
+    "模型行为问题、来源材料问题和参考标签争议分开标记。",
+    "来源字面定位成功不表示语义支持；模型错误分类不能替代人工教学判断。",
+    "v3-stem-copy-number和v3-econ-opportunity-cost不进入事后分数敏感性分母。"
+  ],
+  "records": [
+    {
+      "answer_key": "x=3",
+      "case_id": "v3-linear-arithmetic-slip",
+      "categories": [
+        "incorrect_arithmetic_credit",
+        "incorrect_method_credit"
+      ],
+      "criteria": [
+        {
+          "criterion_key": "division",
+          "model_evidence": [
+            {
+              "kind": "quote",
+              "quote": "x=3.5",
+              "reason": null,
+              "segment_index": 0,
+              "source_segment_text": "7x+5=26\n7x=21\nx=3.5"
+            },
+            {
+              "kind": "no_evidence",
+              "quote": null,
+              "reason": "作答未写出正确的21÷7=3，因此缺少正确计算结果。",
+              "segment_index": null,
+              "source_segment_text": null
+            }
+          ],
+          "model_points": "3.00",
+          "model_rationale": "学生作答中出现了由7x=21计算得到的x=3.5，说明进行了21÷7的除法计算，但结果错误；按该项“正确计算21÷7”的要求，计算过程已出现而正确结果未出现。",
+          "reference_evidence": [],
+          "reference_points": "0.00",
+          "reference_rationale": "最终除法计算错误，且没有正确的除法过程。",
+          "rubric_requirement": "正确计算21÷7。"
+        }
+      ],
+      "human_review_status": "unreviewed",
+      "model_total_points": "8.00",
+      "prediction_error_code": null,
+      "prediction_status": "candidate",
+      "question": "解 7x+5=26，说明每一步。",
+      "raw_quote_references": [
+        {
+          "criterion_key": "isolation",
+          "location_status": "unique_exact",
+          "quote": "7x=21",
+          "segment_index": 0,
+          "source_segment_text": "7x+5=26\n7x=21\nx=3.5"
+        },
+        {
+          "criterion_key": "division",
+          "location_status": "unique_exact",
+          "quote": "x=3.5",
+          "segment_index": 0,
+          "source_segment_text": "7x+5=26\n7x=21\nx=3.5"
+        }
+      ],
+      "reference_label_status": "synthetic_curated_unreviewed",
+      "reference_total_points": "5.00",
+      "regression_expectation": "针对Rubric明确要求正确计算的正向回归案例。",
+      "rubric": [
+        {
+          "criterion_key": "isolation",
+          "description": "正确移项并得到7x=21。",
+          "max_points": "5.00"
+        },
+        {
+          "criterion_key": "division",
+          "description": "正确计算21÷7。",
+          "max_points": "3.00"
+        },
+        {
+          "criterion_key": "result",
+          "description": "写出x=3。",
+          "max_points": "2.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "kind": "text",
+          "page_index": 0,
+          "text": "7x+5=26\n7x=21\nx=3.5"
+        }
+      ],
+      "technical_finding": "模型给21÷7的Criterion 3/3；其理由承认学生结果x=3.5错误，但仍以执行过除法为由给满分。"
+    },
+    {
+      "answer_key": "x=5",
+      "case_id": "v3-mixed-right-wrong",
+      "categories": [
+        "incorrect_arithmetic_credit",
+        "incorrect_method_credit"
+      ],
+      "criteria": [
+        {
+          "criterion_key": "division",
+          "model_evidence": [
+            {
+              "kind": "quote",
+              "quote": "x=6",
+              "reason": null,
+              "segment_index": 0,
+              "source_segment_text": "5x−4=21\n5x=25\nx=6"
+            }
+          ],
+          "model_points": "3.00",
+          "model_rationale": "学生作答中出现了除以5后的结果x=6，完成了除以5的步骤，但数值错误；按步骤给分，该步骤已执行。",
+          "reference_evidence": [],
+          "reference_points": "0.00",
+          "reference_rationale": "最终计算写错为6。",
+          "rubric_requirement": "正确除以5得到x=5。"
+        }
+      ],
+      "human_review_status": "unreviewed",
+      "model_total_points": "8.00",
+      "prediction_error_code": null,
+      "prediction_status": "candidate",
+      "question": "解 5x−4=21，标出有效步骤和最终答案。",
+      "raw_quote_references": [
+        {
+          "criterion_key": "isolation",
+          "location_status": "unique_exact",
+          "quote": "5x=25",
+          "segment_index": 0,
+          "source_segment_text": "5x−4=21\n5x=25\nx=6"
+        },
+        {
+          "criterion_key": "division",
+          "location_status": "unique_exact",
+          "quote": "x=6",
+          "segment_index": 0,
+          "source_segment_text": "5x−4=21\n5x=25\nx=6"
+        },
+        {
+          "criterion_key": "result",
+          "location_status": "unique_exact",
+          "quote": "x=6",
+          "segment_index": 0,
+          "source_segment_text": "5x−4=21\n5x=25\nx=6"
+        }
+      ],
+      "reference_label_status": "synthetic_curated_unreviewed",
+      "reference_total_points": "5.00",
+      "regression_expectation": "针对Rubric明确要求正确结果的正向回归案例。",
+      "rubric": [
+        {
+          "criterion_key": "isolation",
+          "description": "正确移项得到5x=25。",
+          "max_points": "5.00"
+        },
+        {
+          "criterion_key": "division",
+          "description": "正确除以5得到x=5。",
+          "max_points": "3.00"
+        },
+        {
+          "criterion_key": "result",
+          "description": "答案x=5。",
+          "max_points": "2.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "kind": "text",
+          "page_index": 0,
+          "text": "5x−4=21\n5x=25\nx=6"
+        }
+      ],
+      "technical_finding": "模型给除以5的Criterion 3/3；学生写x=6，Rubric要求x=5，模型理由仍把错误结果当成完成步骤。"
+    },
+    {
+      "answer_key": "750 m",
+      "case_id": "v3-partial-quarter",
+      "categories": [
+        "missing_conversion_credit"
+      ],
+      "criteria": [
+        {
+          "criterion_key": "conversion",
+          "model_evidence": [
+            {
+              "kind": "quote",
+              "quote": "3×25000=75000 cm。",
+              "reason": null,
+              "segment_index": 0,
+              "source_segment_text": "3×25000=75000 cm。"
+            }
+          ],
+          "model_points": "5.00",
+          "model_rationale": "学生作答已得到75000 cm，按厘米到米换算应为750 m，符合该项要求。",
+          "reference_evidence": [],
+          "reference_points": "0.00",
+          "reference_rationale": "未进行单位换算，也未给米数。",
+          "rubric_requirement": "正确换算为750 m。"
+        }
+      ],
+      "human_review_status": "unreviewed",
+      "model_total_points": "10.00",
+      "prediction_error_code": null,
+      "prediction_status": "candidate",
+      "question": "比例尺1:25000，地图距离3 cm，求实地距离并换算为米。",
+      "raw_quote_references": [
+        {
+          "criterion_key": "scale",
+          "location_status": "unique_exact",
+          "quote": "3×25000=75000 cm。",
+          "segment_index": 0,
+          "source_segment_text": "3×25000=75000 cm。"
+        },
+        {
+          "criterion_key": "conversion",
+          "location_status": "unique_exact",
+          "quote": "3×25000=75000 cm。",
+          "segment_index": 0,
+          "source_segment_text": "3×25000=75000 cm。"
+        }
+      ],
+      "reference_label_status": "synthetic_curated_unreviewed",
+      "reference_total_points": "5.00",
+      "regression_expectation": "针对不能推断未出现单位换算步骤的正向回归案例。",
+      "rubric": [
+        {
+          "criterion_key": "scale",
+          "description": "正确使用比例尺得到75000 cm。",
+          "max_points": "5.00"
+        },
+        {
+          "criterion_key": "conversion",
+          "description": "正确换算为750 m。",
+          "max_points": "5.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "kind": "text",
+          "page_index": 0,
+          "text": "3×25000=75000 cm。"
+        }
+      ],
+      "technical_finding": "学生仅写75000 cm；模型给750 m换算Criterion 5/5，理由把应当换算误作已经换算。"
+    },
+    {
+      "answer_key": "植物利用光能将CO₂和水合成为糖并释放氧气",
+      "case_id": "v3-english-keyword",
+      "categories": [
+        "keyword_only_credit"
+      ],
+      "criteria": [
+        {
+          "criterion_key": "product",
+          "model_evidence": [
+            {
+              "kind": "quote",
+              "quote": "oxygen",
+              "reason": null,
+              "segment_index": 0,
+              "source_segment_text": "photosynthesis sunlight carbon dioxide oxygen"
+            }
+          ],
+          "model_points": "4.00",
+          "model_rationale": "作答中列出了氧气，可确认氧气作为相关产物之一出现。",
+          "reference_evidence": [],
+          "reference_points": "0.00",
+          "reference_rationale": "仅列词语，不说明其为产物。",
+          "rubric_requirement": "说明氧气是产物之一。"
+        }
+      ],
+      "human_review_status": "unreviewed",
+      "model_total_points": "4.00",
+      "prediction_error_code": null,
+      "prediction_status": "candidate",
+      "question": "用“photosynthesis”解释植物如何利用光能。",
+      "raw_quote_references": [
+        {
+          "criterion_key": "product",
+          "location_status": "unique_exact",
+          "quote": "oxygen",
+          "segment_index": 0,
+          "source_segment_text": "photosynthesis sunlight carbon dioxide oxygen"
+        }
+      ],
+      "reference_label_status": "synthetic_curated_unreviewed",
+      "reference_total_points": "0.00",
+      "regression_expectation": "Quote字面定位成功，但短关键词不足以证明Criterion语义关系。",
+      "rubric": [
+        {
+          "criterion_key": "process",
+          "description": "说明光能驱动原料转化为糖。",
+          "max_points": "6.00"
+        },
+        {
+          "criterion_key": "product",
+          "description": "说明氧气是产物之一。",
+          "max_points": "4.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "kind": "text",
+          "page_index": 0,
+          "text": "photosynthesis sunlight carbon dioxide oxygen"
+        }
+      ],
+      "technical_finding": "学生只列出oxygen等关键词；模型给4/4，并把词语出现解释为氧气已被说明为产物。"
+    },
+    {
+      "answer_key": "距离÷时间，单位km/h",
+      "case_id": "v3-stem-copy-number",
+      "categories": [
+        "source_incomplete",
+        "incorrect_method_credit"
+      ],
+      "criteria": [
+        {
+          "criterion_key": "formula",
+          "model_evidence": [
+            {
+              "kind": "quote",
+              "quote": "距离÷时间，单位km/h。",
+              "reason": null,
+              "segment_index": 0,
+              "source_segment_text": "距离÷时间，单位km/h。"
+            },
+            {
+              "kind": "no_evidence",
+              "quote": null,
+              "reason": "作答中未出现任何具体距离或时间数据，无法核验代入数据步骤。",
+              "segment_index": null,
+              "source_segment_text": null
+            }
+          ],
+          "model_points": "6.00",
+          "model_rationale": "学生写出了距离除以时间的关系，但未代入具体数据；按该项要求“写出距离除以时间的关系并代入数据”，关系部分已出现，代入数据缺失。",
+          "reference_evidence": [],
+          "reference_points": "0.00",
+          "reference_rationale": "复制关系但没有任何题干数据代入。",
+          "rubric_requirement": "写出距离除以时间的关系并代入数据。"
+        }
+      ],
+      "human_review_status": "unreviewed",
+      "model_total_points": "6.00",
+      "prediction_error_code": null,
+      "prediction_status": "candidate",
+      "question": "货车行驶距离为题干给定量，求平均速度并写单位。",
+      "raw_quote_references": [
+        {
+          "criterion_key": "formula",
+          "location_status": "unique_exact",
+          "quote": "距离÷时间，单位km/h。",
+          "segment_index": 0,
+          "source_segment_text": "距离÷时间，单位km/h。"
+        }
+      ],
+      "reference_label_status": "disputed_unreviewed",
+      "reference_total_points": "0.00",
+      "regression_expectation": "从事后评分敏感性分析排除；修正题目需创建新数据集版本并重新请求模型。",
+      "rubric": [
+        {
+          "criterion_key": "formula",
+          "description": "写出距离除以时间的关系并代入数据。",
+          "max_points": "6.00"
+        },
+        {
+          "criterion_key": "unit",
+          "description": "根据具体数据给出数值及单位。",
+          "max_points": "4.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "kind": "text",
+          "page_index": 0,
+          "text": "距离÷时间，单位km/h。"
+        }
+      ],
+      "technical_finding": "题干没有给出距离与时间，学生写通用关系式。无法区分学生未代入和题目未提供数据；模型仍给6/6。"
+    },
+    {
+      "answer_key": "放弃的兼职收入及最佳替代用途价值",
+      "case_id": "v3-econ-opportunity-cost",
+      "categories": [
+        "rubric_interpretation_disagreement",
+        "reference_label_dispute"
+      ],
+      "criteria": [
+        {
+          "criterion_key": "definition",
+          "model_evidence": [
+            {
+              "kind": "quote",
+              "quote": "机会成本就是放弃的兼职工资。",
+              "reason": null,
+              "segment_index": 0,
+              "source_segment_text": "机会成本就是放弃的兼职工资。"
+            },
+            {
+              "kind": "no_evidence",
+              "quote": null,
+              "reason": "未出现“最佳替代选择价值”或“最佳替代用途价值”的表述。",
+              "segment_index": null,
+              "source_segment_text": null
+            }
+          ],
+          "model_points": "3.00",
+          "model_rationale": "学生指出机会成本是放弃的兼职工资，体现了放弃的替代选择价值，但未明确“最佳替代选择”或“最佳替代用途价值”这一限定。",
+          "reference_evidence": [
+            {
+              "quote": "放弃的兼职工资",
+              "segment_index": 0,
+              "text_start": 6
+            }
+          ],
+          "reference_points": "5.00",
+          "reference_rationale": "表达了放弃的替代收益。",
+          "rubric_requirement": "识别机会成本是放弃的最佳替代选择价值。"
+        },
+        {
+          "criterion_key": "application",
+          "model_evidence": [
+            {
+              "kind": "quote",
+              "quote": "机会成本就是放弃的兼职工资。",
+              "reason": null,
+              "segment_index": 0,
+              "source_segment_text": "机会成本就是放弃的兼职工资。"
+            },
+            {
+              "kind": "no_evidence",
+              "quote": null,
+              "reason": "未出现“培训”或说明培训与兼职选择之间的替代关系。",
+              "segment_index": null,
+              "source_segment_text": null
+            }
+          ],
+          "model_points": "4.00",
+          "model_rationale": "学生将机会成本与“兼职”选择联系起来，但未说明因参加培训而放弃兼职收入这一具体应用关系。",
+          "reference_evidence": [
+            {
+              "quote": "兼职工资",
+              "segment_index": 0,
+              "text_start": 9
+            }
+          ],
+          "reference_points": "5.00",
+          "reference_rationale": "明确指出具体被放弃收入。",
+          "rubric_requirement": "把定义应用到培训与兼职选择。"
+        }
+      ],
+      "human_review_status": "unreviewed",
+      "model_total_points": "7.00",
+      "prediction_error_code": null,
+      "prediction_status": "candidate",
+      "question": "小李用周末时间参加培训而放弃兼职收入，说明其机会成本。",
+      "raw_quote_references": [
+        {
+          "criterion_key": "definition",
+          "location_status": "unique_exact",
+          "quote": "机会成本就是放弃的兼职工资。",
+          "segment_index": 0,
+          "source_segment_text": "机会成本就是放弃的兼职工资。"
+        },
+        {
+          "criterion_key": "application",
+          "location_status": "unique_exact",
+          "quote": "机会成本就是放弃的兼职工资。",
+          "segment_index": 0,
+          "source_segment_text": "机会成本就是放弃的兼职工资。"
+        }
+      ],
+      "reference_label_status": "disputed_unreviewed",
+      "reference_total_points": "10.00",
+      "regression_expectation": "不作为已确认模型错误；待合格教师仲裁，事后敏感性分析排除。",
+      "rubric": [
+        {
+          "criterion_key": "definition",
+          "description": "识别机会成本是放弃的最佳替代选择价值。",
+          "max_points": "5.00"
+        },
+        {
+          "criterion_key": "application",
+          "description": "把定义应用到培训与兼职选择。",
+          "max_points": "5.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "kind": "text",
+          "page_index": 0,
+          "text": "机会成本就是放弃的兼职工资。"
+        }
+      ],
+      "technical_finding": "合成参考为10分，模型为7分。题干语境可支持参考解释，但Rubric对最佳替代价值及培训/兼职应用的拆分不够明确。"
+    },
+    {
+      "answer_key": "需要缺失图像中的标注才能解答",
+      "case_id": "v3-uncertain-missing-image",
+      "categories": [
+        "source_incomplete",
+        "missing_source_returned_zero"
+      ],
+      "criteria": [
+        {
+          "criterion_key": "diagram",
+          "model_evidence": [
+            {
+              "kind": "no_evidence",
+              "quote": null,
+              "reason": "作答中没有出现读取图中已知角与边的具体内容，仅说明图像资源缺失导致无法读取角度标记。",
+              "segment_index": null,
+              "source_segment_text": null
+            }
+          ],
+          "model_points": "0.00",
+          "model_rationale": "学生作答仅说明关键图像资源缺失、无法读取角度标记，未读取图中任何已知角与边，因此该项未完成。",
+          "reference_evidence": [],
+          "reference_points": null,
+          "reference_rationale": null,
+          "rubric_requirement": "读取图中已知角与边。"
+        }
+      ],
+      "human_review_status": "unreviewed",
+      "model_total_points": "0.00",
+      "prediction_error_code": null,
+      "prediction_status": "candidate",
+      "question": "根据学生照片中的几何图求角度，图像素材缺失时应如何处理？",
+      "raw_quote_references": [],
+      "reference_label_status": "synthetic_curated_unreviewed",
+      "reference_total_points": null,
+      "regression_expectation": "应由评分前Source Readiness门禁阻止模型评分或转人工，不应把该结果计作学生0分。",
+      "rubric": [
+        {
+          "criterion_key": "diagram",
+          "description": "读取图中已知角与边。",
+          "max_points": "10.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "kind": "text",
+          "page_index": 0,
+          "text": "[Canonical来源提示：关键图像资源缺失，无法读取角度标记。"
+        }
+      ],
+      "technical_finding": "题目依赖的图像不可用；模型仍产生0分候选并称学生未完成，把来源缺失混同于学生答错或未作答。"
+    },
+    {
+      "answer_key": "排除温度等因素影响，保证比较公平",
+      "case_id": "v3-quote-short-duplicate",
+      "categories": [
+        "duplicate_quote_location"
+      ],
+      "criteria": [],
+      "human_review_status": "unreviewed",
+      "model_total_points": null,
+      "prediction_error_code": "quote_ambiguous",
+      "prediction_status": "invalid_evidence",
+      "question": "指出实验中控制变量的目的，并引用具体变量。",
+      "raw_quote_references": [
+        {
+          "criterion_key": "control",
+          "location_status": "unique_exact",
+          "quote": "其余条件相同，便于比较。",
+          "segment_index": 0,
+          "source_segment_text": "温度保持25℃。温度保持25℃。其余条件相同，便于比较。"
+        },
+        {
+          "criterion_key": "example",
+          "location_status": "quote_ambiguous",
+          "quote": "温度保持25℃。",
+          "segment_index": 0,
+          "source_segment_text": "温度保持25℃。温度保持25℃。其余条件相同，便于比较。"
+        }
+      ],
+      "reference_label_status": "synthetic_curated_unreviewed",
+      "reference_total_points": "10.00",
+      "regression_expectation": "定位/候选覆盖失败，不是评分语义通过或失败样本。",
+      "rubric": [
+        {
+          "criterion_key": "control",
+          "description": "说明固定变量用于排除干扰。",
+          "max_points": "5.00"
+        },
+        {
+          "criterion_key": "example",
+          "description": "引用具体被控制变量。",
+          "max_points": "5.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "kind": "text",
+          "page_index": 0,
+          "text": "温度保持25℃。温度保持25℃。其余条件相同，便于比较。"
+        }
+      ],
+      "technical_finding": "模型选择的短Quote在学生片段中重复，唯一定位校验以quote_ambiguous拒绝候选。"
+    }
+  ],
+  "schema_name": "huipi.grading.p3d2a-error-regression-analysis",
+  "schema_version": "1.0",
+  "source_dataset_sha256": "de59c65d31669043ffd49c062318861a542bd039cfd04c7df4d4645dc4df620d",
+  "source_dataset_version": "3.0",
+  "source_prediction_sha256": "9b141f5af5a962ec988476ab4722c14319b48264292a037dba9a0d163b24eedf"
+}
