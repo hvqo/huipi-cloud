@@ -79,3 +79,24 @@ uv run python scripts/evaluate_quote_selection.py \
 报告分别列出 Provider 成功、JSON 协议、Rubric/Quote 确定性校验、候选覆盖、分数误差、高估风险及人工复核状态。候选准确率以已通过严格验证的候选为条件，必须同时报告覆盖率，不能把条件准确率当作全体案例表现。自动 Quote 定位成功只证明原文位置合法，不证明引用充分或评分理由在教学上正确。
 
 合成留出集通过也不能代表真实课堂作业的准确率。进入后续生产集成前至少需要教师独立标注、双评或仲裁、真实作业覆盖、隐私授权及稳定的高估风险控制。
+
+## 首轮真实合成运行结果
+
+本节记录 2026-10-14 的一次冻结运行。P3-D1 PR #19 已 squash 合并到 main，Merge SHA 为 `339a8430679ec70d9032e3ce7d754805fb4dfc43`；合并后 main CI 通过（519 passed，9 skipped）。本轮运行基于随后创建的独立 v3 留出集，未读取或覆盖 v1/v2 预测，也未调用真实学生资料。
+
+- 请求窗口：2026-10-14 10:15:09 至 10:16:42 UTC。时间取自运行清单创建和最终报告文件时间，只能证明本机观察到的运行窗口，不是服务端请求时间戳。
+- 实际响应模型：60/60 为 `deepseek-flash`。Provider 为 OpenAI-compatible，Thinking disabled，`max_output_tokens=4096`，超时120秒，重试0次。环境中配置的 `reasoning_effort=max` 在 Thinking disabled 时未生效，也未传入请求。
+- Provider、JSON解析与 Quote Selection 协议：分别为60/60、60/60、60/60。55条计分案例中，54条通过候选评分与来源校验；1条因短 Quote 在同一学生片段中重复而以 `quote_ambiguous` 被拒绝。
+- 101条模型 Quote 引用中，100条可唯一、精确定位，1条有歧义；定位率为100/101（99.01%）。这不表示已人工确认引用语义充分。
+- 5条材料不确定的探针有4条弃权（4/5）。`v3-uncertain-missing-image` 返回0分候选而非弃权，因此弃权门槛未通过；该探针不计入分数质量样本。
+- 在54条有效候选上，总分完全一致48/54（88.89%），总分 MAE 为24/54 = 0.4444分；5例高估、1例低估。Criterion 完全一致110/117（94.02%），MAE 为24/117 = 0.2051分；5项高估、2项低估。以上均为有效候选条件下的指标，须与54/55候选覆盖率同时解读。
+- 9条零分高风险参考案例中，2条收到正分候选：`v3-english-keyword` 因答案只含关键词获得4分，`v3-stem-copy-number` 因抄写一般公式、没有代入题目数据获得6分。关键零分Criterion误给分也为2项，两个高估门槛均失败。
+- 其他分数偏差包括 `v3-linear-arithmetic-slip` 与 `v3-mixed-right-wrong` 将错误运算步骤部分计分、`v3-partial-quarter` 对未完成单位换算给了完整换算分、`v3-econ-opportunity-cost` 低估2个Criterion。`v3-quote-short-duplicate` 未形成有效候选。详细逐项记录见运行目录中的 `human-semantic-review.json`。
+- 两条显式标为 `missing_steps` 的案例中，模型未对零分步骤正向给分；但 `no_work` 的题干关键词复制案例仍出现6分误给。该标签切片只有2例，不能据此宣称缺步风险已解决。所有引用的教学语义状态仍是 `needs_human_review`，人工状态为 `unreviewed`。
+- 预注册的12项门槛中7项通过、5项失败：Quote唯一定位、材料缺陷弃权、零分答案不误给分、关键零分项不误给分，以及人工语义审核。故不满足进入生产集成的条件，也不建议据此接入 P3-D2B。
+
+全轮收到50,285个输入Token和13,777个输出Token；Token用量均有返回，Thinking disabled 下报告的reasoning Token为0。缓存命中15,360、未命中34,925。按本轮发生时段的[DeepSeek 官方价格表](https://api-docs.deepseek.com/quick_start/pricing/)非高峰价（输入缓存命中 $0.003/M、未命中 $0.15/M、输出 $0.60/M）估算约 **$0.0136**，不是最终账单；若按高峰价计算约 **$0.0271**。请求前采用更保守的高峰未缓存输入价和每次4096输出Token预检，上界为 **$0.3603801**，低于预设$0.50预算。价格会变动，复现运行前需重新查价。
+
+原始预测和报告没有被更改。运行目录保存运行清单、[原始预测](../../data/evaluation/grading/deepseek-flash-grading-v3-2026-10-14-run-01/quote_selection-predictions.json)、独立不确定性探针、[复算报告](../../data/evaluation/grading/deepseek-flash-grading-v3-2026-10-14-run-01/quality-summary.json)及[逐项人工检查清单](../../data/evaluation/grading/deepseek-flash-grading-v3-2026-10-14-run-01/human-semantic-review.json)；`run-integrity.json` 记录这些文件的大小、SHA-256和本机观察到的运行时间。所有人工检查状态均为 `unreviewed`，这些材料不会写入 GradeReview。
+
+运行所用的远程调用和外部合成数据授权只在该命令进程中临时开启；本地 `.env` 没有修改。发送到 DeepSeek 的只有这组人工编制的合成题目、答案、Rubric和模拟学生作答。

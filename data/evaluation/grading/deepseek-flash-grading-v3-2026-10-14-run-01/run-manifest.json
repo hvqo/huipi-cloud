@@ -1,0 +1,37 @@
+{
+  "abstention_probe_case_ids": [
+    "v3-uncertain-missing-image",
+    "v3-uncertain-illegible",
+    "v3-uncertain-rubric-conflict",
+    "v3-uncertain-cropped-page",
+    "v3-uncertain-chem-symbol"
+  ],
+  "abstention_probe_count": 5,
+  "configured_model": "deepseek-flash",
+  "cost_preflight": {
+    "budget_usd": "0.50",
+    "definition": "UTF-8输入字节和协议开销作为保守上界；未缓存输入价与含思考输出价估算，不是账单或账户硬限额。",
+    "input_token_budget_bound": 218227,
+    "input_usd_per_million": "0.30",
+    "output_token_cap": 245760,
+    "output_usd_per_million": "1.20",
+    "preflight_estimate_usd": "0.3603801",
+    "request_cap": 60
+  },
+  "data_classification": "synthetic_only",
+  "dataset_sha256": "de59c65d31669043ffd49c062318861a542bd039cfd04c7df4d4645dc4df620d",
+  "invalid_response_retries": 0,
+  "max_output_tokens": 4096,
+  "preregistered": {
+    "acceptance_criteria_sha256": "8d4de2bdf2691ad2e494e343af22702665f2aface31eb521e4492700b3a5c861",
+    "manifest_file": "rubric-cases-v3-manifest.json",
+    "manifest_sha256": "4161ea5bfdc74abfa27f727852d96329fdd105c3ccd2aec3166ff7a3d7f8bb08"
+  },
+  "provider": "openai_compatible",
+  "request_cap": 55,
+  "requested_call_count": 60,
+  "standalone_quote_selection": true,
+  "strict_predictions_sha256": null,
+  "thinking_mode": "disabled",
+  "timeout_seconds": 120.0
+}
