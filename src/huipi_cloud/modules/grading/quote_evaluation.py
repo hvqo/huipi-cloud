@@ -42,12 +42,11 @@ from huipi_cloud.modules.grading.proposal_service import (
 )
 from huipi_cloud.modules.grading.quote_selection import (
     QUOTE_SELECTION_PROMPT_VERSION,
-    QUOTE_SELECTION_SYSTEM_PROMPT,
     GradeQuoteSelectionReply,
     QuoteSelectionReference,
-    build_quote_selection_prompt,
     convert_quote_selections,
     locate_quote,
+    quote_selection_prompts,
 )
 
 ExperimentMode = Literal["strict", "quote_selection"]
@@ -94,6 +93,7 @@ class ExperimentPredictionCase(EvaluationPredictionCase):
 
 
 class QuoteExperimentPredictions(RubricEvaluationPredictions):
+    experiment_config_digest: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
     schema_name: Literal["huipi.grading.quote-experiment.predictions"] = (
         "huipi.grading.quote-experiment.predictions"
     )
@@ -103,26 +103,32 @@ class QuoteExperimentPredictions(RubricEvaluationPredictions):
     cases: list[ExperimentPredictionCase] = Field(min_length=1, max_length=100)
 
 
-def experiment_prompts(case: RubricEvaluationCase, mode: ExperimentMode) -> tuple[str, str]:
+def experiment_prompts(
+    case: RubricEvaluationCase, mode: ExperimentMode, prompt_version: str | None = None
+) -> tuple[str, str]:
     document = build_grade_input(case)
     if mode == "strict":
+        if prompt_version not in {None, PROMPT_VERSION}:
+            raise ValueError("experiment_prompt_version_mismatch")
         return SYSTEM_PROMPT, build_user_prompt(document)
-    return QUOTE_SELECTION_SYSTEM_PROMPT, build_quote_selection_prompt(document)
+    return quote_selection_prompts(document, prompt_version or QUOTE_SELECTION_PROMPT_VERSION)
 
 
-def _prompt_sha256(case: RubricEvaluationCase, mode: ExperimentMode) -> str:
-    system, user = experiment_prompts(case, mode)
+def _prompt_sha256(
+    case: RubricEvaluationCase, mode: ExperimentMode, prompt_version: str | None = None
+) -> str:
+    system, user = experiment_prompts(case, mode, prompt_version)
     return hashlib.sha256((system + "\0" + user).encode("utf-8")).hexdigest()
 
 
 def unrequested_prediction(
-    case: RubricEvaluationCase, mode: ExperimentMode
+    case: RubricEvaluationCase, mode: ExperimentMode, prompt_version: str | None = None
 ) -> ExperimentPredictionCase:
     return ExperimentPredictionCase(
         case_id=case.case_id,
         status="excluded_uncertain" if case.reference_status != "included" else "not_requested",
         input_sha256=build_grade_input(case).input_sha256,
-        prompt_sha256=_prompt_sha256(case, mode),
+        prompt_sha256=_prompt_sha256(case, mode, prompt_version),
     )
 
 
@@ -175,14 +181,16 @@ async def request_experiment_prediction(
     mode: ExperimentMode,
     provider: TextGradingProvider,
     config: Settings,
+    *,
+    prompt_version: str | None = None,
 ) -> ExperimentPredictionCase:
     """One provider call, no retries; raw reply is never repaired or persisted as a Proposal."""
 
-    metadata = unrequested_prediction(case, mode).model_dump(
+    metadata = unrequested_prediction(case, mode, prompt_version).model_dump(
         exclude={"status", "error_code", "response_content"}
     )
     started = time.perf_counter()
-    system, user = experiment_prompts(case, mode)
+    system, user = experiment_prompts(case, mode, prompt_version)
     try:
         _check_prompt_budget(system, user, config)
         metadata["request_id"] = uuid4()
@@ -252,14 +260,23 @@ def create_experiment_predictions(
     provider: TextGradingProvider,
     config: Settings,
     cases: list[ExperimentPredictionCase],
+    *,
+    prompt_version: str | None = None,
 ) -> QuoteExperimentPredictions:
+    version = prompt_version or (
+        PROMPT_VERSION if mode == "strict" else QUOTE_SELECTION_PROMPT_VERSION
+    )
+    experiment_prompts(dataset.cases[0], mode, version)
     return QuoteExperimentPredictions(
+        experiment_config_digest=hashlib.sha256(
+            (provider.generation_config_digest + "\0" + version).encode()
+        ).hexdigest(),
         mode=mode,
         dataset_version=dataset.dataset_version,
         dataset_sha256=digest,
         provider=provider.provider_name,
         model_id=provider.model_id,
-        prompt_version=(PROMPT_VERSION if mode == "strict" else QUOTE_SELECTION_PROMPT_VERSION),
+        prompt_version=version,
         generation_config_digest=provider.generation_config_digest,
         thinking_mode=(
             config.grading_deepseek_thinking
@@ -316,9 +333,7 @@ def import_strict_baseline(
         "timeout_seconds": config.grading_timeout_seconds,
     }
     mismatched_fields = [
-        key
-        for key, value in expected_metadata.items()
-        if getattr(strict_predictions, key) != value
+        key for key, value in expected_metadata.items() if getattr(strict_predictions, key) != value
     ]
     if mismatched_fields:
         raise ValueError(
@@ -459,11 +474,12 @@ def evaluate_experiment(
     digest: str,
     predictions: QuoteExperimentPredictions,
 ) -> dict:
-    expected_prompt = (
-        PROMPT_VERSION if predictions.mode == "strict" else QUOTE_SELECTION_PROMPT_VERSION
-    )
-    if predictions.prompt_version != expected_prompt:
-        raise ValueError("experiment_prompt_version_mismatch")
+    experiment_prompts(dataset.cases[0], predictions.mode, predictions.prompt_version)
+    expected_config_digest = hashlib.sha256(
+        (predictions.generation_config_digest + "\0" + predictions.prompt_version).encode()
+    ).hexdigest()
+    if predictions.experiment_config_digest not in {None, expected_config_digest}:
+        raise ValueError("experiment_config_digest_mismatch")
     by_case_id = {case.case_id: case for case in dataset.cases}
     for prediction in predictions.cases:
         case = by_case_id.get(prediction.case_id)
@@ -471,7 +487,9 @@ def evaluate_experiment(
             raise ValueError("prediction_case_set_mismatch")
         if prediction.input_sha256 != build_grade_input(case).input_sha256:
             raise ValueError("experiment_input_sha256_mismatch")
-        if prediction.prompt_sha256 != _prompt_sha256(case, predictions.mode):
+        if prediction.prompt_sha256 != _prompt_sha256(
+            case, predictions.mode, predictions.prompt_version
+        ):
             raise ValueError("experiment_prompt_sha256_mismatch")
         if prediction.response_content is not None and (
             not prediction.provider_attempted

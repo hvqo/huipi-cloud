@@ -1,0 +1,1182 @@
+{
+  "dataset_name": "huipi-rubric-candidate-grading",
+  "dataset_version": "3-regression-1",
+  "source": "synthetic_curated_reference",
+  "description": "已观察的v3开发回归切片，4条明确风险、15条正常对照和1条Quote歧义案例；不是新Holdout。",
+  "cases": [
+    {
+      "case_id": "v3-linear-arithmetic-slip",
+      "case_kind": "algebra_arithmetic_error",
+      "question_type": "calculation",
+      "stem": "解 7x+5=26，说明每一步。",
+      "max_score": "10.00",
+      "answer_key": "x=3",
+      "rubric": [
+        {
+          "criterion_key": "isolation",
+          "description": "正确移项并得到7x=21。",
+          "max_points": "5.00"
+        },
+        {
+          "criterion_key": "division",
+          "description": "正确计算21÷7。",
+          "max_points": "3.00"
+        },
+        {
+          "criterion_key": "result",
+          "description": "写出x=3。",
+          "max_points": "2.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "text": "7x+5=26\n7x=21\nx=3.5",
+          "page_index": 0,
+          "kind": "text"
+        }
+      ],
+      "reference_status": "included",
+      "reference_total_score": "5.00",
+      "reference_criterion_scores": [
+        {
+          "criterion_key": "isolation",
+          "awarded_points": "5.00",
+          "rationale": "移项正确。",
+          "evidence": [
+            {
+              "segment_index": 0,
+              "quote": "7x=21",
+              "text_start": 8
+            }
+          ]
+        },
+        {
+          "criterion_key": "division",
+          "awarded_points": "0.00",
+          "rationale": "最终除法计算错误，且没有正确的除法过程。",
+          "evidence": []
+        },
+        {
+          "criterion_key": "result",
+          "awarded_points": "0.00",
+          "rationale": "答案写为3.5。",
+          "evidence": []
+        }
+      ],
+      "reference_rationale": "只认可到正确的移项；算术错误不能获得除法或结果分。",
+      "label_provenance": "synthetic_curated_reference",
+      "difficulty": "easy"
+    },
+    {
+      "case_id": "v3-mixed-right-wrong",
+      "case_kind": "mixed_correct_wrong_steps",
+      "question_type": "calculation",
+      "stem": "解 5x−4=21，标出有效步骤和最终答案。",
+      "max_score": "10.00",
+      "answer_key": "x=5",
+      "rubric": [
+        {
+          "criterion_key": "isolation",
+          "description": "正确移项得到5x=25。",
+          "max_points": "5.00"
+        },
+        {
+          "criterion_key": "division",
+          "description": "正确除以5得到x=5。",
+          "max_points": "3.00"
+        },
+        {
+          "criterion_key": "result",
+          "description": "答案x=5。",
+          "max_points": "2.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "text": "5x−4=21\n5x=25\nx=6",
+          "page_index": 0,
+          "kind": "text"
+        }
+      ],
+      "reference_status": "included",
+      "reference_total_score": "5.00",
+      "reference_criterion_scores": [
+        {
+          "criterion_key": "isolation",
+          "awarded_points": "5.00",
+          "rationale": "中间步骤正确。",
+          "evidence": [
+            {
+              "segment_index": 0,
+              "quote": "5x=25",
+              "text_start": 8
+            }
+          ]
+        },
+        {
+          "criterion_key": "division",
+          "awarded_points": "0.00",
+          "rationale": "最终计算写错为6。",
+          "evidence": []
+        },
+        {
+          "criterion_key": "result",
+          "awarded_points": "0.00",
+          "rationale": "最终答案错误。",
+          "evidence": []
+        }
+      ],
+      "reference_rationale": "混合正确过程和错误最终值，过程分与结果分分别判。",
+      "label_provenance": "synthetic_curated_reference",
+      "difficulty": "medium"
+    },
+    {
+      "case_id": "v3-partial-quarter",
+      "case_kind": "rubric-quarter-credit",
+      "question_type": "calculation",
+      "stem": "比例尺1:25000，地图距离3 cm，求实地距离并换算为米。",
+      "max_score": "10.00",
+      "answer_key": "750 m",
+      "rubric": [
+        {
+          "criterion_key": "scale",
+          "description": "正确使用比例尺得到75000 cm。",
+          "max_points": "5.00"
+        },
+        {
+          "criterion_key": "conversion",
+          "description": "正确换算为750 m。",
+          "max_points": "5.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "text": "3×25000=75000 cm。",
+          "page_index": 0,
+          "kind": "text"
+        }
+      ],
+      "reference_status": "included",
+      "reference_total_score": "5.00",
+      "reference_criterion_scores": [
+        {
+          "criterion_key": "scale",
+          "awarded_points": "5.00",
+          "rationale": "地图距离乘比例因子正确。",
+          "evidence": [
+            {
+              "segment_index": 0,
+              "quote": "3×25000=75000 cm",
+              "text_start": 0
+            }
+          ]
+        },
+        {
+          "criterion_key": "conversion",
+          "awarded_points": "0.00",
+          "rationale": "未进行单位换算，也未给米数。",
+          "evidence": []
+        }
+      ],
+      "reference_rationale": "保留已完成计算项得分，不推断后续换算。",
+      "label_provenance": "synthetic_curated_reference",
+      "difficulty": "medium"
+    },
+    {
+      "case_id": "v3-english-keyword",
+      "case_kind": "english-keyword-only",
+      "question_type": "language",
+      "stem": "用“photosynthesis”解释植物如何利用光能。",
+      "max_score": "10.00",
+      "answer_key": "植物利用光能将CO₂和水合成为糖并释放氧气",
+      "rubric": [
+        {
+          "criterion_key": "process",
+          "description": "说明光能驱动原料转化为糖。",
+          "max_points": "6.00"
+        },
+        {
+          "criterion_key": "product",
+          "description": "说明氧气是产物之一。",
+          "max_points": "4.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "text": "photosynthesis sunlight carbon dioxide oxygen",
+          "page_index": 0,
+          "kind": "text"
+        }
+      ],
+      "reference_status": "included",
+      "reference_total_score": "0.00",
+      "reference_criterion_scores": [
+        {
+          "criterion_key": "process",
+          "awarded_points": "0.00",
+          "rationale": "只列关键词，无过程关系。",
+          "evidence": []
+        },
+        {
+          "criterion_key": "product",
+          "awarded_points": "0.00",
+          "rationale": "仅列词语，不说明其为产物。",
+          "evidence": []
+        }
+      ],
+      "reference_rationale": "术语集合没有给出关系或过程。",
+      "label_provenance": "synthetic_curated_reference",
+      "difficulty": "easy"
+    },
+    {
+      "case_id": "v3-eq-no-work",
+      "case_kind": "algebra_no_work",
+      "question_type": "calculation",
+      "stem": "解方程 3(x−2)=12，并写出关键步骤。",
+      "max_score": "10.00",
+      "answer_key": "x=6",
+      "rubric": [
+        {
+          "criterion_key": "method",
+          "description": "列出等价变形并正确求解。",
+          "max_points": "6.00"
+        },
+        {
+          "criterion_key": "result",
+          "description": "最终解为x=6。",
+          "max_points": "4.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "text": "x=6。",
+          "page_index": 0,
+          "kind": "text"
+        }
+      ],
+      "reference_status": "included",
+      "reference_total_score": "4.00",
+      "reference_criterion_scores": [
+        {
+          "criterion_key": "method",
+          "awarded_points": "0.00",
+          "rationale": "只写结果，没有任何等价变形。",
+          "evidence": []
+        },
+        {
+          "criterion_key": "result",
+          "awarded_points": "4.00",
+          "rationale": "最终结果正确。",
+          "evidence": [
+            {
+              "segment_index": 0,
+              "quote": "x=6",
+              "text_start": 0
+            }
+          ]
+        }
+      ],
+      "reference_rationale": "仅最终结果可得结果项4分；不得推断未展示步骤。",
+      "label_provenance": "synthetic_curated_reference",
+      "difficulty": "easy"
+    },
+    {
+      "case_id": "v3-lucky-arithmetic",
+      "case_kind": "algebra_lucky_result",
+      "question_type": "calculation",
+      "stem": "先计算 4×3−1，再用算式说明过程。",
+      "max_score": "10.00",
+      "answer_key": "11",
+      "rubric": [
+        {
+          "criterion_key": "multiplication",
+          "description": "正确计算4×3。",
+          "max_points": "4.00"
+        },
+        {
+          "criterion_key": "subtraction",
+          "description": "从正确乘积减去1。",
+          "max_points": "3.00"
+        },
+        {
+          "criterion_key": "result",
+          "description": "最终结果11。",
+          "max_points": "3.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "text": "4×3=13，所以13−2=11；答案11。",
+          "page_index": 0,
+          "kind": "text"
+        }
+      ],
+      "reference_status": "included",
+      "reference_total_score": "3.00",
+      "reference_criterion_scores": [
+        {
+          "criterion_key": "multiplication",
+          "awarded_points": "0.00",
+          "rationale": "学生明确写出错误乘积13。",
+          "evidence": []
+        },
+        {
+          "criterion_key": "subtraction",
+          "awarded_points": "0.00",
+          "rationale": "后续运算使用错误中间值并减2。",
+          "evidence": []
+        },
+        {
+          "criterion_key": "result",
+          "awarded_points": "3.00",
+          "rationale": "偶然写出正确最终数值，结果项按Rubric单独给分。",
+          "evidence": [
+            {
+              "segment_index": 0,
+              "quote": "答案11",
+              "text_start": 17
+            }
+          ]
+        }
+      ],
+      "reference_rationale": "偶然得到正确结果不证明过程正确；只给Rubric明确列出的结果项。",
+      "label_provenance": "synthetic_curated_reference",
+      "difficulty": "medium"
+    },
+    {
+      "case_id": "v3-quadratic-factor",
+      "case_kind": "quadratic_factorization",
+      "question_type": "calculation",
+      "stem": "解 x²−5x+6=0，写出因式分解和根。",
+      "max_score": "10.00",
+      "answer_key": "x=2或x=3",
+      "rubric": [
+        {
+          "criterion_key": "factor",
+          "description": "正确因式分解为(x−2)(x−3)。",
+          "max_points": "5.00"
+        },
+        {
+          "criterion_key": "roots",
+          "description": "由零乘积性质得到两个根。",
+          "max_points": "5.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "text": "x²−5x+6=(x−2)(x−3)=0\nx=2或x=3",
+          "page_index": 0,
+          "kind": "text"
+        }
+      ],
+      "reference_status": "included",
+      "reference_total_score": "10.00",
+      "reference_criterion_scores": [
+        {
+          "criterion_key": "factor",
+          "awarded_points": "5.00",
+          "rationale": "因式分解完全正确。",
+          "evidence": [
+            {
+              "segment_index": 0,
+              "quote": "(x−2)(x−3)",
+              "text_start": 8
+            }
+          ]
+        },
+        {
+          "criterion_key": "roots",
+          "awarded_points": "5.00",
+          "rationale": "两个根均正确。",
+          "evidence": [
+            {
+              "segment_index": 0,
+              "quote": "x=2或x=3",
+              "text_start": 21
+            }
+          ]
+        }
+      ],
+      "reference_rationale": "完整分解及两根均有直接文本证据。",
+      "label_provenance": "synthetic_curated_reference",
+      "difficulty": "easy"
+    },
+    {
+      "case_id": "v3-completing-square",
+      "case_kind": "quadratic_root_error",
+      "question_type": "calculation",
+      "stem": "解 x²−6x+5=0，使用配方法。",
+      "max_score": "10.00",
+      "answer_key": "x=1或x=5",
+      "rubric": [
+        {
+          "criterion_key": "square",
+          "description": "正确配方得到(x−3)²=4。",
+          "max_points": "4.00"
+        },
+        {
+          "criterion_key": "root_step",
+          "description": "正确开平方为x−3=±2。",
+          "max_points": "3.00"
+        },
+        {
+          "criterion_key": "answer",
+          "description": "给出x=1或x=5。",
+          "max_points": "3.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "text": "x²−6x+5=0\n(x−3)²=4\nx−3=±4\nx=7或x=−1",
+          "page_index": 0,
+          "kind": "text"
+        }
+      ],
+      "reference_status": "included",
+      "reference_total_score": "4.00",
+      "reference_criterion_scores": [
+        {
+          "criterion_key": "square",
+          "awarded_points": "4.00",
+          "rationale": "配方正确。",
+          "evidence": [
+            {
+              "segment_index": 0,
+              "quote": "(x−3)²=4",
+              "text_start": 10
+            }
+          ]
+        },
+        {
+          "criterion_key": "root_step",
+          "awarded_points": "0.00",
+          "rationale": "将平方根4误写为±4。",
+          "evidence": []
+        },
+        {
+          "criterion_key": "answer",
+          "awarded_points": "0.00",
+          "rationale": "最终两根错误。",
+          "evidence": []
+        }
+      ],
+      "reference_rationale": "中间配方步骤正确，根式与最终解错误。",
+      "label_provenance": "synthetic_curated_reference",
+      "difficulty": "medium"
+    },
+    {
+      "case_id": "v3-fraction-equivalent",
+      "case_kind": "fraction_equivalent_allowed",
+      "question_type": "calculation",
+      "stem": "求 3/8+1/4，要求说明通分。",
+      "max_score": "10.00",
+      "answer_key": "5/8",
+      "rubric": [
+        {
+          "criterion_key": "common_denominator",
+          "description": "将1/4化成2/8。",
+          "max_points": "4.00"
+        },
+        {
+          "criterion_key": "sum",
+          "description": "正确相加得到5/8。",
+          "max_points": "4.00"
+        },
+        {
+          "criterion_key": "form",
+          "description": "答案使用正确分数形式。",
+          "max_points": "2.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "text": "1/4=2/8，3/8+2/8=5/8。",
+          "page_index": 0,
+          "kind": "text"
+        }
+      ],
+      "reference_status": "included",
+      "reference_total_score": "10.00",
+      "reference_criterion_scores": [
+        {
+          "criterion_key": "common_denominator",
+          "awarded_points": "4.00",
+          "rationale": "通分正确。",
+          "evidence": [
+            {
+              "segment_index": 0,
+              "quote": "1/4=2/8",
+              "text_start": 0
+            }
+          ]
+        },
+        {
+          "criterion_key": "sum",
+          "awarded_points": "4.00",
+          "rationale": "分子相加正确。",
+          "evidence": [
+            {
+              "segment_index": 0,
+              "quote": "3/8+2/8=5/8",
+              "text_start": 8
+            }
+          ]
+        },
+        {
+          "criterion_key": "form",
+          "awarded_points": "2.00",
+          "rationale": "答案为正确且最简的5/8。",
+          "evidence": [
+            {
+              "segment_index": 0,
+              "quote": "5/8",
+              "text_start": 16
+            }
+          ]
+        }
+      ],
+      "reference_rationale": "三个得分点分别有原文证据。",
+      "label_provenance": "synthetic_curated_reference",
+      "difficulty": "easy"
+    },
+    {
+      "case_id": "v3-decimal-strict",
+      "case_kind": "fraction_decimal_policy",
+      "question_type": "calculation",
+      "stem": "将 7/20 写成最简分数，并写出化简依据。",
+      "max_score": "10.00",
+      "answer_key": "7/20",
+      "rubric": [
+        {
+          "criterion_key": "simplification",
+          "description": "以分数形式表示并证明已最简。",
+          "max_points": "6.00"
+        },
+        {
+          "criterion_key": "result_form",
+          "description": "最终答案为最简分数7/20。",
+          "max_points": "4.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "text": "0.35",
+          "page_index": 0,
+          "kind": "text"
+        }
+      ],
+      "reference_status": "included",
+      "reference_total_score": "0.00",
+      "reference_criterion_scores": [
+        {
+          "criterion_key": "simplification",
+          "awarded_points": "0.00",
+          "rationale": "仅写小数，未给出分数化简过程。",
+          "evidence": []
+        },
+        {
+          "criterion_key": "result_form",
+          "awarded_points": "0.00",
+          "rationale": "答案不符合题目明确要求的表示形式。",
+          "evidence": []
+        }
+      ],
+      "reference_rationale": "数值等价不替代明确要求的最简分数形式。",
+      "label_provenance": "synthetic_curated_reference",
+      "difficulty": "easy"
+    },
+    {
+      "case_id": "v3-linear-system",
+      "case_kind": "linear_system_partial",
+      "question_type": "calculation",
+      "stem": "解方程组 x+y=9，2x−y=3。",
+      "max_score": "10.00",
+      "answer_key": "x=4,y=5",
+      "rubric": [
+        {
+          "criterion_key": "elimination",
+          "description": "正确消元得到3x=12并求出x=4。",
+          "max_points": "5.00"
+        },
+        {
+          "criterion_key": "substitution",
+          "description": "代回并正确求出y=5。",
+          "max_points": "5.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "text": "两式相加：3x=12，所以x=4。代回得y=5。",
+          "page_index": 0,
+          "kind": "text"
+        }
+      ],
+      "reference_status": "included",
+      "reference_total_score": "10.00",
+      "reference_criterion_scores": [
+        {
+          "criterion_key": "elimination",
+          "awarded_points": "5.00",
+          "rationale": "消元及x值均正确。",
+          "evidence": [
+            {
+              "segment_index": 0,
+              "quote": "3x=12，所以x=4",
+              "text_start": 5
+            }
+          ]
+        },
+        {
+          "criterion_key": "substitution",
+          "awarded_points": "5.00",
+          "rationale": "代回结果正确。",
+          "evidence": [
+            {
+              "segment_index": 0,
+              "quote": "代回得y=5",
+              "text_start": 17
+            }
+          ]
+        }
+      ],
+      "reference_rationale": "消元和代回均明确出现。",
+      "label_provenance": "synthetic_curated_reference",
+      "difficulty": "medium"
+    },
+    {
+      "case_id": "v3-physics-wrong-unit",
+      "case_kind": "physics_wrong_unit",
+      "question_type": "physics",
+      "stem": "电流2安培通过3欧姆电阻，求电压并写单位。",
+      "max_score": "10.00",
+      "answer_key": "6 V",
+      "rubric": [
+        {
+          "criterion_key": "law",
+          "description": "正确使用欧姆定律U=IR。",
+          "max_points": "4.00"
+        },
+        {
+          "criterion_key": "value",
+          "description": "正确计算数值6。",
+          "max_points": "4.00"
+        },
+        {
+          "criterion_key": "unit",
+          "description": "电压单位为伏特V。",
+          "max_points": "2.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "text": "U=IR=2×3=6 A。",
+          "page_index": 0,
+          "kind": "text"
+        }
+      ],
+      "reference_status": "included",
+      "reference_total_score": "8.00",
+      "reference_criterion_scores": [
+        {
+          "criterion_key": "law",
+          "awarded_points": "4.00",
+          "rationale": "公式正确。",
+          "evidence": [
+            {
+              "segment_index": 0,
+              "quote": "U=IR",
+              "text_start": 0
+            }
+          ]
+        },
+        {
+          "criterion_key": "value",
+          "awarded_points": "4.00",
+          "rationale": "乘法正确。",
+          "evidence": [
+            {
+              "segment_index": 0,
+              "quote": "2×3=6",
+              "text_start": 5
+            }
+          ]
+        },
+        {
+          "criterion_key": "unit",
+          "awarded_points": "0.00",
+          "rationale": "把电压单位写成A。",
+          "evidence": []
+        }
+      ],
+      "reference_rationale": "单位错误只扣单位项，不抹去正确公式和数值。",
+      "label_provenance": "synthetic_curated_reference",
+      "difficulty": "medium"
+    },
+    {
+      "case_id": "v3-chem-balanced",
+      "case_kind": "chem-balanced",
+      "question_type": "chemistry",
+      "stem": "配平 Fe+O₂→Fe₂O₃，并说明氧原子守恒。",
+      "max_score": "10.00",
+      "answer_key": "4Fe+3O₂→2Fe₂O₃",
+      "rubric": [
+        {
+          "criterion_key": "equation",
+          "description": "最简系数4:3:2配平。",
+          "max_points": "7.00"
+        },
+        {
+          "criterion_key": "conservation",
+          "description": "指出氧原子数相同。",
+          "max_points": "3.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "text": "4Fe+3O₂→2Fe₂O₃；左右各有6个氧原子。",
+          "page_index": 0,
+          "kind": "text"
+        }
+      ],
+      "reference_status": "included",
+      "reference_total_score": "10.00",
+      "reference_criterion_scores": [
+        {
+          "criterion_key": "equation",
+          "awarded_points": "7.00",
+          "rationale": "系数正确且为最简整数比。",
+          "evidence": [
+            {
+              "segment_index": 0,
+              "quote": "4Fe+3O₂→2Fe₂O₃",
+              "text_start": 0
+            }
+          ]
+        },
+        {
+          "criterion_key": "conservation",
+          "awarded_points": "3.00",
+          "rationale": "明确写出两侧均为6个氧原子。",
+          "evidence": [
+            {
+              "segment_index": 0,
+              "quote": "左右各有6个氧原子",
+              "text_start": 15
+            }
+          ]
+        }
+      ],
+      "reference_rationale": "方程式与守恒解释准确。",
+      "label_provenance": "synthetic_curated_reference",
+      "difficulty": "medium"
+    },
+    {
+      "case_id": "v3-chem-unbalanced",
+      "case_kind": "chem-unbalanced",
+      "question_type": "chemistry",
+      "stem": "配平 H₂+O₂→H₂O。",
+      "max_score": "10.00",
+      "answer_key": "2H₂+O₂→2H₂O",
+      "rubric": [
+        {
+          "criterion_key": "elements",
+          "description": "两侧氢、氧原子数相等。",
+          "max_points": "5.00"
+        },
+        {
+          "criterion_key": "coefficients",
+          "description": "给出最简整数系数2:1:2。",
+          "max_points": "5.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "text": "H₂+O₂→H₂O",
+          "page_index": 0,
+          "kind": "text"
+        }
+      ],
+      "reference_status": "included",
+      "reference_total_score": "0.00",
+      "reference_criterion_scores": [
+        {
+          "criterion_key": "elements",
+          "awarded_points": "0.00",
+          "rationale": "方程式未配平。",
+          "evidence": []
+        },
+        {
+          "criterion_key": "coefficients",
+          "awarded_points": "0.00",
+          "rationale": "没有写出任何配平系数。",
+          "evidence": []
+        }
+      ],
+      "reference_rationale": "原子数不守恒，不能因出现反应物和产物名称给分。",
+      "label_provenance": "synthetic_curated_reference",
+      "difficulty": "easy"
+    },
+    {
+      "case_id": "v3-bio-photosynthesis",
+      "case_kind": "biology-photosynthesis",
+      "question_type": "short_answer",
+      "stem": "简述光合作用的场所、主要原料和产物。",
+      "max_score": "10.00",
+      "answer_key": "叶绿体中以CO₂和H₂O合成有机物并释放O₂",
+      "rubric": [
+        {
+          "criterion_key": "site_inputs",
+          "description": "指出叶绿体及CO₂、H₂O原料。",
+          "max_points": "5.00"
+        },
+        {
+          "criterion_key": "products",
+          "description": "指出有机物和O₂产物。",
+          "max_points": "5.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "text": "主要在叶绿体进行，以二氧化碳和水为原料，在光能下合成有机物并释放氧气。",
+          "page_index": 0,
+          "kind": "text"
+        }
+      ],
+      "reference_status": "included",
+      "reference_total_score": "10.00",
+      "reference_criterion_scores": [
+        {
+          "criterion_key": "site_inputs",
+          "awarded_points": "5.00",
+          "rationale": "场所和原料均正确。",
+          "evidence": [
+            {
+              "segment_index": 0,
+              "quote": "叶绿体",
+              "text_start": 3
+            },
+            {
+              "segment_index": 0,
+              "quote": "二氧化碳和水",
+              "text_start": 10
+            }
+          ]
+        },
+        {
+          "criterion_key": "products",
+          "awarded_points": "5.00",
+          "rationale": "两类产物均正确。",
+          "evidence": [
+            {
+              "segment_index": 0,
+              "quote": "合成有机物并释放氧气",
+              "text_start": 24
+            }
+          ]
+        }
+      ],
+      "reference_rationale": "语义改写与标准表达等价，证据完整。",
+      "label_provenance": "synthetic_curated_reference",
+      "difficulty": "easy"
+    },
+    {
+      "case_id": "v3-chinese-paraphrase",
+      "case_kind": "chinese-short-answer-paraphrase",
+      "question_type": "short_answer",
+      "stem": "用自己的话说明“学而不思则罔，思而不学则殆”的含义。",
+      "max_score": "10.00",
+      "answer_key": "学习和思考应结合，偏废一方会产生局限",
+      "rubric": [
+        {
+          "criterion_key": "study_thinking",
+          "description": "说明学习与思考需相互结合。",
+          "max_points": "5.00"
+        },
+        {
+          "criterion_key": "consequence",
+          "description": "说明只学或只思各自的局限。",
+          "max_points": "5.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "text": "只读书不琢磨就容易迷惑；只凭空想不学习，认识就会陷入危险。",
+          "page_index": 0,
+          "kind": "text"
+        }
+      ],
+      "reference_status": "included",
+      "reference_total_score": "10.00",
+      "reference_criterion_scores": [
+        {
+          "criterion_key": "study_thinking",
+          "awarded_points": "5.00",
+          "rationale": "准确表达二者结合的关系。",
+          "evidence": [
+            {
+              "segment_index": 0,
+              "quote": "只读书不琢磨",
+              "text_start": 0
+            },
+            {
+              "segment_index": 0,
+              "quote": "只凭空想不学习",
+              "text_start": 12
+            }
+          ]
+        },
+        {
+          "criterion_key": "consequence",
+          "awarded_points": "5.00",
+          "rationale": "分别写出迷惑和认识危险。",
+          "evidence": [
+            {
+              "segment_index": 0,
+              "quote": "只读书不琢磨就容易迷惑",
+              "text_start": 0
+            },
+            {
+              "segment_index": 0,
+              "quote": "只凭空想不学习",
+              "text_start": 12
+            }
+          ]
+        }
+      ],
+      "reference_rationale": "语义等价的中文改写接受，不要求逐字引用答案Key。",
+      "label_provenance": "synthetic_curated_reference",
+      "difficulty": "medium"
+    },
+    {
+      "case_id": "v3-english-answer-only",
+      "case_kind": "english-no-explanation",
+      "question_type": "language",
+      "stem": "用过去完成时改写“He left before I arrived.”，再另用一句话说明哪个动作先发生。",
+      "max_score": "10.00",
+      "answer_key": "He had left before I arrived.",
+      "rubric": [
+        {
+          "criterion_key": "form",
+          "description": "正确使用过去完成时。",
+          "max_points": "6.00"
+        },
+        {
+          "criterion_key": "sequence",
+          "description": "解释离开发生在到达之前。",
+          "max_points": "4.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "text": "He had left before I arrived.",
+          "page_index": 0,
+          "kind": "text"
+        }
+      ],
+      "reference_status": "included",
+      "reference_total_score": "6.00",
+      "reference_criterion_scores": [
+        {
+          "criterion_key": "form",
+          "awarded_points": "6.00",
+          "rationale": "句型正确。",
+          "evidence": [
+            {
+              "segment_index": 0,
+              "quote": "He had left before I arrived.",
+              "text_start": 0
+            }
+          ]
+        },
+        {
+          "criterion_key": "sequence",
+          "awarded_points": "0.00",
+          "rationale": "没有提供时间先后说明。",
+          "evidence": []
+        }
+      ],
+      "reference_rationale": "形式正确，但未提供要求的解释。",
+      "label_provenance": "synthetic_curated_reference",
+      "difficulty": "medium"
+    },
+    {
+      "case_id": "v3-cross-page-proof",
+      "case_kind": "cross_page_argument",
+      "question_type": "short_answer",
+      "stem": "根据材料说明城市湿地对防洪和生物多样性的两项作用。",
+      "max_score": "10.00",
+      "answer_key": "滞蓄雨水并提供生境",
+      "rubric": [
+        {
+          "criterion_key": "flood",
+          "description": "说明滞蓄径流、降低洪峰。",
+          "max_points": "5.00"
+        },
+        {
+          "criterion_key": "habitat",
+          "description": "说明为生物提供栖息地。",
+          "max_points": "5.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "text": "湿地可滞蓄暴雨径流。",
+          "page_index": 2,
+          "kind": "text"
+        },
+        {
+          "text": "它也为多种水鸟和植物提供栖息地。",
+          "page_index": 3,
+          "kind": "text"
+        }
+      ],
+      "reference_status": "included",
+      "reference_total_score": "10.00",
+      "reference_criterion_scores": [
+        {
+          "criterion_key": "flood",
+          "awarded_points": "5.00",
+          "rationale": "防洪作用在第一页段落明确出现。",
+          "evidence": [
+            {
+              "segment_index": 0,
+              "quote": "滞蓄暴雨径流",
+              "text_start": 3
+            }
+          ]
+        },
+        {
+          "criterion_key": "habitat",
+          "awarded_points": "5.00",
+          "rationale": "多类生物栖息地作用明确。",
+          "evidence": [
+            {
+              "segment_index": 1,
+              "quote": "提供栖息地",
+              "text_start": 10
+            }
+          ]
+        }
+      ],
+      "reference_rationale": "跨页两个独立片段各支持一项。",
+      "label_provenance": "synthetic_curated_reference",
+      "difficulty": "medium"
+    },
+    {
+      "case_id": "v3-rubric-boundary",
+      "case_kind": "rubric-boundary-half",
+      "question_type": "calculation",
+      "stem": "按评分细则：正确列出变形4分，正确结果6分。求 2x+1=9。",
+      "max_score": "10.00",
+      "answer_key": "x=4",
+      "rubric": [
+        {
+          "criterion_key": "transform",
+          "description": "列出2x=8。",
+          "max_points": "4.00"
+        },
+        {
+          "criterion_key": "result",
+          "description": "最终结果x=4。",
+          "max_points": "6.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "text": "2x+1=9，2x=8，所以x=4。",
+          "page_index": 0,
+          "kind": "text"
+        }
+      ],
+      "reference_status": "included",
+      "reference_total_score": "10.00",
+      "reference_criterion_scores": [
+        {
+          "criterion_key": "transform",
+          "awarded_points": "4.00",
+          "rationale": "变形正确。",
+          "evidence": [
+            {
+              "segment_index": 0,
+              "quote": "2x=8",
+              "text_start": 7
+            }
+          ]
+        },
+        {
+          "criterion_key": "result",
+          "awarded_points": "6.00",
+          "rationale": "结果正确。",
+          "evidence": [
+            {
+              "segment_index": 0,
+              "quote": "x=4",
+              "text_start": 14
+            }
+          ]
+        }
+      ],
+      "reference_rationale": "边界满分拆分与细则一致。",
+      "label_provenance": "synthetic_curated_reference",
+      "difficulty": "easy"
+    },
+    {
+      "case_id": "v3-quote-short-duplicate",
+      "case_kind": "short-quote-duplicate",
+      "question_type": "short_answer",
+      "stem": "指出实验中控制变量的目的，并引用具体变量。",
+      "max_score": "10.00",
+      "answer_key": "排除温度等因素影响，保证比较公平",
+      "rubric": [
+        {
+          "criterion_key": "control",
+          "description": "说明固定变量用于排除干扰。",
+          "max_points": "5.00"
+        },
+        {
+          "criterion_key": "example",
+          "description": "引用具体被控制变量。",
+          "max_points": "5.00"
+        }
+      ],
+      "student_segments": [
+        {
+          "text": "温度保持25℃。温度保持25℃。其余条件相同，便于比较。",
+          "page_index": 0,
+          "kind": "text"
+        }
+      ],
+      "reference_status": "included",
+      "reference_total_score": "10.00",
+      "reference_criterion_scores": [
+        {
+          "criterion_key": "control",
+          "awarded_points": "5.00",
+          "rationale": "目的直接说明。",
+          "evidence": [
+            {
+              "segment_index": 0,
+              "quote": "其余条件相同，便于比较",
+              "text_start": 16
+            }
+          ]
+        },
+        {
+          "criterion_key": "example",
+          "awarded_points": "5.00",
+          "rationale": "温度及具体值出现两次，标注起点明确。",
+          "evidence": [
+            {
+              "segment_index": 0,
+              "quote": "温度保持25℃",
+              "text_start": 0
+            }
+          ]
+        }
+      ],
+      "reference_rationale": "重复短串需使用精确字符起点，自动唯一定位会拒绝重复引用。",
+      "label_provenance": "synthetic_curated_reference",
+      "difficulty": "medium"
+    }
+  ]
+}

@@ -61,12 +61,14 @@ async def _prepared_review(
     decision: str = "response_present",
     middle_content: str = _MIDDLE_CONTENT,
     response_text: str = _RESPONSE,
+    question_stem: str = "读取合成样例。",
 ):
     submission_id, _ = await _seed_parsed_source(
         client,
         storage,
         engine,
         middle_content=middle_content,
+        question_stem=question_stem,
     )
     factory = async_sessionmaker(engine, expire_on_commit=False)
     await canonical_service.normalize_submission(factory, storage, submission_id)

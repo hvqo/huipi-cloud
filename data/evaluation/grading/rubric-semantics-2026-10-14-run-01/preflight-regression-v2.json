@@ -1,0 +1,31 @@
+{
+  "configured_model": "deepseek-flash",
+  "configured_provider": "openai_compatible",
+  "cost_preflight": {
+    "budget_usd": "0.50",
+    "definition": "UTF-8输入字节和协议开销作为保守上界；未缓存输入价与含思考输出价估算，不是账单或账户硬限额。",
+    "input_token_budget_bound": 118860,
+    "input_usd_per_million": "0.30",
+    "output_token_cap": 81920,
+    "output_usd_per_million": "1.20",
+    "preflight_estimate_usd": "0.133962",
+    "request_cap": 20
+  },
+  "dataset_cases": 20,
+  "dataset_sha256": "f769ccef257d11393e6b5b7ddfc088a6c7859ba6fe88f909a9ec9647191aedbf",
+  "dataset_version": "3-regression-1",
+  "effective_reasoning_effort": null,
+  "excluded_uncertain_abstention_probes": 0,
+  "included_cases": 20,
+  "invalid_response_retries": 0,
+  "max_output_tokens": 4096,
+  "max_prompt_bytes_by_mode": {
+    "quote_selection": 5771
+  },
+  "mode": "dry_run",
+  "planned_provider_requests": 20,
+  "prompt_version": "rubric-quote-selection-v2",
+  "provider_requests_sent": 0,
+  "thinking_mode": "disabled",
+  "timeout_seconds": 120.0
+}

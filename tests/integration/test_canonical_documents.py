@@ -1098,6 +1098,7 @@ async def _seed_parsed_source(
     *,
     wrong_middle_checksum: bool = False,
     with_image_asset: bool = False,
+    image_in_text: bool = False,
     middle_content: str | None = None,
     middle_bbox: tuple[float, float, float, float] | None = None,
     source_override: tuple[str, bytes, str] | None = None,
@@ -1131,11 +1132,11 @@ async def _seed_parsed_source(
                 {
                     "type": "image_body",
                     "index": 0,
-                    "content": '<img src="figures/diagram.png">',
+                    "content": middle_content or '<img src="figures/diagram.png">',
                 }
             ],
         }
-        if with_image_asset
+        if with_image_asset and not image_in_text
         else {
             "type": "text",
             "index": 0,

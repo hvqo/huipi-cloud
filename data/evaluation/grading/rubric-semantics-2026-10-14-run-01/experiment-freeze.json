@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.0",
+  "frozen_at_utc": "2026-10-14T13:56:56.466719+00:00",
+  "synthetic_only": true,
+  "model_requests_at_freeze": 0,
+  "labels_independent_of_predictions": true,
+  "teacher_double_scored": false,
+  "prompt_versions": [
+    "rubric-quote-selection-v1",
+    "rubric-quote-selection-v2"
+  ],
+  "system_prompt_sha256": {
+    "rubric-quote-selection-v1": "5177ea51874d0ac0ca789274d7ed3323676e9ab180b2cd27047034f411285238",
+    "rubric-quote-selection-v2": "821928a62f64a03a530e43988e610bd5b323807c3eb3f56d0cc9f215e8fbf4d6"
+  },
+  "model": "deepseek-flash",
+  "thinking": "disabled",
+  "max_output_tokens": 4096,
+  "timeout_seconds": 120,
+  "retries": 0,
+  "planned_new_requests": 64,
+  "historical_regression_a_requests": 0,
+  "aggregate_preflight_usd": "0.4135242",
+  "aggregate_budget_usd": "0.50",
+  "preflight_by_run": {
+    "preflight-holdout-v1": {
+      "budget_usd": "0.50",
+      "definition": "UTF-8输入字节和协议开销作为保守上界；未缓存输入价与含思考输出价估算，不是账单或账户硬限额。",
+      "input_token_budget_bound": 80101,
+      "input_usd_per_million": "0.30",
+      "output_token_cap": 90112,
+      "output_usd_per_million": "1.20",
+      "preflight_estimate_usd": "0.1321647",
+      "request_cap": 22
+    },
+    "preflight-holdout-v2": {
+      "budget_usd": "0.50",
+      "definition": "UTF-8输入字节和协议开销作为保守上界；未缓存输入价与含思考输出价估算，不是账单或账户硬限额。",
+      "input_token_budget_bound": 130877,
+      "input_usd_per_million": "0.30",
+      "output_token_cap": 90112,
+      "output_usd_per_million": "1.20",
+      "preflight_estimate_usd": "0.1473975",
+      "request_cap": 22
+    },
+    "preflight-regression-v2": {
+      "budget_usd": "0.50",
+      "definition": "UTF-8输入字节和协议开销作为保守上界；未缓存输入价与含思考输出价估算，不是账单或账户硬限额。",
+      "input_token_budget_bound": 118860,
+      "input_usd_per_million": "0.30",
+      "output_token_cap": 81920,
+      "output_usd_per_million": "1.20",
+      "preflight_estimate_usd": "0.133962",
+      "request_cap": 20
+    }
+  },
+  "pricing_source": "https://api-docs.deepseek.com/quick_start/pricing/",
+  "price_policy": "预检采用高峰未缓存输入0.30/M与输出1.20/M；费用估算非账户硬限额。",
+  "acceptance_criteria_sha256": "e3bdd99c1cd80bbfaa2098c4ad18cc1250b7e0418cc5cf8e3c3e64b38cbb7b47",
+  "production_integration_enabled": false
+}

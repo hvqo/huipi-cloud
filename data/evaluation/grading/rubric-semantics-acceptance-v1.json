@@ -1,0 +1,49 @@
+{
+  "criteria_version": "semantics-1.0",
+  "locked_before_model_requests": true,
+  "scope": "实验Prompt后续评估，不是成绩发布授权",
+  "model": "deepseek-flash",
+  "thinking": "disabled",
+  "max_output_tokens": 4096,
+  "timeout_seconds": 120,
+  "retries": 0,
+  "request_policy": "每个组每例一次，失败保留，不重试调分",
+  "max_total_estimated_cost_usd": "0.50",
+  "gates": {
+    "provider_success_rate_min": "0.95",
+    "protocol_valid_rate_min": "0.95",
+    "valid_candidate_coverage_min": "0.90",
+    "all_raw_quote_unique_location_rate_min": "0.95",
+    "known_four_exact_required": 4,
+    "normal_controls_new_errors_allowed": 0,
+    "holdout_total_mae_max": "0.50",
+    "holdout_criterion_mae_max": "0.25",
+    "holdout_total_exact_min": "0.90",
+    "holdout_criterion_exact_min": "0.90",
+    "zero_reference_positive_scores_allowed": 0,
+    "wrong_or_missing_step_false_credit_allowed": 0,
+    "holdout_probe_abstain_required": 2,
+    "qualified_semantic_review_required": true
+  },
+  "human_review_status": "unreviewed",
+  "teacher_double_scored": false,
+  "production_integration_enabled": false,
+  "critical_holdout_case_ids": [
+    "h4-average-division-error",
+    "h4-lucky-area",
+    "h4-time-conversion-missing",
+    "h4-speed-unit-missing",
+    "h4-climate-keywords",
+    "h4-oxygen-unbalanced",
+    "h4-domain-boundary",
+    "h4-literature-evidence-only",
+    "h4-sampling-partial"
+  ],
+  "known_failure_case_ids": [
+    "v3-linear-arithmetic-slip",
+    "v3-mixed-right-wrong",
+    "v3-partial-quarter",
+    "v3-english-keyword"
+  ],
+  "normal_control_policy": "只比较历史v3已正确的15条普通对照，重复Quote例单列；总分、逐Criterion或候选状态任何退化都记录。"
+}
