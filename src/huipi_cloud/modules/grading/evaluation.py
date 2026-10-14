@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections import Counter
+from collections.abc import Callable
 from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
@@ -391,6 +392,10 @@ def evaluate_predictions(
     predictions: RubricEvaluationPredictions,
     *,
     config: Settings | None = None,
+    reply_evaluator: Callable[
+        [RubricEvaluationCase, EvaluationPredictionCase, Settings],
+        tuple[str, GradeModelReply | None, str | None],
+    ] | None = None,
 ) -> dict[str, object]:
     """Revalidate saved provider outputs and calculate reproducible metrics."""
 
@@ -423,7 +428,9 @@ def evaluate_predictions(
             continue
         if prediction.status == "excluded_uncertain":
             raise ValueError("included_reference_cannot_be_marked_excluded")
-        derived[case.case_id] = _derive_prediction(case, prediction, selected_config)
+        derived[case.case_id] = (reply_evaluator or _derive_prediction)(
+            case, prediction, selected_config
+        )
 
     valid_candidate_cases: list[tuple[RubricEvaluationCase, GradeModelReply]] = []
     abstention_count = 0
@@ -665,7 +672,11 @@ def evaluate_predictions(
         stage_quote_refs_checked += checked
         stage_quote_refs_valid += valid_count
 
-    protocol_failure_diagnostics = _protocol_failure_diagnostics(dataset, by_case_id)
+    protocol_failure_diagnostics = (
+        _protocol_failure_diagnostics(dataset, by_case_id)
+        if reply_evaluator is None
+        else {"interpretation": "实验协议的诊断由对应实验评测器提供。"}
+    )
     source_quote_failure_diagnostics = _source_quote_failure_diagnostics(
         dataset, derived, selected_config
     )

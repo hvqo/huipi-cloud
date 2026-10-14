@@ -1,0 +1,369 @@
+{
+  "actual_response_model_ids": [
+    "deepseek-flash"
+  ],
+  "configured_model": "deepseek-flash",
+  "configured_reasoning_effort": "max",
+  "cost_estimate": {
+    "budget_usd": "0.50",
+    "definition": "无格式重试；UTF-8字节与协议开销作保守输入预算，输出含思考；按用户核对的未缓存单价估算，不是账单或账户级硬限额。",
+    "input_token_budget_bound": 82212,
+    "input_usd_per_million": "0.30",
+    "output_token_cap": 102400,
+    "output_usd_per_million": "1.20",
+    "preflight_estimate_usd": "0.1475436",
+    "reported_token_estimate_usd": "0.0123492",
+    "request_cap": 25
+  },
+  "counts": {
+    "abstention_cases": 0,
+    "candidate_cases": 11,
+    "excluded_uncertain_reference_cases": 2,
+    "included_reference_cases": 25,
+    "json_parseable": {
+      "denominator": 25,
+      "numerator": 25
+    },
+    "prediction_status_counts": {
+      "candidate": 11,
+      "excluded_uncertain": 2,
+      "invalid_evidence": 3,
+      "protocol_error": 11
+    },
+    "provider_requests_sent": 25,
+    "provider_responses_received": 25,
+    "rubric_constraints_valid": {
+      "definition": "只诊断Criterion集合、分值范围和总分算术；不替代P3-B接受校验。",
+      "denominator": 14,
+      "numerator": 14
+    },
+    "strict_reply_valid": {
+      "definition": "GradeModelReply结构协议通过，尚不代表Rubric、quote或语义检查通过。",
+      "denominator": 25,
+      "numerator": 14
+    },
+    "valid_quote_refs": {
+      "candidate_outcome_cases": 14,
+      "definition": "按P3-B原文和Unicode码点半开区间校验；正分还必须至少有一条有效quote。",
+      "quote_references_checked": 19,
+      "valid_candidate_outcome_cases": 11,
+      "valid_quote_references": 16
+    }
+  },
+  "data_classification": "synthetic_only",
+  "dataset_sha256": "0da5948b79a15839d6abb939f134948e8d58dad101b66862ed7d4abaac40b26d",
+  "dataset_version": "2.0",
+  "effective_reasoning_effort": null,
+  "generation_config_digest": "8193583eec6fb7c8df492b9d7d529c56f24fdc4e04de12325ee514aff7a19040",
+  "historical_files_preserved": true,
+  "invalid_response_retries": 0,
+  "max_output_tokens": 4096,
+  "note": "B组与A组使用同一模型和生成参数；单次合成运行仅作为协议与候选覆盖对照，不表示真实教学评分准确率。",
+  "predictions_sha256": "1cc769df63c477b5a12e3145349141e1e958b15dac3dfb111912aaa6ba7293d0",
+  "prompt_version": "rubric-candidate-v3",
+  "protocol_failure_diagnostic_counts": {
+    "empty_quote": {
+      "case_count": 0,
+      "occurrence_count": 0
+    },
+    "invalid_criterion_structure": {
+      "case_count": 0,
+      "occurrence_count": 0
+    },
+    "invalid_json": {
+      "case_count": 0,
+      "occurrence_count": 0
+    },
+    "invalid_no_evidence_shape": {
+      "case_count": 4,
+      "occurrence_count": 4
+    },
+    "invalid_outcome": {
+      "case_count": 0,
+      "occurrence_count": 0
+    },
+    "invalid_quote_length": {
+      "case_count": 8,
+      "occurrence_count": 13
+    },
+    "invalid_quote_offsets": {
+      "case_count": 3,
+      "occurrence_count": 4
+    },
+    "invalid_quote_text": {
+      "case_count": 0,
+      "occurrence_count": 0
+    },
+    "invalid_score_value": {
+      "case_count": 0,
+      "occurrence_count": 0
+    },
+    "missing_required_field": {
+      "case_count": 0,
+      "occurrence_count": 0
+    },
+    "other_protocol_error": {
+      "case_count": 0,
+      "occurrence_count": 0
+    },
+    "unexpected_field": {
+      "case_count": 0,
+      "occurrence_count": 0
+    }
+  },
+  "provider": "openai_compatible",
+  "quote_source_match_summary": {
+    "claimed_offsets_uncheckable": 2,
+    "exact_at_claimed_offsets": 5,
+    "exact_text_found_elsewhere": 13,
+    "exact_text_not_found_in_claimed_segment": 0,
+    "exact_text_present_in_claimed_segment": 20,
+    "quote_references_checked": 20,
+    "source_segment_unavailable": 0
+  },
+  "report_sha256": "dd57d8a55292ab4c75cd468ebbd6580e30854441df59f650109bab851dcd7ced",
+  "run_date": "2026-10-14",
+  "runtime_usage": {
+    "cache_hit_tokens": 6400,
+    "cache_miss_tokens": 12688,
+    "completion_tokens": 5519,
+    "elapsed_ms_mean": 1757.36,
+    "elapsed_ms_p50_nearest_rank": 1767,
+    "elapsed_ms_p95_nearest_rank": 2295,
+    "elapsed_ms_total": 43934,
+    "prompt_tokens": 19088
+  },
+  "schema_name": "huipi.grading.deepseek.evaluation-run-manifest",
+  "schema_version": "1.0",
+  "score_metrics": {
+    "criterion_score": {
+      "absolute_error_sum": "3.00",
+      "by_case_criterion": {
+        "answer-only-no-method/final": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "answer-only-no-method/method": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "correct-transform-wrong-result-v2/division": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "correct-transform-wrong-result-v2/solution": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "equivalent-fraction-equivalent-form-allowed/equivalent_value": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "equivalent-fraction-strict-format/simplified_fraction": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "linear-correct/answer": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "linear-missing-step-v2/answer": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "linear-missing-step-v2/transformation": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "linear-wrong-answer/answer": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "neutralization-products/balanced": {
+          "absolute_error_sum": "3.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 0
+          },
+          "mae": "3.0000",
+          "over_count": 1,
+          "under_count": 0
+        },
+        "neutralization-products/salt": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "neutralization-products/water": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "off-topic-zero/boiling_point": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "ratio-simplification/ratio": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "two-segment-evidence/answer": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "two-segment-evidence/operation": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        }
+      },
+      "exact": {
+        "denominator": 17,
+        "numerator": 16
+      },
+      "mae": "0.1765",
+      "mae_denominator": 17,
+      "offsetting_error_case_ids": [],
+      "offsetting_error_cases": 0,
+      "over_count": 1,
+      "sample_count": 17,
+      "under_count": 0
+    },
+    "total_score": {
+      "absolute_error_sum": "3.00",
+      "exact": {
+        "denominator": 11,
+        "numerator": 10
+      },
+      "mae": "0.2727",
+      "mae_denominator": 11,
+      "over_count": 1,
+      "sample_count": 11,
+      "under_count": 0,
+      "within_tolerance": {
+        "denominator": 11,
+        "numerator": 10
+      }
+    }
+  },
+  "strict_baseline_metric_reproduction": {
+    "counts_core": true,
+    "criterion_score": true,
+    "note": "only experiment wrapper fields provider_requests_sent and nearest-rank latency percentiles were added during revalidation",
+    "per_case": true,
+    "runtime_core": true,
+    "total_score": true
+  },
+  "thinking_mode": "disabled",
+  "timeout_seconds": 120.0
+}

@@ -43,6 +43,11 @@ dist/
 !/data/evaluation/grading/report-qwen3.5-4b-v1-audited.json
 !/data/evaluation/grading/deepseek-v2-run-manifest.json
 !/data/evaluation/grading/deepseek-v2-run-manifest.json.sha256
+!/data/evaluation/grading/predictions-deepseek-flash-v2-20261014.json
+!/data/evaluation/grading/report-deepseek-flash-v2-20261014.json
+!/data/evaluation/grading/deepseek-flash-v2-20261014-run-manifest.json
+!/data/evaluation/grading/deepseek-flash-v2-20261014-run-manifest.json.sha256
+!/data/evaluation/grading/deepseek-flash-quote-selection-v2-20261014/
 /uploads/
 /raw-submissions/
 /submission-files/

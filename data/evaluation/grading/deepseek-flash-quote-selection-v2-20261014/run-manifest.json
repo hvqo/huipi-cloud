@@ -1,0 +1,59 @@
+{
+  "actual_response_model_ids": [
+    "deepseek-flash"
+  ],
+  "actual_token_cost_estimate_usd": "0.0128835",
+  "cache_and_finish_reason_capture_in_this_run": false,
+  "configured_model": "deepseek-flash",
+  "configured_reasoning_effort": "max",
+  "cost_preflight": {
+    "budget_usd": "0.50",
+    "definition": "UTF-8输入字节和协议开销作为保守上界；未缓存输入价与含思考输出价估算，不是账单或账户硬限额。",
+    "input_token_budget_bound": 89062,
+    "input_usd_per_million": "0.30",
+    "output_token_cap": 102400,
+    "output_usd_per_million": "1.20",
+    "preflight_estimate_usd": "0.1495986",
+    "request_cap": 25
+  },
+  "data_classification": "synthetic_only",
+  "dataset_sha256": "0da5948b79a15839d6abb939f134948e8d58dad101b66862ed7d4abaac40b26d",
+  "effective_reasoning_effort": null,
+  "generation_config_digest": "8193583eec6fb7c8df492b9d7d529c56f24fdc4e04de12325ee514aff7a19040",
+  "invalid_response_retries": 0,
+  "max_output_tokens": 4096,
+  "paired_report_sha256": "e19b11ace01fc35bbb1b7aae09b5ae993cdaef3d07326dfc956e7341876acf27",
+  "prediction_files_are_immutable": true,
+  "prompt_version": "rubric-quote-selection-v1",
+  "protocol_validation_before_full_run": {
+    "local_synthetic_unit_tests_passed": 19,
+    "note": "协议先经19项确定性合成单测验证；未另发小批量付费试跑，随后以25请求上限执行B组。",
+    "separate_live_model_pilot": false
+  },
+  "provider": "openai_compatible",
+  "provider_requests_sent": 25,
+  "quote_selection_predictions_sha256": "f83a4cb9ca481728331e677aed542b6824d3d670742edce1541cfcd7a67c9e44",
+  "quote_selection_report_sha256": "65ac4e41c216b6255c65940835efca3710eef9aa19510a23a6bc9609febeb9e0",
+  "raw_prediction_not_modified_after_initial_run": true,
+  "reported_completion_tokens": 5583,
+  "reported_prompt_tokens": 20613,
+  "request_cap": 25,
+  "run_date": "2026-10-14",
+  "strict_and_selection_generation_config_match": true,
+  "strict_and_selection_generation_options_match": true,
+  "strict_baseline_metric_reproduction": {
+    "counts_core": true,
+    "criterion_score": true,
+    "note": "only experiment wrapper fields provider_requests_sent and nearest-rank latency percentiles were added during revalidation",
+    "per_case": true,
+    "runtime_core": true,
+    "total_score": true
+  },
+  "strict_baseline_requested_cases": 25,
+  "strict_generation_config_digest": "8193583eec6fb7c8df492b9d7d529c56f24fdc4e04de12325ee514aff7a19040",
+  "strict_predictions_sha256": "1cc769df63c477b5a12e3145349141e1e958b15dac3dfb111912aaa6ba7293d0",
+  "strict_prompt_version": "rubric-candidate-v3",
+  "strict_report_sha256": "dd57d8a55292ab4c75cd468ebbd6580e30854441df59f650109bab851dcd7ced",
+  "thinking_mode": "disabled",
+  "timeout_seconds": 120.0
+}

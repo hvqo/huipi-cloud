@@ -1,0 +1,259 @@
+{
+  "common_candidate_total_mae": {
+    "denominator": 10,
+    "quote_selection": "0.00",
+    "strict": "0.00"
+  },
+  "dataset_sha256": "0da5948b79a15839d6abb939f134948e8d58dad101b66862ed7d4abaac40b26d",
+  "interpretation": "单轮配对观测，不证明确定性提升；条件MAE的支持集可能不同。",
+  "paired_cases": [
+    {
+      "case_id": "answer-only-no-method",
+      "reference_total": "4.00",
+      "selection_status": "candidate",
+      "selection_total": "4.00",
+      "strict_status": "candidate",
+      "strict_total": "4.00"
+    },
+    {
+      "case_id": "biology-incomplete",
+      "reference_total": "3.00",
+      "selection_status": "candidate",
+      "selection_total": "3.00",
+      "strict_status": "protocol_error",
+      "strict_total": null
+    },
+    {
+      "case_id": "chemistry-balanced",
+      "reference_total": "8.00",
+      "selection_status": "candidate",
+      "selection_total": "8.00",
+      "strict_status": "protocol_error",
+      "strict_total": null
+    },
+    {
+      "case_id": "correct-transform-wrong-result-v2",
+      "reference_total": "0.00",
+      "selection_status": "candidate",
+      "selection_total": "0.00",
+      "strict_status": "candidate",
+      "strict_total": "0.00"
+    },
+    {
+      "case_id": "corrected-redundant-work",
+      "reference_total": "6.00",
+      "selection_status": "candidate",
+      "selection_total": "6.00",
+      "strict_status": "protocol_error",
+      "strict_total": null
+    },
+    {
+      "case_id": "equivalent-fraction-equivalent-form-allowed",
+      "reference_total": "5.00",
+      "selection_status": "candidate",
+      "selection_total": "5.00",
+      "strict_status": "candidate",
+      "strict_total": "5.00"
+    },
+    {
+      "case_id": "equivalent-fraction-strict-format",
+      "reference_total": "0.00",
+      "selection_status": "candidate",
+      "selection_total": "0.00",
+      "strict_status": "candidate",
+      "strict_total": "0.00"
+    },
+    {
+      "case_id": "fraction-partial",
+      "reference_total": "7.00",
+      "selection_status": "candidate",
+      "selection_total": "7.00",
+      "strict_status": "protocol_error",
+      "strict_total": null
+    },
+    {
+      "case_id": "geometry-cross-page",
+      "reference_total": "10.00",
+      "selection_status": "candidate",
+      "selection_total": "10.00",
+      "strict_status": "protocol_error",
+      "strict_total": null
+    },
+    {
+      "case_id": "linear-correct",
+      "reference_total": "10.00",
+      "selection_status": "candidate",
+      "selection_total": "10.00",
+      "strict_status": "candidate",
+      "strict_total": "10.00"
+    },
+    {
+      "case_id": "linear-missing-step-v2",
+      "reference_total": "3.00",
+      "selection_status": "candidate",
+      "selection_total": "3.00",
+      "strict_status": "candidate",
+      "strict_total": "3.00"
+    },
+    {
+      "case_id": "linear-sign-error",
+      "reference_total": "0.00",
+      "selection_status": "candidate",
+      "selection_total": "0.00",
+      "strict_status": "invalid_evidence",
+      "strict_total": null
+    },
+    {
+      "case_id": "linear-wrong-answer",
+      "reference_total": "0.00",
+      "selection_status": "candidate",
+      "selection_total": "0.00",
+      "strict_status": "candidate",
+      "strict_total": "0.00"
+    },
+    {
+      "case_id": "literature-two-criteria",
+      "reference_total": "8.00",
+      "selection_status": "candidate",
+      "selection_total": "8.00",
+      "strict_status": "protocol_error",
+      "strict_total": null
+    },
+    {
+      "case_id": "neutralization-products",
+      "reference_total": "5.00",
+      "selection_status": "invalid_evidence",
+      "selection_total": null,
+      "strict_status": "candidate",
+      "strict_total": "8.00"
+    },
+    {
+      "case_id": "off-topic-zero",
+      "reference_total": "0.00",
+      "selection_status": "candidate",
+      "selection_total": "0.00",
+      "strict_status": "candidate",
+      "strict_total": "0.00"
+    },
+    {
+      "case_id": "photosynthesis-omission",
+      "reference_total": "2.00",
+      "selection_status": "candidate",
+      "selection_total": "2.00",
+      "strict_status": "protocol_error",
+      "strict_total": null
+    },
+    {
+      "case_id": "physics-missing-unit",
+      "reference_total": "6.00",
+      "selection_status": "candidate",
+      "selection_total": "6.00",
+      "strict_status": "protocol_error",
+      "strict_total": null
+    },
+    {
+      "case_id": "physics-substitution",
+      "reference_total": "8.00",
+      "selection_status": "candidate",
+      "selection_total": "8.00",
+      "strict_status": "protocol_error",
+      "strict_total": null
+    },
+    {
+      "case_id": "prompt-injection-data",
+      "reference_total": "5.00",
+      "selection_status": "candidate",
+      "selection_total": "5.00",
+      "strict_status": "invalid_evidence",
+      "strict_total": null
+    },
+    {
+      "case_id": "pythagorean-proof",
+      "reference_total": "10.00",
+      "selection_status": "candidate",
+      "selection_total": "10.00",
+      "strict_status": "protocol_error",
+      "strict_total": null
+    },
+    {
+      "case_id": "quadratic-factorization",
+      "reference_total": "10.00",
+      "selection_status": "candidate",
+      "selection_total": "10.00",
+      "strict_status": "invalid_evidence",
+      "strict_total": null
+    },
+    {
+      "case_id": "ratio-simplification",
+      "reference_total": "6.00",
+      "selection_status": "candidate",
+      "selection_total": "6.00",
+      "strict_status": "candidate",
+      "strict_total": "6.00"
+    },
+    {
+      "case_id": "two-segment-evidence",
+      "reference_total": "10.00",
+      "selection_status": "candidate",
+      "selection_total": "10.00",
+      "strict_status": "candidate",
+      "strict_total": "10.00"
+    },
+    {
+      "case_id": "zero-evidence-absence",
+      "reference_total": "0.00",
+      "selection_status": "candidate",
+      "selection_total": "0.00",
+      "strict_status": "protocol_error",
+      "strict_total": null
+    }
+  ],
+  "paired_outcomes": {
+    "both_candidate": {
+      "case_ids": [
+        "answer-only-no-method",
+        "correct-transform-wrong-result-v2",
+        "equivalent-fraction-equivalent-form-allowed",
+        "equivalent-fraction-strict-format",
+        "linear-correct",
+        "linear-missing-step-v2",
+        "linear-wrong-answer",
+        "off-topic-zero",
+        "ratio-simplification",
+        "two-segment-evidence"
+      ],
+      "count": 10
+    },
+    "neither_candidate": {
+      "case_ids": [],
+      "count": 0
+    },
+    "selection_only": {
+      "case_ids": [
+        "biology-incomplete",
+        "chemistry-balanced",
+        "corrected-redundant-work",
+        "fraction-partial",
+        "geometry-cross-page",
+        "linear-sign-error",
+        "literature-two-criteria",
+        "photosynthesis-omission",
+        "physics-missing-unit",
+        "physics-substitution",
+        "prompt-injection-data",
+        "pythagorean-proof",
+        "quadratic-factorization",
+        "zero-evidence-absence"
+      ],
+      "count": 14
+    },
+    "strict_only": {
+      "case_ids": [
+        "neutralization-products"
+      ],
+      "count": 1
+    }
+  },
+  "paired_requested_case_count": 25,
+  "semantic_accuracy_claim": false
+}

@@ -1,0 +1,106 @@
+{
+  "dataset_sha256": "0da5948b79a15839d6abb939f134948e8d58dad101b66862ed7d4abaac40b26d",
+  "ordering": "immutable A predictions reused; B quote-selection calls sequential; no retries",
+  "request_order": [
+    {
+      "case_id": "answer-only-no-method",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "biology-incomplete",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "chemistry-balanced",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "correct-transform-wrong-result-v2",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "corrected-redundant-work",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "equivalent-fraction-equivalent-form-allowed",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "equivalent-fraction-strict-format",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "fraction-partial",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "geometry-cross-page",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "linear-correct",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "linear-missing-step-v2",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "linear-sign-error",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "linear-wrong-answer",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "literature-two-criteria",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "neutralization-products",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "off-topic-zero",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "photosynthesis-omission",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "physics-missing-unit",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "physics-substitution",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "prompt-injection-data",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "pythagorean-proof",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "quadratic-factorization",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "ratio-simplification",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "two-segment-evidence",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "zero-evidence-absence",
+      "mode": "quote_selection"
+    }
+  ]
+}

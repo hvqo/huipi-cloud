@@ -137,3 +137,31 @@ uv run python scripts/evaluate_grade_proposals.py \
 ```
 
 此路径只构造内存中的合成 `GradeInputDocument`，不访问 PostgreSQL、MinIO 或候选结果索引。每个模型请求只会看到题干、答案标准、Rubric 和合成学生片段，不会看到参考分数、标注理由或标签来源。报告中的分数指标只使用通过 P3-B 现有协议、分值和引用验证的候选；协议失败、弃权和请求故障都保留在覆盖和逐例失败统计中。详见[Rubric 候选评分评测定义与基线](../evaluation/rubric-candidate-grading.md)。
+
+## 确定性 Quote 定位实验
+
+P3-D1 对照工具只用于合成离线评测，不调用 P3-B `GradeProposalService`，不写 GradeProposal、GradeReview、PostgreSQL 或 S3。模型只返回 `segment_index` 和逐字 `quote`；程序在指定学生片段中执行唯一精确搜索，以 Python Unicode 码点生成半开偏移，再运行既有 Rubric/Quote 校验。不存在、重复、跨片段、规范化不同或全半角不同的引用都会拒绝，不做模糊匹配、补写或教师答案回填。
+
+默认 dry-run 不调用模型：
+
+```bash
+uv run python scripts/evaluate_quote_selection.py --dry-run --mode quote_selection
+```
+
+正式调用必须使用当前 DeepSeek Flash，Thinking 关闭，0 次重试，且需要 v2 数据集对应的严格 A 组预测作为不可变基线。操作者应在本地 `.env` 配置Key，并仅在已批准本轮合成数据远程传输时，临时为该进程打开授权开关；不要把Key写入命令行：
+
+```bash
+GRADING_ENABLED=true \
+GRADING_ALLOW_REMOTE=true \
+GRADING_EXTERNAL_DATA_AUTHORIZED=true \
+uv run python scripts/evaluate_quote_selection.py \
+  --dataset data/evaluation/grading/rubric-cases-v2.json \
+  --run-model --mode quote_selection \
+  --strict-predictions data/evaluation/grading/predictions-deepseek-flash-v2-20261014.json \
+  --max-requests 25 --timeout-seconds 120 --max-output-tokens 4096 \
+  --input-usd-per-million 0.30 --output-usd-per-million 1.20 \
+  --max-estimated-cost-usd 0.50 \
+  --output-dir data/evaluation/grading/quote-selection-NEW-RUN
+```
+
+运行会检查 Provider、模型、Thinking、授权、A 组数据 SHA、请求集合和生成配置一致性。输出目录必须是全新目录；价格需先从[官方定价页](https://api-docs.deepseek.com/quick_start/pricing/)核对，预算硬限制在 `$0.50` 以下。成本按 UTF-8 输入字节与最大输出量预检；不是账号扣费保证。完整方法、实际 A/B 结果和限制见[P3-D1 对照报告](../evaluation/p3d1-deepseek-quote-selection-2026-10-14.md)。
