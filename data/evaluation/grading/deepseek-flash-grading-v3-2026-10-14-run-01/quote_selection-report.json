@@ -1,0 +1,3258 @@
+{
+  "cost_estimate": {
+    "budget_usd": "0.50",
+    "definition": "UTF-8输入字节和协议开销作为保守上界；未缓存输入价与含思考输出价估算，不是账单或账户硬限额。按Provider用量估算，非最终账单。",
+    "input_token_budget_bound": 218227,
+    "input_usd_per_million": "0.30",
+    "output_token_cap": 245760,
+    "output_usd_per_million": "1.20",
+    "preflight_estimate_usd": "0.3603801",
+    "reported_completion_tokens": 13777,
+    "reported_prompt_tokens": 50285,
+    "reported_token_estimate_usd": "0.0316179",
+    "request_cap": 60,
+    "usage_complete": true
+  },
+  "counts": {
+    "abstention_cases": 0,
+    "dataset_cases": 60,
+    "excluded_uncertain_reference_cases": 5,
+    "included_reference_cases": 55,
+    "not_requested_cases": 0,
+    "prediction_status_counts": {
+      "candidate": 54,
+      "invalid_evidence": 1
+    },
+    "protocol_valid_replies": 55,
+    "provider_requests_sent": 55,
+    "requested_cases": 55,
+    "valid_candidate_cases": 54
+  },
+  "coverage": {
+    "abstention_over_requested": "0.0000",
+    "candidate_over_included_dataset": "0.9818",
+    "candidate_over_requested": "0.9818",
+    "invalid_evidence_over_requested": "0.0182",
+    "invalid_rubric_scores_over_requested": "0.0000",
+    "protocol_error_over_requested": "0.0000",
+    "protocol_valid_over_requested": "1.0000",
+    "provider_failure_over_requested": "0.0000"
+  },
+  "criterion_score": {
+    "absolute_error_sum": "24.00",
+    "by_case_criterion": {
+      "v3-bio-cell/oxygen_role": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-bio-cell/site": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-bio-ecosystem/decrease": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-bio-ecosystem/direction": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-bio-keyword-copy/barrier": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-bio-keyword-copy/surface": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-bio-photosynthesis/products": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-bio-photosynthesis/site_inputs": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-chem-acid/molecular": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-chem-acid/net_ionic": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-chem-balanced/conservation": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-chem-balanced/equation": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-chem-electron/direction": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-chem-electron/half_reactions": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-chem-limiting/limiting": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-chem-limiting/yield": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-chem-ph/definition": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-chem-ph/value": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-chem-unbalanced/coefficients": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-chem-unbalanced/elements": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-chinese-argument/function": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-chinese-argument/metaphor": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-chinese-keyword/interpretation": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-chinese-keyword/text_detail": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-chinese-paraphrase/consequence": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-chinese-paraphrase/study_thinking": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-completing-square/answer": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-completing-square/root_step": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-completing-square/square": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-cross-page-proof/flood": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-cross-page-proof/habitat": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-cross-segment/data_use": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-cross-segment/speed": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-decimal-strict/result_form": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-decimal-strict/simplification": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-econ-opportunity-cost/application": {
+        "absolute_error_sum": "1.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 0
+        },
+        "mae": "1.0000",
+        "over_count": 0,
+        "under_count": 1
+      },
+      "v3-econ-opportunity-cost/definition": {
+        "absolute_error_sum": "2.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 0
+        },
+        "mae": "2.0000",
+        "over_count": 0,
+        "under_count": 1
+      },
+      "v3-english-answer-only/form": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-english-answer-only/sequence": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-english-keyword/process": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-english-keyword/product": {
+        "absolute_error_sum": "4.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 0
+        },
+        "mae": "4.0000",
+        "over_count": 1,
+        "under_count": 0
+      },
+      "v3-english-paraphrase/concession": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-english-paraphrase/meaning": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-english-tense/correction": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-english-tense/reason": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-eq-no-work/method": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-eq-no-work/result": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-fraction-equivalent/common_denominator": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-fraction-equivalent/form": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-fraction-equivalent/sum": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-function-domain/radicand_condition": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-function-domain/solution": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-geography-climate/moisture": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-geography-climate/rainfall": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-geometry-similar/calculation": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-geometry-similar/proportion": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-history-causality/employment": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-history-causality/transport": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-history-copy-stem/exchange": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-history-copy-stem/trade": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-injection/operation": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-injection/result": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-linear-arithmetic-slip/division": {
+        "absolute_error_sum": "3.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 0
+        },
+        "mae": "3.0000",
+        "over_count": 1,
+        "under_count": 0
+      },
+      "v3-linear-arithmetic-slip/isolation": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-linear-arithmetic-slip/result": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-linear-system/elimination": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-linear-system/substitution": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-logic-correlation/causality": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-logic-correlation/confounder": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-lucky-arithmetic/multiplication": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-lucky-arithmetic/result": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-lucky-arithmetic/subtraction": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-math-vector/conclusion": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-math-vector/dot": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-mixed-right-wrong/division": {
+        "absolute_error_sum": "3.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 0
+        },
+        "mae": "3.0000",
+        "over_count": 1,
+        "under_count": 0
+      },
+      "v3-mixed-right-wrong/isolation": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-mixed-right-wrong/result": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-overestimate-missing-proof/factor_two": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-overestimate-missing-proof/substitution": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-partial-quarter/conversion": {
+        "absolute_error_sum": "5.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 0
+        },
+        "mae": "5.0000",
+        "over_count": 1,
+        "under_count": 0
+      },
+      "v3-partial-quarter/scale": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-physics-accel/change": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-physics-accel/division": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-physics-accel/unit": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-physics-density/formula": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-physics-density/unit": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-physics-density/value": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-physics-energy/relationship": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-physics-energy/result_unit": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-physics-unit/formula": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-physics-unit/unit": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-physics-unit/value": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-physics-wrong-unit/law": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-physics-wrong-unit/unit": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-physics-wrong-unit/value": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-proof-counterexample/counterexample": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-proof-counterexample/verdict": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-proof-odd/divisibility": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-proof-odd/representation": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-quadratic-factor/factor": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-quadratic-factor/roots": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-quote-repeated/conclusion": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-quote-repeated/values": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-quote-same-word/first": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-quote-same-word/repeatability": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-rubric-boundary/result": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-rubric-boundary/transform": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-short-quote-irrelevant/absorption": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-short-quote-irrelevant/surface": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-source-keywords/homeostasis": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-source-keywords/transport": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-stats-conditional/conditional": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-stats-conditional/product": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-stats-median/middle": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-stats-median/ordering": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      },
+      "v3-stem-copy-number/formula": {
+        "absolute_error_sum": "6.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 0
+        },
+        "mae": "6.0000",
+        "over_count": 1,
+        "under_count": 0
+      },
+      "v3-stem-copy-number/unit": {
+        "absolute_error_sum": "0.00",
+        "count": 1,
+        "exact": {
+          "denominator": 1,
+          "numerator": 1
+        },
+        "mae": "0.0000",
+        "over_count": 0,
+        "under_count": 0
+      }
+    },
+    "exact": {
+      "denominator": 117,
+      "numerator": 110
+    },
+    "mae": "0.2051",
+    "mae_denominator": 117,
+    "offsetting_error_case_ids": [],
+    "offsetting_error_cases": 0,
+    "over_count": 5,
+    "sample_count": 117,
+    "under_count": 2
+  },
+  "dataset_sha256": "de59c65d31669043ffd49c062318861a542bd039cfd04c7df4d4645dc4df620d",
+  "dataset_version": "3.0",
+  "evaluation_stages": {
+    "candidate_total_score_comparison": {
+      "denominator": 54,
+      "exact_numerator": 48,
+      "mae": "0.4444",
+      "semantic_accuracy_claim": false
+    },
+    "final_usable_candidate": {
+      "denominator": 55,
+      "numerator": 54
+    },
+    "json_parseable": {
+      "denominator": 55,
+      "numerator": 55
+    },
+    "provider_response_received": {
+      "denominator": 55,
+      "numerator": 55
+    },
+    "quote_selection_reply_valid": {
+      "definition": "独立GradeQuoteSelectionReply协议有效，尚不代表定位、分值或语义有效。",
+      "denominator": 55,
+      "numerator": 55
+    },
+    "rationale_semantic_adequacy": {
+      "automated_result": "not_evaluated",
+      "human_review_required": true
+    },
+    "rubric_score_constraints_valid": {
+      "definition": "只诊断Criterion集合、分值范围和总分算术；不替代P3-B接受校验。",
+      "denominator": 55,
+      "numerator": 55
+    },
+    "source_quote_validation": {
+      "candidate_outcome_cases": 55,
+      "definition": "指定segment唯一精确定位后再次校验；正分仍须有效quote。",
+      "quote_references_checked": 101,
+      "valid_candidate_outcome_cases": 54,
+      "valid_quote_references": 100
+    }
+  },
+  "evidence": {
+    "invalid_quote_references": 0,
+    "positive_criterion_scores": 91,
+    "positive_scores_with_valid_quote": 91,
+    "positive_scores_without_quote": 0,
+    "quote_references_checked": 99,
+    "reference_quote_overlap_characters": {
+      "gold": 849,
+      "intersection": 822,
+      "iou": "0.6688",
+      "precision": "0.6839",
+      "predicted": 1202,
+      "recall": "0.9682"
+    },
+    "semantic_support": "requires_human_review",
+    "valid_quote_references": 99
+  },
+  "experiment_mode": "quote_selection",
+  "failure_cases": [
+    {
+      "case_id": "v3-linear-arithmetic-slip",
+      "case_kind": "algebra_arithmetic_error",
+      "completion_tokens": 371,
+      "criterion_errors": [
+        {
+          "criterion_key": "division",
+          "delta": "3.00",
+          "predicted": "3.00",
+          "reference": "0.00"
+        }
+      ],
+      "difficulty": "easy",
+      "elapsed_ms": 2362,
+      "failure_categories": [
+        "total_score_error",
+        "total_over_scored",
+        "criterion_score_error"
+      ],
+      "included_in_metrics": true,
+      "predicted_total_score": "8.00",
+      "prompt_tokens": 875,
+      "reference_total_score": "5.00",
+      "status": "candidate",
+      "total_absolute_error": "3.00",
+      "within_tolerance": false
+    },
+    {
+      "case_id": "v3-english-keyword",
+      "case_kind": "english-keyword-only",
+      "completion_tokens": 218,
+      "criterion_errors": [
+        {
+          "criterion_key": "product",
+          "delta": "4.00",
+          "predicted": "4.00",
+          "reference": "0.00"
+        }
+      ],
+      "difficulty": "easy",
+      "elapsed_ms": 1783,
+      "failure_categories": [
+        "total_score_error",
+        "total_over_scored",
+        "criterion_score_error"
+      ],
+      "included_in_metrics": true,
+      "predicted_total_score": "4.00",
+      "prompt_tokens": 827,
+      "reference_total_score": "0.00",
+      "status": "candidate",
+      "total_absolute_error": "4.00",
+      "within_tolerance": false
+    },
+    {
+      "case_id": "v3-econ-opportunity-cost",
+      "case_kind": "economics-opportunity-cost",
+      "completion_tokens": 299,
+      "criterion_errors": [
+        {
+          "criterion_key": "definition",
+          "delta": "-2.00",
+          "predicted": "3.00",
+          "reference": "5.00"
+        },
+        {
+          "criterion_key": "application",
+          "delta": "-1.00",
+          "predicted": "4.00",
+          "reference": "5.00"
+        }
+      ],
+      "difficulty": "easy",
+      "elapsed_ms": 1965,
+      "failure_categories": [
+        "total_score_error",
+        "total_under_scored",
+        "criterion_score_error"
+      ],
+      "included_in_metrics": true,
+      "predicted_total_score": "7.00",
+      "prompt_tokens": 832,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "3.00",
+      "within_tolerance": false
+    },
+    {
+      "case_id": "v3-quote-short-duplicate",
+      "case_kind": "short-quote-duplicate",
+      "completion_tokens": 212,
+      "difficulty": "medium",
+      "elapsed_ms": 1580,
+      "failure_categories": [
+        "invalid_evidence"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 825,
+      "reason": "quote_ambiguous",
+      "status": "invalid_evidence"
+    },
+    {
+      "case_id": "v3-stem-copy-number",
+      "case_kind": "stem-number-copy",
+      "completion_tokens": 281,
+      "criterion_errors": [
+        {
+          "criterion_key": "formula",
+          "delta": "6.00",
+          "predicted": "6.00",
+          "reference": "0.00"
+        }
+      ],
+      "difficulty": "easy",
+      "elapsed_ms": 1907,
+      "failure_categories": [
+        "total_score_error",
+        "total_over_scored",
+        "criterion_score_error"
+      ],
+      "included_in_metrics": true,
+      "predicted_total_score": "6.00",
+      "prompt_tokens": 824,
+      "reference_total_score": "0.00",
+      "status": "candidate",
+      "total_absolute_error": "6.00",
+      "within_tolerance": false
+    },
+    {
+      "case_id": "v3-mixed-right-wrong",
+      "case_kind": "mixed_correct_wrong_steps",
+      "completion_tokens": 302,
+      "criterion_errors": [
+        {
+          "criterion_key": "division",
+          "delta": "3.00",
+          "predicted": "3.00",
+          "reference": "0.00"
+        }
+      ],
+      "difficulty": "medium",
+      "elapsed_ms": 1667,
+      "failure_categories": [
+        "total_score_error",
+        "total_over_scored",
+        "criterion_score_error"
+      ],
+      "included_in_metrics": true,
+      "predicted_total_score": "8.00",
+      "prompt_tokens": 876,
+      "reference_total_score": "5.00",
+      "status": "candidate",
+      "total_absolute_error": "3.00",
+      "within_tolerance": false
+    },
+    {
+      "case_id": "v3-partial-quarter",
+      "case_kind": "rubric-quarter-credit",
+      "completion_tokens": 225,
+      "criterion_errors": [
+        {
+          "criterion_key": "conversion",
+          "delta": "5.00",
+          "predicted": "5.00",
+          "reference": "0.00"
+        }
+      ],
+      "difficulty": "medium",
+      "elapsed_ms": 1265,
+      "failure_categories": [
+        "total_score_error",
+        "total_over_scored",
+        "criterion_score_error"
+      ],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 825,
+      "reference_total_score": "5.00",
+      "status": "candidate",
+      "total_absolute_error": "5.00",
+      "within_tolerance": false
+    }
+  ],
+  "generation_options": {
+    "max_input_bytes": 32768,
+    "max_input_tokens": 49152,
+    "max_output_tokens": 4096,
+    "max_quote_characters": 400,
+    "max_rationale_characters": 1600,
+    "temperature": 0
+  },
+  "per_case": [
+    {
+      "case_id": "v3-eq-no-work",
+      "case_kind": "algebra_no_work",
+      "completion_tokens": 227,
+      "criterion_errors": [],
+      "difficulty": "easy",
+      "elapsed_ms": 1758,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "4.00",
+      "prompt_tokens": 816,
+      "reference_total_score": "4.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-linear-arithmetic-slip",
+      "case_kind": "algebra_arithmetic_error",
+      "completion_tokens": 371,
+      "criterion_errors": [
+        {
+          "criterion_key": "division",
+          "delta": "3.00",
+          "predicted": "3.00",
+          "reference": "0.00"
+        }
+      ],
+      "difficulty": "easy",
+      "elapsed_ms": 2362,
+      "failure_categories": [
+        "total_score_error",
+        "total_over_scored",
+        "criterion_score_error"
+      ],
+      "included_in_metrics": true,
+      "predicted_total_score": "8.00",
+      "prompt_tokens": 875,
+      "reference_total_score": "5.00",
+      "status": "candidate",
+      "total_absolute_error": "3.00",
+      "within_tolerance": false
+    },
+    {
+      "case_id": "v3-lucky-arithmetic",
+      "case_kind": "algebra_lucky_result",
+      "completion_tokens": 310,
+      "criterion_errors": [],
+      "difficulty": "medium",
+      "elapsed_ms": 2077,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "3.00",
+      "prompt_tokens": 870,
+      "reference_total_score": "3.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-quadratic-factor",
+      "case_kind": "quadratic_factorization",
+      "completion_tokens": 242,
+      "criterion_errors": [],
+      "difficulty": "easy",
+      "elapsed_ms": 1319,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 851,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-completing-square",
+      "case_kind": "quadratic_root_error",
+      "completion_tokens": 322,
+      "criterion_errors": [],
+      "difficulty": "medium",
+      "elapsed_ms": 1546,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "4.00",
+      "prompt_tokens": 904,
+      "reference_total_score": "4.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-fraction-equivalent",
+      "case_kind": "fraction_equivalent_allowed",
+      "completion_tokens": 281,
+      "criterion_errors": [],
+      "difficulty": "easy",
+      "elapsed_ms": 1608,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 879,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-decimal-strict",
+      "case_kind": "fraction_decimal_policy",
+      "completion_tokens": 235,
+      "criterion_errors": [],
+      "difficulty": "easy",
+      "elapsed_ms": 1294,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "0.00",
+      "prompt_tokens": 818,
+      "reference_total_score": "0.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-linear-system",
+      "case_kind": "linear_system_partial",
+      "completion_tokens": 234,
+      "criterion_errors": [],
+      "difficulty": "medium",
+      "elapsed_ms": 1517,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 841,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-function-domain",
+      "case_kind": "function_domain",
+      "completion_tokens": 198,
+      "criterion_errors": [],
+      "difficulty": "easy",
+      "elapsed_ms": 1201,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 829,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-geometry-similar",
+      "case_kind": "geometry_similarity",
+      "completion_tokens": 231,
+      "criterion_errors": [],
+      "difficulty": "easy",
+      "elapsed_ms": 1512,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 830,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-proof-odd",
+      "case_kind": "proof_odd_sum",
+      "completion_tokens": 240,
+      "criterion_errors": [],
+      "difficulty": "medium",
+      "elapsed_ms": 1487,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 861,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-physics-unit",
+      "case_kind": "physics_unit_error",
+      "completion_tokens": 286,
+      "criterion_errors": [],
+      "difficulty": "easy",
+      "elapsed_ms": 1486,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 875,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-physics-wrong-unit",
+      "case_kind": "physics_wrong_unit",
+      "completion_tokens": 288,
+      "criterion_errors": [],
+      "difficulty": "medium",
+      "elapsed_ms": 1756,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "8.00",
+      "prompt_tokens": 870,
+      "reference_total_score": "8.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-physics-accel",
+      "case_kind": "physics_acceleration",
+      "completion_tokens": 301,
+      "criterion_errors": [],
+      "difficulty": "easy",
+      "elapsed_ms": 1870,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 882,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-physics-energy",
+      "case_kind": "physics-energy-work",
+      "completion_tokens": 202,
+      "criterion_errors": [],
+      "difficulty": "easy",
+      "elapsed_ms": 1437,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 814,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-physics-density",
+      "case_kind": "physics-density",
+      "completion_tokens": 281,
+      "criterion_errors": [],
+      "difficulty": "easy",
+      "elapsed_ms": 1529,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 871,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-chem-unbalanced",
+      "case_kind": "chem-unbalanced",
+      "completion_tokens": 235,
+      "criterion_errors": [],
+      "difficulty": "easy",
+      "elapsed_ms": 1133,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "0.00",
+      "prompt_tokens": 827,
+      "reference_total_score": "0.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-chem-balanced",
+      "case_kind": "chem-balanced",
+      "completion_tokens": 219,
+      "criterion_errors": [],
+      "difficulty": "medium",
+      "elapsed_ms": 1256,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 848,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-chem-limiting",
+      "case_kind": "chem-limiting-reagent",
+      "completion_tokens": 258,
+      "criterion_errors": [],
+      "difficulty": "hard",
+      "elapsed_ms": 1472,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 881,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-chem-acid",
+      "case_kind": "chem-acid-neutralization",
+      "completion_tokens": 236,
+      "criterion_errors": [],
+      "difficulty": "medium",
+      "elapsed_ms": 1302,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 845,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-chem-electron",
+      "case_kind": "chem-redox-electrons",
+      "completion_tokens": 238,
+      "criterion_errors": [],
+      "difficulty": "medium",
+      "elapsed_ms": 1311,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 859,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-chem-ph",
+      "case_kind": "chem-ph",
+      "completion_tokens": 205,
+      "criterion_errors": [],
+      "difficulty": "easy",
+      "elapsed_ms": 1225,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 819,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-bio-photosynthesis",
+      "case_kind": "biology-photosynthesis",
+      "completion_tokens": 219,
+      "criterion_errors": [],
+      "difficulty": "easy",
+      "elapsed_ms": 1213,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 850,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-bio-keyword-copy",
+      "case_kind": "biology-keyword-copy",
+      "completion_tokens": 228,
+      "criterion_errors": [],
+      "difficulty": "easy",
+      "elapsed_ms": 1523,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "0.00",
+      "prompt_tokens": 824,
+      "reference_total_score": "0.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-bio-cell",
+      "case_kind": "biology-cell-respiration",
+      "completion_tokens": 216,
+      "criterion_errors": [],
+      "difficulty": "medium",
+      "elapsed_ms": 1106,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 839,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-bio-ecosystem",
+      "case_kind": "biology-energy-flow",
+      "completion_tokens": 220,
+      "criterion_errors": [],
+      "difficulty": "medium",
+      "elapsed_ms": 1537,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 849,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-chinese-paraphrase",
+      "case_kind": "chinese-short-answer-paraphrase",
+      "completion_tokens": 268,
+      "criterion_errors": [],
+      "difficulty": "medium",
+      "elapsed_ms": 1498,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 844,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-chinese-keyword",
+      "case_kind": "chinese-keyword-misleading",
+      "completion_tokens": 242,
+      "criterion_errors": [],
+      "difficulty": "medium",
+      "elapsed_ms": 1434,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "0.00",
+      "prompt_tokens": 834,
+      "reference_total_score": "0.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-history-causality",
+      "case_kind": "history-causal-link",
+      "completion_tokens": 229,
+      "criterion_errors": [],
+      "difficulty": "medium",
+      "elapsed_ms": 1711,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 846,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-history-copy-stem",
+      "case_kind": "history-copy-prompt",
+      "completion_tokens": 210,
+      "criterion_errors": [],
+      "difficulty": "easy",
+      "elapsed_ms": 1262,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "0.00",
+      "prompt_tokens": 828,
+      "reference_total_score": "0.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-geography-climate",
+      "case_kind": "geography-monsoon",
+      "completion_tokens": 229,
+      "criterion_errors": [],
+      "difficulty": "medium",
+      "elapsed_ms": 1392,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 842,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-chinese-argument",
+      "case_kind": "chinese-argument-evidence",
+      "completion_tokens": 225,
+      "criterion_errors": [],
+      "difficulty": "medium",
+      "elapsed_ms": 1220,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 841,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-english-tense",
+      "case_kind": "english-tense",
+      "completion_tokens": 234,
+      "criterion_errors": [],
+      "difficulty": "easy",
+      "elapsed_ms": 1452,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 830,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-english-answer-only",
+      "case_kind": "english-no-explanation",
+      "completion_tokens": 211,
+      "criterion_errors": [],
+      "difficulty": "medium",
+      "elapsed_ms": 1645,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "6.00",
+      "prompt_tokens": 823,
+      "reference_total_score": "6.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-english-paraphrase",
+      "case_kind": "english-synonym-paraphrase",
+      "completion_tokens": 215,
+      "criterion_errors": [],
+      "difficulty": "medium",
+      "elapsed_ms": 1105,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 834,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-english-keyword",
+      "case_kind": "english-keyword-only",
+      "completion_tokens": 218,
+      "criterion_errors": [
+        {
+          "criterion_key": "product",
+          "delta": "4.00",
+          "predicted": "4.00",
+          "reference": "0.00"
+        }
+      ],
+      "difficulty": "easy",
+      "elapsed_ms": 1783,
+      "failure_categories": [
+        "total_score_error",
+        "total_over_scored",
+        "criterion_score_error"
+      ],
+      "included_in_metrics": true,
+      "predicted_total_score": "4.00",
+      "prompt_tokens": 827,
+      "reference_total_score": "0.00",
+      "status": "candidate",
+      "total_absolute_error": "4.00",
+      "within_tolerance": false
+    },
+    {
+      "case_id": "v3-stats-median",
+      "case_kind": "statistics-median",
+      "completion_tokens": 231,
+      "criterion_errors": [],
+      "difficulty": "easy",
+      "elapsed_ms": 1175,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 833,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-stats-conditional",
+      "case_kind": "statistics-conditional-probability",
+      "completion_tokens": 228,
+      "criterion_errors": [],
+      "difficulty": "medium",
+      "elapsed_ms": 1688,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 852,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-math-vector",
+      "case_kind": "vector-dot-product",
+      "completion_tokens": 221,
+      "criterion_errors": [],
+      "difficulty": "medium",
+      "elapsed_ms": 1640,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 843,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-logic-correlation",
+      "case_kind": "logic-correlation",
+      "completion_tokens": 211,
+      "criterion_errors": [],
+      "difficulty": "medium",
+      "elapsed_ms": 1190,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 845,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-proof-counterexample",
+      "case_kind": "proof-counterexample",
+      "completion_tokens": 202,
+      "criterion_errors": [],
+      "difficulty": "easy",
+      "elapsed_ms": 1240,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 822,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-econ-opportunity-cost",
+      "case_kind": "economics-opportunity-cost",
+      "completion_tokens": 299,
+      "criterion_errors": [
+        {
+          "criterion_key": "definition",
+          "delta": "-2.00",
+          "predicted": "3.00",
+          "reference": "5.00"
+        },
+        {
+          "criterion_key": "application",
+          "delta": "-1.00",
+          "predicted": "4.00",
+          "reference": "5.00"
+        }
+      ],
+      "difficulty": "easy",
+      "elapsed_ms": 1965,
+      "failure_categories": [
+        "total_score_error",
+        "total_under_scored",
+        "criterion_score_error"
+      ],
+      "included_in_metrics": true,
+      "predicted_total_score": "7.00",
+      "prompt_tokens": 832,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "3.00",
+      "within_tolerance": false
+    },
+    {
+      "case_id": "v3-cross-page-proof",
+      "case_kind": "cross_page_argument",
+      "completion_tokens": 239,
+      "criterion_errors": [],
+      "difficulty": "medium",
+      "elapsed_ms": 1302,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 854,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-quote-repeated",
+      "case_kind": "repeated-quote-ambiguity",
+      "completion_tokens": 257,
+      "criterion_errors": [],
+      "difficulty": "medium",
+      "elapsed_ms": 1535,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 842,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-quote-short-duplicate",
+      "case_kind": "short-quote-duplicate",
+      "completion_tokens": 212,
+      "difficulty": "medium",
+      "elapsed_ms": 1580,
+      "failure_categories": [
+        "invalid_evidence"
+      ],
+      "included_in_metrics": true,
+      "prompt_tokens": 825,
+      "reason": "quote_ambiguous",
+      "status": "invalid_evidence"
+    },
+    {
+      "case_id": "v3-stem-copy-number",
+      "case_kind": "stem-number-copy",
+      "completion_tokens": 281,
+      "criterion_errors": [
+        {
+          "criterion_key": "formula",
+          "delta": "6.00",
+          "predicted": "6.00",
+          "reference": "0.00"
+        }
+      ],
+      "difficulty": "easy",
+      "elapsed_ms": 1907,
+      "failure_categories": [
+        "total_score_error",
+        "total_over_scored",
+        "criterion_score_error"
+      ],
+      "included_in_metrics": true,
+      "predicted_total_score": "6.00",
+      "prompt_tokens": 824,
+      "reference_total_score": "0.00",
+      "status": "candidate",
+      "total_absolute_error": "6.00",
+      "within_tolerance": false
+    },
+    {
+      "case_id": "v3-injection",
+      "case_kind": "prompt-injection-answer",
+      "completion_tokens": 208,
+      "criterion_errors": [],
+      "difficulty": "easy",
+      "elapsed_ms": 1490,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 816,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-mixed-right-wrong",
+      "case_kind": "mixed_correct_wrong_steps",
+      "completion_tokens": 302,
+      "criterion_errors": [
+        {
+          "criterion_key": "division",
+          "delta": "3.00",
+          "predicted": "3.00",
+          "reference": "0.00"
+        }
+      ],
+      "difficulty": "medium",
+      "elapsed_ms": 1667,
+      "failure_categories": [
+        "total_score_error",
+        "total_over_scored",
+        "criterion_score_error"
+      ],
+      "included_in_metrics": true,
+      "predicted_total_score": "8.00",
+      "prompt_tokens": 876,
+      "reference_total_score": "5.00",
+      "status": "candidate",
+      "total_absolute_error": "3.00",
+      "within_tolerance": false
+    },
+    {
+      "case_id": "v3-short-quote-irrelevant",
+      "case_kind": "irrelevant-quote",
+      "completion_tokens": 203,
+      "criterion_errors": [],
+      "difficulty": "medium",
+      "elapsed_ms": 1397,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "5.00",
+      "prompt_tokens": 829,
+      "reference_total_score": "5.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-cross-segment",
+      "case_kind": "cross_segment_steps",
+      "completion_tokens": 233,
+      "criterion_errors": [],
+      "difficulty": "medium",
+      "elapsed_ms": 1440,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 856,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-overestimate-missing-proof",
+      "case_kind": "missing-proof-credit",
+      "completion_tokens": 226,
+      "criterion_errors": [],
+      "difficulty": "medium",
+      "elapsed_ms": 1447,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "0.00",
+      "prompt_tokens": 841,
+      "reference_total_score": "0.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-rubric-boundary",
+      "case_kind": "rubric-boundary-half",
+      "completion_tokens": 207,
+      "criterion_errors": [],
+      "difficulty": "easy",
+      "elapsed_ms": 1440,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 835,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-partial-quarter",
+      "case_kind": "rubric-quarter-credit",
+      "completion_tokens": 225,
+      "criterion_errors": [
+        {
+          "criterion_key": "conversion",
+          "delta": "5.00",
+          "predicted": "5.00",
+          "reference": "0.00"
+        }
+      ],
+      "difficulty": "medium",
+      "elapsed_ms": 1265,
+      "failure_categories": [
+        "total_score_error",
+        "total_over_scored",
+        "criterion_score_error"
+      ],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 825,
+      "reference_total_score": "5.00",
+      "status": "candidate",
+      "total_absolute_error": "5.00",
+      "within_tolerance": false
+    },
+    {
+      "case_id": "v3-quote-same-word",
+      "case_kind": "same-quote-multiple-segments",
+      "completion_tokens": 246,
+      "criterion_errors": [],
+      "difficulty": "medium",
+      "elapsed_ms": 1379,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "10.00",
+      "prompt_tokens": 833,
+      "reference_total_score": "10.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-source-keywords",
+      "case_kind": "answer-key-keywords-only",
+      "completion_tokens": 222,
+      "criterion_errors": [],
+      "difficulty": "medium",
+      "elapsed_ms": 1456,
+      "failure_categories": [],
+      "included_in_metrics": true,
+      "predicted_total_score": "0.00",
+      "prompt_tokens": 824,
+      "reference_total_score": "0.00",
+      "status": "candidate",
+      "total_absolute_error": "0.00",
+      "within_tolerance": true
+    },
+    {
+      "case_id": "v3-uncertain-missing-image",
+      "case_kind": "missing_image_material",
+      "included_in_metrics": false,
+      "reason": "作答依赖缺失图像，不能可靠建立参考分数；模型应弃权。",
+      "status": "excluded_uncertain"
+    },
+    {
+      "case_id": "v3-uncertain-illegible",
+      "case_kind": "illegible-number",
+      "included_in_metrics": false,
+      "reason": "关键数值存在两个合理读法，不强行选择分数。",
+      "status": "excluded_uncertain"
+    },
+    {
+      "case_id": "v3-uncertain-rubric-conflict",
+      "case_kind": "rubric-conflict",
+      "included_in_metrics": false,
+      "reason": "评分细则本身矛盾，不存在确定参考标签。",
+      "status": "excluded_uncertain"
+    },
+    {
+      "case_id": "v3-uncertain-cropped-page",
+      "case_kind": "cropped-page",
+      "included_in_metrics": false,
+      "reason": "关键前文丢失，无法判定引用推导是否满足规则。",
+      "status": "excluded_uncertain"
+    },
+    {
+      "case_id": "v3-uncertain-chem-symbol",
+      "case_kind": "ambiguous-chemical-symbol",
+      "included_in_metrics": false,
+      "reason": "元素符号不可辨认导致题目对象不确定，标记不确定而不强行评分。",
+      "status": "excluded_uncertain"
+    }
+  ],
+  "prediction_model": {
+    "configured_reasoning_effort": "max",
+    "generation_config_digest": "8193583eec6fb7c8df492b9d7d529c56f24fdc4e04de12325ee514aff7a19040",
+    "invalid_response_retries": 0,
+    "max_output_tokens": 4096,
+    "model_id": "deepseek-flash",
+    "prompt_version": "rubric-quote-selection-v1",
+    "provider": "openai_compatible",
+    "reasoning_effort": null,
+    "thinking_mode": "disabled",
+    "timeout_seconds": 120.0
+  },
+  "protocol_failure_diagnostics": {
+    "cases": [],
+    "raw_quotes_included": false
+  },
+  "provider_call_metadata": [
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 560,
+      "case_id": "v3-eq-no-work",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 619,
+      "case_id": "v3-linear-arithmetic-slip",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 614,
+      "case_id": "v3-lucky-arithmetic",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 595,
+      "case_id": "v3-quadratic-factor",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 648,
+      "case_id": "v3-completing-square",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 623,
+      "case_id": "v3-fraction-equivalent",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 562,
+      "case_id": "v3-decimal-strict",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 585,
+      "case_id": "v3-linear-system",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 573,
+      "case_id": "v3-function-domain",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 574,
+      "case_id": "v3-geometry-similar",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 605,
+      "case_id": "v3-proof-odd",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 619,
+      "case_id": "v3-physics-unit",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 614,
+      "case_id": "v3-physics-wrong-unit",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 626,
+      "case_id": "v3-physics-accel",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 558,
+      "case_id": "v3-physics-energy",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 615,
+      "case_id": "v3-physics-density",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 571,
+      "case_id": "v3-chem-unbalanced",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 592,
+      "case_id": "v3-chem-balanced",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 625,
+      "case_id": "v3-chem-limiting",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 589,
+      "case_id": "v3-chem-acid",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 603,
+      "case_id": "v3-chem-electron",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 563,
+      "case_id": "v3-chem-ph",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 594,
+      "case_id": "v3-bio-photosynthesis",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 568,
+      "case_id": "v3-bio-keyword-copy",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 583,
+      "case_id": "v3-bio-cell",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 593,
+      "case_id": "v3-bio-ecosystem",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 588,
+      "case_id": "v3-chinese-paraphrase",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 578,
+      "case_id": "v3-chinese-keyword",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 590,
+      "case_id": "v3-history-causality",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 572,
+      "case_id": "v3-history-copy-stem",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 586,
+      "case_id": "v3-geography-climate",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 585,
+      "case_id": "v3-chinese-argument",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 574,
+      "case_id": "v3-english-tense",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 567,
+      "case_id": "v3-english-answer-only",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 578,
+      "case_id": "v3-english-paraphrase",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 571,
+      "case_id": "v3-english-keyword",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 577,
+      "case_id": "v3-stats-median",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 596,
+      "case_id": "v3-stats-conditional",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 587,
+      "case_id": "v3-math-vector",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 589,
+      "case_id": "v3-logic-correlation",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 566,
+      "case_id": "v3-proof-counterexample",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 576,
+      "case_id": "v3-econ-opportunity-cost",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 598,
+      "case_id": "v3-cross-page-proof",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 586,
+      "case_id": "v3-quote-repeated",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 569,
+      "case_id": "v3-quote-short-duplicate",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 568,
+      "case_id": "v3-stem-copy-number",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 560,
+      "case_id": "v3-injection",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 620,
+      "case_id": "v3-mixed-right-wrong",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 573,
+      "case_id": "v3-short-quote-irrelevant",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 600,
+      "case_id": "v3-cross-segment",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 585,
+      "case_id": "v3-overestimate-missing-proof",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 579,
+      "case_id": "v3-rubric-boundary",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 569,
+      "case_id": "v3-partial-quarter",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 577,
+      "case_id": "v3-quote-same-word",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    },
+    {
+      "actual_model_id": "deepseek-flash",
+      "cache_hit_tokens": 256,
+      "cache_miss_tokens": 568,
+      "case_id": "v3-source-keywords",
+      "finish_reason": "stop",
+      "reasoning_tokens": null
+    }
+  ],
+  "quote_location": {
+    "candidate_gate_failures": [
+      {
+        "case_id": "v3-quote-short-duplicate",
+        "reason_code": "quote_ambiguous"
+      }
+    ],
+    "candidate_outcome_cases": 55,
+    "location_failure_case_counts": {
+      "quote_ambiguous": 1
+    },
+    "location_failure_occurrences": {
+      "quote_ambiguous": 1
+    },
+    "location_failures": [
+      {
+        "case_id": "v3-quote-short-duplicate",
+        "criterion_index": 1,
+        "evidence_index": 0,
+        "reason_code": "quote_ambiguous"
+      }
+    ],
+    "protocol_failure_cases": [],
+    "protocol_valid_cases": 55,
+    "provider_failure_cases": [],
+    "quote_valid_cases": 54,
+    "rubric_valid_cases": 55,
+    "selection_references": 101,
+    "unique_exact_located_references": 100
+  },
+  "reference_source": "synthetic_curated_reference",
+  "runtime_usage": {
+    "completion_token_count": 55,
+    "completion_tokens_total": 13257,
+    "elapsed_ms_count": 55,
+    "elapsed_ms_mean": 1482.58,
+    "elapsed_ms_p50": 1456,
+    "elapsed_ms_p95": 1965,
+    "elapsed_ms_total": 81542,
+    "percentile_definition": "nearest_rank; actual provider attempts including failures",
+    "prompt_token_count": 55,
+    "prompt_tokens_total": 46383
+  },
+  "score_tolerance": "0.50",
+  "semantic_score_risk_review": {
+    "case_count": 6,
+    "cases": [
+      {
+        "case_id": "v3-linear-arithmetic-slip",
+        "criterion_score_differences": [
+          {
+            "criterion_key": "division",
+            "reference_points": "0.00",
+            "unvalidated_response_points": "3.00"
+          }
+        ],
+        "human_semantic_review_required": true,
+        "included_in_candidate_score_metrics": true,
+        "reference_total_score": "5.00",
+        "stored_status": "candidate",
+        "unvalidated_response_total_score": "8.00"
+      },
+      {
+        "case_id": "v3-english-keyword",
+        "criterion_score_differences": [
+          {
+            "criterion_key": "product",
+            "reference_points": "0.00",
+            "unvalidated_response_points": "4.00"
+          }
+        ],
+        "human_semantic_review_required": true,
+        "included_in_candidate_score_metrics": true,
+        "reference_total_score": "0.00",
+        "stored_status": "candidate",
+        "unvalidated_response_total_score": "4.00"
+      },
+      {
+        "case_id": "v3-econ-opportunity-cost",
+        "criterion_score_differences": [
+          {
+            "criterion_key": "definition",
+            "reference_points": "5.00",
+            "unvalidated_response_points": "3.00"
+          },
+          {
+            "criterion_key": "application",
+            "reference_points": "5.00",
+            "unvalidated_response_points": "4.00"
+          }
+        ],
+        "human_semantic_review_required": true,
+        "included_in_candidate_score_metrics": true,
+        "reference_total_score": "10.00",
+        "stored_status": "candidate",
+        "unvalidated_response_total_score": "7.00"
+      },
+      {
+        "case_id": "v3-stem-copy-number",
+        "criterion_score_differences": [
+          {
+            "criterion_key": "formula",
+            "reference_points": "0.00",
+            "unvalidated_response_points": "6.00"
+          }
+        ],
+        "human_semantic_review_required": true,
+        "included_in_candidate_score_metrics": true,
+        "reference_total_score": "0.00",
+        "stored_status": "candidate",
+        "unvalidated_response_total_score": "6.00"
+      },
+      {
+        "case_id": "v3-mixed-right-wrong",
+        "criterion_score_differences": [
+          {
+            "criterion_key": "division",
+            "reference_points": "0.00",
+            "unvalidated_response_points": "3.00"
+          }
+        ],
+        "human_semantic_review_required": true,
+        "included_in_candidate_score_metrics": true,
+        "reference_total_score": "5.00",
+        "stored_status": "candidate",
+        "unvalidated_response_total_score": "8.00"
+      },
+      {
+        "case_id": "v3-partial-quarter",
+        "criterion_score_differences": [
+          {
+            "criterion_key": "conversion",
+            "reference_points": "0.00",
+            "unvalidated_response_points": "5.00"
+          }
+        ],
+        "human_semantic_review_required": true,
+        "included_in_candidate_score_metrics": true,
+        "reference_total_score": "5.00",
+        "stored_status": "candidate",
+        "unvalidated_response_total_score": "10.00"
+      }
+    ],
+    "interpretation": "这些是未经完整P3-B验证的原始候选输出与合成参考标签的数值差异，不是自动判定的教学错误。",
+    "rationales_and_quotes_included": false
+  },
+  "source_quote_failure_diagnostics": {
+    "candidate_gate_failures": [
+      {
+        "case_id": "v3-quote-short-duplicate",
+        "reason_code": "quote_ambiguous"
+      }
+    ],
+    "cases": [
+      {
+        "case_id": "v3-quote-short-duplicate",
+        "criterion_index": 1,
+        "evidence_index": 0,
+        "reason_code": "quote_ambiguous"
+      }
+    ],
+    "interpretation": "定位失败不修补；每个错误引用都使完整候选失败。"
+  },
+  "total_score": {
+    "absolute_error_sum": "24.00",
+    "exact": {
+      "denominator": 54,
+      "numerator": 48
+    },
+    "mae": "0.4444",
+    "mae_denominator": 54,
+    "over_count": 5,
+    "sample_count": 54,
+    "under_count": 1,
+    "within_tolerance": {
+      "denominator": 54,
+      "numerator": 48
+    }
+  },
+  "zero_reference_positive_score_risks": {
+    "cases": [
+      {
+        "case_id": "v3-english-keyword",
+        "criterion_score_differences": [
+          {
+            "criterion_key": "product",
+            "reference_points": "0.00",
+            "unvalidated_response_points": "4.00"
+          }
+        ],
+        "human_semantic_review_required": true,
+        "included_in_candidate_score_metrics": true,
+        "reference_total_score": "0.00",
+        "stored_status": "candidate",
+        "unvalidated_response_total_score": "4.00"
+      },
+      {
+        "case_id": "v3-stem-copy-number",
+        "criterion_score_differences": [
+          {
+            "criterion_key": "formula",
+            "reference_points": "0.00",
+            "unvalidated_response_points": "6.00"
+          }
+        ],
+        "human_semantic_review_required": true,
+        "included_in_candidate_score_metrics": true,
+        "reference_total_score": "0.00",
+        "stored_status": "candidate",
+        "unvalidated_response_total_score": "6.00"
+      }
+    ],
+    "definition": "合成参考总分为0却有正分数值意图；协议失败也保留风险。",
+    "raw_intent_case_count": 2,
+    "usable_candidate_case_count": 2
+  }
+}

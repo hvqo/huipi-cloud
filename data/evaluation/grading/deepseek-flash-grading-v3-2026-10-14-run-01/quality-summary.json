@@ -1,0 +1,1705 @@
+{
+  "dataset": {
+    "excluded_uncertain_probe_cases": 5,
+    "reference_source": "synthetic_curated_reference",
+    "scored_cases": 55,
+    "sha256": "de59c65d31669043ffd49c062318861a542bd039cfd04c7df4d4645dc4df620d",
+    "teacher_double_scored": false,
+    "total_cases": 60,
+    "version": "3.0"
+  },
+  "engineering_validity": {
+    "abstention_on_scored_cases": {
+      "denominator": 55,
+      "numerator": 0,
+      "rate": "0"
+    },
+    "calls_attempted": 60,
+    "configured_reasoning_effort": "max",
+    "cost_estimate": {
+      "budget_usd": "0.50",
+      "definition": "UTF-8输入字节和协议开销作为保守上界；未缓存输入价与含思考输出价估算，不是账单或账户硬限额。按Provider用量估算，非最终账单。",
+      "input_token_budget_bound": 218227,
+      "input_usd_per_million": "0.30",
+      "output_token_cap": 245760,
+      "output_usd_per_million": "1.20",
+      "preflight_estimate_usd": "0.3603801",
+      "reported_completion_tokens": 13777,
+      "reported_prompt_tokens": 50285,
+      "reported_token_estimate_usd": "0.0316179",
+      "request_cap": 60,
+      "usage_complete": true
+    },
+    "effective_reasoning_effort": null,
+    "excluded_uncertain_probes": {
+      "expected_abstain": 4,
+      "pass_rate": {
+        "denominator": 5,
+        "numerator": 4,
+        "rate": "0.8"
+      },
+      "probe_cases": 5,
+      "score_metrics_included": false
+    },
+    "failure_cases": [
+      {
+        "case_id": "v3-linear-arithmetic-slip",
+        "case_kind": "algebra_arithmetic_error",
+        "completion_tokens": 371,
+        "criterion_errors": [
+          {
+            "criterion_key": "division",
+            "delta": "3.00",
+            "predicted": "3.00",
+            "reference": "0.00"
+          }
+        ],
+        "difficulty": "easy",
+        "elapsed_ms": 2362,
+        "failure_categories": [
+          "total_score_error",
+          "total_over_scored",
+          "criterion_score_error"
+        ],
+        "included_in_metrics": true,
+        "predicted_total_score": "8.00",
+        "prompt_tokens": 875,
+        "reference_total_score": "5.00",
+        "status": "candidate",
+        "total_absolute_error": "3.00",
+        "within_tolerance": false
+      },
+      {
+        "case_id": "v3-english-keyword",
+        "case_kind": "english-keyword-only",
+        "completion_tokens": 218,
+        "criterion_errors": [
+          {
+            "criterion_key": "product",
+            "delta": "4.00",
+            "predicted": "4.00",
+            "reference": "0.00"
+          }
+        ],
+        "difficulty": "easy",
+        "elapsed_ms": 1783,
+        "failure_categories": [
+          "total_score_error",
+          "total_over_scored",
+          "criterion_score_error"
+        ],
+        "included_in_metrics": true,
+        "predicted_total_score": "4.00",
+        "prompt_tokens": 827,
+        "reference_total_score": "0.00",
+        "status": "candidate",
+        "total_absolute_error": "4.00",
+        "within_tolerance": false
+      },
+      {
+        "case_id": "v3-econ-opportunity-cost",
+        "case_kind": "economics-opportunity-cost",
+        "completion_tokens": 299,
+        "criterion_errors": [
+          {
+            "criterion_key": "definition",
+            "delta": "-2.00",
+            "predicted": "3.00",
+            "reference": "5.00"
+          },
+          {
+            "criterion_key": "application",
+            "delta": "-1.00",
+            "predicted": "4.00",
+            "reference": "5.00"
+          }
+        ],
+        "difficulty": "easy",
+        "elapsed_ms": 1965,
+        "failure_categories": [
+          "total_score_error",
+          "total_under_scored",
+          "criterion_score_error"
+        ],
+        "included_in_metrics": true,
+        "predicted_total_score": "7.00",
+        "prompt_tokens": 832,
+        "reference_total_score": "10.00",
+        "status": "candidate",
+        "total_absolute_error": "3.00",
+        "within_tolerance": false
+      },
+      {
+        "case_id": "v3-quote-short-duplicate",
+        "case_kind": "short-quote-duplicate",
+        "completion_tokens": 212,
+        "difficulty": "medium",
+        "elapsed_ms": 1580,
+        "failure_categories": [
+          "invalid_evidence"
+        ],
+        "included_in_metrics": true,
+        "prompt_tokens": 825,
+        "reason": "quote_ambiguous",
+        "status": "invalid_evidence"
+      },
+      {
+        "case_id": "v3-stem-copy-number",
+        "case_kind": "stem-number-copy",
+        "completion_tokens": 281,
+        "criterion_errors": [
+          {
+            "criterion_key": "formula",
+            "delta": "6.00",
+            "predicted": "6.00",
+            "reference": "0.00"
+          }
+        ],
+        "difficulty": "easy",
+        "elapsed_ms": 1907,
+        "failure_categories": [
+          "total_score_error",
+          "total_over_scored",
+          "criterion_score_error"
+        ],
+        "included_in_metrics": true,
+        "predicted_total_score": "6.00",
+        "prompt_tokens": 824,
+        "reference_total_score": "0.00",
+        "status": "candidate",
+        "total_absolute_error": "6.00",
+        "within_tolerance": false
+      },
+      {
+        "case_id": "v3-mixed-right-wrong",
+        "case_kind": "mixed_correct_wrong_steps",
+        "completion_tokens": 302,
+        "criterion_errors": [
+          {
+            "criterion_key": "division",
+            "delta": "3.00",
+            "predicted": "3.00",
+            "reference": "0.00"
+          }
+        ],
+        "difficulty": "medium",
+        "elapsed_ms": 1667,
+        "failure_categories": [
+          "total_score_error",
+          "total_over_scored",
+          "criterion_score_error"
+        ],
+        "included_in_metrics": true,
+        "predicted_total_score": "8.00",
+        "prompt_tokens": 876,
+        "reference_total_score": "5.00",
+        "status": "candidate",
+        "total_absolute_error": "3.00",
+        "within_tolerance": false
+      },
+      {
+        "case_id": "v3-partial-quarter",
+        "case_kind": "rubric-quarter-credit",
+        "completion_tokens": 225,
+        "criterion_errors": [
+          {
+            "criterion_key": "conversion",
+            "delta": "5.00",
+            "predicted": "5.00",
+            "reference": "0.00"
+          }
+        ],
+        "difficulty": "medium",
+        "elapsed_ms": 1265,
+        "failure_categories": [
+          "total_score_error",
+          "total_over_scored",
+          "criterion_score_error"
+        ],
+        "included_in_metrics": true,
+        "predicted_total_score": "10.00",
+        "prompt_tokens": 825,
+        "reference_total_score": "5.00",
+        "status": "candidate",
+        "total_absolute_error": "5.00",
+        "within_tolerance": false
+      }
+    ],
+    "generation_config_digest": "8193583eec6fb7c8df492b9d7d529c56f24fdc4e04de12325ee514aff7a19040",
+    "json_parseable": {
+      "denominator": 60,
+      "numerator": 60,
+      "rate": "1"
+    },
+    "latency_ms": {
+      "count": 60,
+      "mean": "1446.916666666666666666666667",
+      "p50_nearest_rank": 1440,
+      "p95_nearest_rank": 1907,
+      "total": 86815
+    },
+    "provider_response_success": {
+      "denominator": 60,
+      "numerator": 60,
+      "rate": "1"
+    },
+    "quote_location": {
+      "exact_location_rate": {
+        "denominator": 101,
+        "numerator": 100,
+        "rate": "0.9900990099009900990099009901"
+      },
+      "location_failures": [
+        {
+          "case_id": "v3-quote-short-duplicate",
+          "reason_code": "quote_ambiguous"
+        }
+      ],
+      "selected_quote_references": 101,
+      "unique_exactly_located": 100
+    },
+    "quote_selection_protocol_valid": {
+      "denominator": 60,
+      "numerator": 60,
+      "rate": "1"
+    },
+    "response_content_received": {
+      "denominator": 60,
+      "numerator": 60,
+      "rate": "1"
+    },
+    "response_model_id_counts": {
+      "deepseek-flash": 60
+    },
+    "status_counts_all_calls": {
+      "abstain": 4,
+      "candidate": 55,
+      "invalid_evidence": 1
+    },
+    "status_counts_scored_cases": {
+      "candidate": 54,
+      "invalid_evidence": 1
+    },
+    "thinking_mode": "disabled",
+    "token_usage_all_calls": {
+      "cache_hit_token_count": 60,
+      "cache_hit_tokens_total": 15360,
+      "cache_miss_token_count": 60,
+      "cache_miss_tokens_total": 34925,
+      "calls_missing_completion_usage": 0,
+      "calls_missing_prompt_usage": 0,
+      "completion_token_count": 60,
+      "completion_tokens_total": 13777,
+      "prompt_token_count": 60,
+      "prompt_tokens_total": 50285,
+      "reasoning_token_count": 0,
+      "reasoning_tokens_total": 0,
+      "usage_note": "reasoning_tokens是completion_tokens中的子集，不重复计费。"
+    },
+    "valid_candidate_coverage": {
+      "denominator": 55,
+      "numerator": 54,
+      "rate": "0.9818181818181818181818181818"
+    }
+  },
+  "human_review": {
+    "case_count": 60,
+    "checklist_file": "human-semantic-review.json",
+    "formal_grade_review_records_written": false,
+    "semantic_judgments_automated": false,
+    "status": "unreviewed"
+  },
+  "pre_registered_gates": {
+    "criteria_version": "1.0",
+    "eligible_for_later_production_integration": false,
+    "interpretation": "即使所有合成数字门槛通过，人工语义复核和真实作业双评仍是独立必要条件。",
+    "passed_count": 7,
+    "registered_thresholds": {
+      "abstention_probe_expected_abstain": "5/5",
+      "accepted_quote_unique_exact_location": "100%",
+      "candidate_coverage_minimum": "44/55",
+      "candidate_criterion_exact_match_minimum": "80%",
+      "candidate_criterion_score_mae_maximum_points": "0.50",
+      "candidate_total_exact_match_minimum": "80%",
+      "candidate_total_score_mae_maximum_points": "0.75",
+      "critical_zero_reference_criterion_false_credit_allowed": "0",
+      "provider_success_minimum": "59/60",
+      "quote_selection_protocol_valid_minimum": "57/60",
+      "zero_reference_positive_total_score_allowed": "0/9"
+    },
+    "results": {
+      "abstention_probe_expected_abstain": false,
+      "accepted_quote_unique_exact_location": false,
+      "candidate_coverage_minimum": true,
+      "candidate_criterion_exact_match_minimum": true,
+      "candidate_criterion_score_mae_maximum_points": true,
+      "candidate_total_exact_match_minimum": true,
+      "candidate_total_score_mae_maximum_points": true,
+      "critical_zero_reference_criterion_false_credit_allowed": false,
+      "human_semantic_gate_complete": false,
+      "provider_success_minimum": true,
+      "quote_selection_protocol_valid_minimum": true,
+      "zero_reference_positive_total_score_allowed": false
+    },
+    "total_count": 12
+  },
+  "provenance": {
+    "abstention_probe_sha256": "2513d30b62d9a407bed17f290f3c84bdc1a2f94c567e2ea824b39c6a78b15989",
+    "criteria_sha256": "8d4de2bdf2691ad2e494e343af22702665f2aface31eb521e4492700b3a5c861",
+    "prediction_sha256": "9b141f5af5a962ec988476ab4722c14319b48264292a037dba9a0d163b24eedf",
+    "report_sha256": "d35963b9c5a2fc5be96b07ae6d91c80e745570f7389a05d5bc7d22601936ad46",
+    "run_manifest_sha256": "0ee5000905a07680645b05fc9da72840f3855ca33ec805b835138370ea08e88e",
+    "synthetic_data_only": true
+  },
+  "score_quality": {
+    "criterion_score": {
+      "absolute_error_sum": "24.00",
+      "by_case_criterion": {
+        "v3-bio-cell/oxygen_role": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-bio-cell/site": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-bio-ecosystem/decrease": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-bio-ecosystem/direction": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-bio-keyword-copy/barrier": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-bio-keyword-copy/surface": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-bio-photosynthesis/products": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-bio-photosynthesis/site_inputs": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-chem-acid/molecular": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-chem-acid/net_ionic": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-chem-balanced/conservation": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-chem-balanced/equation": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-chem-electron/direction": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-chem-electron/half_reactions": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-chem-limiting/limiting": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-chem-limiting/yield": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-chem-ph/definition": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-chem-ph/value": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-chem-unbalanced/coefficients": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-chem-unbalanced/elements": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-chinese-argument/function": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-chinese-argument/metaphor": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-chinese-keyword/interpretation": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-chinese-keyword/text_detail": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-chinese-paraphrase/consequence": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-chinese-paraphrase/study_thinking": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-completing-square/answer": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-completing-square/root_step": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-completing-square/square": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-cross-page-proof/flood": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-cross-page-proof/habitat": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-cross-segment/data_use": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-cross-segment/speed": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-decimal-strict/result_form": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-decimal-strict/simplification": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-econ-opportunity-cost/application": {
+          "absolute_error_sum": "1.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 0
+          },
+          "mae": "1.0000",
+          "over_count": 0,
+          "under_count": 1
+        },
+        "v3-econ-opportunity-cost/definition": {
+          "absolute_error_sum": "2.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 0
+          },
+          "mae": "2.0000",
+          "over_count": 0,
+          "under_count": 1
+        },
+        "v3-english-answer-only/form": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-english-answer-only/sequence": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-english-keyword/process": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-english-keyword/product": {
+          "absolute_error_sum": "4.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 0
+          },
+          "mae": "4.0000",
+          "over_count": 1,
+          "under_count": 0
+        },
+        "v3-english-paraphrase/concession": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-english-paraphrase/meaning": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-english-tense/correction": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-english-tense/reason": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-eq-no-work/method": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-eq-no-work/result": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-fraction-equivalent/common_denominator": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-fraction-equivalent/form": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-fraction-equivalent/sum": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-function-domain/radicand_condition": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-function-domain/solution": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-geography-climate/moisture": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-geography-climate/rainfall": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-geometry-similar/calculation": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-geometry-similar/proportion": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-history-causality/employment": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-history-causality/transport": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-history-copy-stem/exchange": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-history-copy-stem/trade": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-injection/operation": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-injection/result": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-linear-arithmetic-slip/division": {
+          "absolute_error_sum": "3.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 0
+          },
+          "mae": "3.0000",
+          "over_count": 1,
+          "under_count": 0
+        },
+        "v3-linear-arithmetic-slip/isolation": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-linear-arithmetic-slip/result": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-linear-system/elimination": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-linear-system/substitution": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-logic-correlation/causality": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-logic-correlation/confounder": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-lucky-arithmetic/multiplication": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-lucky-arithmetic/result": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-lucky-arithmetic/subtraction": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-math-vector/conclusion": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-math-vector/dot": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-mixed-right-wrong/division": {
+          "absolute_error_sum": "3.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 0
+          },
+          "mae": "3.0000",
+          "over_count": 1,
+          "under_count": 0
+        },
+        "v3-mixed-right-wrong/isolation": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-mixed-right-wrong/result": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-overestimate-missing-proof/factor_two": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-overestimate-missing-proof/substitution": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-partial-quarter/conversion": {
+          "absolute_error_sum": "5.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 0
+          },
+          "mae": "5.0000",
+          "over_count": 1,
+          "under_count": 0
+        },
+        "v3-partial-quarter/scale": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-physics-accel/change": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-physics-accel/division": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-physics-accel/unit": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-physics-density/formula": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-physics-density/unit": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-physics-density/value": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-physics-energy/relationship": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-physics-energy/result_unit": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-physics-unit/formula": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-physics-unit/unit": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-physics-unit/value": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-physics-wrong-unit/law": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-physics-wrong-unit/unit": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-physics-wrong-unit/value": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-proof-counterexample/counterexample": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-proof-counterexample/verdict": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-proof-odd/divisibility": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-proof-odd/representation": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-quadratic-factor/factor": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-quadratic-factor/roots": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-quote-repeated/conclusion": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-quote-repeated/values": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-quote-same-word/first": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-quote-same-word/repeatability": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-rubric-boundary/result": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-rubric-boundary/transform": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-short-quote-irrelevant/absorption": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-short-quote-irrelevant/surface": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-source-keywords/homeostasis": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-source-keywords/transport": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-stats-conditional/conditional": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-stats-conditional/product": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-stats-median/middle": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-stats-median/ordering": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        },
+        "v3-stem-copy-number/formula": {
+          "absolute_error_sum": "6.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 0
+          },
+          "mae": "6.0000",
+          "over_count": 1,
+          "under_count": 0
+        },
+        "v3-stem-copy-number/unit": {
+          "absolute_error_sum": "0.00",
+          "count": 1,
+          "exact": {
+            "denominator": 1,
+            "numerator": 1
+          },
+          "mae": "0.0000",
+          "over_count": 0,
+          "under_count": 0
+        }
+      },
+      "exact": {
+        "denominator": 117,
+        "numerator": 110
+      },
+      "mae": "0.2051",
+      "mae_denominator": 117,
+      "offsetting_error_case_ids": [],
+      "offsetting_error_cases": 0,
+      "over_count": 5,
+      "sample_count": 117,
+      "under_count": 2
+    },
+    "critical_zero_reference_criterion_false_credit": [
+      {
+        "candidate_was_accepted": true,
+        "case_id": "v3-english-keyword",
+        "criterion_key": "product",
+        "model_points": "4.00"
+      },
+      {
+        "candidate_was_accepted": true,
+        "case_id": "v3-stem-copy-number",
+        "criterion_key": "formula",
+        "model_points": "6.00"
+      }
+    ],
+    "missing_step_false_credit": [],
+    "offsetting_criterion_error_case_ids": [],
+    "offsetting_criterion_error_cases": 0,
+    "semantic_quote_support": "not_evaluated; requires qualified human review",
+    "total_score": {
+      "absolute_error_sum": "24.00",
+      "exact": {
+        "denominator": 54,
+        "numerator": 48
+      },
+      "mae": "0.4444",
+      "mae_denominator": 54,
+      "over_count": 5,
+      "sample_count": 54,
+      "under_count": 1,
+      "within_tolerance": {
+        "denominator": 54,
+        "numerator": 48
+      }
+    },
+    "zero_reference_positive_total_score_intents": [
+      {
+        "candidate_was_accepted": true,
+        "case_id": "v3-english-keyword",
+        "model_total_score": "4.00"
+      },
+      {
+        "candidate_was_accepted": true,
+        "case_id": "v3-stem-copy-number",
+        "model_total_score": "6.00"
+      }
+    ]
+  }
+}

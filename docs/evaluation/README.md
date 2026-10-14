@@ -6,5 +6,7 @@
 - [Rubric 候选评分参考标签审计与协议失败归因](rubric-reference-audit.md)
 - [DeepSeek Provider：授权、合成验收与 v2 评测计划](deepseek-provider-validation.md)
 - [P3-D1 DeepSeek 严格 Quote 与确定性定位对照](p3d1-deepseek-quote-selection-2026-10-14.md)
+- [P3-D2A 独立评分质量留出集与准入门槛](p3d2a-grading-quality-v3.md)
+- [P3-D2A v3参考标签审计、Quote口径与评分失败归因](p3d2a-v3-audit.md)
 
 评测报告必须区分合成数据与真实作业、模型协议通过与识别正确、视觉候选与 Canonical 来源映射。没有可信来源标注时，应使用 `not_evaluated`，不能推算准确率。

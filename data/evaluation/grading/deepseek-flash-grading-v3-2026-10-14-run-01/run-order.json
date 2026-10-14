@@ -1,0 +1,306 @@
+{
+  "dataset_sha256": "de59c65d31669043ffd49c062318861a542bd039cfd04c7df4d4645dc4df620d",
+  "ordering": "one request per case; no retries; excluded probes stay outside score metrics",
+  "request_order": [
+    {
+      "case_id": "v3-eq-no-work",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-linear-arithmetic-slip",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-lucky-arithmetic",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-quadratic-factor",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-completing-square",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-fraction-equivalent",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-decimal-strict",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-linear-system",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-function-domain",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-geometry-similar",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-proof-odd",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-physics-unit",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-physics-wrong-unit",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-physics-accel",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-physics-energy",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-physics-density",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-chem-unbalanced",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-chem-balanced",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-chem-limiting",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-chem-acid",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-chem-electron",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-chem-ph",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-bio-photosynthesis",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-bio-keyword-copy",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-bio-cell",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-bio-ecosystem",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-chinese-paraphrase",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-chinese-keyword",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-history-causality",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-history-copy-stem",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-geography-climate",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-chinese-argument",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-english-tense",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-english-answer-only",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-english-paraphrase",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-english-keyword",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-stats-median",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-stats-conditional",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-math-vector",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-logic-correlation",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-proof-counterexample",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-econ-opportunity-cost",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-cross-page-proof",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-quote-repeated",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-quote-short-duplicate",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-stem-copy-number",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-injection",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-mixed-right-wrong",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-short-quote-irrelevant",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-cross-segment",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-overestimate-missing-proof",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-rubric-boundary",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-partial-quarter",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-quote-same-word",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-source-keywords",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-uncertain-missing-image",
+      "kind": "excluded_uncertain_abstention_probe",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-uncertain-illegible",
+      "kind": "excluded_uncertain_abstention_probe",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-uncertain-rubric-conflict",
+      "kind": "excluded_uncertain_abstention_probe",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-uncertain-cropped-page",
+      "kind": "excluded_uncertain_abstention_probe",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-uncertain-chem-symbol",
+      "kind": "excluded_uncertain_abstention_probe",
+      "mode": "quote_selection"
+    }
+  ]
+}

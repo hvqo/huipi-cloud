@@ -1,0 +1,53 @@
+{
+  "acceptance_criteria_sha256": "8d4de2bdf2691ad2e494e343af22702665f2aface31eb521e4492700b3a5c861",
+  "artifacts": {
+    "abstention-probe-report.json": {
+      "sha256": "f791b0eeb9fbd33f2f4781980667c449ae250b46ce9c6dabc4eea1eee07976a5",
+      "size_bytes": 1890
+    },
+    "abstention-probes.json": {
+      "sha256": "2513d30b62d9a407bed17f290f3c84bdc1a2f94c567e2ea824b39c6a78b15989",
+      "size_bytes": 5861
+    },
+    "human-semantic-review.json": {
+      "sha256": "8d76aaed728231a2191ec83d62f267ec8580174c1387cdbabc4f9062f1449afd",
+      "size_bytes": 204927
+    },
+    "quality-summary.json": {
+      "sha256": "2adeef06f62f793ed6f7124018b75077bb7d004b4f00bd7dc07683b0c9b2e90d",
+      "size_bytes": 46503
+    },
+    "quote_selection-predictions.json": {
+      "sha256": "9b141f5af5a962ec988476ab4722c14319b48264292a037dba9a0d163b24eedf",
+      "size_bytes": 88213
+    },
+    "quote_selection-report.json": {
+      "sha256": "d35963b9c5a2fc5be96b07ae6d91c80e745570f7389a05d5bc7d22601936ad46",
+      "size_bytes": 88877
+    },
+    "run-manifest.json": {
+      "sha256": "0ee5000905a07680645b05fc9da72840f3855ca33ec805b835138370ea08e88e",
+      "size_bytes": 1382
+    },
+    "run-order.json": {
+      "sha256": "c7fe214e84e8582e8d499c72c85bb2b0c481602ea1deaf8ae25cfa640f2fa182",
+      "size_bytes": 6886
+    }
+  },
+  "data_classification": "synthetic_only",
+  "dataset_sha256": "de59c65d31669043ffd49c062318861a542bd039cfd04c7df4d4645dc4df620d",
+  "dataset_version": "3.0",
+  "max_output_tokens": 4096,
+  "model_id": "deepseek-flash",
+  "provider_requests": 60,
+  "request_window_observed": {
+    "basis": "run-manifest creation precedes the first request; final quote-selection report is written after requests; filesystem observation, not provider-side timestamps",
+    "completed_by": "2026-10-14T10:16:42.750959+00:00",
+    "starts_at_or_after": "2026-10-14T10:15:09.443663+00:00"
+  },
+  "retry_count": 0,
+  "schema_name": "huipi.grading.p3d2a-run-integrity",
+  "schema_version": "1.0",
+  "thinking_mode": "disabled",
+  "timeout_seconds": 120
+}

@@ -1,0 +1,70 @@
+{
+  "abstain_cases": 4,
+  "cases": [
+    {
+      "case_id": "v3-uncertain-missing-image",
+      "completion_tokens": 159,
+      "elapsed_ms": 1134,
+      "error_code": null,
+      "finish_reason": "stop",
+      "human_review_status": "unreviewed",
+      "prompt_tokens": 782,
+      "response_model_id": "deepseek-flash",
+      "status": "candidate"
+    },
+    {
+      "case_id": "v3-uncertain-illegible",
+      "completion_tokens": 89,
+      "elapsed_ms": 1018,
+      "error_code": null,
+      "finish_reason": "stop",
+      "human_review_status": "unreviewed",
+      "prompt_tokens": 788,
+      "response_model_id": "deepseek-flash",
+      "status": "abstain"
+    },
+    {
+      "case_id": "v3-uncertain-rubric-conflict",
+      "completion_tokens": 82,
+      "elapsed_ms": 852,
+      "error_code": null,
+      "finish_reason": "stop",
+      "human_review_status": "unreviewed",
+      "prompt_tokens": 779,
+      "response_model_id": "deepseek-flash",
+      "status": "abstain"
+    },
+    {
+      "case_id": "v3-uncertain-cropped-page",
+      "completion_tokens": 100,
+      "elapsed_ms": 1136,
+      "error_code": null,
+      "finish_reason": "stop",
+      "human_review_status": "unreviewed",
+      "prompt_tokens": 771,
+      "response_model_id": "deepseek-flash",
+      "status": "abstain"
+    },
+    {
+      "case_id": "v3-uncertain-chem-symbol",
+      "completion_tokens": 90,
+      "elapsed_ms": 1133,
+      "error_code": null,
+      "finish_reason": "stop",
+      "human_review_status": "unreviewed",
+      "prompt_tokens": 782,
+      "response_model_id": "deepseek-flash",
+      "status": "abstain"
+    }
+  ],
+  "expected_behavior": "abstain",
+  "non_abstain_or_failure_cases": 1,
+  "probe_cases": 5,
+  "provider_requests_sent": 5,
+  "raw_responses_file": "abstention-probes.json",
+  "score_metrics_included": false,
+  "status_counts": {
+    "abstain": 4,
+    "candidate": 1
+  }
+}
