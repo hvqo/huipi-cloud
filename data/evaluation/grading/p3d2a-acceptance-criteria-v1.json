@@ -1,0 +1,60 @@
+{
+  "criteria_version": "1.0",
+  "experiment": "P3-D2A grading quality v3 holdout",
+  "dataset_version": "3.0",
+  "locked_before_model_requests": true,
+  "request_policy": {
+    "provider": "DeepSeek OpenAI-compatible",
+    "model": "deepseek-flash",
+    "thinking": "disabled",
+    "requests_per_case": 1,
+    "retries": 0,
+    "max_output_tokens": 4096,
+    "timeout_seconds": 120,
+    "max_estimated_cost_usd": "0.50",
+    "uncertain_case_policy": "send one abstention probe; exclude it from score metrics"
+  },
+  "engineering_gates": {
+    "provider_success_minimum": "59/60",
+    "quote_selection_protocol_valid_minimum": "57/60",
+    "candidate_coverage_minimum": "44/55",
+    "accepted_quote_unique_exact_location": "100%",
+    "abstention_probe_expected_abstain": "5/5"
+  },
+  "score_quality_gates": {
+    "candidate_total_score_mae_maximum_points": "0.75",
+    "candidate_criterion_score_mae_maximum_points": "0.50",
+    "candidate_total_exact_match_minimum": "80%",
+    "candidate_criterion_exact_match_minimum": "80%",
+    "zero_reference_positive_total_score_allowed": "0/9",
+    "critical_zero_reference_criterion_false_credit_allowed": "0"
+  },
+  "human_semantic_gate": {
+    "required_before_any_production_integration": "all positive-scored model criteria and all overestimate-risk cases reviewed by a qualified human",
+    "required_quote_support_status": "reviewed_and_supported",
+    "current_status": "unreviewed",
+    "synthetic_label_provenance_is_not_teacher_double_scoring": true
+  },
+  "decision_rule": "All engineering and score gates must pass, and human semantic review must be complete, before considering a later production-integration proposal. Passing synthetic gates alone is never production-grading authorization.",
+  "high_risk_zero_score_case_ids": [
+    "v3-decimal-strict",
+    "v3-chem-unbalanced",
+    "v3-bio-keyword-copy",
+    "v3-chinese-keyword",
+    "v3-history-copy-stem",
+    "v3-english-keyword",
+    "v3-stem-copy-number",
+    "v3-overestimate-missing-proof",
+    "v3-source-keywords"
+  ],
+  "critical_false_credit_tags": [
+    "false_credit_guard",
+    "keyword_only",
+    "missing_steps",
+    "prompt_content_confusion",
+    "prompt_copy",
+    "stem_as_answer",
+    "unbalanced_equation",
+    "overcredit_trap"
+  ]
+}

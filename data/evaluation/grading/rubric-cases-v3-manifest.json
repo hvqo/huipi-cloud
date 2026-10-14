@@ -1,0 +1,635 @@
+{
+  "manifest_version": "1.0",
+  "dataset_version": "3.0",
+  "dataset_file": "rubric-cases-v3.json",
+  "dataset_sha256": "de59c65d31669043ffd49c062318861a542bd039cfd04c7df4d4645dc4df620d",
+  "case_count": 60,
+  "included_case_count": 55,
+  "excluded_uncertain_case_count": 5,
+  "reference_label_provenance": "synthetic_curated_reference",
+  "teacher_double_scored": false,
+  "labels_locked_before_predictions": true,
+  "predictions_exist_at_manifest_creation": false,
+  "created_at_utc": "2026-10-14T10:03:12.241455+00:00",
+  "v1_v2_modified": false,
+  "model_predictions_used_to_author_labels": false,
+  "cases": [
+    {
+      "case_id": "v3-eq-no-work",
+      "risk_categories": [
+        "missing_steps",
+        "correct_final_only"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "仅最终结果可得结果项4分；不得推断未展示步骤。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-linear-arithmetic-slip",
+      "risk_categories": [
+        "arithmetic_error",
+        "partial_credit"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "只认可到正确的移项；算术错误不能获得除法或结果分。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-lucky-arithmetic",
+      "risk_categories": [
+        "lucky_correct_final",
+        "wrong_intermediate",
+        "overcredit_trap"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "偶然得到正确结果不证明过程正确；只给Rubric明确列出的结果项。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-quadratic-factor",
+      "risk_categories": [
+        "multiple_criteria",
+        "correct_work"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "完整分解及两根均有直接文本证据。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-completing-square",
+      "risk_categories": [
+        "correct_intermediate_wrong_final",
+        "partial_credit"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "中间配方步骤正确，根式与最终解错误。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-fraction-equivalent",
+      "risk_categories": [
+        "equivalent_form",
+        "complete_steps"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "三个得分点分别有原文证据。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-decimal-strict",
+      "risk_categories": [
+        "equivalent_value_wrong_form",
+        "zero_score_keywords"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "数值等价不替代明确要求的最简分数形式。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-linear-system",
+      "risk_categories": [
+        "dependent_criteria",
+        "multi_step"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "消元和代回均明确出现。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-function-domain",
+      "risk_categories": [
+        "inequality",
+        "symbolic_reasoning"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "定义域条件及求解均正确。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-geometry-similar",
+      "risk_categories": [
+        "geometry",
+        "proportional_reasoning"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "比例及结果均正确。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-proof-odd",
+      "risk_categories": [
+        "proof",
+        "multi_criterion"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "设元表达与整除论证齐全。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-physics-unit",
+      "risk_categories": [
+        "physics",
+        "units"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "数值和单位均正确。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-physics-wrong-unit",
+      "risk_categories": [
+        "wrong_unit",
+        "partial_credit"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "单位错误只扣单位项，不抹去正确公式和数值。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-physics-accel",
+      "risk_categories": [
+        "physics",
+        "multi_criterion"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "速度差、时间比值和单位正确。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-physics-energy",
+      "risk_categories": [
+        "physics",
+        "work"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "计算完整。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-physics-density",
+      "risk_categories": [
+        "physics",
+        "unit"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "三项证据完整。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-chem-unbalanced",
+      "risk_categories": [
+        "chemistry",
+        "unbalanced_equation",
+        "zero_score_keywords",
+        "overcredit_trap"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "原子数不守恒，不能因出现反应物和产物名称给分。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-chem-balanced",
+      "risk_categories": [
+        "chemistry",
+        "balancing"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "方程式与守恒解释准确。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-chem-limiting",
+      "risk_categories": [
+        "chemistry",
+        "dependent_criteria"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "判断依据和产物量均明确。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-chem-acid",
+      "risk_categories": [
+        "chemistry",
+        "representation"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "两种方程式均准确。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-chem-electron",
+      "risk_categories": [
+        "chemistry",
+        "electron_transfer"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "半反应和方向均正确。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-chem-ph",
+      "risk_categories": [
+        "chemistry",
+        "logarithm"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "公式及数值正确。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-bio-photosynthesis",
+      "risk_categories": [
+        "chinese_paraphrase",
+        "biology"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "语义改写与标准表达等价，证据完整。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-bio-keyword-copy",
+      "risk_categories": [
+        "keyword_only",
+        "zero_score_keywords",
+        "overcredit_trap"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "关键词重合不能替代完整因果说明。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-bio-cell",
+      "risk_categories": [
+        "biology",
+        "mechanism"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "两点均明确。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-bio-ecosystem",
+      "risk_categories": [
+        "biology",
+        "causal_explanation"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "原因与方向均有证据。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-chinese-paraphrase",
+      "risk_categories": [
+        "chinese_paraphrase",
+        "semantic_equivalence"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "语义等价的中文改写接受，不要求逐字引用答案Key。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-chinese-keyword",
+      "risk_categories": [
+        "keyword_only",
+        "prompt_content_confusion",
+        "overcredit_trap"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "题干和常见评价词不能充当具体分析证据。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-history-causality",
+      "risk_categories": [
+        "humanities",
+        "causal_explanation"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "两条因果链分别有证据。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-history-copy-stem",
+      "risk_categories": [
+        "prompt_copy",
+        "stem_as_answer",
+        "missing_evidence"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "重复题干不构成展开解释的学生证据。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-geography-climate",
+      "risk_categories": [
+        "geography",
+        "causal_explanation"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "机制解释完整。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-chinese-argument",
+      "risk_categories": [
+        "chinese_paraphrase",
+        "textual_reasoning"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "改写表达含义充分。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-english-tense",
+      "risk_categories": [
+        "language",
+        "grammar"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "答案和理由均正确。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-english-answer-only",
+      "risk_categories": [
+        "correct_result_missing_explanation",
+        "english"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "形式正确，但未提供要求的解释。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-english-paraphrase",
+      "risk_categories": [
+        "semantic_equivalence",
+        "paraphrase"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "同义表达接受，核心关系和命题均保留。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-english-keyword",
+      "risk_categories": [
+        "keyword_only",
+        "overcredit_trap"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "术语集合没有给出关系或过程。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-stats-median",
+      "risk_categories": [
+        "statistics",
+        "position"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "选择中间位置正确。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-stats-conditional",
+      "risk_categories": [
+        "statistics",
+        "dependent_criteria"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "条件概率和乘法均正确。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-math-vector",
+      "risk_categories": [
+        "math",
+        "conclusion"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "计算和结论一致。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-logic-correlation",
+      "risk_categories": [
+        "reasoning",
+        "confounder"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "判断与混杂解释完整。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-proof-counterexample",
+      "risk_categories": [
+        "logic",
+        "counterexample"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "反例直接推翻全称命题。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-econ-opportunity-cost",
+      "risk_categories": [
+        "economics",
+        "application"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "具体应用与定义一致。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-cross-page-proof",
+      "risk_categories": [
+        "cross_page",
+        "multiple_segments"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "跨页两个独立片段各支持一项。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-quote-repeated",
+      "risk_categories": [
+        "repeated_quote",
+        "quote_ambiguity"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "存在重复“左边/右边”短语，引用完整唯一片段以避开歧义。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-quote-short-duplicate",
+      "risk_categories": [
+        "duplicate_quote",
+        "repeated_text"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "重复短串需使用精确字符起点，自动唯一定位会拒绝重复引用。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-stem-copy-number",
+      "risk_categories": [
+        "stem_keyword",
+        "no_work",
+        "overcredit_trap"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "看似相关的通用措辞不构成完成计算。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-injection",
+      "risk_categories": [
+        "prompt_injection",
+        "safety"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "注入文本只是学生内容；评分只根据数学Rubric判断，不为安全指令额外设分。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-mixed-right-wrong",
+      "risk_categories": [
+        "mixed_correct_wrong",
+        "partial_credit"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "混合正确过程和错误最终值，过程分与结果分分别判。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-short-quote-irrelevant",
+      "risk_categories": [
+        "irrelevant_content",
+        "partial_credit"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "相关结构可得相应项，但不能用无关句子补足作用说明。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-cross-segment",
+      "risk_categories": [
+        "cross_page",
+        "cross_segment",
+        "multi_step"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "跨页数据和后续计算分别引用来源片段。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-overestimate-missing-proof",
+      "risk_categories": [
+        "missing_steps",
+        "false_credit_guard",
+        "overcredit_trap"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "结论虽真，但仅重述结论，没有过程证据。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-rubric-boundary",
+      "risk_categories": [
+        "rubric_boundary",
+        "decimal_score"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "边界满分拆分与细则一致。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-partial-quarter",
+      "risk_categories": [
+        "partial_steps",
+        "missing_unit_conversion"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "保留已完成计算项得分，不推断后续换算。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-quote-same-word",
+      "risk_categories": [
+        "same_quote_cross_segment",
+        "source_identity"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "相同Quote在不同segment出现，segment身份不可混淆。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-source-keywords",
+      "risk_categories": [
+        "answer_key_keyword_overlap",
+        "keyword_only"
+      ],
+      "reference_decision": "included_with_curated_score",
+      "reference_reason": "标准答案关键词出现本身不能构成语义证据。",
+      "expected_probe_outcome": null
+    },
+    {
+      "case_id": "v3-uncertain-missing-image",
+      "risk_categories": [
+        "material_defect",
+        "missing_image",
+        "expected_abstain"
+      ],
+      "reference_decision": "excluded_uncertain_no_score",
+      "reference_reason": "作答依赖缺失图像，不能可靠建立参考分数；模型应弃权。",
+      "expected_probe_outcome": "abstain"
+    },
+    {
+      "case_id": "v3-uncertain-illegible",
+      "risk_categories": [
+        "material_defect",
+        "ambiguous_source",
+        "expected_abstain"
+      ],
+      "reference_decision": "excluded_uncertain_no_score",
+      "reference_reason": "关键数值存在两个合理读法，不强行选择分数。",
+      "expected_probe_outcome": "abstain"
+    },
+    {
+      "case_id": "v3-uncertain-rubric-conflict",
+      "risk_categories": [
+        "material_defect",
+        "rubric_ambiguity",
+        "expected_abstain"
+      ],
+      "reference_decision": "excluded_uncertain_no_score",
+      "reference_reason": "评分细则本身矛盾，不存在确定参考标签。",
+      "expected_probe_outcome": "abstain"
+    },
+    {
+      "case_id": "v3-uncertain-cropped-page",
+      "risk_categories": [
+        "material_defect",
+        "truncated_context",
+        "expected_abstain"
+      ],
+      "reference_decision": "excluded_uncertain_no_score",
+      "reference_reason": "关键前文丢失，无法判定引用推导是否满足规则。",
+      "expected_probe_outcome": "abstain"
+    },
+    {
+      "case_id": "v3-uncertain-chem-symbol",
+      "risk_categories": [
+        "material_defect",
+        "ambiguous_chemistry",
+        "expected_abstain"
+      ],
+      "reference_decision": "excluded_uncertain_no_score",
+      "reference_reason": "元素符号不可辨认导致题目对象不确定，标记不确定而不强行评分。",
+      "expected_probe_outcome": "abstain"
+    }
+  ],
+  "acceptance_criteria_file": "p3d2a-acceptance-criteria-v1.json",
+  "acceptance_criteria_sha256": "8d4de2bdf2691ad2e494e343af22702665f2aface31eb521e4492700b3a5c861",
+  "acceptance_criteria_locked_before_model_requests": true
+}
