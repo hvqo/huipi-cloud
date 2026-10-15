@@ -353,10 +353,16 @@ class RagProvider:
         )
 
 
-async def run_agent(factory, storage, aid, provider):
+async def run_agent(factory, storage, aid, provider, *, strict=False):
     return await CopilotRuntime(
         provider, BusinessTools(factory, aid, storage=storage), Settings(_env_file=None)
-    ).run(CopilotRequest(assignment_id=aid, question="请根据本作业资料解释热传导并引用来源。"))
+    ).run(
+        CopilotRequest(
+            assignment_id=aid,
+            question="请根据本作业资料解释热传导并引用来源。",
+            require_material_evidence=strict,
+        )
+    )
 
 
 @pytest.mark.anyio
@@ -368,7 +374,7 @@ async def test_agent_cites_verified_chunk_and_never_exposes_storage_keys(
     factory, aid = await assignment(client, postgres_engine)
     await put(factory, recording_minio_storage, aid)
     provider = RagProvider()
-    result = await run_agent(factory, recording_minio_storage, aid, provider)
+    result = await run_agent(factory, recording_minio_storage, aid, provider, strict=True)
     assert result.status == "completed" and len(result.citations) == 1
     assert f"[[{result.citations[0].citation_id}]]" in result.answer
     assert result.citations[0].source_version == 1 and result.tool_calls == 1

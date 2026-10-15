@@ -276,6 +276,6 @@ proposal JSON 以每次执行不同的不可变 Key 上传到私有 S3，`grade_
 
 确定性分块最多400码点，优先段落/标题边界，overlap 48，ID绑定版本、顺序、范围和hash；不按UTF-8字节切断中文。Retriever接口区分`search`与`validate_citations`。当前实现为NFKC/casefold的中文单字/二元组和英文数字词覆盖率，排序使用固定平局规则；不是BM25、概率、语义置信度或教学评分。查询强制Assignment与active许可过滤，容量与工具字节预算有硬边界，输出说明truncated。
 
-Copilot注册表新增`search_assignment_materials(query, top_k)`，scope只能来自BusinessTools。检索前关闭数据库短只读事务，随后有界读取S3并验证原文/Chunk SHA和字符范围，再检查当前状态。模型只见逻辑ID、版本、片段及citation_id，不见存储定位字段。每轮单独收集实际命中的Citation；最终回答必须使用`[[citation_id]]`，程序拒绝未知/缺少/畸形引用，再检查当前版本、原文SHA及范围。检索无命中由服务端直接结束为证据不足；工具故障沿用不重试与禁用后续工具规则。
+Copilot注册表新增`search_assignment_materials(query, top_k)`，scope只能来自BusinessTools。检索前关闭数据库短只读事务，随后有界读取S3并验证原文/Chunk SHA和字符范围，再检查当前状态。模型只见逻辑ID、版本、片段及citation_id，不见存储定位字段。每轮单独收集实际命中的Citation；最终回答必须使用`[[citation_id]]`，严格资料模式要求本轮有效引用，即使模型跳过检索也拒绝无证据完成；一般说明模式保留无工具回答。程序拒绝未知/缺少/畸形引用，再检查当前版本、原文SHA及范围。检索无命中由服务端直接结束为证据不足；工具故障沿用不重试与禁用后续工具规则。
 
 引用校验只证明来源身份与时点有效性，不证明答案语义正确；资料内指令始终是不可信数据。不同系统之间没有原子读取保证，返回后的撤销不回溯改变历史回答。没有跨作业授权或公网RAG服务。未来P4-B2可以在同一Retriever/Chunk合同下接入本地Embedding、Dense/Sparse召回与本地Rerank；生成和Agent规划继续使用云端API，本轮没有新增模型或向量服务依赖。

@@ -47,6 +47,7 @@ class RunState(TypedDict):
     call_ids: set[str]
     tool_failed: bool
     citations: dict
+    require_material_evidence: bool
     done: bool
 
 
@@ -115,6 +116,7 @@ class CopilotRuntime:
             "call_ids": set(),
             "tool_failed": False,
             "citations": {},
+            "require_material_evidence": request.require_material_evidence,
             "done": False,
         }
         try:
@@ -180,6 +182,8 @@ class CopilotRuntime:
                 raise CopilotError("provider_usage_exceeds_reservation")
             if not reply.tool_calls:
                 labels = cited_ids(reply.content, state["citations"])
+                if state["require_material_evidence"] and not labels:
+                    raise CopilotError("material_evidence_required")
                 if state["citations"] and not labels:
                     raise CopilotError("citation_required")
                 if labels:

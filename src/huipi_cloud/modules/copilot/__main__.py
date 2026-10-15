@@ -23,7 +23,11 @@ async def run(args):
     if args.use_grading_key:
         config = config.model_copy(update={"copilot_api_key": config.grading_api_key})
     try:
-        request = CopilotRequest(assignment_id=args.assignment_id, question=args.question)
+        request = CopilotRequest(
+            assignment_id=args.assignment_id,
+            question=args.question,
+            require_material_evidence=getattr(args, "require_material_evidence", False),
+        )
         provider = DeepSeekCopilotProvider(config)
         try:
             storage = _configured_storage()
@@ -61,6 +65,11 @@ def main():
     parser = argparse.ArgumentParser(description="受控本地教师Copilot；没有身份认证或成绩发布权限")
     parser.add_argument("--assignment-id", required=True, type=UUID)
     parser.add_argument("--question", required=True)
+    parser.add_argument(
+        "--require-material-evidence",
+        action="store_true",
+        help="材料问答严格模式：即使模型跳过检索也不得无证据完成回答",
+    )
     parser.add_argument(
         "--use-grading-key",
         action="store_true",

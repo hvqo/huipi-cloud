@@ -26,6 +26,7 @@ class CopilotError(Exception):
 class CopilotRequest(StrictModel):
     assignment_id: UUID
     question: str = Field(min_length=1, max_length=2000)
+    require_material_evidence: bool = Field(default=False, strict=True)
 
     @field_validator("question")
     @classmethod
