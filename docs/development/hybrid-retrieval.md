@@ -72,4 +72,4 @@ RUN_HYBRID_CLOUD_E2E=1 HYBRID_SYNTHETIC_TRANSFER_AUTHORIZED=1 \
   uv run pytest -q -m hybrid_cloud_e2e
 ```
 
-评测脚本只使用不同于开发库且以`_test`结尾的测试PG、本地独立测试桶和本次UUID作用域，结束仅删除自身资料与对象。历史报告不可覆盖。没有新增迁移，不自动升级开发库。后续Rerank可在候选集合上排序，但不得替代当前作用域/许可与Citation验证。
+评测脚本只使用不同于开发库且以`_test`结尾的测试PG、本地独立测试桶和本次UUID作用域，结束仅删除自身资料与对象。历史报告不可覆盖。没有新增迁移，不自动升级开发库。可选精排见[Rerank指南](rerank-retrieval.md)，不得替代当前作用域/许可与Citation验证。

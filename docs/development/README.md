@@ -18,3 +18,5 @@
 - [教师知识材料导入、版本与作用域检索](scoped-retrieval.md)
 
 - [本地Embedding与混合检索](hybrid-retrieval.md)
+
+- [本地Rerank与两阶段检索](rerank-retrieval.md)

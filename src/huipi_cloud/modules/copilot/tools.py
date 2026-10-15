@@ -10,6 +10,7 @@ from sqlalchemy import func, select, text
 from sqlalchemy.exc import SQLAlchemyError
 
 from huipi_cloud.infrastructure.embedding.protocol import EmbeddingError
+from huipi_cloud.infrastructure.reranking.protocol import RerankError
 from huipi_cloud.modules.answer_alignment.models import AnswerAlignmentArtifact
 from huipi_cloud.modules.answer_review.models import AnswerReviewDecision
 from huipi_cloud.modules.assignments import repository as assignment_repository
@@ -112,19 +113,28 @@ class BusinessTools:
 
     @property
     def retrieval_config(self):
-        dense = getattr(self.retriever, "dense", self.retriever)
+        base = getattr(self.retriever, "source", self.retriever)
+        dense = getattr(base, "dense", base)
         embedding = getattr(dense, "embedding", None)
         return {
             "implementation": type(self.retriever).__name__,
             "embedding_digest": embedding.identity.digest if embedding else None,
+            "rerank_digest": getattr(
+                getattr(self.retriever, "reranker", None), "identity", None
+            ).digest
+            if hasattr(self.retriever, "reranker")
+            else None,
+            "rerank_min_score": getattr(self.retriever, "min_score", None),
+            "candidate_limit": getattr(self.retriever, "candidate_limit", None),
+            "rerank_allow_fallback": getattr(self.retriever, "allow_fallback", False),
             "min_cosine": getattr(dense, "min_cosine", None),
-            "allow_lexical_fallback": getattr(self.retriever, "allow_lexical_fallback", False),
+            "allow_lexical_fallback": getattr(base, "allow_lexical_fallback", False),
         }
 
     async def validate_citations(self, hits):
         try:
             await self.retriever.validate_citations(self.assignment_id, hits)
-        except (KnowledgeError, EmbeddingError) as error:
+        except (KnowledgeError, EmbeddingError, RerankError) as error:
             raise CopilotError(error.code) from None
 
     async def execute(self, name: str, args: StrictModel) -> dict:
@@ -153,7 +163,7 @@ class BusinessTools:
         try:
             result = await self.retriever.search(self.assignment_id, args.query, args.top_k)
             return result.model_dump(mode="json")
-        except (KnowledgeError, EmbeddingError) as error:
+        except (KnowledgeError, EmbeddingError, RerankError) as error:
             raise CopilotError(error.code) from None
 
     async def _read(self, session, name, args):

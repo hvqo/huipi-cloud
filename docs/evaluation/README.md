@@ -18,3 +18,5 @@
 - [作用域知识检索基线与真实合成验收](scoped-retrieval.md)
 
 - [本地Embedding与混合检索基线](hybrid-retrieval.md)
+
+- [Rerank独立留出评测](rerank-retrieval.md)

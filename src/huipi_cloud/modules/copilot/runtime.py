@@ -280,6 +280,14 @@ class CopilotRuntime:
                             "retrieval_mode": search.retrieval_mode,
                             "degraded": search.degraded,
                             "degradation_reason": search.degradation_reason,
+                            "requested_mode": search.requested_mode,
+                            "actual_mode": search.actual_mode or search.retrieval_mode,
+                            "reranker_model_version": search.reranker_model_version,
+                            "rerank_input_tokens": search.rerank_input_tokens,
+                            "rerank_degraded": search.rerank_degraded,
+                            "rerank_degradation_reason": search.rerank_degradation_reason,
+                            "candidate_count": search.candidate_count,
+                            "rerank_elapsed_ms": search.rerank_elapsed_ms,
                         }
                         state["citations"].update({h.citation_id: h for h in search.hits})
                         if not search.hits:

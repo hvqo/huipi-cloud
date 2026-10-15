@@ -1,0 +1,73 @@
+{
+  "scope": "provider_only_synthetic_not_PG_source_validation",
+  "synthetic_only": true,
+  "embedding_load_seconds": 4.899401294998825,
+  "rerank_load_seconds": 4.444698941000752,
+  "own_gpu_process_memory_mib": [
+    2428,
+    2452
+  ],
+  "responses": [
+    {
+      "scores": [
+        0.9974591135978699
+      ],
+      "model_id": "Qwen/Qwen3-Reranker-0.6B",
+      "model_revision": "e61197ed45024b0ed8a2d74b80b4d909f1255473",
+      "config_digest": "389dd2bbe252baa33aac45990db28197c8618235cda7af2b4aa2ba490a2d305f",
+      "processed_count": 1,
+      "elapsed_ms": 435,
+      "input_tokens": 88,
+      "cuda_allocated_bytes": 2392235008,
+      "cuda_peak_allocated_bytes": 2396941824
+    },
+    {
+      "scores": [
+        0.9974589943885803,
+        4.6567205572500825e-05,
+        0.9974589943885803,
+        4.6567205572500825e-05
+      ],
+      "model_id": "Qwen/Qwen3-Reranker-0.6B",
+      "model_revision": "e61197ed45024b0ed8a2d74b80b4d909f1255473",
+      "config_digest": "389dd2bbe252baa33aac45990db28197c8618235cda7af2b4aa2ba490a2d305f",
+      "processed_count": 4,
+      "elapsed_ms": 91,
+      "input_tokens": 348,
+      "cuda_allocated_bytes": 2394059264,
+      "cuda_peak_allocated_bytes": 2412323328
+    },
+    {
+      "scores": [
+        0.9974589943885803,
+        4.6567205572500825e-05,
+        0.9974589943885803,
+        4.6567205572500825e-05,
+        0.9974589943885803,
+        4.6567205572500825e-05,
+        0.9974589943885803,
+        4.6567205572500825e-05,
+        0.9974589943885803,
+        4.6567205572500825e-05,
+        0.9974589943885803,
+        4.6567205572500825e-05,
+        0.9974589943885803,
+        4.6567205572500825e-05,
+        0.9974589943885803,
+        4.6567205572500825e-05,
+        0.9974589943885803,
+        4.6567205572500825e-05,
+        0.9974589943885803,
+        4.6567205572500825e-05
+      ],
+      "model_id": "Qwen/Qwen3-Reranker-0.6B",
+      "model_revision": "e61197ed45024b0ed8a2d74b80b4d909f1255473",
+      "config_digest": "389dd2bbe252baa33aac45990db28197c8618235cda7af2b4aa2ba490a2d305f",
+      "processed_count": 20,
+      "elapsed_ms": 411,
+      "input_tokens": 1740,
+      "cuda_allocated_bytes": 2394515968,
+      "cuda_peak_allocated_bytes": 2414600192
+    }
+  ]
+}

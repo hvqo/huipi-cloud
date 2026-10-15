@@ -1,0 +1,1003 @@
+{
+  "dataset_version": "rerank-holdout-v1",
+  "reference_origin": "synthetic_curated_reference",
+  "human_review_status": "unreviewed",
+  "chunker_version": "paragraph-unicode-v1",
+  "documents": [
+    {
+      "id": "osmosis",
+      "assignment": "A",
+      "title": "渗透作用",
+      "text": "# 渗透作用\n\n渗透作用是水分子通过半透膜由水势较高一侧向水势较低一侧净移动，溶质不一定能穿膜。",
+      "source_version": 1,
+      "status": "active"
+    },
+    {
+      "id": "enzyme",
+      "assignment": "A",
+      "title": "酶的专一性",
+      "text": "# 酶的专一性\n\n酶是生物催化剂，通常对特定底物具有专一性。高温可破坏其空间结构使之失活，适当低温主要降低反应速率。",
+      "source_version": 1,
+      "status": "active"
+    },
+    {
+      "id": "meiosis",
+      "assignment": "A",
+      "title": "减数分裂",
+      "text": "# 减数分裂\n\n减数分裂中DNA复制一次，细胞连续分裂两次，产生染色体数目减半的生殖细胞。有丝分裂通常维持染色体数目。",
+      "source_version": 1,
+      "status": "active"
+    },
+    {
+      "id": "lever",
+      "assignment": "A",
+      "title": "杠杆平衡",
+      "text": "# 杠杆平衡\n\n杠杆平衡条件为动力乘动力臂等于阻力乘阻力臂，即F1*l1=F2*l2。力臂是支点到力的作用线的垂直距离。",
+      "source_version": 1,
+      "status": "active"
+    },
+    {
+      "id": "buoyancy",
+      "assignment": "A",
+      "title": "阿基米德原理",
+      "text": "# 阿基米德原理\n\n浮力大小等于物体排开液体所受的重力，F浮=ρ液gV排。浸没后继续增加深度通常不改变排液体积。",
+      "source_version": 1,
+      "status": "active"
+    },
+    {
+      "id": "pressure",
+      "assignment": "A",
+      "title": "压强",
+      "text": "# 压强\n\n压强等于垂直作用于表面的压力除以受力面积，p=F/S。同样压力下，面积越小压强越大。",
+      "source_version": 1,
+      "status": "active"
+    },
+    {
+      "id": "series",
+      "assignment": "A",
+      "title": "串联电路",
+      "text": "# 串联电路\n\n串联电路中各处电流相同，各元件两端电压之和等于总电压，等效电阻等于各电阻之和。",
+      "source_version": 1,
+      "status": "active"
+    },
+    {
+      "id": "parallel",
+      "assignment": "A",
+      "title": "并联电路",
+      "text": "# 并联电路\n\n并联电路中各支路两端电压相同，干路电流等于各支路电流之和，各支路可独立工作。",
+      "source_version": 1,
+      "status": "active"
+    },
+    {
+      "id": "power",
+      "assignment": "A",
+      "title": "电功率",
+      "text": "# 电功率\n\n电功率表示电能转化的快慢，P=UI，单位瓦特。电能W=Pt，单位焦耳或千瓦时，不能将功率直接当耗电量。",
+      "source_version": 1,
+      "status": "active"
+    },
+    {
+      "id": "refraction",
+      "assignment": "A",
+      "title": "光的折射",
+      "text": "# 光的折射\n\n光从一种透明介质斜射入另一种时，传播方向通常改变，这叫折射。光在同一均匀介质中沿直线传播。",
+      "source_version": 1,
+      "status": "active"
+    },
+    {
+      "id": "derivative",
+      "assignment": "A",
+      "title": "导数",
+      "text": "# 导数\n\n导数刻画函数在一点的瞬时变化率，是该点切线斜率。区间平均变化率是割线斜率，二者不能总是等同。",
+      "source_version": 1,
+      "status": "active"
+    },
+    {
+      "id": "median",
+      "assignment": "A",
+      "title": "中位数",
+      "text": "# 中位数\n\n将数据排序，奇数个数据的中位数是中间的数，偶数个取中间两数的平均。中位数通常比均值更不容易受极端值影响。",
+      "source_version": 1,
+      "status": "active"
+    },
+    {
+      "id": "variance",
+      "assignment": "A",
+      "title": "方差",
+      "text": "# 方差\n\n方差是各数据与均值之差的平方的平均，用于描述离散程度。数据整体加同一个常数，方差不变；整体乘a后方差乘a²。",
+      "source_version": 1,
+      "status": "active"
+    },
+    {
+      "id": "catalyst",
+      "assignment": "A",
+      "title": "催化剂",
+      "text": "# 催化剂\n\n催化剂改变反应路径并降低活化能，提高正逆反应速率，但不改变平衡常数或最终平衡组成。它不能令热力学不允许的反应自发发生。",
+      "source_version": 1,
+      "status": "active"
+    },
+    {
+      "id": "equilibrium",
+      "assignment": "A",
+      "title": "化学平衡移动",
+      "text": "# 化学平衡移动\n\n改变温度可能改变平衡常数。升温有利于吸热方向，降温有利于放热方向；平衡移动与反应速率加快不是同一个概念。",
+      "source_version": 1,
+      "status": "active"
+    },
+    {
+      "id": "passive",
+      "assignment": "A",
+      "title": "被动语态",
+      "text": "# 被动语态\n\n英语被动语态通常由be动词加过去分词构成，用于突出动作承受者。施事者可用by短语表示，也可省略。",
+      "source_version": 1,
+      "status": "active"
+    },
+    {
+      "id": "hyperbole",
+      "assignment": "A",
+      "title": "夸张修辞",
+      "text": "# 夸张修辞\n\n夸张有意放大或缩小事物特征以加强表达效果，例如等了一个世纪，不应把这种表达直接当成精确事实。",
+      "source_version": 1,
+      "status": "active"
+    },
+    {
+      "id": "cohesion",
+      "assignment": "A",
+      "title": "语篇衔接",
+      "text": "# 语篇衔接\n\n语篇衔接可通过代词指代、连接词和词汇复现建立句间联系。however表示转折，therefore表示因果中的结果。",
+      "source_version": 1,
+      "status": "active"
+    },
+    {
+      "id": "microscope",
+      "assignment": "A",
+      "title": "显微镜操作资料",
+      "text": "# 显微镜定位\n\n观察标本时先使用低倍物镜定位，再将目标移到视野中央。调节照明使视野明亮，先从侧面观察镜头与载玻片的距离，再缓慢调焦。标本必须平整固定，气泡和厚薄不匀会影响观察。记录时注明观察部位、放大倍率和可见结构，不能用想象代替观察到的现象。若目标已经移出视野，应回到低倍重新寻找。该合成练习没有规定仪器品牌、学校名称或采购价格。保持载物台与镜头之间有安全距离，可以避免压碎载玻片。先定位再放大是操作顺序，不是对物体真实尺寸的改变。\n\n# 高倍观察\n\n换用高倍物镜后只能用细准焦螺旋微调，不再大幅转动粗准焦螺旋。高倍下视野变小变暗，需要调整照明。放大倍率等于目镜倍数乘物镜倍数。清楚观察到细节并不代表能看见所有细胞器，光学分辨率仍有限制。操作员需要保护镜片与标本，不把镜头压向载玻片。记录应区分实际观察和推断，不能把未见到的结构强写入观察图。合成资料没有提供这台仪器的产品序列号，也没有提供任何学生身份信息。\n\n# 镜片清洁\n\n清洁显微镜镜片应使用专用镜头纸，不能用普通纱布或手指擦拭。实验后移走标本并清洁载物台，恢复低倍镜位置，按规范遮盖保存。镜片表面残留油污会降低图像质量，清洁工具必须与光学表面要求相符。镜头纸用于保护镜片，不是记录学生答案的纸张。设备维护与生物观察属于不同环节，需要分别记录。合成练习不提供特定品牌配套清洁剂的成分和购买渠道，也不列出仪器维修联系电话。",
+      "source_version": 1,
+      "status": "active"
+    },
+    {
+      "id": "scope-lab",
+      "assignment": "B",
+      "title": "显微镜操作资料",
+      "text": "本作业B的合成实验编号是ZXBETA751，观察记录周期为23分钟。",
+      "source_version": 1,
+      "status": "active"
+    },
+    {
+      "id": "versioned",
+      "assignment": "A",
+      "title": "课程通知",
+      "text": "旧课程合成口令ZXEXPIRED602。",
+      "source_version": 1,
+      "status": "superseded"
+    },
+    {
+      "id": "versioned",
+      "assignment": "A",
+      "title": "课程通知",
+      "text": "当前课程合成口令ZXCURRENT603，记录使用蓝色方格纸。",
+      "source_version": 2,
+      "status": "active"
+    },
+    {
+      "id": "dot",
+      "assignment": "A",
+      "title": "向量点积",
+      "text": "# 向量点积\n\n两个平面向量的点积等于对应坐标乘积之和，也等于模长乘积再乘夹角余弦。点积为零时，两个非零向量互相垂直。",
+      "source_version": 1,
+      "status": "active"
+    },
+    {
+      "id": "diffusion",
+      "assignment": "A",
+      "title": "扩散",
+      "text": "# 扩散\n\n扩散由分子无规则运动引起，浓度差可导致净迁移，不要求一定存在半透膜。",
+      "source_version": 1,
+      "status": "active"
+    },
+    {
+      "id": "reflection",
+      "assignment": "A",
+      "title": "光的反射",
+      "text": "# 光的反射\n\n反射时入射角等于反射角，角度相对于法线测量；传播方向改变未必都是折射。",
+      "source_version": 1,
+      "status": "active"
+    },
+    {
+      "id": "mean",
+      "assignment": "A",
+      "title": "算术平均数",
+      "text": "# 算术平均数\n\n算术平均数是所有数据之和除以个数，所有数整体加常数时均值也加该常数。",
+      "source_version": 1,
+      "status": "active"
+    },
+    {
+      "id": "mass",
+      "assignment": "A",
+      "title": "重力与质量",
+      "text": "# 重力与质量\n\n重力是地球吸引物体的力，G=mg；质量描述物体所含物质多少，单位千克。",
+      "source_version": 1,
+      "status": "active"
+    },
+    {
+      "id": "glass",
+      "assignment": "A",
+      "title": "普通玻璃维护",
+      "text": "# 普通玻璃维护\n\n清洁普通窗玻璃可以使用适当清洁工具，窗玻璃不是精密显微镜镜片。",
+      "source_version": 1,
+      "status": "active"
+    },
+    {
+      "id": "mitosis",
+      "assignment": "A",
+      "title": "有丝分裂",
+      "text": "# 有丝分裂\n\n有丝分裂通常形成遗传信息相同的子细胞，染色体数一般保持不变，不用于让配子染色体数减半。",
+      "source_version": 1,
+      "status": "active"
+    },
+    {
+      "id": "revoked",
+      "assignment": "A",
+      "title": "撤销课程通知",
+      "text": "已撤销资料标识ZXREVOKED604。",
+      "source_version": 1,
+      "status": "revoked"
+    }
+  ],
+  "queries": [
+    {
+      "case_id": "osmosis-concept",
+      "assignment": "A",
+      "query": "半透膜两边水分子为什么会发生净移动？",
+      "category": "concept_paraphrase",
+      "relevant": [
+        {
+          "document": "osmosis",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "osmosis-contrast",
+      "assignment": "A",
+      "query": "osmosis过程中穿过选择透过膜的主要是什么？",
+      "category": "contrast_or_bilingual",
+      "relevant": [
+        {
+          "document": "osmosis",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "enzyme-concept",
+      "assignment": "A",
+      "query": "酶对底物有何选择性？",
+      "category": "concept_paraphrase",
+      "relevant": [
+        {
+          "document": "enzyme",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "enzyme-contrast",
+      "assignment": "A",
+      "query": "为什么煮沸会让催化蛋白失去活性，而冷却通常只是减慢反应？",
+      "category": "contrast_or_bilingual",
+      "relevant": [
+        {
+          "document": "enzyme",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "meiosis-concept",
+      "assignment": "A",
+      "query": "染色体数目减半的配子通过什么过程产生？",
+      "category": "concept_paraphrase",
+      "relevant": [
+        {
+          "document": "meiosis",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "meiosis-contrast",
+      "assignment": "A",
+      "query": "DNA复制一次却分裂两次是mitosis还是meiosis？",
+      "category": "contrast_or_bilingual",
+      "relevant": [
+        {
+          "document": "meiosis",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "lever-concept",
+      "assignment": "A",
+      "query": "力臂到底量哪一段距离？",
+      "category": "concept_paraphrase",
+      "relevant": [
+        {
+          "document": "lever",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "lever-contrast",
+      "assignment": "A",
+      "query": "支点两边怎样满足力矩相等才能保持杠杆静止？",
+      "category": "contrast_or_bilingual",
+      "relevant": [
+        {
+          "document": "lever",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "buoyancy-concept",
+      "assignment": "A",
+      "query": "物体受到的向上托力由排开的什么量决定？",
+      "category": "concept_paraphrase",
+      "relevant": [
+        {
+          "document": "buoyancy",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "buoyancy-contrast",
+      "assignment": "A",
+      "query": "完全浸没物体继续下沉，浮力一定随深度增大吗？",
+      "category": "contrast_or_bilingual",
+      "relevant": [
+        {
+          "document": "buoyancy",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "pressure-concept",
+      "assignment": "A",
+      "query": "钉尖做得很细为什么容易压入木板？",
+      "category": "concept_paraphrase",
+      "relevant": [
+        {
+          "document": "pressure",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "pressure-contrast",
+      "assignment": "A",
+      "query": "pressure与force和接触面积之间怎样联系？",
+      "category": "contrast_or_bilingual",
+      "relevant": [
+        {
+          "document": "pressure",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "series-concept",
+      "assignment": "A",
+      "query": "一条支路依次连接电阻时各处电流相同吗？",
+      "category": "concept_paraphrase",
+      "relevant": [
+        {
+          "document": "series",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "series-contrast",
+      "assignment": "A",
+      "query": "series circuit里多个电阻两端的电压怎样合成总电压？",
+      "category": "contrast_or_bilingual",
+      "relevant": [
+        {
+          "document": "series",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "parallel-concept",
+      "assignment": "A",
+      "query": "家用电器为何可以各自开关而互不影响？",
+      "category": "concept_paraphrase",
+      "relevant": [
+        {
+          "document": "parallel",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "parallel-contrast",
+      "assignment": "A",
+      "query": "parallel circuit的电压与总电流有哪些基本关系？",
+      "category": "contrast_or_bilingual",
+      "relevant": [
+        {
+          "document": "parallel",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "power-concept",
+      "assignment": "A",
+      "query": "瓦特和千瓦时分别量什么？",
+      "category": "concept_paraphrase",
+      "relevant": [
+        {
+          "document": "power",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "power-contrast",
+      "assignment": "A",
+      "query": "一台电器标称的P=UI说明的是电能转换速度还是累计用电量？",
+      "category": "contrast_or_bilingual",
+      "relevant": [
+        {
+          "document": "power",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "refraction-concept",
+      "assignment": "A",
+      "query": "筷子插入水中看起来弯折涉及什么现象？",
+      "category": "concept_paraphrase",
+      "relevant": [
+        {
+          "document": "refraction",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "refraction-contrast",
+      "assignment": "A",
+      "query": "light由空气进入水而偏转属于反射还是折射？",
+      "category": "contrast_or_bilingual",
+      "relevant": [
+        {
+          "document": "refraction",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "derivative-concept",
+      "assignment": "A",
+      "query": "函数某点瞬时变化快慢对应哪个数学量？",
+      "category": "concept_paraphrase",
+      "relevant": [
+        {
+          "document": "derivative",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "derivative-contrast",
+      "assignment": "A",
+      "query": "derivative与两个端点连线的斜率有什么区别？",
+      "category": "contrast_or_bilingual",
+      "relevant": [
+        {
+          "document": "derivative",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "median-concept",
+      "assignment": "A",
+      "query": "一组收入中出现极端高值，哪个位置统计量较稳健？",
+      "category": "concept_paraphrase",
+      "relevant": [
+        {
+          "document": "median",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "median-contrast",
+      "assignment": "A",
+      "query": "median在偶数个已排序数据中怎样确定？",
+      "category": "contrast_or_bilingual",
+      "relevant": [
+        {
+          "document": "median",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "variance-concept",
+      "assignment": "A",
+      "query": "每个测量值都加十后离散程度会改变吗？",
+      "category": "concept_paraphrase",
+      "relevant": [
+        {
+          "document": "variance",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "variance-contrast",
+      "assignment": "A",
+      "query": "variance在所有数扩大三倍后会扩大几倍？",
+      "category": "contrast_or_bilingual",
+      "relevant": [
+        {
+          "document": "variance",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "catalyst-concept",
+      "assignment": "A",
+      "query": "催化剂使反应更快，是否也改变最终平衡比例？",
+      "category": "concept_paraphrase",
+      "relevant": [
+        {
+          "document": "catalyst",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "catalyst-contrast",
+      "assignment": "A",
+      "query": "catalyst通过降低什么能量障碍来加快反应？",
+      "category": "contrast_or_bilingual",
+      "relevant": [
+        {
+          "document": "catalyst",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "equilibrium-concept",
+      "assignment": "A",
+      "query": "升高温度使平衡偏向吸热还是放热方向？",
+      "category": "concept_paraphrase",
+      "relevant": [
+        {
+          "document": "equilibrium",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "equilibrium-contrast",
+      "assignment": "A",
+      "query": "化学反应更快就一定意味着平衡常数增大吗？",
+      "category": "contrast_or_bilingual",
+      "relevant": [
+        {
+          "document": "equilibrium",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "passive-concept",
+      "assignment": "A",
+      "query": "The window was broken使用哪种语态？",
+      "category": "concept_paraphrase",
+      "relevant": [
+        {
+          "document": "passive",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "passive-contrast",
+      "assignment": "A",
+      "query": "突出动作接受者时English动词常用怎样的结构？",
+      "category": "contrast_or_bilingual",
+      "relevant": [
+        {
+          "document": "passive",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "hyperbole-concept",
+      "assignment": "A",
+      "query": "等车等了一个世纪在修辞上是什么？",
+      "category": "concept_paraphrase",
+      "relevant": [
+        {
+          "document": "hyperbole",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "hyperbole-contrast",
+      "assignment": "A",
+      "query": "为了加强感受而故意把数量说得极大叫什么手法？",
+      "category": "contrast_or_bilingual",
+      "relevant": [
+        {
+          "document": "hyperbole",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "cohesion-concept",
+      "assignment": "A",
+      "query": "however与therefore表达的逻辑联系有什么不同？",
+      "category": "concept_paraphrase",
+      "relevant": [
+        {
+          "document": "cohesion",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "cohesion-contrast",
+      "assignment": "A",
+      "query": "英文段落里用代词回指前面的名词有什么作用？",
+      "category": "contrast_or_bilingual",
+      "relevant": [
+        {
+          "document": "cohesion",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "micro-start",
+      "assignment": "A",
+      "query": "显微镜寻找标本时应先用什么倍率？",
+      "category": "multi_paragraph",
+      "relevant": [
+        {
+          "document": "microscope",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "micro-focus",
+      "assignment": "A",
+      "query": "切换到高倍以后可否大幅转动粗准焦？",
+      "category": "multi_paragraph",
+      "relevant": [
+        {
+          "document": "microscope",
+          "source_version": 1,
+          "chunk_index": 1,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "micro-clean",
+      "assignment": "A",
+      "query": "光学镜片应采用什么纸擦拭？",
+      "category": "multi_paragraph",
+      "relevant": [
+        {
+          "document": "microscope",
+          "source_version": 1,
+          "chunk_index": 2,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "micro-cross",
+      "assignment": "A",
+      "query": "请同时说明标本的初次定位顺序和结束后镜片擦拭材料。",
+      "category": "cross_chunk",
+      "relevant": [
+        {
+          "document": "microscope",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        },
+        {
+          "document": "microscope",
+          "source_version": 1,
+          "chunk_index": 2,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "micro-combined",
+      "assignment": "A",
+      "query": "高倍时如何微调焦距，维护时哪些擦拭方式应避免？",
+      "category": "multiple_relevant",
+      "relevant": [
+        {
+          "document": "microscope",
+          "source_version": 1,
+          "chunk_index": 1,
+          "relevance": 2
+        },
+        {
+          "document": "microscope",
+          "source_version": 1,
+          "chunk_index": 2,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "equilibrium-cause",
+      "assignment": "A",
+      "query": "为什么加入催化剂不能替代改变温度来调整平衡常数？",
+      "category": "multiple_relevant",
+      "relevant": [
+        {
+          "document": "catalyst",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        },
+        {
+          "document": "equilibrium",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 1
+        }
+      ]
+    },
+    {
+      "case_id": "own-b",
+      "assignment": "B",
+      "query": "本作业ZXBETA751的记录周期是多少？",
+      "category": "same_title_scope",
+      "relevant": [
+        {
+          "document": "scope-lab",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "current",
+      "assignment": "A",
+      "query": "ZXCURRENT603要求用什么记录纸？",
+      "category": "current_source",
+      "relevant": [
+        {
+          "document": "versioned",
+          "source_version": 2,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "dot-perpendicular",
+      "assignment": "A",
+      "query": "两个非零向量数量积等于零可以推出什么方向关系？",
+      "category": "formula_in_words",
+      "relevant": [
+        {
+          "document": "dot",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "old-source",
+      "assignment": "A",
+      "query": "ZXEXPIRED602的课程口令是什么？",
+      "category": "old_version",
+      "relevant": []
+    },
+    {
+      "case_id": "revoked-source",
+      "assignment": "A",
+      "query": "请解释ZXREVOKED604。",
+      "category": "revoked",
+      "relevant": []
+    },
+    {
+      "case_id": "cross-scope",
+      "assignment": "A",
+      "query": "ZXBETA751的观察周期是多少？",
+      "category": "foreign_scope",
+      "relevant": []
+    },
+    {
+      "case_id": "unknown-brand",
+      "assignment": "A",
+      "query": "本作业这台显微镜的厂家和采购价格是多少？",
+      "category": "missing_specific_fact",
+      "relevant": []
+    },
+    {
+      "case_id": "enzyme-sequence",
+      "assignment": "A",
+      "query": "本次实验的酶蛋白完整氨基酸序列是什么？",
+      "category": "missing_specific_fact",
+      "relevant": []
+    },
+    {
+      "case_id": "student-name",
+      "assignment": "A",
+      "query": "告诉我这名学生的姓名与身份证号码。",
+      "category": "forbidden_absent_fact",
+      "relevant": []
+    },
+    {
+      "case_id": "exam-province",
+      "assignment": "A",
+      "query": "2026年真实高考这道题属于哪个省的试卷？",
+      "category": "missing_metadata",
+      "relevant": []
+    },
+    {
+      "case_id": "missing-circuit",
+      "assignment": "A",
+      "query": "图中没有提供的电阻R1具体是多少欧姆？",
+      "category": "missing_image",
+      "relevant": []
+    },
+    {
+      "case_id": "missing-pressure",
+      "assignment": "A",
+      "query": "没有提供压力和面积数值，请给出本实验压强的确切数值。",
+      "category": "missing_numbers",
+      "relevant": []
+    },
+    {
+      "case_id": "sport",
+      "assignment": "A",
+      "query": "本校今年篮球比赛冠军是哪一班？",
+      "category": "no_answer",
+      "relevant": []
+    },
+    {
+      "case_id": "published-grade",
+      "assignment": "A",
+      "query": "给出这份学生作业已经正式发布的总成绩。",
+      "category": "not_knowledge_fact",
+      "relevant": []
+    },
+    {
+      "case_id": "one-han",
+      "assignment": "A",
+      "query": "的",
+      "category": "weak_overlap",
+      "relevant": []
+    },
+    {
+      "case_id": "solubility",
+      "assignment": "A",
+      "query": "氯化钠在20摄氏度时每百克水的具体溶解度是多少克？",
+      "category": "unsupported_topic",
+      "relevant": []
+    },
+    {
+      "case_id": "unknown-code",
+      "assignment": "A",
+      "query": "ZXNOTPRESENT605是什么合成编号？",
+      "category": "no_answer",
+      "relevant": []
+    },
+    {
+      "case_id": "unlisted-word",
+      "assignment": "A",
+      "query": "本课程词汇ZXGLOSSARY606的中文官方翻译是什么？",
+      "category": "no_answer",
+      "relevant": []
+    }
+  ]
+}

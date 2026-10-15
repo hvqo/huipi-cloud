@@ -9,14 +9,14 @@ from uuid import NAMESPACE_URL, uuid5
 from huipi_cloud.modules.knowledge.chunking import chunk_text
 
 
-def load_dataset(path):
+def load_dataset(path, *, expected_version="scoped-retrieval-v1"):
     path = Path(path)
     raw = path.read_bytes()
     digest = hashlib.sha256(raw).hexdigest()
     if path.with_suffix(path.suffix + ".sha256").read_text().split()[0] != digest:
         raise ValueError("retrieval_dataset_sha_mismatch")
     data = json.loads(raw)
-    if data["dataset_version"] != "scoped-retrieval-v1":
+    if data["dataset_version"] != expected_version:
         raise ValueError("retrieval_dataset_version_mismatch")
     if data["reference_origin"] != "synthetic_curated_reference":
         raise ValueError("retrieval_reference_origin_invalid")
