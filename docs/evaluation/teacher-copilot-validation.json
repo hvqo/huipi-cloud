@@ -1,0 +1,326 @@
+{
+  "schema_version": "1.0",
+  "data_classification": "synthetic_only",
+  "human_semantic_review_status": "unreviewed",
+  "model": "deepseek-flash",
+  "thinking": "disabled",
+  "output_tokens_limit": 1024,
+  "automatic_retries": 0,
+  "new_model_requests": 6,
+  "new_business_tool_queries": 8,
+  "observations": [
+    {
+      "observation": "initial",
+      "raw_local_evidence_sha256": "3f2cdedd9b8e1e7bd6e80eaee9fac0d42938bf58bece7f2139273d27efd37d78",
+      "observed_complete_at": "2026-10-15T06:01:50.980861+00:00",
+      "runs": [
+        {
+          "run_id": "a190e668-fb32-4830-bc27-7f794e4d69d2",
+          "agent_version": "teacher-copilot-v1",
+          "generation_config_digest": "709f8eadccd4eaf32a4fb5c8d1518eb5eaef67d414d1a51a5f790e3cfee76b5e",
+          "status": "completed",
+          "finish_reason": "answered",
+          "steps": 1,
+          "model_calls": 1,
+          "tool_calls": 0,
+          "prompt_tokens": 759,
+          "completion_tokens": 195,
+          "reserved_cost_usd": "0.0022473",
+          "known_usage_cost_upper_usd": "0.0004617",
+          "elapsed_ms": 2004,
+          "trace": [
+            {
+              "kind": "model",
+              "sequence": 1,
+              "name": "deepseek_chat",
+              "status": "ok",
+              "elapsed_ms": 2001,
+              "arguments_sha256": null,
+              "result_sha256": null,
+              "result_bytes": 0,
+              "model_id": "deepseek-flash",
+              "prompt_tokens": 759,
+              "completion_tokens": 195,
+              "cache_hit_tokens": 0,
+              "cache_miss_tokens": 759
+            }
+          ],
+          "limitations": [
+            "local_operator_scope_is_not_authentication",
+            "no_published_grades_available",
+            "model_answer_requires_human_verification"
+          ]
+        },
+        {
+          "run_id": "a91a92a7-667a-4ee7-b335-7f40cdb8d506",
+          "agent_version": "teacher-copilot-v1",
+          "generation_config_digest": "709f8eadccd4eaf32a4fb5c8d1518eb5eaef67d414d1a51a5f790e3cfee76b5e",
+          "status": "completed",
+          "finish_reason": "answered",
+          "steps": 3,
+          "model_calls": 2,
+          "tool_calls": 4,
+          "prompt_tokens": 2242,
+          "completion_tokens": 511,
+          "reserved_cost_usd": "0.0057153",
+          "known_usage_cost_upper_usd": "0.0012858",
+          "elapsed_ms": 3312,
+          "trace": [
+            {
+              "kind": "model",
+              "sequence": 1,
+              "name": "deepseek_chat",
+              "status": "ok",
+              "elapsed_ms": 1195,
+              "arguments_sha256": null,
+              "result_sha256": null,
+              "result_bytes": 0,
+              "model_id": "deepseek-flash",
+              "prompt_tokens": 844,
+              "completion_tokens": 187,
+              "cache_hit_tokens": 640,
+              "cache_miss_tokens": 204
+            },
+            {
+              "kind": "tool",
+              "sequence": 1,
+              "name": "get_assignment_summary",
+              "status": "ok",
+              "elapsed_ms": 14,
+              "arguments_sha256": "d77f03ff454755f9f7a3fece296f120ae40bafdeb1c4d29f8a5f536baab875cd",
+              "result_sha256": "767aa10b2ba0eafad6eb89bc1f4827d23b877a8a58165aa40c49b624018c5b4b",
+              "result_bytes": 251,
+              "model_id": null,
+              "prompt_tokens": 0,
+              "completion_tokens": 0,
+              "cache_hit_tokens": null,
+              "cache_miss_tokens": null
+            },
+            {
+              "kind": "tool",
+              "sequence": 2,
+              "name": "list_assignment_questions",
+              "status": "ok",
+              "elapsed_ms": 6,
+              "arguments_sha256": "296e131572f5c317354ef108de209d0fe985a508d91c83561120bdd083347d62",
+              "result_sha256": "aed2b4c34fb20eb9988d5459124ecaa777e6c8c2df8114ad8172a7910ed631a0",
+              "result_bytes": 225,
+              "model_id": null,
+              "prompt_tokens": 0,
+              "completion_tokens": 0,
+              "cache_hit_tokens": null,
+              "cache_miss_tokens": null
+            },
+            {
+              "kind": "tool",
+              "sequence": 3,
+              "name": "get_question_rubric_summary",
+              "status": "ok",
+              "elapsed_ms": 6,
+              "arguments_sha256": "75591ba0b79d03e4a0484123dc93cf427ef1ab3299aae4176c9d50aaa1d6337e",
+              "result_sha256": "92ef1d7235ca269310cc6e73dea19462003c7346d77ab7d3501f5e2302ca49c3",
+              "result_bytes": 242,
+              "model_id": null,
+              "prompt_tokens": 0,
+              "completion_tokens": 0,
+              "cache_hit_tokens": null,
+              "cache_miss_tokens": null
+            },
+            {
+              "kind": "tool",
+              "sequence": 4,
+              "name": "get_submission_processing_status",
+              "status": "ok",
+              "elapsed_ms": 12,
+              "arguments_sha256": "7f98dcbdd704d3dd57ddfde8bdeb5338285c914c6a68abcf81791842f1bd739f",
+              "result_sha256": "173110a957bc99cd0f69051166fc2d9a9df7f958db9e99c51748f6abffeee821",
+              "result_bytes": 325,
+              "model_id": null,
+              "prompt_tokens": 0,
+              "completion_tokens": 0,
+              "cache_hit_tokens": null,
+              "cache_miss_tokens": null
+            },
+            {
+              "kind": "model",
+              "sequence": 2,
+              "name": "deepseek_chat",
+              "status": "ok",
+              "elapsed_ms": 2075,
+              "arguments_sha256": null,
+              "result_sha256": null,
+              "result_bytes": 0,
+              "model_id": "deepseek-flash",
+              "prompt_tokens": 1398,
+              "completion_tokens": 324,
+              "cache_hit_tokens": 1024,
+              "cache_miss_tokens": 374
+            }
+          ],
+          "limitations": [
+            "local_operator_scope_is_not_authentication",
+            "no_published_grades_available",
+            "model_answer_requires_human_verification"
+          ]
+        }
+      ]
+    },
+    {
+      "observation": "clarified_counts",
+      "raw_local_evidence_sha256": "7febc22891e9c3b714a91c3398b68402bf7dce23e378ead7a424ccdad88783c4",
+      "observed_complete_at": "2026-10-15T06:05:22.028944+00:00",
+      "runs": [
+        {
+          "run_id": "f5554d6b-9d1e-4436-875b-6657a1455fc3",
+          "agent_version": "teacher-copilot-v1",
+          "generation_config_digest": "709f8eadccd4eaf32a4fb5c8d1518eb5eaef67d414d1a51a5f790e3cfee76b5e",
+          "status": "completed",
+          "finish_reason": "answered",
+          "steps": 1,
+          "model_calls": 1,
+          "tool_calls": 0,
+          "prompt_tokens": 759,
+          "completion_tokens": 130,
+          "reserved_cost_usd": "0.0022473",
+          "known_usage_cost_upper_usd": "0.0003837",
+          "elapsed_ms": 1272,
+          "trace": [
+            {
+              "kind": "model",
+              "sequence": 1,
+              "name": "deepseek_chat",
+              "status": "ok",
+              "elapsed_ms": 1270,
+              "arguments_sha256": null,
+              "result_sha256": null,
+              "result_bytes": 0,
+              "model_id": "deepseek-flash",
+              "prompt_tokens": 759,
+              "completion_tokens": 130,
+              "cache_hit_tokens": 512,
+              "cache_miss_tokens": 247
+            }
+          ],
+          "limitations": [
+            "local_operator_scope_is_not_authentication",
+            "no_published_grades_available",
+            "model_answer_requires_human_verification"
+          ]
+        },
+        {
+          "run_id": "6fb08577-d4e4-4ef7-a714-050475692707",
+          "agent_version": "teacher-copilot-v1",
+          "generation_config_digest": "709f8eadccd4eaf32a4fb5c8d1518eb5eaef67d414d1a51a5f790e3cfee76b5e",
+          "status": "completed",
+          "finish_reason": "answered",
+          "steps": 3,
+          "model_calls": 2,
+          "tool_calls": 4,
+          "prompt_tokens": 2263,
+          "completion_tokens": 469,
+          "reserved_cost_usd": "0.0057585",
+          "known_usage_cost_upper_usd": "0.0012417",
+          "elapsed_ms": 2783,
+          "trace": [
+            {
+              "kind": "model",
+              "sequence": 1,
+              "name": "deepseek_chat",
+              "status": "ok",
+              "elapsed_ms": 947,
+              "arguments_sha256": null,
+              "result_sha256": null,
+              "result_bytes": 0,
+              "model_id": "deepseek-flash",
+              "prompt_tokens": 842,
+              "completion_tokens": 185,
+              "cache_hit_tokens": 640,
+              "cache_miss_tokens": 202
+            },
+            {
+              "kind": "tool",
+              "sequence": 1,
+              "name": "get_assignment_summary",
+              "status": "ok",
+              "elapsed_ms": 10,
+              "arguments_sha256": "d77f03ff454755f9f7a3fece296f120ae40bafdeb1c4d29f8a5f536baab875cd",
+              "result_sha256": "e4405c60ca7a73acda3ecc29a004d56ad237bb926bf29cadcc93c4b44f68d589",
+              "result_bytes": 251,
+              "model_id": null,
+              "prompt_tokens": 0,
+              "completion_tokens": 0,
+              "cache_hit_tokens": null,
+              "cache_miss_tokens": null
+            },
+            {
+              "kind": "tool",
+              "sequence": 2,
+              "name": "list_assignment_questions",
+              "status": "ok",
+              "elapsed_ms": 5,
+              "arguments_sha256": "296e131572f5c317354ef108de209d0fe985a508d91c83561120bdd083347d62",
+              "result_sha256": "d0989eb89cc0709209a9e20625b1287313f9b1d880053f76e099cff5a2ac164c",
+              "result_bytes": 225,
+              "model_id": null,
+              "prompt_tokens": 0,
+              "completion_tokens": 0,
+              "cache_hit_tokens": null,
+              "cache_miss_tokens": null
+            },
+            {
+              "kind": "tool",
+              "sequence": 3,
+              "name": "get_question_rubric_summary",
+              "status": "ok",
+              "elapsed_ms": 5,
+              "arguments_sha256": "b0a7422ada3517e812f63f6d51c0a3c2273e64904e8de8f225f656a77bc74d6c",
+              "result_sha256": "735480bc6a94c0f635a1fff198b7e1224d9212a7383feab0c6f3cdba62a41242",
+              "result_bytes": 242,
+              "model_id": null,
+              "prompt_tokens": 0,
+              "completion_tokens": 0,
+              "cache_hit_tokens": null,
+              "cache_miss_tokens": null
+            },
+            {
+              "kind": "tool",
+              "sequence": 4,
+              "name": "get_submission_processing_status",
+              "status": "ok",
+              "elapsed_ms": 12,
+              "arguments_sha256": "9115929da1ff2b393930b7226b13db43c4f2fcea9b312555ba253dca9c2257ae",
+              "result_sha256": "0898c4d1ab6e7585fc7b39e0d555d815a5806262cb40aab06a8d9e93496f8948",
+              "result_bytes": 463,
+              "model_id": null,
+              "prompt_tokens": 0,
+              "completion_tokens": 0,
+              "cache_hit_tokens": null,
+              "cache_miss_tokens": null
+            },
+            {
+              "kind": "model",
+              "sequence": 2,
+              "name": "deepseek_chat",
+              "status": "ok",
+              "elapsed_ms": 1801,
+              "arguments_sha256": null,
+              "result_sha256": null,
+              "result_bytes": 0,
+              "model_id": "deepseek-flash",
+              "prompt_tokens": 1421,
+              "completion_tokens": 284,
+              "cache_hit_tokens": 1024,
+              "cache_miss_tokens": 397
+            }
+          ],
+          "limitations": [
+            "local_operator_scope_is_not_authentication",
+            "no_published_grades_available",
+            "model_answer_requires_human_verification"
+          ]
+        }
+      ]
+    }
+  ],
+  "interpretation": "initial business answer did not interpret count field; explicit count and meaning added; second observation correctly used count. Not an accuracy benchmark."
+}

@@ -1,6 +1,6 @@
 # 架构与模块边界
 
-慧批云端采用 src 布局的模块化单体，围绕作业提交、文档解析、来源对齐、视觉建议和人工复核建立可追溯的数据流。离线视觉评测与线上视觉建议使用同一严格回复协议，但评测工具不修改线上 Provider 行为。自动批改、教师 Copilot、完整认证和 RBAC 仍未实现。
+慧批云端采用 src 布局的模块化单体，围绕作业提交、文档解析、来源对齐、视觉建议和人工复核建立可追溯的数据流。离线视觉评测与线上视觉建议使用同一严格回复协议，但评测工具不修改线上 Provider 行为。自动成绩发布、完整认证和 RBAC 仍未实现；教师 Copilot 仅提供受控本地只读核心。
 
 业务推理默认使用云端DeepSeek API（文本评分与视觉建议均为 `deepseek-flash`），无密钥、无授权或服务失败时不降级到本地模型。Ollama仅保留显式开发兼容能力。DeepSeek非思考请求显式设置 `thinking.type=disabled`，不发送会开启思考的 `reasoning_effort`；配置档位max不表示实际启用max推理。正常结束、JSON协议、Rubric和Quote来源是独立门禁；截断响应不能登记成功结果。真实合成验收与后续基线计划见[DeepSeek验收文档](evaluation/deepseek-provider-validation.md)。
 
@@ -253,3 +253,15 @@ proposal JSON 以每次执行不同的不可变 Key 上传到私有 S3，`grade_
 记录绑定 Proposal/GradeInput ID 与 SHA、Submission、Question、request 摘要、review revision 和 supersedes ID。写入前读取并验证私有 S3 对象、索引和来源；PostgreSQL 事务再锁 Proposal 行，以串行分配 revision，并调用 GradeInput 来源校验重新确认 Canonical、Alignment、Question、AnswerKey、Rubric 与最新 AnswerReview。相同 request ID 和内容返回既有记录，不同内容冲突；expected revision 不匹配时返回业务冲突。数据库唯一约束保护 revision、request 和单一后继关系，数据库触发器拒绝 UPDATE/DELETE。COMMIT 确认不明时使用原 request ID 重试，服务先查已有记录以恢复结果。
 
 人工记录直接保存在 PostgreSQL JSONB 中，因此该流程没有 S3/PG 双写。记录保存模型候选与复核分数、理由、引用、原因码和自声明 `reviewer_ref`，这些字段按敏感数据管理。受控 CLI 的 inspect/history 输出经过筛选，不显示学生原文、AnswerKey、模型完整理由、对象 Key 或评论。当前没有 HTTP 写 API、登录、RBAC 或正式成绩表；`reviewer_ref` 不是认证身份，`accepted`/`revised` 也不表示成绩发布。单条人工复核可用于未来分歧分析，但不能直接作为高可信参考标签，需经过授权、独立评分和仲裁。
+
+## 教师 Copilot 核心
+
+`modules/copilot` 是受控本地 Service/CLI，不注册 FastAPI 对话端点。配置独立为 `COPILOT_*`，默认关闭；外传需要启用和数据授权，API Key 不隐式复用评分配置。`infrastructure/copilot/provider.py` 复用既有有界 HTTP 传输，但使用独立 Chat Completions 文本/tool_calls 合同，不调用评分工作流。当前只允许 DeepSeek Flash，关闭 Thinking，没有本地模型回退和自动重试。新增 LangGraph 1.2.x 仅用于 StateGraph 节点/边和执行状态，不使用预制 Agent、checkpoint、额外任务队列或外部追踪。
+
+输入经 Pydantic 验证后，图执行 `model → tools → model/END`。状态包含消息、待执行工具、已调用指纹、结束状态、用量和预算。固定注册表只有作业概要、分页题目、Rubric 摘要、提交处理状态四个只读工具。Question 与 Submission 必须属于本地操作员显式传入的 Assignment；模型参数不能改变作用域。作业概要等查询使用现有业务模型的有限字段投影；题目归属复用现有 Repository。没有读取答案全文、标准答案或S3私有地址的工具，也没有模型自由SQL/URL/代码执行入口。
+
+工具每次建立短的 PostgreSQL `REPEATABLE READ READ ONLY` 事务，并设置 statement timeout；模型调用不持有数据库事务。候选分数、人工作答确认、人工评分接受/修订、拒绝/重新评分与正式成绩是不同概念；当前工具只读处理索引和人工存在性计数，不提供评分结果。索引状态明确标记未重新验证，因此不代表当前来源有效或可评分。缺乏正式登录、RBAC和租户授权是本地使用边界，不能用 reviewer_ref 或命令参数声称已经完成认证。
+
+默认限制4次模型、6次工具、12个节点步骤、16384上下文预算、1024输出Token、8192工具结果字节；单模型30秒、工具5秒、全轮90秒。上下文按UTF-8字节加封装余量估计，费用按Flash高峰无缓存价格提前预留，默认估算上限$0.05；不是服务商硬扣费保证。未知费用的失败也不退还预留。相同工具/参数不会重复执行；失败后禁用后续工具，模型只可说明错误。超限不会无界补问或自动调用本地模型。
+
+内存轨迹和CLI仅输出模型ID、Agent/配置版本、调用顺序、参数/结果hash、状态、字节数、Token和耗时，不记录完整工具正文或reasoning_content，不持久化新审计表。哈希可用于一致性核对，不等同完整可恢复审计。Prompt Injection不能扩充注册表或取消数据库只读，但仍可能影响自然语言解释，模型回答必须核查。[开发指南](development/teacher-copilot.md)说明CLI和扩展约束；[真实验收记录](evaluation/teacher-copilot-validation.md)区分调用、数据库结果与模型解释质量。

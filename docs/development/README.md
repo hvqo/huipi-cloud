@@ -11,4 +11,6 @@
 - [Rubric 候选评分 CLI](grade-proposals.md)
 - [Rubric 候选评分人工复核 CLI](grade-review.md)
 
+- [教师 Copilot 本地 Agent CLI](teacher-copilot.md)
+
 所有示例默认用于本地受控环境。项目尚未实现登录、RBAC 或租户隔离。

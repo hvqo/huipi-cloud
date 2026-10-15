@@ -17,11 +17,17 @@
 - **Rubric 候选评分**：受控本地 CLI 可调用配置的文本模型，为每个评分项生成候选分数、理由和可核验的原文引用；不会发布成绩，也不会修改人工复核记录。
 - **候选评分人工复核**：受控本地 CLI 可接受、修订、拒绝候选分数或标记需要重新评分，并保留不可变修订历史；记录不等于正式成绩。
 
+- **教师 Copilot**：受控本地 CLI 可调用云端模型查询指定作业、题目、Rubric 和提交处理状态；只读、不发布成绩。
+
 ## 系统架构
 
 ```mermaid
 flowchart LR
     Client[教师或学生客户端] --> API[FastAPI]
+    CopilotCLI[本地教师 Copilot CLI] --> Graph[受控 LangGraph]
+    Graph --> CopilotModel[经授权的云端对话模型]
+    Graph --> ReadTools[固定只读业务工具]
+    ReadTools --> PG
     API --> PG[(PostgreSQL)]
     API --> S3[(私有 S3 兼容存储)]
     API --> Task[ParsingTask]
@@ -62,7 +68,7 @@ flowchart LR
 - S3 兼容对象存储与 boto3；本地 Compose 使用 PGSTY SILO
 - MinerU 4.x Basic/ONNX 独立运行时
 - pypdf、pypdfium2、Pillow、HTTPX
-- pytest、Ruff
+- LangGraph（受控 Copilot 状态流程）、pytest、Ruff
 
 ## 快速开始
 
@@ -104,7 +110,7 @@ API 文档位于 <http://127.0.0.1:8000/docs>，存活检查为 `GET /api/v1/hea
 - 系统没有完整登录、RBAC 或租户隔离。`student_ref` 是本地模拟标识；提交、查询、下载和复核工具只适用于受控环境，不能直接暴露到公网。
 - `aligned` 只表示来源区域与作业题目的映射证据足够，不表示学生已作答、OCR 完整或可以评分。
 - `ready_text` 只表示文本评分输入通过来源门禁，不表示已产生分数、图像/表格/公式均可评分或人工标签绝对正确。
-- 视觉和文本模型都只生成候选建议；候选分数不是最终成绩，尚无经充分验证的真实教学作业评分质量，也没有自动发布成绩和教师 Copilot。
+- 视觉和文本模型都只生成候选建议；候选分数不是最终成绩，尚无经充分验证的真实教学作业评分质量，没有自动发布成绩；教师 Copilot 只提供本地只读 CLI，不具备教师认证或公网服务权限。
 - 当前视觉评测集由合成样本构成；合成结果不能代表真实学生作业表现。
 
 ## 项目文档
@@ -114,6 +120,7 @@ API 文档位于 <http://127.0.0.1:8000/docs>，存活检查为 `GET /api/v1/hea
 - [评分输入准备指南](docs/development/grade-input.md)
 - [Rubric 候选评分 CLI 指南](docs/development/grade-proposals.md)
 - [候选评分人工复核 CLI 指南](docs/development/grade-review.md)
+- [教师 Copilot 本地 CLI](docs/development/teacher-copilot.md)
 - [路线图](docs/roadmap.md)
 - [视觉证据评测方法与基线](docs/evaluation/visual-evidence.md)
 - [题目来源对齐评测说明](docs/evaluation/answer-alignment.md)

@@ -71,6 +71,23 @@ class Settings(BaseSettings):
         le=16 * 1024 * 1024,
     )
     grading_enabled: bool = False
+    copilot_enabled: bool = False
+    copilot_api_key: SecretStr | None = None
+    copilot_base_url: str = "https://api.deepseek.com"
+    copilot_model: Literal["deepseek-flash"] = "deepseek-flash"
+    copilot_allow_remote: bool = False
+    copilot_external_data_authorized: bool = False
+    # P4-A deliberately supports non-thinking tool conversations only.
+    copilot_max_model_calls: int = Field(default=4, ge=1, le=8)
+    copilot_max_tool_calls: int = Field(default=6, ge=1, le=12)
+    copilot_max_steps: int = Field(default=12, ge=1, le=24)
+    copilot_max_context_tokens: int = Field(default=16384, ge=1024, le=32768)
+    copilot_max_output_tokens: int = Field(default=1024, ge=64, le=4096)
+    copilot_max_tool_result_bytes: int = Field(default=8192, ge=256, le=16384)
+    copilot_model_timeout_seconds: float = Field(default=30, gt=0, le=120)
+    copilot_tool_timeout_seconds: float = Field(default=5, gt=0, le=15)
+    copilot_total_timeout_seconds: float = Field(default=90, gt=0, le=300)
+    copilot_budget_usd: float = Field(default=0.05, gt=0, le=0.50)
     grading_provider: Literal["openai_compatible", "ollama_native"] = "openai_compatible"
     grading_base_url: str = "https://api.deepseek.com"
     grading_model: str = "deepseek-flash"
