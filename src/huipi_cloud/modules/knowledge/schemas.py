@@ -77,11 +77,29 @@ class RetrievalHit(Contract):
 class SearchResult(Contract):
     hits: list[RetrievalHit] = Field(default_factory=list, max_length=5)
     truncated: bool = False
-    retrieval_mode: Literal["lexical", "dense", "hybrid"] = "lexical"
-    requested_mode: Literal["lexical", "dense", "hybrid"] | None = None
+    retrieval_mode: Literal[
+        "lexical", "dense", "hybrid", "dense_rerank", "hybrid_rerank", "lexical_rerank"
+    ] = "lexical"
+    requested_mode: (
+        Literal["lexical", "dense", "hybrid", "dense_rerank", "hybrid_rerank", "lexical_rerank"]
+        | None
+    ) = None
+    actual_mode: str | None = None
     degraded: bool = False
     degradation_reason: str | None = None
     embedding_model_version: str | None = None
+    rerank_degraded: bool = False
+    rerank_degradation_reason: str | None = None
+    reranker_model_version: str | None = None
+    candidate_count: int = Field(default=0, ge=0, le=20)
+    rerank_elapsed_ms: int = Field(default=0, ge=0)
+    rerank_input_tokens: int = Field(default=0, ge=0)
     index_status: Literal["not_used", "not_ready", "ready", "rebuilt"] = "not_used"
     retriever_version: str = RETRIEVER_VERSION
     score_meaning: str = "lexical_query_term_coverage_not_teaching_score_or_probability"
+
+
+class CandidateResult(SearchResult):
+    """Internal only; never sent wholesale to the Agent model."""
+
+    hits: list[RetrievalHit] = Field(default_factory=list, max_length=20)

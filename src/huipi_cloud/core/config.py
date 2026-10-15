@@ -70,13 +70,22 @@ class Settings(BaseSettings):
         ge=4096,
         le=16 * 1024 * 1024,
     )
-    retrieval_mode: Literal["lexical", "dense", "hybrid"] = "lexical"
+    retrieval_mode: Literal["lexical", "dense", "hybrid", "dense_rerank", "hybrid_rerank"] = (
+        "lexical"
+    )
     embedding_python: str = ""
     embedding_model_path: str = ""
     embedding_device: Literal["cpu", "cuda"] = "cpu"
     embedding_timeout_seconds: float = Field(default=30, gt=0, le=120)
     embedding_min_cosine: float = Field(default=0.55, ge=-1, le=1)
     retrieval_allow_lexical_fallback: bool = True
+    rerank_python: str = ""
+    rerank_model_path: str = ""
+    rerank_device: Literal["cpu", "cuda"] = "cpu"
+    rerank_timeout_seconds: float = Field(default=30, gt=0, le=120)
+    rerank_candidate_limit: int = Field(default=20, ge=1, le=20)
+    rerank_min_score: float = Field(default=0.5, ge=0, le=1)
+    rerank_allow_fallback: bool = False
     grading_enabled: bool = False
     copilot_enabled: bool = False
     copilot_api_key: SecretStr | None = None
@@ -112,9 +121,7 @@ class Settings(BaseSettings):
     grading_max_quote_characters: int = Field(default=400, ge=20, le=2000)
     grading_invalid_response_retries: int = Field(default=1, ge=0, le=1)
     visual_evidence_enabled: bool = False
-    visual_evidence_provider: Literal["openai_compatible", "ollama_native"] = (
-        "openai_compatible"
-    )
+    visual_evidence_provider: Literal["openai_compatible", "ollama_native"] = "openai_compatible"
     visual_evidence_base_url: str = "https://api.deepseek.com"
     visual_evidence_model: str = "deepseek-flash"
     visual_evidence_api_key: SecretStr | None = None
@@ -130,9 +137,7 @@ class Settings(BaseSettings):
         default=20 * 1024 * 1024, ge=1024, le=50 * 1024 * 1024
     )
     visual_evidence_max_source_pdf_pages: int = Field(default=200, ge=1, le=500)
-    visual_evidence_max_image_pixels: int = Field(
-        default=12_000_000, ge=1_000_000, le=24_000_000
-    )
+    visual_evidence_max_image_pixels: int = Field(default=12_000_000, ge=1_000_000, le=24_000_000)
     visual_evidence_render_dpi: int = Field(default=120, ge=36, le=180)
     visual_evidence_max_render_edge: int = Field(default=2048, ge=512, le=4096)
     visual_evidence_max_page_image_bytes: int = Field(

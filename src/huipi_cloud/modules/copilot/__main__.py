@@ -1,3 +1,4 @@
+
 """Run one locally scoped conversation; cloud transfer requires explicit configuration."""
 
 import argparse
@@ -12,6 +13,7 @@ from huipi_cloud.core.config import Settings
 from huipi_cloud.infrastructure.copilot.provider import DeepSeekCopilotProvider
 from huipi_cloud.infrastructure.database.session import dispose_database_engine, session_factory
 from huipi_cloud.infrastructure.embedding.protocol import EmbeddingError
+from huipi_cloud.infrastructure.reranking.protocol import RerankError
 from huipi_cloud.infrastructure.storage.dependencies import _configured_storage
 from huipi_cloud.modules.copilot.protocol import CopilotError, CopilotRequest
 from huipi_cloud.modules.copilot.runtime import CopilotRuntime
@@ -55,13 +57,15 @@ async def run(args):
         result = await runtime.run(request)
         print(result.model_dump_json(indent=2))
         return 0 if result.status == "completed" else 1
-    except (CopilotError, KnowledgeError, EmbeddingError, ValidationError) as error:
+    except (CopilotError, KnowledgeError, EmbeddingError, RerankError, ValidationError) as error:
         print(
             json.dumps(
                 {
                     "status": "failed",
                     "code": error.code
-                    if isinstance(error, (CopilotError, KnowledgeError, EmbeddingError))
+                    if isinstance(
+                        error, (CopilotError, KnowledgeError, EmbeddingError, RerankError)
+                    )
                     else "invalid_cli_input",
                 }
             ),

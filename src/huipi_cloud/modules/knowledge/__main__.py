@@ -1,3 +1,4 @@
+
 """Local operator material import/revoke/history/search. No anonymous HTTP ingestion."""
 
 import argparse
@@ -12,6 +13,7 @@ from pydantic import ValidationError
 from huipi_cloud.core.config import Settings
 from huipi_cloud.infrastructure.database.session import dispose_database_engine, session_factory
 from huipi_cloud.infrastructure.embedding.protocol import EmbeddingError
+from huipi_cloud.infrastructure.reranking.protocol import RerankError
 from huipi_cloud.infrastructure.storage.dependencies import _configured_storage
 from huipi_cloud.modules.knowledge.dependencies import configured_retriever
 from huipi_cloud.modules.knowledge.schemas import MAX_SOURCE_BYTES, ImportRequest, KnowledgeError
@@ -60,13 +62,13 @@ async def run(args):
                 ).model_dump(mode="json")
         print(json.dumps(output, ensure_ascii=False, indent=2))
         return 0
-    except (KnowledgeError, EmbeddingError, ValidationError) as error:
+    except (KnowledgeError, EmbeddingError, RerankError, ValidationError) as error:
         print(
             json.dumps(
                 {
                     "status": "failed",
                     "code": error.code
-                    if isinstance(error, (KnowledgeError, EmbeddingError))
+                    if isinstance(error, (KnowledgeError, EmbeddingError, RerankError))
                     else "knowledge_invalid_input",
                 }
             ),

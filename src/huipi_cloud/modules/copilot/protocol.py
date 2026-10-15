@@ -65,6 +65,14 @@ class TraceEvent(StrictModel):
     retrieval_mode: str | None = None
     degraded: bool | None = None
     degradation_reason: str | None = None
+    requested_mode: str | None = None
+    actual_mode: str | None = None
+    reranker_model_version: str | None = None
+    rerank_input_tokens: int | None = None
+    rerank_degraded: bool | None = None
+    rerank_degradation_reason: str | None = None
+    candidate_count: int | None = None
+    rerank_elapsed_ms: int | None = None
     model_id: str | None = None
     prompt_tokens: int = 0
     completion_tokens: int = 0

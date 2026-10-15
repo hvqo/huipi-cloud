@@ -5,7 +5,11 @@ import math
 import time
 
 from huipi_cloud.infrastructure.embedding.protocol import EmbeddingError, normalize
-from huipi_cloud.modules.knowledge.retriever import LexicalRetriever
+from huipi_cloud.modules.knowledge.retriever import (
+    LexicalRetriever,
+    candidate_result,
+    validate_candidate_query,
+)
 from huipi_cloud.modules.knowledge.schemas import KnowledgeError, SearchResult
 from huipi_cloud.modules.knowledge.vector_index import MemoryVectorIndex, VectorKey
 
@@ -127,8 +131,7 @@ class DenseRetriever:
                 raise EmbeddingError("embedding_index_not_ready")
             return vectors, bool(missing)
 
-    async def search(self, assignment_id, query, top_k):
-        validate_search(query, top_k)
+    async def _rank(self, assignment_id, query):
         identity = self.embedding.identity
         rows = await self.verifier._rows(assignment_id)
         vectors, rebuilt = await self._ensure(assignment_id, rows)
@@ -142,16 +145,29 @@ class DenseRetriever:
                 ranked.append((cosine, doc, chunk))
         ranked.sort(key=lambda r: (-r[0], str(r[1].document_id), r[2].chunk_index))
         hits = [self.verifier._hit(d, c, (score + 1) / 2) for score, d, c in ranked]
-        return await bounded_output(
-            self.verifier,
-            assignment_id,
-            hits,
-            top_k,
+        return hits, rebuilt
+
+    def _metadata(self, rebuilt):
+        return dict(
             retrieval_mode="dense",
             retriever_version=DENSE_VERSION,
             embedding_model_version=self.embedding.identity.digest,
             index_status="rebuilt" if rebuilt else "ready",
             score_meaning="(cosine+1)/2_ranking_signal_not_probability_or_teaching_score",
+        )
+
+    async def search(self, assignment_id, query, top_k):
+        validate_search(query, top_k)
+        hits, rebuilt = await self._rank(assignment_id, query)
+        return await bounded_output(
+            self.verifier, assignment_id, hits, top_k, **self._metadata(rebuilt)
+        )
+
+    async def retrieve_candidates(self, assignment_id, query, candidate_limit):
+        validate_candidate_query(query, candidate_limit)
+        hits, rebuilt = await self._rank(assignment_id, query)
+        return await candidate_result(
+            self.verifier, assignment_id, hits, candidate_limit, **self._metadata(rebuilt)
         )
 
     async def aclose(self):
@@ -225,6 +241,53 @@ class HybridRetriever:
             index_status=dense.index_status,
             upstream_truncated=lexical.truncated or dense.truncated,
             score_meaning="RRF_sum_1/(60+rank)_not_probability_or_teaching_score",
+        )
+
+    async def retrieve_candidates(self, assignment_id, query, candidate_limit):
+        validate_candidate_query(query, candidate_limit)
+        lexical = await self.lexical.retrieve_candidates(assignment_id, query, candidate_limit)
+        try:
+            if self.preparation_failure:
+                raise EmbeddingError(self.preparation_failure)
+            dense = await self.dense.retrieve_candidates(assignment_id, query, candidate_limit)
+        except EmbeddingError as error:
+            if not self.allow_lexical_fallback:
+                raise
+            return await candidate_result(
+                self.lexical,
+                assignment_id,
+                lexical.hits,
+                candidate_limit,
+                retrieval_mode="lexical",
+                requested_mode="hybrid",
+                degraded=True,
+                degradation_reason=error.code,
+                index_status="not_ready",
+                upstream_truncated=lexical.truncated,
+            )
+        by_id = {h.chunk_id: h for h in lexical.hits}
+        for hit in dense.hits:
+            if (
+                hit.chunk_id in by_id
+                and by_id[hit.chunk_id].model_copy(update={"relevance_score": hit.relevance_score})
+                != hit
+            ):
+                raise KnowledgeError("citation_source_mismatch")
+            by_id[hit.chunk_id] = hit
+        combined = rrf([[h.chunk_id for h in lexical.hits], [h.chunk_id for h in dense.hits]])
+        hits = [by_id[cid].model_copy(update={"relevance_score": score}) for cid, score in combined]
+        return await candidate_result(
+            self.lexical,
+            assignment_id,
+            hits,
+            candidate_limit,
+            retrieval_mode="hybrid",
+            requested_mode="hybrid",
+            retriever_version="scoped-rrf-candidates20-v1",
+            embedding_model_version=self.dense.embedding.identity.digest,
+            index_status=dense.index_status,
+            score_meaning="RRF_sum_1/(60+rank)_not_probability_or_teaching_score",
+            upstream_truncated=lexical.truncated or dense.truncated,
         )
 
     async def aclose(self):

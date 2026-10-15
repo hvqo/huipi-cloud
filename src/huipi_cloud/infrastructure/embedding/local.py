@@ -16,7 +16,16 @@ from huipi_cloud.infrastructure.embedding.protocol import (
 
 
 class LocalEmbeddingProvider:
-    def __init__(self, python, model_path, *, device="cpu", timeout=30, startup_timeout=60):
+    def __init__(
+        self,
+        python,
+        model_path,
+        *,
+        device="cpu",
+        timeout=30,
+        startup_timeout=60,
+        inference_gate=None,
+    ):
         self.python, self.model_path = python, model_path
         if device not in {"cpu", "cuda"} or not 0 < timeout <= 120:
             raise ValueError("embedding_invalid_runtime_config")
@@ -24,6 +33,7 @@ class LocalEmbeddingProvider:
         self.identity = EmbeddingIdentity()
         self.process = None
         self.lock = asyncio.Lock()
+        self.inference_gate = inference_gate or asyncio.Semaphore(1)
 
     async def _stop(self):
         process, self.process = self.process, None
@@ -98,7 +108,7 @@ class LocalEmbeddingProvider:
             or any(not isinstance(t, str) or not t.strip() or len(t) > 1000 for t in texts)
         ):
             raise EmbeddingError("embedding_input_limit")
-        async with self.lock:
+        async with self.inference_gate, self.lock:
             try:
                 if self.process is None:
                     await self._start()

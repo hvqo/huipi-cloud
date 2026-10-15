@@ -16,15 +16,41 @@ from huipi_cloud.modules.knowledge.models import KnowledgeChunk, KnowledgeDocume
 from huipi_cloud.modules.knowledge.schemas import (
     MAX_SCOPE_CHUNKS,
     MAX_SOURCE_BYTES,
+    CandidateResult,
     KnowledgeError,
     RetrievalHit,
     SearchResult,
 )
 
+MAX_CANDIDATE_BYTES = 65536
+
+
+def validate_candidate_query(query, limit):
+    if (
+        not isinstance(query, str)
+        or not 1 <= len(query.strip()) <= 250
+        or type(limit) is not int
+        or not 1 <= limit <= 20
+    ):
+        raise KnowledgeError("knowledge_invalid_candidate_search")
+
+
+async def candidate_result(verifier, aid, hits, limit, *, upstream_truncated=False, **metadata):
+    result = CandidateResult(
+        hits=hits[:limit], truncated=upstream_truncated or len(hits) > limit, **metadata
+    )
+    if len(result.model_dump_json().encode()) > MAX_CANDIDATE_BYTES:
+        raise KnowledgeError("knowledge_candidate_budget_exceeded")
+    await verifier.validate_citations(aid, result.hits)
+    return result
+
 
 class Retriever(Protocol):
     async def search(self, assignment_id: UUID, query: str, top_k: int) -> SearchResult: ...
     async def validate_citations(self, assignment_id: UUID, hits: list[RetrievalHit]) -> None: ...
+    async def retrieve_candidates(
+        self, assignment_id: UUID, query: str, candidate_limit: int
+    ) -> CandidateResult: ...
 
 
 def terms(value: str) -> dict[str, int]:
@@ -160,6 +186,23 @@ class LexicalRetriever:
         output = SearchResult(hits=result.hits, truncated=len(ranked) > len(result.hits))
         await self.validate_citations(assignment_id, output.hits)
         return output
+
+    async def retrieve_candidates(self, assignment_id, query, candidate_limit):
+        validate_candidate_query(query, candidate_limit)
+        rows = await self._rows(assignment_id)
+        ranked = sorted(
+            ((lexical_score(query, c.chunk_text), d, c) for d, c in rows),
+            key=lambda r: (-r[0], str(r[1].document_id), r[2].chunk_index),
+        )
+        positive = [(score, d, c) for score, d, c in ranked if score > 0]
+        hits = [self._hit(d, c, score) for score, d, c in positive[:candidate_limit]]
+        return await candidate_result(
+            self,
+            assignment_id,
+            hits,
+            candidate_limit,
+            upstream_truncated=len(positive) > candidate_limit,
+        )
 
     async def validate_citations(self, assignment_id: UUID, hits: list[RetrievalHit]) -> None:
         if not hits:
