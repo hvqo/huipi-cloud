@@ -136,7 +136,7 @@ async def test_injection_cannot_expand_scope_and_registry_is_fixed():
         )
     )
     assert result.finish_reason == "tool_not_allowed" and not t.calls
-    assert len(tool_schemas()) == 4
+    assert len(tool_schemas()) == 5
     with pytest.raises(CopilotError, match="scope_mismatch"):
         await CopilotRuntime(p, t, Settings(_env_file=None)).run(
             CopilotRequest(assignment_id=uuid4(), question="任意查询")

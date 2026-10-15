@@ -43,6 +43,7 @@ def isolated_model_defaults(monkeypatch: pytest.MonkeyPatch, request: pytest.Fix
         "grade_llm_e2e": "RUN_GRADE_LLM_E2E",
         "visual_evidence_e2e": "VISUAL_EVIDENCE_E2E",
         "copilot_e2e": "RUN_COPILOT_E2E",
+        "retrieval_e2e": "RUN_RETRIEVAL_E2E",
     }
     if any(
         request.node.get_closest_marker(marker) is not None and os.getenv(flag) == "1"

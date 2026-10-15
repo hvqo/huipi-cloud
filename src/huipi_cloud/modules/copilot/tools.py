@@ -15,6 +15,8 @@ from huipi_cloud.modules.assignments import repository as assignment_repository
 from huipi_cloud.modules.assignments.models import AnswerKey, Assignment, Question, RubricCriterion
 from huipi_cloud.modules.canonical_documents.models import CanonicalArtifact
 from huipi_cloud.modules.copilot.protocol import CopilotError, StrictModel
+from huipi_cloud.modules.knowledge.retriever import LexicalRetriever
+from huipi_cloud.modules.knowledge.schemas import KnowledgeError
 from huipi_cloud.modules.submissions.models import ParsingTask, Submission
 
 
@@ -35,8 +37,17 @@ class SubmissionArgs(StrictModel):
     submission_id: UUID
 
 
+class SearchArgs(StrictModel):
+    query: str = Field(min_length=1, max_length=250)
+    top_k: int = Field(default=3, ge=1, le=5, strict=True)
+
+
 # A fixed allowlist; model text cannot add tools, endpoints, SQL, or Python.
 REGISTRY = {
+    "search_assignment_materials": (
+        SearchArgs,
+        "检索本作业当前有效的教师资料。回答须用原样[[citation_id]]引用；无命中不猜测。",
+    ),
     "get_assignment_summary": (NoArgs, "读取作用域作业的名称、学科、状态及题目/提交数量。"),
     "list_assignment_questions": (PageArgs, "分页列出作用域作业题号、ID、类型和Rubric配置状态。"),
     "get_question_rubric_summary": (QuestionArgs, "读取作用域内题目的Rubric描述和分值上限。"),
@@ -83,9 +94,26 @@ def validate_arguments(name: str, arguments: str) -> StrictModel:
 
 
 class BusinessTools:
-    def __init__(self, session_factory, assignment_id: UUID):
+    def __init__(
+        self,
+        session_factory,
+        assignment_id: UUID,
+        *,
+        storage=None,
+        retriever=None,
+        max_result_bytes=8192,
+    ):
         self.session_factory = session_factory
         self.assignment_id = assignment_id
+        self.retriever = retriever or LexicalRetriever(
+            session_factory, storage, max_result_bytes=max_result_bytes
+        )
+
+    async def validate_citations(self, hits):
+        try:
+            await self.retriever.validate_citations(self.assignment_id, hits)
+        except KnowledgeError as error:
+            raise CopilotError(error.code) from None
 
     async def execute(self, name: str, args: StrictModel) -> dict:
         if name not in REGISTRY or not isinstance(args, REGISTRY[name][0]):
@@ -105,9 +133,16 @@ class BusinessTools:
                     )
                     if found is None:
                         raise CopilotError("resource_not_found_in_scope")
-                    return await self._read(session, name, args)
+                    if name != "search_assignment_materials":
+                        return await self._read(session, name, args)
         except (SQLAlchemyError, OSError):
             raise CopilotError("database_unavailable") from None
+        # Source I/O and lexical retrieval happen after the scope-check transaction closes.
+        try:
+            result = await self.retriever.search(self.assignment_id, args.query, args.top_k)
+            return result.model_dump(mode="json")
+        except KnowledgeError as error:
+            raise CopilotError(error.code) from None
 
     async def _read(self, session, name, args):
         aid = self.assignment_id

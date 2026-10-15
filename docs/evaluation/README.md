@@ -14,3 +14,5 @@
 评测报告必须区分合成数据与真实作业、模型协议通过与识别正确、视觉候选与 Canonical 来源映射。没有可信来源标注时，应使用 `not_evaluated`，不能推算准确率。
 
 - [教师 Copilot 云端与业务闭环验收](teacher-copilot-validation.md)
+
+- [作用域知识检索基线与真实合成验收](scoped-retrieval.md)

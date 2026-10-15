@@ -4,7 +4,7 @@
 
 ## 环境与启动
 
-沿用[快速开始](quickstart.md)的 Python 3.12、uv、PostgreSQL 和 Alembic。Copilot 不读取文件正文，不需要为对话单独启动 Worker 或对象存储。上传和解析演示仍需既有 S3 服务。
+沿用[快速开始](quickstart.md)的 Python 3.12、uv、PostgreSQL 和 Alembic。基础四个工具不读取学生文件正文，不需要解析Worker；新增教师资料检索需要私有S3，见[材料检索指南](scoped-retrieval.md)。上传和解析演示仍需既有S3服务。
 
 ```bash
 uv sync --locked
@@ -48,6 +48,8 @@ CLI 输出单轮 JSON：答案、状态、结束原因、计数、用量、成�
 
 模型不能传入 assignment_id 改变作用域。未知工具、额外参数、重复 JSON 键、非法 UUID 和不合法分页值均拒绝。存在于其他作业的资源与不存在的资源返回同一个安全错误。参数使用 SQLAlchemy 绑定值，不接受 SQL、代码或 URL。数据工具使用独立短事务，PostgreSQL 强制 `READ ONLY`，并设置 3 秒 statement timeout；模型调用时不持有数据库事务。
 
+新增只读工具 `search_assignment_materials({query, top_k})` 检索显式导入的教师资料并返回可校验引用。参数不接受Assignment；材料、版本、撤销和Citation边界见[材料检索指南](scoped-retrieval.md)。
+
 ## 状态和预算
 
 `CopilotRequest` 先完成输入和作用域一致性检查，LangGraph 执行 `model → tools → model`，最终到 END。状态包含消息、待执行工具、已调用指纹、结果和计数。没有持久化会话、checkpointer 或外部 LangSmith 上报；显式关闭 tracing。
@@ -83,4 +85,4 @@ RUN_COPILOT_E2E=1 COPILOT_SYNTHETIC_TRANSFER_AUTHORIZED=1 \
 
 ## 后续检索接口
 
-P4-B 若加入检索，应提供新工具的严格输入与结构化输出：绑定作用域、来源版本、引用 ID、字节/数量上限和数据授权；检索内容仍是不可信数据。认证和租户隔离需先单独实现，不能使用 reviewer_ref。不得将整份学生答案、S3 Key、标准答案或未经许可的文档随意塞入模型上下文；Embedding/Rerank 可以本地运行，生成仍使用经授权云端 API。本轮没有向量数据库或检索工具。
+P4-B 若加入检索，应提供新工具的严格输入与结构化输出：绑定作用域、来源版本、引用 ID、字节/数量上限和数据授权；检索内容仍是不可信数据。认证和租户隔离需先单独实现，不能使用 reviewer_ref。不得将整份学生答案、S3 Key、标准答案或未经许可的文档随意塞入模型上下文；Embedding/Rerank 可以本地运行，生成仍使用经授权云端 API。已具备受控词法材料检索；尚无向量数据库、Embedding或Rerank服务。
