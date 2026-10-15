@@ -30,7 +30,7 @@ def rrf(rankings, *, k=60):
 async def bounded_output(verifier, aid, hits, top_k, *, upstream_truncated=False, **metadata):
     result = SearchResult(**metadata)
     for hit in hits[:top_k]:
-        candidate = SearchResult(hits=[*result.hits, hit], truncated=True, **metadata)
+        candidate = SearchResult(hits=[*result.hits, hit], truncated=False, **metadata)
         if len(candidate.model_dump_json().encode()) + 128 > verifier.max_result_bytes:
             if not result.hits:
                 raise KnowledgeError("knowledge_result_budget_too_small")

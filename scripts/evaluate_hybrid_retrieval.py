@@ -22,10 +22,15 @@ from huipi_cloud.infrastructure.storage.s3 import S3ObjectStorage
 from huipi_cloud.modules.assignments.models import Assignment
 from huipi_cloud.modules.knowledge.chunking import sha256
 from huipi_cloud.modules.knowledge.evaluation import load_dataset, ranking_metrics
-from huipi_cloud.modules.knowledge.hybrid import DenseRetriever, HybridRetriever
+from huipi_cloud.modules.knowledge.hybrid import (
+    DENSE_VERSION,
+    HYBRID_VERSION,
+    DenseRetriever,
+    HybridRetriever,
+)
 from huipi_cloud.modules.knowledge.models import KnowledgeChunk, KnowledgeDocument
 from huipi_cloud.modules.knowledge.retriever import LexicalRetriever
-from huipi_cloud.modules.knowledge.schemas import ImportRequest
+from huipi_cloud.modules.knowledge.schemas import RETRIEVER_VERSION, ImportRequest
 from huipi_cloud.modules.knowledge.service import import_material, revoke_material
 
 DEFAULT_DATASET = Path("data/evaluation/retrieval/scoped-cases-v1.json")
@@ -148,7 +153,17 @@ async def evaluate(args, data, digest):
                 )
             results[mode] = ranking_metrics(records[mode])
         return dict(
-            report_version="hybrid-retrieval-v1",
+            report_version="hybrid-retrieval-v1.1",
+            retriever_versions=args.manifest_data["retriever_versions"],
+            experiment_manifest_sha256=args.manifest_sha256,
+            implementation_sources={
+                str(p): sha256(p.read_bytes())
+                for root in [
+                    Path("src/huipi_cloud/modules/knowledge"),
+                    Path("src/huipi_cloud/infrastructure/embedding"),
+                ]
+                for p in sorted(root.glob("*.py"))
+            },
             synthetic_only=True,
             human_review_status="unreviewed",
             started_at=started,
@@ -197,13 +212,22 @@ def main():
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     data, digest = load_dataset(args.dataset)
-    manifest_path = args.dataset.with_name("experiment-v1.json")
+    manifest_path = args.dataset.with_name("experiment-v2.json")
     manifest_raw = manifest_path.read_bytes()
-    assert (
+    if (
         hashlib.sha256(manifest_raw).hexdigest()
-        == manifest_path.with_suffix(".json.sha256").read_text().split()[0]
-    ), "experiment_manifest_sha_mismatch"
+        != manifest_path.with_suffix(".json.sha256").read_text().split()[0]
+    ):
+        raise ValueError("experiment_manifest_sha_mismatch")
     manifest = json.loads(manifest_raw)
+    if manifest["retriever_versions"] != {
+        "lexical": RETRIEVER_VERSION,
+        "dense": DENSE_VERSION,
+        "hybrid": HYBRID_VERSION,
+    }:
+        raise ValueError("experiment_retriever_version_mismatch")
+    args.manifest_data = manifest
+    args.manifest_sha256 = hashlib.sha256(manifest_raw).hexdigest()
     if manifest["dataset_sha256"] != digest:
         raise ValueError("experiment_dataset_sha_mismatch")
     if not args.run_local:

@@ -97,3 +97,4 @@ dist/
 /data/evaluation/retrieval/*
 !/data/evaluation/retrieval/scoped-cases-v1.json*
 !/data/evaluation/retrieval/experiment-v1.json*
+!/data/evaluation/retrieval/experiment-v2.json*

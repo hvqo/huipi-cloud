@@ -218,3 +218,40 @@ async def test_database_failure_never_triggers_embedding_or_remote_fallback():
         with pytest.raises(KnowledgeError, match="knowledge_database_unavailable"):
             await retriever.search(uuid4(), "合成问题", 1)
     assert fake.documents == fake.queries == []
+
+
+@pytest.mark.anyio
+async def test_final_false_truncation_flag_is_included_in_exact_byte_budget():
+    from huipi_cloud.modules.knowledge.hybrid import bounded_output
+    from huipi_cloud.modules.knowledge.schemas import KnowledgeError, RetrievalHit, SearchResult
+
+    chunk_id = uuid4()
+    hit = RetrievalHit(
+        citation_id="K" + chunk_id.hex,
+        document_id=uuid4(),
+        title="合成",
+        source_version=1,
+        source_sha256="a" * 64,
+        chunk_id=chunk_id,
+        chunk_text_sha256="b" * 64,
+        text_start=0,
+        text_end=1,
+        excerpt="字",
+        relevance_score=1,
+    )
+
+    class Verifier:
+        max_result_bytes = (
+            len(SearchResult(hits=[hit], truncated=True).model_dump_json().encode()) + 128
+        )
+
+        async def validate_citations(self, aid, hits):
+            pass
+
+    verifier = Verifier()
+    # false is one byte longer than true; the shorter intermediate form cannot set the budget.
+    with pytest.raises(KnowledgeError, match="budget_too_small"):
+        await bounded_output(verifier, uuid4(), [hit], 1)
+    verifier.max_result_bytes += 1
+    result = await bounded_output(verifier, uuid4(), [hit], 1)
+    assert len(result.model_dump_json().encode()) + 128 == verifier.max_result_bytes
