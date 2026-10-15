@@ -42,6 +42,7 @@ def isolated_model_defaults(monkeypatch: pytest.MonkeyPatch, request: pytest.Fix
         "deepseek_e2e": "RUN_DEEPSEEK_SMOKE",
         "grade_llm_e2e": "RUN_GRADE_LLM_E2E",
         "visual_evidence_e2e": "VISUAL_EVIDENCE_E2E",
+        "copilot_e2e": "RUN_COPILOT_E2E",
     }
     if any(
         request.node.get_closest_marker(marker) is not None and os.getenv(flag) == "1"
@@ -58,7 +59,7 @@ def isolated_model_defaults(monkeypatch: pytest.MonkeyPatch, request: pytest.Fix
         "visual_evidence_base_url": "http://127.0.0.1:11434/v1",
         "visual_evidence_model": "qwen3.5:4b",
     }
-    for prefix in ("grading", "visual_evidence"):
+    for prefix in ("grading", "visual_evidence", "copilot"):
         for name, field in Settings.model_fields.items():
             if name.startswith(prefix + "_"):
                 default = local_contract_defaults.get(name, field.default)
