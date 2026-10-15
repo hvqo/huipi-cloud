@@ -1,0 +1,3356 @@
+{
+  "report_version": "hybrid-retrieval-v1.1",
+  "retriever_versions": {
+    "lexical": "unicode-weighted-coverage-v1",
+    "dense": "scoped-cosine-v1",
+    "hybrid": "scoped-rrf-v1"
+  },
+  "experiment_manifest_sha256": "214fe22b1732d113a341f69b3fa23ff0baa3afc0a8b7a0242665f3e4257d4240",
+  "implementation_sources": {
+    "src/huipi_cloud/modules/knowledge/__init__.py": "ceadae68c7c9760888539846cda589131b69b4f858f79da44c03fd8d4775e330",
+    "src/huipi_cloud/modules/knowledge/__main__.py": "57bec6216ba0681e4f9ef38fd6a4a230229fa2602492efb7d053f7b6f40bb8a5",
+    "src/huipi_cloud/modules/knowledge/chunking.py": "7d56f489761cde18c48ff0c706efd47ca8962e90f0996bfae4caeb8d08f3b8e5",
+    "src/huipi_cloud/modules/knowledge/dependencies.py": "9e62ed0f1af55b1f891039c0b2dfe2a47d626259c00f199e396d2252ef0cce35",
+    "src/huipi_cloud/modules/knowledge/evaluation.py": "e6e2cb35ccc3bea1241015dccc71ab791d9a7f9820a7876f1c9ad073819d098d",
+    "src/huipi_cloud/modules/knowledge/hybrid.py": "3100903a142e8a0f5fc59b2f163112ce0fdcd77d4725e33ef2b28a883c8b6ceb",
+    "src/huipi_cloud/modules/knowledge/models.py": "d7de8732abddc660d868d87fc29b0a69ce96328e24f0b53a58c31eaf3e51a285",
+    "src/huipi_cloud/modules/knowledge/retriever.py": "e585630a43c14fd2c83be9ac75f95ca69a46f60c6d757259b5696ed0fc82fd9f",
+    "src/huipi_cloud/modules/knowledge/schemas.py": "04036bc43b690dacec7b798222e6f977a22a1a864e7cbf55302da057ff6aad38",
+    "src/huipi_cloud/modules/knowledge/service.py": "444bddaf481ba17c2b922aa6e401cfb22292ea1310ca88113ff13b51b2f87858",
+    "src/huipi_cloud/modules/knowledge/vector_index.py": "c494787c727007ddab476c63cacaec0ec5ff044ca803dfa865a2ab820d9dd293",
+    "src/huipi_cloud/infrastructure/embedding/__init__.py": "5347ad30457aedb13919a3d29079ce1a7a325f064a5afd2d1c3fc41a91da50db",
+    "src/huipi_cloud/infrastructure/embedding/local.py": "d30719f33b059b41178282c6cdec961f915c0b0b4ff87ca4c6b0c2dc68aa934d",
+    "src/huipi_cloud/infrastructure/embedding/protocol.py": "003dbbd8b39df2f15fc843a87ff688df24979357e0cf757bf9ee7cef09a86c99",
+    "src/huipi_cloud/infrastructure/embedding/worker.py": "5cd6bbe5263fc37b7e753302bba9be17760238b23ad1a2bbd331e5fc4843bc42"
+  },
+  "synthetic_only": true,
+  "human_review_status": "unreviewed",
+  "started_at": "2026-10-15T09:07:08.125739+00:00",
+  "completed_at": "2026-10-15T09:07:19.893892+00:00",
+  "dataset_sha256": "675ff665a65abfede6117e3e6b1b84dcb6c67e682cbc746f983299dae64798f4",
+  "freeze_commit": "ab65bebc1513489aa7ab391141f954c04ec777fd",
+  "model_identity": {
+    "model_id": "Qwen/Qwen3-Embedding-0.6B",
+    "model_revision": "97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3",
+    "dimension": 1024,
+    "max_tokens": 512,
+    "batch_size": 8,
+    "query_instruction": "Given a teacher question, retrieve relevant teaching reference passages",
+    "normalization": "l2-float32-v1",
+    "pooling": "last-token-v1",
+    "adapter_version": "local-qwen3-transformers-v1"
+  },
+  "device": "cuda",
+  "embedding_config_digest": "9dd79e6aef9456bfeb46928b6b9d2db5eb84117d8ee236fe18553714111502f8",
+  "index_seconds": 4.682,
+  "vector_count": 26,
+  "vector_float32_payload_bytes": 106496,
+  "metrics": {
+    "lexical": {
+      "answerable_cases": 43,
+      "no_answer_cases": 5,
+      "recall_at_1": {
+        "value": 0.8604651162790697,
+        "sum_case_recall": 37.0,
+        "denominator_cases": 43
+      },
+      "precision_at_1": {
+        "value": 0.8604651162790697,
+        "numerator": 37,
+        "denominator": 43
+      },
+      "recall_at_3": {
+        "value": 0.9069767441860465,
+        "sum_case_recall": 39.0,
+        "denominator_cases": 43
+      },
+      "precision_at_3": {
+        "value": 0.3023255813953488,
+        "numerator": 39,
+        "denominator": 129
+      },
+      "recall_at_5": {
+        "value": 0.9069767441860465,
+        "sum_case_recall": 39.0,
+        "denominator_cases": 43
+      },
+      "precision_at_5": {
+        "value": 0.1813953488372093,
+        "numerator": 39,
+        "denominator": 215
+      },
+      "mrr": {
+        "value": 0.8837209302325582,
+        "sum_reciprocal_rank": 38.0,
+        "denominator": 43
+      },
+      "no_answer_false_hit": {
+        "numerator": 1,
+        "denominator": 5,
+        "value": 0.2
+      },
+      "latency_ms": {
+        "p50": 27.613,
+        "p95": 32.969
+      },
+      "cross_assignment_leaks": 0,
+      "stale_hits": 0
+    },
+    "dense": {
+      "answerable_cases": 43,
+      "no_answer_cases": 5,
+      "recall_at_1": {
+        "value": 0.9767441860465116,
+        "sum_case_recall": 42.0,
+        "denominator_cases": 43
+      },
+      "precision_at_1": {
+        "value": 0.9767441860465116,
+        "numerator": 42,
+        "denominator": 43
+      },
+      "recall_at_3": {
+        "value": 0.9767441860465116,
+        "sum_case_recall": 42.0,
+        "denominator_cases": 43
+      },
+      "precision_at_3": {
+        "value": 0.32558139534883723,
+        "numerator": 42,
+        "denominator": 129
+      },
+      "recall_at_5": {
+        "value": 0.9767441860465116,
+        "sum_case_recall": 42.0,
+        "denominator_cases": 43
+      },
+      "precision_at_5": {
+        "value": 0.19534883720930232,
+        "numerator": 42,
+        "denominator": 215
+      },
+      "mrr": {
+        "value": 0.9767441860465116,
+        "sum_reciprocal_rank": 42.0,
+        "denominator": 43
+      },
+      "no_answer_false_hit": {
+        "numerator": 0,
+        "denominator": 5,
+        "value": 0.0
+      },
+      "latency_ms": {
+        "p50": 35.144,
+        "p95": 39.574
+      },
+      "cross_assignment_leaks": 0,
+      "stale_hits": 0
+    },
+    "hybrid": {
+      "answerable_cases": 43,
+      "no_answer_cases": 5,
+      "recall_at_1": {
+        "value": 0.9534883720930233,
+        "sum_case_recall": 41.0,
+        "denominator_cases": 43
+      },
+      "precision_at_1": {
+        "value": 0.9534883720930233,
+        "numerator": 41,
+        "denominator": 43
+      },
+      "recall_at_3": {
+        "value": 0.9767441860465116,
+        "sum_case_recall": 42.0,
+        "denominator_cases": 43
+      },
+      "precision_at_3": {
+        "value": 0.32558139534883723,
+        "numerator": 42,
+        "denominator": 129
+      },
+      "recall_at_5": {
+        "value": 0.9767441860465116,
+        "sum_case_recall": 42.0,
+        "denominator_cases": 43
+      },
+      "precision_at_5": {
+        "value": 0.19534883720930232,
+        "numerator": 42,
+        "denominator": 215
+      },
+      "mrr": {
+        "value": 0.9651162790697675,
+        "sum_reciprocal_rank": 41.5,
+        "denominator": 43
+      },
+      "no_answer_false_hit": {
+        "numerator": 1,
+        "denominator": 5,
+        "value": 0.2
+      },
+      "latency_ms": {
+        "p50": 81.039,
+        "p95": 94.003
+      },
+      "cross_assignment_leaks": 0,
+      "stale_hits": 0
+    }
+  },
+  "cases": {
+    "lexical": [
+      {
+        "case_id": "heat-lexical",
+        "category": "lexical",
+        "relevant": [
+          "heat:v1:0"
+        ],
+        "returned": [
+          "heat:v1:0",
+          "radiation:v1:0",
+          "convection:v1:0",
+          "thesis:v1:0",
+          "opportunity:v1:0"
+        ],
+        "scores": [
+          0.61904762,
+          0.0952381,
+          0.0952381,
+          0.04761905,
+          0.04761905
+        ],
+        "elapsed_ms": 28.505,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "heat-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "heat:v1:0"
+        ],
+        "returned": [
+          "heat:v1:0",
+          "circle:v1:0",
+          "evaporation:v1:0",
+          "opportunity:v1:0",
+          "present:v1:0"
+        ],
+        "scores": [
+          0.12328767,
+          0.09589041,
+          0.08219178,
+          0.05479452,
+          0.04109589
+        ],
+        "elapsed_ms": 26.714,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "convection-lexical",
+        "category": "lexical",
+        "relevant": [
+          "convection:v1:0"
+        ],
+        "returned": [
+          "convection:v1:0",
+          "heat:v1:0",
+          "thesis:v1:0",
+          "opportunity:v1:0",
+          "evaporation:v1:0"
+        ],
+        "scores": [
+          0.27272727,
+          0.09090909,
+          0.06060606,
+          0.06060606,
+          0.06060606
+        ],
+        "elapsed_ms": 32.969,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "convection-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "convection:v1:0"
+        ],
+        "returned": [
+          "convection:v1:0",
+          "evaporation:v1:0",
+          "water:v1:0",
+          "heat:v1:0",
+          "probability:v1:0"
+        ],
+        "scores": [
+          0.25,
+          0.09722222,
+          0.06944444,
+          0.04166667,
+          0.04166667
+        ],
+        "elapsed_ms": 29.017,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "radiation-lexical",
+        "category": "lexical",
+        "relevant": [
+          "radiation:v1:0"
+        ],
+        "returned": [
+          "radiation:v1:0",
+          "unit:v1:0",
+          "past:v1:0",
+          "speed:v1:0",
+          "heat:v1:0"
+        ],
+        "scores": [
+          0.51724138,
+          0.17241379,
+          0.17241379,
+          0.17241379,
+          0.06896552
+        ],
+        "elapsed_ms": 27.166,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "radiation-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "radiation:v1:0"
+        ],
+        "returned": [
+          "radiation:v1:0",
+          "respire:v1:0",
+          "water:v1:0",
+          "heat:v1:0",
+          "probability:v1:0"
+        ],
+        "scores": [
+          0.50877193,
+          0.15789474,
+          0.10526316,
+          0.10526316,
+          0.07017544
+        ],
+        "elapsed_ms": 25.286,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "photo-lexical",
+        "category": "lexical",
+        "relevant": [
+          "photo:v1:0"
+        ],
+        "returned": [
+          "photo:v1:0",
+          "respire:v1:0",
+          "thesis:v1:0",
+          "present:v1:0",
+          "opportunity:v1:0"
+        ],
+        "scores": [
+          0.62068966,
+          0.20689655,
+          0.06896552,
+          0.03448276,
+          0.03448276
+        ],
+        "elapsed_ms": 23.91,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "photo-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "photo:v1:0"
+        ],
+        "returned": [],
+        "scores": [],
+        "elapsed_ms": 3.045,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "respire-lexical",
+        "category": "lexical",
+        "relevant": [
+          "respire:v1:0"
+        ],
+        "returned": [
+          "respire:v1:0",
+          "photo:v1:0",
+          "energy:v1:0",
+          "probability:v1:0",
+          "opportunity:v1:0"
+        ],
+        "scores": [
+          0.7027027,
+          0.05405405,
+          0.02702703,
+          0.02702703,
+          0.02702703
+        ],
+        "elapsed_ms": 24.217,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "respire-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "respire:v1:0"
+        ],
+        "returned": [
+          "respire:v1:0",
+          "heat:v1:0",
+          "radiation:v1:0",
+          "thesis:v1:0",
+          "density:v1:0"
+        ],
+        "scores": [
+          0.2,
+          0.16923077,
+          0.10769231,
+          0.06153846,
+          0.06153846
+        ],
+        "elapsed_ms": 27.981,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "neutral-lexical",
+        "category": "lexical",
+        "relevant": [
+          "neutral:v1:0"
+        ],
+        "returned": [
+          "neutral:v1:0",
+          "opportunity:v1:0",
+          "photo:v1:0",
+          "heat:v1:0",
+          "thesis:v1:0"
+        ],
+        "scores": [
+          0.43902439,
+          0.12195122,
+          0.09756098,
+          0.07317073,
+          0.07317073
+        ],
+        "elapsed_ms": 29.481,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "neutral-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "neutral:v1:0"
+        ],
+        "returned": [
+          "neutral:v1:0",
+          "water:v1:0",
+          "convection:v1:0",
+          "photo:v1:0",
+          "fraction:v1:0"
+        ],
+        "scores": [
+          0.27692308,
+          0.15384615,
+          0.10769231,
+          0.07692308,
+          0.06153846
+        ],
+        "elapsed_ms": 26.744,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "oxidation-lexical",
+        "category": "lexical",
+        "relevant": [
+          "oxidation:v1:0"
+        ],
+        "returned": [
+          "oxidation:v1:0",
+          "photo:v1:0",
+          "respire:v1:0",
+          "energy:v1:0",
+          "unit:v1:0"
+        ],
+        "scores": [
+          0.44827586,
+          0.17241379,
+          0.17241379,
+          0.03448276,
+          0.03448276
+        ],
+        "elapsed_ms": 25.439,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "oxidation-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "oxidation:v1:0"
+        ],
+        "returned": [
+          "unit:v1:0",
+          "oxidation:v1:0",
+          "energy:v1:0",
+          "heat:v1:0",
+          "present:v1:0"
+        ],
+        "scores": [
+          0.11538462,
+          0.11538462,
+          0.03846154,
+          0.01923077,
+          0.01923077
+        ],
+        "elapsed_ms": 29.002,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "speed-lexical",
+        "category": "lexical",
+        "relevant": [
+          "speed:v1:0"
+        ],
+        "returned": [
+          "speed:v1:0",
+          "density:v1:0",
+          "heat:v1:0",
+          "evaporation:v1:0",
+          "fraction:v1:0"
+        ],
+        "scores": [
+          0.39393939,
+          0.21212121,
+          0.06060606,
+          0.06060606,
+          0.06060606
+        ],
+        "elapsed_ms": 26.305,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "speed-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "speed:v1:0"
+        ],
+        "returned": [
+          "evaporation:v1:0",
+          "past:v1:0",
+          "present:v1:0",
+          "energy:v1:0",
+          "thesis:v1:0"
+        ],
+        "scores": [
+          0.08695652,
+          0.05797101,
+          0.04347826,
+          0.04347826,
+          0.04347826
+        ],
+        "elapsed_ms": 29.704,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "friction-lexical",
+        "category": "lexical",
+        "relevant": [
+          "friction:v1:0"
+        ],
+        "returned": [
+          "friction:v1:0",
+          "heat:v1:0",
+          "present:v1:0",
+          "energy:v1:0",
+          "opportunity:v1:0"
+        ],
+        "scores": [
+          0.5862069,
+          0.20689655,
+          0.06896552,
+          0.06896552,
+          0.06896552
+        ],
+        "elapsed_ms": 28.477,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "friction-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "friction:v1:0"
+        ],
+        "returned": [
+          "friction:v1:0",
+          "energy:v1:0",
+          "present:v1:0",
+          "heat:v1:0",
+          "past:v1:0"
+        ],
+        "scores": [
+          0.29166667,
+          0.05555556,
+          0.04166667,
+          0.02777778,
+          0.02777778
+        ],
+        "elapsed_ms": 32.947,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "energy-lexical",
+        "category": "lexical",
+        "relevant": [
+          "energy:v1:0"
+        ],
+        "returned": [
+          "energy:v1:0",
+          "probability:v1:0",
+          "photo:v1:0",
+          "water:v1:0",
+          "heat:v1:0"
+        ],
+        "scores": [
+          0.68,
+          0.24,
+          0.08,
+          0.04,
+          0.04
+        ],
+        "elapsed_ms": 27.713,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "energy-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "energy:v1:0"
+        ],
+        "returned": [
+          "heat:v1:0",
+          "energy:v1:0",
+          "convection:v1:0",
+          "radiation:v1:0",
+          "respire:v1:0"
+        ],
+        "scores": [
+          0.12345679,
+          0.11111111,
+          0.08641975,
+          0.07407407,
+          0.07407407
+        ],
+        "elapsed_ms": 23.999,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "fraction-lexical",
+        "category": "lexical",
+        "relevant": [
+          "fraction:v1:0"
+        ],
+        "returned": [
+          "fraction:v1:0",
+          "energy:v1:0",
+          "respire:v1:0"
+        ],
+        "scores": [
+          0.35294118,
+          0.05882353,
+          0.05882353
+        ],
+        "elapsed_ms": 18.495,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "fraction-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "fraction:v1:0"
+        ],
+        "returned": [
+          "fraction:v1:0",
+          "opportunity:v1:0",
+          "thesis:v1:0",
+          "probability:v1:0",
+          "past:v1:0"
+        ],
+        "scores": [
+          0.30434783,
+          0.11594203,
+          0.08695652,
+          0.07246377,
+          0.07246377
+        ],
+        "elapsed_ms": 31.996,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "probability-lexical",
+        "category": "lexical",
+        "relevant": [
+          "probability:v1:0"
+        ],
+        "returned": [
+          "probability:v1:0",
+          "speed:v1:0",
+          "unit:v1:0"
+        ],
+        "scores": [
+          0.28571429,
+          0.23809524,
+          0.04761905
+        ],
+        "elapsed_ms": 23.454,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "probability-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "probability:v1:0"
+        ],
+        "returned": [
+          "probability:v1:0",
+          "present:v1:0",
+          "energy:v1:0",
+          "respire:v1:0",
+          "heat:v1:0"
+        ],
+        "scores": [
+          0.16176471,
+          0.04411765,
+          0.04411765,
+          0.04411765,
+          0.02941176
+        ],
+        "elapsed_ms": 33.67,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "simile-lexical",
+        "category": "lexical",
+        "relevant": [
+          "simile:v1:0"
+        ],
+        "returned": [
+          "simile:v1:0",
+          "present:v1:0",
+          "energy:v1:0",
+          "probability:v1:0",
+          "opportunity:v1:0"
+        ],
+        "scores": [
+          0.34482759,
+          0.06896552,
+          0.03448276,
+          0.03448276,
+          0.03448276
+        ],
+        "elapsed_ms": 28.88,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "simile-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "simile:v1:0"
+        ],
+        "returned": [
+          "opportunity:v1:0",
+          "heat:v1:0",
+          "thesis:v1:0",
+          "probability:v1:0",
+          "density:v1:0"
+        ],
+        "scores": [
+          0.05172414,
+          0.03448276,
+          0.03448276,
+          0.03448276,
+          0.03448276
+        ],
+        "elapsed_ms": 27.915,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "thesis-lexical",
+        "category": "lexical",
+        "relevant": [
+          "thesis:v1:0"
+        ],
+        "returned": [
+          "thesis:v1:0",
+          "simile:v1:0",
+          "heat:v1:0",
+          "present:v1:0",
+          "energy:v1:0"
+        ],
+        "scores": [
+          0.35714286,
+          0.07142857,
+          0.03571429,
+          0.03571429,
+          0.03571429
+        ],
+        "elapsed_ms": 27.766,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "thesis-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "thesis:v1:0"
+        ],
+        "returned": [
+          "thesis:v1:0",
+          "present:v1:0",
+          "simile:v1:0",
+          "probability:v1:0",
+          "past:v1:0"
+        ],
+        "scores": [
+          0.32786885,
+          0.1147541,
+          0.04918033,
+          0.03278689,
+          0.03278689
+        ],
+        "elapsed_ms": 29.155,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "past-lexical",
+        "category": "lexical",
+        "relevant": [
+          "past:v1:0"
+        ],
+        "returned": [
+          "past:v1:0",
+          "present:v1:0",
+          "fraction:v1:0",
+          "speed:v1:0",
+          "opportunity:v1:0"
+        ],
+        "scores": [
+          0.51515152,
+          0.18181818,
+          0.09090909,
+          0.09090909,
+          0.06060606
+        ],
+        "elapsed_ms": 27.613,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "past-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "past:v1:0"
+        ],
+        "returned": [],
+        "scores": [],
+        "elapsed_ms": 2.903,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "water-lexical",
+        "category": "lexical",
+        "relevant": [
+          "water:v1:0"
+        ],
+        "returned": [
+          "water:v1:0",
+          "convection:v1:0",
+          "photo:v1:0",
+          "neutral:v1:0",
+          "respire:v1:0"
+        ],
+        "scores": [
+          0.53125,
+          0.15625,
+          0.03125,
+          0.03125,
+          0.03125
+        ],
+        "elapsed_ms": 26.852,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "water-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "water:v1:0"
+        ],
+        "returned": [
+          "water:v1:0",
+          "neutral:v1:0",
+          "photo:v1:0",
+          "radiation:v1:0",
+          "evaporation:v1:0"
+        ],
+        "scores": [
+          0.09090909,
+          0.07575758,
+          0.03030303,
+          0.03030303,
+          0.03030303
+        ],
+        "elapsed_ms": 28.844,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "opportunity-lexical",
+        "category": "lexical",
+        "relevant": [
+          "opportunity:v1:0"
+        ],
+        "returned": [
+          "opportunity:v1:0",
+          "photo:v1:0",
+          "thesis:v1:0",
+          "simile:v1:0",
+          "water:v1:0"
+        ],
+        "scores": [
+          0.85,
+          0.075,
+          0.075,
+          0.075,
+          0.05
+        ],
+        "elapsed_ms": 28.798,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "opportunity-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "opportunity:v1:0"
+        ],
+        "returned": [
+          "opportunity:v1:0",
+          "thesis:v1:0",
+          "present:v1:0",
+          "past:v1:0",
+          "heat:v1:0"
+        ],
+        "scores": [
+          0.38356164,
+          0.08219178,
+          0.04109589,
+          0.04109589,
+          0.02739726
+        ],
+        "elapsed_ms": 29.314,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "circle-lexical",
+        "category": "lexical",
+        "relevant": [
+          "circle:v1:0"
+        ],
+        "returned": [
+          "circle:v1:0",
+          "density:v1:0",
+          "evaporation:v1:0",
+          "heat:v1:0",
+          "fraction:v1:0"
+        ],
+        "scores": [
+          0.31034483,
+          0.24137931,
+          0.17241379,
+          0.06896552,
+          0.06896552
+        ],
+        "elapsed_ms": 27.659,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "circle-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "circle:v1:0"
+        ],
+        "returned": [
+          "circle:v1:0",
+          "friction:v1:0",
+          "thesis:v1:0",
+          "opportunity:v1:0",
+          "fraction:v1:0"
+        ],
+        "scores": [
+          0.10810811,
+          0.08108108,
+          0.04054054,
+          0.04054054,
+          0.04054054
+        ],
+        "elapsed_ms": 25.688,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "unit-lexical",
+        "category": "lexical",
+        "relevant": [
+          "unit:v1:0"
+        ],
+        "returned": [
+          "unit:v1:0",
+          "density:v1:0",
+          "speed:v1:0",
+          "present:v1:0",
+          "energy:v1:0"
+        ],
+        "scores": [
+          0.5,
+          0.19444444,
+          0.19444444,
+          0.02777778,
+          0.02777778
+        ],
+        "elapsed_ms": 26.345,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "unit-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "unit:v1:0"
+        ],
+        "returned": [
+          "unit:v1:0",
+          "speed:v1:0",
+          "present:v1:0",
+          "opportunity:v1:0",
+          "fraction:v1:0"
+        ],
+        "scores": [
+          0.16216216,
+          0.12162162,
+          0.05405405,
+          0.05405405,
+          0.05405405
+        ],
+        "elapsed_ms": 49.713,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "density-lexical",
+        "category": "lexical",
+        "relevant": [
+          "density:v1:0"
+        ],
+        "returned": [
+          "density:v1:0",
+          "heat:v1:0",
+          "fraction:v1:0",
+          "thesis:v1:0",
+          "opportunity:v1:0"
+        ],
+        "scores": [
+          0.44,
+          0.08,
+          0.08,
+          0.04,
+          0.04
+        ],
+        "elapsed_ms": 27.634,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "density-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "density:v1:0"
+        ],
+        "returned": [
+          "density:v1:0",
+          "heat:v1:0",
+          "radiation:v1:0",
+          "evaporation:v1:0",
+          "friction:v1:0"
+        ],
+        "scores": [
+          0.39705882,
+          0.11764706,
+          0.10294118,
+          0.07352941,
+          0.05882353
+        ],
+        "elapsed_ms": 25.443,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "old",
+        "category": "old_version",
+        "relevant": [],
+        "returned": [],
+        "scores": [],
+        "elapsed_ms": 3.264,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "revoked",
+        "category": "revoked",
+        "relevant": [],
+        "returned": [],
+        "scores": [],
+        "elapsed_ms": 2.929,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "foreign-deny",
+        "category": "cross_assignment",
+        "relevant": [],
+        "returned": [],
+        "scores": [],
+        "elapsed_ms": 2.637,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "foreign-own",
+        "category": "cross_assignment",
+        "relevant": [
+          "foreign:v1:0"
+        ],
+        "returned": [
+          "foreign:v1:0"
+        ],
+        "scores": [
+          1.0
+        ],
+        "elapsed_ms": 11.284,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "new",
+        "category": "current_version",
+        "relevant": [
+          "versioned:v2:0"
+        ],
+        "returned": [
+          "versioned:v2:0"
+        ],
+        "scores": [
+          1.0
+        ],
+        "elapsed_ms": 11.983,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "absent",
+        "category": "no_answer",
+        "relevant": [],
+        "returned": [],
+        "scores": [],
+        "elapsed_ms": 3.044,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "weak",
+        "category": "single_han_weak",
+        "relevant": [],
+        "returned": [
+          "heat:v1:0",
+          "present:v1:0",
+          "thesis:v1:0",
+          "probability:v1:0",
+          "opportunity:v1:0"
+        ],
+        "scores": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "elapsed_ms": 30.807,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      },
+      {
+        "case_id": "long",
+        "category": "long_query",
+        "relevant": [
+          "speed:v1:0"
+        ],
+        "returned": [
+          "speed:v1:0",
+          "density:v1:0",
+          "friction:v1:0",
+          "unit:v1:0",
+          "neutral:v1:0"
+        ],
+        "scores": [
+          0.22222222,
+          0.05847953,
+          0.04678363,
+          0.04093567,
+          0.04093567
+        ],
+        "elapsed_ms": 31.509,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "lexical",
+        "degraded": false
+      }
+    ],
+    "dense": [
+      {
+        "case_id": "heat-lexical",
+        "category": "lexical",
+        "relevant": [
+          "heat:v1:0"
+        ],
+        "returned": [
+          "heat:v1:0",
+          "convection:v1:0",
+          "radiation:v1:0"
+        ],
+        "scores": [
+          0.9358908396202441,
+          0.8357875673967212,
+          0.8178171896606954
+        ],
+        "elapsed_ms": 45.125,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "heat-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "heat:v1:0"
+        ],
+        "returned": [
+          "heat:v1:0"
+        ],
+        "scores": [
+          0.8370597086670174
+        ],
+        "elapsed_ms": 37.991,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "convection-lexical",
+        "category": "lexical",
+        "relevant": [
+          "convection:v1:0"
+        ],
+        "returned": [
+          "convection:v1:0",
+          "heat:v1:0"
+        ],
+        "scores": [
+          0.8981195255612175,
+          0.776228095633001
+        ],
+        "elapsed_ms": 38.47,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "convection-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "convection:v1:0"
+        ],
+        "returned": [
+          "convection:v1:0",
+          "heat:v1:0"
+        ],
+        "scores": [
+          0.859132714972185,
+          0.7987691671885543
+        ],
+        "elapsed_ms": 37.367,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "radiation-lexical",
+        "category": "lexical",
+        "relevant": [
+          "radiation:v1:0"
+        ],
+        "returned": [
+          "radiation:v1:0",
+          "heat:v1:0",
+          "convection:v1:0"
+        ],
+        "scores": [
+          0.9165552707279992,
+          0.8091100183250937,
+          0.7772670636149162
+        ],
+        "elapsed_ms": 36.719,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "radiation-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "radiation:v1:0"
+        ],
+        "returned": [
+          "radiation:v1:0"
+        ],
+        "scores": [
+          0.8499960079565247
+        ],
+        "elapsed_ms": 33.55,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "photo-lexical",
+        "category": "lexical",
+        "relevant": [
+          "photo:v1:0"
+        ],
+        "returned": [
+          "photo:v1:0",
+          "respire:v1:0"
+        ],
+        "scores": [
+          0.8970060128911393,
+          0.7990989907120096
+        ],
+        "elapsed_ms": 38.464,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "photo-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "photo:v1:0"
+        ],
+        "returned": [
+          "photo:v1:0"
+        ],
+        "scores": [
+          0.8499038841053472
+        ],
+        "elapsed_ms": 37.842,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "respire-lexical",
+        "category": "lexical",
+        "relevant": [
+          "respire:v1:0"
+        ],
+        "returned": [
+          "respire:v1:0"
+        ],
+        "scores": [
+          0.915035694113092
+        ],
+        "elapsed_ms": 39.283,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "respire-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "respire:v1:0"
+        ],
+        "returned": [
+          "respire:v1:0"
+        ],
+        "scores": [
+          0.8237459348539387
+        ],
+        "elapsed_ms": 40.254,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "neutral-lexical",
+        "category": "lexical",
+        "relevant": [
+          "neutral:v1:0"
+        ],
+        "returned": [
+          "neutral:v1:0"
+        ],
+        "scores": [
+          0.9080936662072763
+        ],
+        "elapsed_ms": 35.814,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "neutral-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "neutral:v1:0"
+        ],
+        "returned": [
+          "neutral:v1:0"
+        ],
+        "scores": [
+          0.873916409315737
+        ],
+        "elapsed_ms": 34.993,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "oxidation-lexical",
+        "category": "lexical",
+        "relevant": [
+          "oxidation:v1:0"
+        ],
+        "returned": [
+          "oxidation:v1:0"
+        ],
+        "scores": [
+          0.8255630112012722
+        ],
+        "elapsed_ms": 34.303,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "oxidation-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "oxidation:v1:0"
+        ],
+        "returned": [
+          "oxidation:v1:0"
+        ],
+        "scores": [
+          0.787638306346391
+        ],
+        "elapsed_ms": 35.352,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "speed-lexical",
+        "category": "lexical",
+        "relevant": [
+          "speed:v1:0"
+        ],
+        "returned": [
+          "speed:v1:0"
+        ],
+        "scores": [
+          0.9307292132364963
+        ],
+        "elapsed_ms": 32.831,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "speed-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "speed:v1:0"
+        ],
+        "returned": [
+          "speed:v1:0"
+        ],
+        "scores": [
+          0.8455567120981372
+        ],
+        "elapsed_ms": 37.185,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "friction-lexical",
+        "category": "lexical",
+        "relevant": [
+          "friction:v1:0"
+        ],
+        "returned": [
+          "friction:v1:0"
+        ],
+        "scores": [
+          0.8817925121811826
+        ],
+        "elapsed_ms": 36.818,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "friction-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "friction:v1:0"
+        ],
+        "returned": [
+          "friction:v1:0"
+        ],
+        "scores": [
+          0.8655000997789235
+        ],
+        "elapsed_ms": 33.336,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "energy-lexical",
+        "category": "lexical",
+        "relevant": [
+          "energy:v1:0"
+        ],
+        "returned": [
+          "energy:v1:0"
+        ],
+        "scores": [
+          0.9148269898591566
+        ],
+        "elapsed_ms": 32.719,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "energy-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "energy:v1:0"
+        ],
+        "returned": [
+          "energy:v1:0"
+        ],
+        "scores": [
+          0.8475208050236436
+        ],
+        "elapsed_ms": 34.256,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "fraction-lexical",
+        "category": "lexical",
+        "relevant": [
+          "fraction:v1:0"
+        ],
+        "returned": [
+          "fraction:v1:0"
+        ],
+        "scores": [
+          0.9226327411430955
+        ],
+        "elapsed_ms": 38.887,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "fraction-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "fraction:v1:0"
+        ],
+        "returned": [
+          "fraction:v1:0"
+        ],
+        "scores": [
+          0.8740600223425689
+        ],
+        "elapsed_ms": 38.692,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "probability-lexical",
+        "category": "lexical",
+        "relevant": [
+          "probability:v1:0"
+        ],
+        "returned": [
+          "probability:v1:0"
+        ],
+        "scores": [
+          0.8615070137649776
+        ],
+        "elapsed_ms": 38.663,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "probability-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "probability:v1:0"
+        ],
+        "returned": [
+          "probability:v1:0"
+        ],
+        "scores": [
+          0.8032573283253168
+        ],
+        "elapsed_ms": 34.125,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "simile-lexical",
+        "category": "lexical",
+        "relevant": [
+          "simile:v1:0"
+        ],
+        "returned": [
+          "simile:v1:0"
+        ],
+        "scores": [
+          0.8937482876986955
+        ],
+        "elapsed_ms": 33.023,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "simile-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "simile:v1:0"
+        ],
+        "returned": [],
+        "scores": [],
+        "elapsed_ms": 26.437,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "thesis-lexical",
+        "category": "lexical",
+        "relevant": [
+          "thesis:v1:0"
+        ],
+        "returned": [
+          "thesis:v1:0"
+        ],
+        "scores": [
+          0.9487591608048087
+        ],
+        "elapsed_ms": 35.054,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "thesis-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "thesis:v1:0"
+        ],
+        "returned": [
+          "thesis:v1:0"
+        ],
+        "scores": [
+          0.8575562070932006
+        ],
+        "elapsed_ms": 36.062,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "past-lexical",
+        "category": "lexical",
+        "relevant": [
+          "past:v1:0"
+        ],
+        "returned": [
+          "past:v1:0",
+          "present:v1:0"
+        ],
+        "scores": [
+          0.9075306621930933,
+          0.8688322523395389
+        ],
+        "elapsed_ms": 38.709,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "past-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "past:v1:0"
+        ],
+        "returned": [
+          "past:v1:0",
+          "present:v1:0"
+        ],
+        "scores": [
+          0.8339378879281507,
+          0.7812664717974638
+        ],
+        "elapsed_ms": 38.215,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "water-lexical",
+        "category": "lexical",
+        "relevant": [
+          "water:v1:0"
+        ],
+        "returned": [
+          "water:v1:0"
+        ],
+        "scores": [
+          0.9037471452919186
+        ],
+        "elapsed_ms": 34.744,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "water-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "water:v1:0"
+        ],
+        "returned": [
+          "water:v1:0"
+        ],
+        "scores": [
+          0.8129120364598728
+        ],
+        "elapsed_ms": 36.318,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "opportunity-lexical",
+        "category": "lexical",
+        "relevant": [
+          "opportunity:v1:0"
+        ],
+        "returned": [
+          "opportunity:v1:0"
+        ],
+        "scores": [
+          0.9238060490905629
+        ],
+        "elapsed_ms": 39.574,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "opportunity-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "opportunity:v1:0"
+        ],
+        "returned": [
+          "opportunity:v1:0"
+        ],
+        "scores": [
+          0.8272179247844644
+        ],
+        "elapsed_ms": 35.144,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "circle-lexical",
+        "category": "lexical",
+        "relevant": [
+          "circle:v1:0"
+        ],
+        "returned": [
+          "circle:v1:0"
+        ],
+        "scores": [
+          0.9036839801452199
+        ],
+        "elapsed_ms": 34.872,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "circle-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "circle:v1:0"
+        ],
+        "returned": [
+          "circle:v1:0"
+        ],
+        "scores": [
+          0.834459244744295
+        ],
+        "elapsed_ms": 33.851,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "unit-lexical",
+        "category": "lexical",
+        "relevant": [
+          "unit:v1:0"
+        ],
+        "returned": [
+          "unit:v1:0"
+        ],
+        "scores": [
+          0.9187762225556947
+        ],
+        "elapsed_ms": 34.044,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "unit-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "unit:v1:0"
+        ],
+        "returned": [
+          "unit:v1:0"
+        ],
+        "scores": [
+          0.830689306134166
+        ],
+        "elapsed_ms": 37.606,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "density-lexical",
+        "category": "lexical",
+        "relevant": [
+          "density:v1:0"
+        ],
+        "returned": [
+          "density:v1:0"
+        ],
+        "scores": [
+          0.9156664757431013
+        ],
+        "elapsed_ms": 33.391,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "density-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "density:v1:0"
+        ],
+        "returned": [
+          "density:v1:0"
+        ],
+        "scores": [
+          0.8327424783005011
+        ],
+        "elapsed_ms": 32.807,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "old",
+        "category": "old_version",
+        "relevant": [],
+        "returned": [],
+        "scores": [],
+        "elapsed_ms": 25.058,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "revoked",
+        "category": "revoked",
+        "relevant": [],
+        "returned": [],
+        "scores": [],
+        "elapsed_ms": 26.504,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "foreign-deny",
+        "category": "cross_assignment",
+        "relevant": [],
+        "returned": [],
+        "scores": [],
+        "elapsed_ms": 28.325,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "foreign-own",
+        "category": "cross_assignment",
+        "relevant": [
+          "foreign:v1:0"
+        ],
+        "returned": [
+          "foreign:v1:0"
+        ],
+        "scores": [
+          0.8019128383446461
+        ],
+        "elapsed_ms": 36.473,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "new",
+        "category": "current_version",
+        "relevant": [
+          "versioned:v2:0"
+        ],
+        "returned": [
+          "versioned:v2:0"
+        ],
+        "scores": [
+          0.7920659417728717
+        ],
+        "elapsed_ms": 35.565,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "absent",
+        "category": "no_answer",
+        "relevant": [],
+        "returned": [],
+        "scores": [],
+        "elapsed_ms": 27.073,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "weak",
+        "category": "single_han_weak",
+        "relevant": [],
+        "returned": [],
+        "scores": [],
+        "elapsed_ms": 26.018,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      },
+      {
+        "case_id": "long",
+        "category": "long_query",
+        "relevant": [
+          "speed:v1:0"
+        ],
+        "returned": [
+          "speed:v1:0"
+        ],
+        "scores": [
+          0.9144111666625027
+        ],
+        "elapsed_ms": 32.725,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "dense",
+        "degraded": false
+      }
+    ],
+    "hybrid": [
+      {
+        "case_id": "heat-lexical",
+        "category": "lexical",
+        "relevant": [
+          "heat:v1:0"
+        ],
+        "returned": [
+          "heat:v1:0",
+          "radiation:v1:0",
+          "convection:v1:0",
+          "thesis:v1:0",
+          "opportunity:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.03200204813108039,
+          0.03200204813108039,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 78.991,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "heat-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "heat:v1:0"
+        ],
+        "returned": [
+          "heat:v1:0",
+          "circle:v1:0",
+          "evaporation:v1:0",
+          "opportunity:v1:0",
+          "present:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 85.196,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "convection-lexical",
+        "category": "lexical",
+        "relevant": [
+          "convection:v1:0"
+        ],
+        "returned": [
+          "convection:v1:0",
+          "heat:v1:0",
+          "thesis:v1:0",
+          "opportunity:v1:0",
+          "evaporation:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.03225806451612903,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 86.051,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "convection-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "convection:v1:0"
+        ],
+        "returned": [
+          "convection:v1:0",
+          "heat:v1:0",
+          "evaporation:v1:0",
+          "water:v1:0",
+          "probability:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.031754032258064516,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 93.641,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "radiation-lexical",
+        "category": "lexical",
+        "relevant": [
+          "radiation:v1:0"
+        ],
+        "returned": [
+          "radiation:v1:0",
+          "heat:v1:0",
+          "unit:v1:0",
+          "past:v1:0",
+          "convection:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.0315136476426799,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015873015873015872
+        ],
+        "elapsed_ms": 94.277,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "radiation-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "radiation:v1:0"
+        ],
+        "returned": [
+          "radiation:v1:0",
+          "respire:v1:0",
+          "water:v1:0",
+          "heat:v1:0",
+          "probability:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 88.656,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "photo-lexical",
+        "category": "lexical",
+        "relevant": [
+          "photo:v1:0"
+        ],
+        "returned": [
+          "photo:v1:0",
+          "respire:v1:0",
+          "thesis:v1:0",
+          "present:v1:0",
+          "opportunity:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.03225806451612903,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 95.162,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "photo-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "photo:v1:0"
+        ],
+        "returned": [
+          "photo:v1:0"
+        ],
+        "scores": [
+          0.01639344262295082
+        ],
+        "elapsed_ms": 49.467,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "respire-lexical",
+        "category": "lexical",
+        "relevant": [
+          "respire:v1:0"
+        ],
+        "returned": [
+          "respire:v1:0",
+          "photo:v1:0",
+          "energy:v1:0",
+          "probability:v1:0",
+          "opportunity:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 94.003,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "respire-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "respire:v1:0"
+        ],
+        "returned": [
+          "respire:v1:0",
+          "heat:v1:0",
+          "radiation:v1:0",
+          "thesis:v1:0",
+          "density:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 87.88,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "neutral-lexical",
+        "category": "lexical",
+        "relevant": [
+          "neutral:v1:0"
+        ],
+        "returned": [
+          "neutral:v1:0",
+          "opportunity:v1:0",
+          "photo:v1:0",
+          "heat:v1:0",
+          "thesis:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 79.683,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "neutral-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "neutral:v1:0"
+        ],
+        "returned": [
+          "neutral:v1:0",
+          "water:v1:0",
+          "convection:v1:0",
+          "photo:v1:0",
+          "fraction:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 81.467,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "oxidation-lexical",
+        "category": "lexical",
+        "relevant": [
+          "oxidation:v1:0"
+        ],
+        "returned": [
+          "oxidation:v1:0",
+          "photo:v1:0",
+          "respire:v1:0",
+          "energy:v1:0",
+          "unit:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 77.308,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "oxidation-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "oxidation:v1:0"
+        ],
+        "returned": [
+          "oxidation:v1:0",
+          "unit:v1:0",
+          "energy:v1:0",
+          "heat:v1:0",
+          "present:v1:0"
+        ],
+        "scores": [
+          0.03252247488101534,
+          0.01639344262295082,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 86.911,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "speed-lexical",
+        "category": "lexical",
+        "relevant": [
+          "speed:v1:0"
+        ],
+        "returned": [
+          "speed:v1:0",
+          "density:v1:0",
+          "heat:v1:0",
+          "evaporation:v1:0",
+          "fraction:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 82.853,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "speed-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "speed:v1:0"
+        ],
+        "returned": [
+          "evaporation:v1:0",
+          "speed:v1:0",
+          "past:v1:0",
+          "present:v1:0",
+          "energy:v1:0"
+        ],
+        "scores": [
+          0.01639344262295082,
+          0.01639344262295082,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625
+        ],
+        "elapsed_ms": 77.251,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "friction-lexical",
+        "category": "lexical",
+        "relevant": [
+          "friction:v1:0"
+        ],
+        "returned": [
+          "friction:v1:0",
+          "heat:v1:0",
+          "present:v1:0",
+          "energy:v1:0",
+          "opportunity:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 86.809,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "friction-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "friction:v1:0"
+        ],
+        "returned": [
+          "friction:v1:0",
+          "energy:v1:0",
+          "present:v1:0",
+          "heat:v1:0",
+          "past:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 76.24,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "energy-lexical",
+        "category": "lexical",
+        "relevant": [
+          "energy:v1:0"
+        ],
+        "returned": [
+          "energy:v1:0",
+          "probability:v1:0",
+          "photo:v1:0",
+          "water:v1:0",
+          "heat:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 86.649,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "energy-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "energy:v1:0"
+        ],
+        "returned": [
+          "energy:v1:0",
+          "heat:v1:0",
+          "convection:v1:0",
+          "radiation:v1:0",
+          "respire:v1:0"
+        ],
+        "scores": [
+          0.03252247488101534,
+          0.01639344262295082,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 80.073,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "fraction-lexical",
+        "category": "lexical",
+        "relevant": [
+          "fraction:v1:0"
+        ],
+        "returned": [
+          "fraction:v1:0",
+          "energy:v1:0",
+          "respire:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872
+        ],
+        "elapsed_ms": 70.17,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "fraction-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "fraction:v1:0"
+        ],
+        "returned": [
+          "fraction:v1:0",
+          "opportunity:v1:0",
+          "thesis:v1:0",
+          "probability:v1:0",
+          "past:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 86.718,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "probability-lexical",
+        "category": "lexical",
+        "relevant": [
+          "probability:v1:0"
+        ],
+        "returned": [
+          "probability:v1:0",
+          "speed:v1:0",
+          "unit:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872
+        ],
+        "elapsed_ms": 75.978,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "probability-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "probability:v1:0"
+        ],
+        "returned": [
+          "probability:v1:0",
+          "present:v1:0",
+          "energy:v1:0",
+          "respire:v1:0",
+          "heat:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 82.521,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "simile-lexical",
+        "category": "lexical",
+        "relevant": [
+          "simile:v1:0"
+        ],
+        "returned": [
+          "simile:v1:0",
+          "present:v1:0",
+          "energy:v1:0",
+          "probability:v1:0",
+          "opportunity:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 83.86,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "simile-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "simile:v1:0"
+        ],
+        "returned": [
+          "opportunity:v1:0",
+          "heat:v1:0",
+          "thesis:v1:0",
+          "probability:v1:0",
+          "density:v1:0"
+        ],
+        "scores": [
+          0.01639344262295082,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 74.532,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "thesis-lexical",
+        "category": "lexical",
+        "relevant": [
+          "thesis:v1:0"
+        ],
+        "returned": [
+          "thesis:v1:0",
+          "simile:v1:0",
+          "heat:v1:0",
+          "present:v1:0",
+          "energy:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 80.144,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "thesis-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "thesis:v1:0"
+        ],
+        "returned": [
+          "thesis:v1:0",
+          "present:v1:0",
+          "simile:v1:0",
+          "probability:v1:0",
+          "past:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 83.343,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "past-lexical",
+        "category": "lexical",
+        "relevant": [
+          "past:v1:0"
+        ],
+        "returned": [
+          "past:v1:0",
+          "present:v1:0",
+          "fraction:v1:0",
+          "speed:v1:0",
+          "opportunity:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.03225806451612903,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 84.573,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "past-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "past:v1:0"
+        ],
+        "returned": [
+          "past:v1:0",
+          "present:v1:0"
+        ],
+        "scores": [
+          0.01639344262295082,
+          0.016129032258064516
+        ],
+        "elapsed_ms": 53.818,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "water-lexical",
+        "category": "lexical",
+        "relevant": [
+          "water:v1:0"
+        ],
+        "returned": [
+          "water:v1:0",
+          "convection:v1:0",
+          "photo:v1:0",
+          "neutral:v1:0",
+          "respire:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 82.44,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "water-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "water:v1:0"
+        ],
+        "returned": [
+          "water:v1:0",
+          "neutral:v1:0",
+          "photo:v1:0",
+          "radiation:v1:0",
+          "evaporation:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 81.775,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "opportunity-lexical",
+        "category": "lexical",
+        "relevant": [
+          "opportunity:v1:0"
+        ],
+        "returned": [
+          "opportunity:v1:0",
+          "photo:v1:0",
+          "thesis:v1:0",
+          "simile:v1:0",
+          "water:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 83.435,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "opportunity-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "opportunity:v1:0"
+        ],
+        "returned": [
+          "opportunity:v1:0",
+          "thesis:v1:0",
+          "present:v1:0",
+          "past:v1:0",
+          "heat:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 82.134,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "circle-lexical",
+        "category": "lexical",
+        "relevant": [
+          "circle:v1:0"
+        ],
+        "returned": [
+          "circle:v1:0",
+          "density:v1:0",
+          "evaporation:v1:0",
+          "heat:v1:0",
+          "fraction:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 75.489,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "circle-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "circle:v1:0"
+        ],
+        "returned": [
+          "circle:v1:0",
+          "friction:v1:0",
+          "thesis:v1:0",
+          "opportunity:v1:0",
+          "fraction:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 79.563,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "unit-lexical",
+        "category": "lexical",
+        "relevant": [
+          "unit:v1:0"
+        ],
+        "returned": [
+          "unit:v1:0",
+          "density:v1:0",
+          "speed:v1:0",
+          "present:v1:0",
+          "energy:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 81.039,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "unit-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "unit:v1:0"
+        ],
+        "returned": [
+          "unit:v1:0",
+          "speed:v1:0",
+          "present:v1:0",
+          "opportunity:v1:0",
+          "fraction:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 83.226,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "density-lexical",
+        "category": "lexical",
+        "relevant": [
+          "density:v1:0"
+        ],
+        "returned": [
+          "density:v1:0",
+          "heat:v1:0",
+          "fraction:v1:0",
+          "thesis:v1:0",
+          "opportunity:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 81.599,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "density-paraphrase",
+        "category": "paraphrase",
+        "relevant": [
+          "density:v1:0"
+        ],
+        "returned": [
+          "density:v1:0",
+          "heat:v1:0",
+          "radiation:v1:0",
+          "evaporation:v1:0",
+          "friction:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 78.613,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "old",
+        "category": "old_version",
+        "relevant": [],
+        "returned": [],
+        "scores": [],
+        "elapsed_ms": 34.273,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "revoked",
+        "category": "revoked",
+        "relevant": [],
+        "returned": [],
+        "scores": [],
+        "elapsed_ms": 30.616,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "foreign-deny",
+        "category": "cross_assignment",
+        "relevant": [],
+        "returned": [],
+        "scores": [],
+        "elapsed_ms": 29.105,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "foreign-own",
+        "category": "cross_assignment",
+        "relevant": [
+          "foreign:v1:0"
+        ],
+        "returned": [
+          "foreign:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164
+        ],
+        "elapsed_ms": 58.824,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "new",
+        "category": "current_version",
+        "relevant": [
+          "versioned:v2:0"
+        ],
+        "returned": [
+          "versioned:v2:0"
+        ],
+        "scores": [
+          0.03278688524590164
+        ],
+        "elapsed_ms": 57.306,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "absent",
+        "category": "no_answer",
+        "relevant": [],
+        "returned": [],
+        "scores": [],
+        "elapsed_ms": 30.174,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "weak",
+        "category": "single_han_weak",
+        "relevant": [],
+        "returned": [
+          "heat:v1:0",
+          "present:v1:0",
+          "thesis:v1:0",
+          "probability:v1:0",
+          "opportunity:v1:0"
+        ],
+        "scores": [
+          0.01639344262295082,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 72.285,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      },
+      {
+        "case_id": "long",
+        "category": "long_query",
+        "relevant": [
+          "speed:v1:0"
+        ],
+        "returned": [
+          "speed:v1:0",
+          "density:v1:0",
+          "friction:v1:0",
+          "unit:v1:0",
+          "neutral:v1:0"
+        ],
+        "scores": [
+          0.03278688524590164,
+          0.016129032258064516,
+          0.015873015873015872,
+          0.015625,
+          0.015384615384615385
+        ],
+        "elapsed_ms": 77.355,
+        "cross_assignment_leaks": 0,
+        "stale_hits": 0,
+        "actual_mode": "hybrid",
+        "degraded": false
+      }
+    ]
+  },
+  "limitations": [
+    "synthetic_not_teacher_double_review",
+    "no_large_scale_ANN",
+    "min_cosine_not_calibrated",
+    "no_semantic_answer_correctness_claim"
+  ]
+}

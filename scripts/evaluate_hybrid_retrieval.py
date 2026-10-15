@@ -195,7 +195,7 @@ async def evaluate(args, data, digest):
         await embedding.aclose()
         # An existing deterministic fixture belongs to another/incomplete run. Never delete it.
         if created:
-            # Query our own rows even if import/index failed. Never touch dev data/bucket/other keys.
+            # Query only this committed fixture, even if import/index failed.
             async with factory() as session:
                 own_keys = (
                     await session.scalars(
