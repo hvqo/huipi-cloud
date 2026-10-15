@@ -279,3 +279,13 @@ proposal JSON 以每次执行不同的不可变 Key 上传到私有 S3，`grade_
 Copilot注册表新增`search_assignment_materials(query, top_k)`，scope只能来自BusinessTools。检索前关闭数据库短只读事务，随后有界读取S3并验证原文/Chunk SHA和字符范围，再检查当前状态。模型只见逻辑ID、版本、片段及citation_id，不见存储定位字段。每轮单独收集实际命中的Citation；最终回答必须使用`[[citation_id]]`，严格资料模式要求本轮有效引用，即使模型跳过检索也拒绝无证据完成；一般说明模式保留无工具回答。程序拒绝未知/缺少/畸形引用，再检查当前版本、原文SHA及范围。检索无命中由服务端直接结束为证据不足；工具故障沿用不重试与禁用后续工具规则。
 
 引用校验只证明来源身份与时点有效性，不证明答案语义正确；资料内指令始终是不可信数据。不同系统之间没有原子读取保证，返回后的撤销不回溯改变历史回答。没有跨作业授权或公网RAG服务。未来P4-B2可以在同一Retriever/Chunk合同下接入本地Embedding、Dense/Sparse召回与本地Rerank；生成和Agent规划继续使用云端API，本轮没有新增模型或向量服务依赖。
+
+## 本地Embedding与混合召回选型
+
+P4-B2A先采用最多4096 Chunk的进程内float32精确向量缓存，不增加向量数据库或迁移。PostgreSQL仍是作用域、许可、active版本的权威，S3仍按原文SHA验证。缓存不是权威索引；重启、模型升级或缓存淘汰后需重新构建。先在过滤后的当前作用域内计算余弦相似度，再按同一Chunk身份融合，不能全局召回后过滤。无ANN或大规模检索承诺。
+
+pgvector需要变更PostgreSQL扩展镜像和迁移；Qdrant增加跨存储索引生命周期和部署负担。当前容量无需引入这两者。内存缓存构建失败不修改知识资料或登记成功状态，批次完成后一次发布，进程中断只丢失缓存，不产生跨数据库提交歧义。
+
+主要实验模型选择Qwen/Qwen3-Embedding-0.6B，固定官方快照97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3，1024维、last-token pooling、L2归一化。官方Apache-2.0许可证，支持中英混合和query指令；相较BGE-small-zh-v1.5（MIT、512维、512 token、较轻量），其多语能力与本机完整缓存利于本轮验证，不表示已证明质量最优。模型原生32K上下文，本适配器限制512 token且拒绝截断、每批最多8条；400字符Chunk不保证一定少于512 token，超额需明确失败。RTX3060 12GB可实验部署；CPU只在显式配置时使用，不自动切换远程Embedding或生成模型。
+
+参考：[Qwen官方模型卡](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B)、[BGE官方模型卡](https://huggingface.co/BAAI/bge-small-zh-v1.5)。生成、规划、Tool Calling保持云端DeepSeek；本地模型仅做Embedding，不做回答或评分。Rerank留到后续。
