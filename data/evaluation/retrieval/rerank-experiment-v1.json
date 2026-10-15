@@ -1,0 +1,52 @@
+{
+  "version": "rerank-experiment-v1",
+  "dataset_sha256": "4d77966f2f0016ab8d2b4b6ca04e3c43f0a056d08b17478adb52ceec7ee04136",
+  "reference_origin": "synthetic_curated_reference",
+  "human_review_status": "unreviewed",
+  "top_k": [
+    1,
+    3,
+    5
+  ],
+  "candidate_limit": 20,
+  "rrf_k": 60,
+  "dense_min_cosine": 0.55,
+  "rerank_min_score": 0.5,
+  "reranker_model_id": "Qwen/Qwen3-Reranker-0.6B",
+  "reranker_revision": "e61197ed45024b0ed8a2d74b80b4d909f1255473",
+  "embedding_model_id": "Qwen/Qwen3-Embedding-0.6B",
+  "embedding_revision": "97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3",
+  "retriever_versions": {
+    "lexical": "unicode-weighted-coverage-v1",
+    "dense": "scoped-cosine-v1",
+    "hybrid_candidates": "scoped-rrf-candidates20-v1",
+    "rerank": "scoped-rerank-v1"
+  },
+  "max_pair_tokens": 1024,
+  "batch_size": 4,
+  "score_contract": "softmax-yes-no-last-token-float32-v1",
+  "fixture_identity": "uuid5 dataset sha+scope alias; refuse existing fixture; cleanup only committed owned fixture",
+  "metrics": {
+    "candidate_recall": "macro fraction relevant in before-rerank top20; answerable only",
+    "recall": "macro fraction relevant in final topK; answerable only",
+    "mrr": "first relevant reciprocal rank; answerable only",
+    "ndcg": "gain=2^grade-1; discount=log2(rank+1); normalize by ideal graded labels; answerable only",
+    "precision": "relevant returned / requested K; answerable only",
+    "no_answer_false_hit": "any final hit / all 15 unanswerable queries",
+    "latency": "warm search including PG/S3, model tokenization/scoring; nearest-rank P50/P95"
+  },
+  "acceptance": {
+    "cross_assignment_leaks": 0,
+    "stale_hits": 0,
+    "source_validation_failure_must_not_succeed": true,
+    "candidate_recall_at_20_min": 0.95,
+    "rerank_no_answer_false_hits_max": "not more than Dense final false-hit case count",
+    "rerank_recall_at_1_min": "Dense recall@1 minus 0.02",
+    "dense_correct_top1_retention_min": 0.95,
+    "rerank_ndcg_at_5_min": "Dense nDCG@5 minus 0.02",
+    "warm_p95_ms_max": 3000,
+    "own_gpu_memory_mib_max": 10240,
+    "reranker_error_count_max": 0
+  },
+  "production_default": "lexical regardless of synthetic result; qualified teacher review and independent acceptance still required"
+}

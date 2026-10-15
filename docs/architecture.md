@@ -289,3 +289,13 @@ pgvector需要变更PostgreSQL扩展镜像和迁移；Qdrant增加跨存储索�
 主要实验模型选择Qwen/Qwen3-Embedding-0.6B，固定官方快照97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3，1024维、last-token pooling、L2归一化。官方Apache-2.0许可证，支持中英混合和query指令；相较BGE-small-zh-v1.5（MIT、512维、512 token、较轻量），其多语能力与本机完整缓存利于本轮验证，不表示已证明质量最优。模型原生32K上下文，本适配器限制512 token且拒绝截断、每批最多8条；400字符Chunk不保证一定少于512 token，超额需明确失败。RTX3060 12GB可实验部署；CPU只在显式配置时使用，不自动切换远程Embedding或生成模型。
 
 参考：[Qwen官方模型卡](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B)、[BGE官方模型卡](https://huggingface.co/BAAI/bge-small-zh-v1.5)。生成、规划、Tool Calling保持云端DeepSeek；本地模型仅做Embedding，不做回答或评分。Rerank留到后续。
+
+## 本地Rerank两阶段检索
+
+Reranker选用Qwen/Qwen3-Reranker-0.6B，固定快照e61197ed45024b0ed8a2d74b80b4d909f1255473，Apache-2.0。它与候选BGE-reranker-v2-m3（约568M、同为Apache-2.0、多语cross-encoder）均可做中文和中英相关性排序；本轮选择已完整缓存、可沿用现有Transformers环境的Qwen，不宣称其质量或速度更优。[Qwen模型卡](https://huggingface.co/Qwen/Qwen3-Reranker-0.6B)、[BGE模型卡](https://huggingface.co/BAAI/bge-reranker-v2-m3)。
+
+本地进程只计算官方yes/no末位logit softmax，不调用generate或输出自然语言；生成/规划仍为云端DeepSeek。Qwen原生32K，本适配器限制query+document+模板总计1024 token、batch=4，超限拒绝而非截断。CPU为显式备选，不自动远程回退。实际显存与时延在独立评测记录中给出，未完成实测前不声称部署可用。
+
+内部retrieve_candidates最多20条，64KiB；外部search/top_k仍最多5条、沿用工具字节预算。候选进入精排前验证PG作用域/active/许可及S3原文SHA，精排后与最终回答前再验证。Dense/Hybrid候选分别精排，不默认融合更优。精排故障仅在显式配置时恢复原始排序；PG/S3/SHA与权限错误不能降级掩盖。Embedding与Rerank的独立故障及最终实际模式都留在轨迹中。
+
+两个独立本地模型进程共享控制器Semaphore，串行加载/计算，但可共同常驻。它不是跨CLI进程的GPU调度或显存硬配额。部署限定单GPU上一个Copilot实例；跨进程并行与其他GPU软件仍可能OOM。各子进程超时/取消杀进程组并有界回收，无新增向量数据库、Schema或评分业务协议。
