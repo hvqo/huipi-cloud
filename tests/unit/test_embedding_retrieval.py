@@ -255,3 +255,12 @@ async def test_final_false_truncation_flag_is_included_in_exact_byte_budget():
     verifier.max_result_bytes += 1
     result = await bounded_output(verifier, uuid4(), [hit], 1)
     assert len(result.model_dump_json().encode()) + 128 == verifier.max_result_bytes
+
+
+def test_evaluation_fixture_identities_are_stable_across_runs_and_scope_separated():
+    from huipi_cloud.modules.knowledge.evaluation import evaluation_scope_ids
+
+    first = evaluation_scope_ids("a" * 64, ["A", "B"])
+    assert first == evaluation_scope_ids("a" * 64, ["B", "A"])
+    assert first["A"] != first["B"]
+    assert first != evaluation_scope_ids("b" * 64, ["A", "B"])

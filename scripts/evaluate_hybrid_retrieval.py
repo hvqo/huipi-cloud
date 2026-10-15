@@ -21,7 +21,11 @@ from huipi_cloud.infrastructure.embedding.local import LocalEmbeddingProvider
 from huipi_cloud.infrastructure.storage.s3 import S3ObjectStorage
 from huipi_cloud.modules.assignments.models import Assignment
 from huipi_cloud.modules.knowledge.chunking import sha256
-from huipi_cloud.modules.knowledge.evaluation import load_dataset, ranking_metrics
+from huipi_cloud.modules.knowledge.evaluation import (
+    evaluation_scope_ids,
+    load_dataset,
+    ranking_metrics,
+)
 from huipi_cloud.modules.knowledge.hybrid import (
     DENSE_VERSION,
     HYBRID_VERSION,
@@ -74,7 +78,8 @@ async def evaluate(args, data, digest):
         factory, storage, embedding, min_cosine=cfg.embedding_min_cosine, max_result_bytes=16384
     )
     hybrid = HybridRetriever(lexical, dense, allow_lexical_fallback=False)
-    scopes = {alias: uuid4() for alias in {d["assignment"] for d in data["documents"]}}
+    scopes = evaluation_scope_ids(digest, {d["assignment"] for d in data["documents"]})
+    created = False
     keys, logical_ids, metadata = [], {}, {}
     started = datetime.now(UTC).isoformat()
     try:
@@ -88,6 +93,7 @@ async def evaluate(args, data, digest):
                         grade_level="高中",
                     )
                 )
+        created = True  # only after our exclusive fixture Assignment transaction commits
         for doc in data["documents"]:
             aid = scopes[doc["assignment"]]
             did = uuid5(aid, doc["id"])
@@ -187,21 +193,23 @@ async def evaluate(args, data, digest):
         )
     finally:
         await embedding.aclose()
-        # Query our own rows even if import/index failed. Never touch dev data/bucket/other keys.
-        async with factory() as session:
-            own_keys = (
-                await session.scalars(
-                    select(KnowledgeDocument.object_key).where(
-                        KnowledgeDocument.assignment_id.in_(list(scopes.values()))
+        # An existing deterministic fixture belongs to another/incomplete run. Never delete it.
+        if created:
+            # Query our own rows even if import/index failed. Never touch dev data/bucket/other keys.
+            async with factory() as session:
+                own_keys = (
+                    await session.scalars(
+                        select(KnowledgeDocument.object_key).where(
+                            KnowledgeDocument.assignment_id.in_(list(scopes.values()))
+                        )
                     )
+                ).all()
+            for key in set(keys) | set(own_keys):
+                await storage.delete(key)
+            async with factory() as session, session.begin():
+                await session.execute(
+                    delete(Assignment).where(Assignment.id.in_(list(scopes.values())))
                 )
-            ).all()
-        for key in set(keys) | set(own_keys):
-            await storage.delete(key)
-        async with factory() as session, session.begin():
-            await session.execute(
-                delete(Assignment).where(Assignment.id.in_(list(scopes.values())))
-            )
         await engine.dispose()
 
 
@@ -212,7 +220,7 @@ def main():
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     data, digest = load_dataset(args.dataset)
-    manifest_path = args.dataset.with_name("experiment-v2.json")
+    manifest_path = args.dataset.with_name("experiment-v3.json")
     manifest_raw = manifest_path.read_bytes()
     if (
         hashlib.sha256(manifest_raw).hexdigest()

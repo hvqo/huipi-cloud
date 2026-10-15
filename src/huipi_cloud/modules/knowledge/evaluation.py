@@ -4,6 +4,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
+from uuid import NAMESPACE_URL, uuid5
 
 from huipi_cloud.modules.knowledge.chunking import chunk_text
 
@@ -82,3 +83,11 @@ def ranking_metrics(cases):
     result["cross_assignment_leaks"] = sum(c["cross_assignment_leaks"] for c in cases)
     result["stale_hits"] = sum(c["stale_hits"] for c in cases)
     return result
+
+
+def evaluation_scope_ids(dataset_sha, aliases):
+    """Stable only for isolated synthetic evaluation, never a tenant authorization scheme."""
+    return {
+        alias: uuid5(NAMESPACE_URL, f"huipi:retrieval-evaluation:{dataset_sha}:{alias}")
+        for alias in sorted(aliases)
+    }
