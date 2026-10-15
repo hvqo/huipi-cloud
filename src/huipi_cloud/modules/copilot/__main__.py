@@ -11,6 +11,7 @@ from pydantic import ValidationError
 from huipi_cloud.core.config import Settings
 from huipi_cloud.infrastructure.copilot.provider import DeepSeekCopilotProvider
 from huipi_cloud.infrastructure.database.session import dispose_database_engine, session_factory
+from huipi_cloud.infrastructure.storage.dependencies import _configured_storage
 from huipi_cloud.modules.copilot.protocol import CopilotError, CopilotRequest
 from huipi_cloud.modules.copilot.runtime import CopilotRuntime
 from huipi_cloud.modules.copilot.tools import BusinessTools
@@ -22,10 +23,25 @@ async def run(args):
     if args.use_grading_key:
         config = config.model_copy(update={"copilot_api_key": config.grading_api_key})
     try:
-        request = CopilotRequest(assignment_id=args.assignment_id, question=args.question)
+        request = CopilotRequest(
+            assignment_id=args.assignment_id,
+            question=args.question,
+            require_material_evidence=getattr(args, "require_material_evidence", False),
+        )
         provider = DeepSeekCopilotProvider(config)
+        try:
+            storage = _configured_storage()
+        except ValueError:
+            storage = None  # The original four tools do not require object storage.
         runtime = CopilotRuntime(
-            provider, BusinessTools(session_factory, request.assignment_id), config
+            provider,
+            BusinessTools(
+                session_factory,
+                request.assignment_id,
+                storage=storage,
+                max_result_bytes=config.copilot_max_tool_result_bytes,
+            ),
+            config,
         )
         result = await runtime.run(request)
         print(result.model_dump_json(indent=2))
@@ -49,6 +65,11 @@ def main():
     parser = argparse.ArgumentParser(description="受控本地教师Copilot；没有身份认证或成绩发布权限")
     parser.add_argument("--assignment-id", required=True, type=UUID)
     parser.add_argument("--question", required=True)
+    parser.add_argument(
+        "--require-material-evidence",
+        action="store_true",
+        help="材料问答严格模式：即使模型跳过检索也不得无证据完成回答",
+    )
     parser.add_argument(
         "--use-grading-key",
         action="store_true",

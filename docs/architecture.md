@@ -258,10 +258,24 @@ proposal JSON 以每次执行不同的不可变 Key 上传到私有 S3，`grade_
 
 `modules/copilot` 是受控本地 Service/CLI，不注册 FastAPI 对话端点。配置独立为 `COPILOT_*`，默认关闭；外传需要启用和数据授权，API Key 不隐式复用评分配置。`infrastructure/copilot/provider.py` 复用既有有界 HTTP 传输，但使用独立 Chat Completions 文本/tool_calls 合同，不调用评分工作流。当前只允许 DeepSeek Flash，关闭 Thinking，没有本地模型回退和自动重试。新增 LangGraph 1.2.x 仅用于 StateGraph 节点/边和执行状态，不使用预制 Agent、checkpoint、额外任务队列或外部追踪。
 
-输入经 Pydantic 验证后，图执行 `model → tools → model/END`。状态包含消息、待执行工具、已调用指纹、结束状态、用量和预算。固定注册表只有作业概要、分页题目、Rubric 摘要、提交处理状态四个只读工具。Question 与 Submission 必须属于本地操作员显式传入的 Assignment；模型参数不能改变作用域。作业概要等查询使用现有业务模型的有限字段投影；题目归属复用现有 Repository。没有读取答案全文、标准答案或S3私有地址的工具，也没有模型自由SQL/URL/代码执行入口。
+输入经 Pydantic 验证后，图执行 `model → tools → model/END`。状态包含消息、待执行工具、已调用指纹、结束状态、用量和预算。基础注册表包含作业概要、分页题目、Rubric 摘要、提交处理状态四个只读工具；现增加的受限知识检索见下节。Question 与 Submission 必须属于本地操作员显式传入的 Assignment；模型参数不能改变作用域。作业概要等查询使用现有业务模型的有限字段投影；题目归属复用现有 Repository。没有读取答案全文、标准答案或S3私有地址的工具，也没有模型自由SQL/URL/代码执行入口。
 
 工具每次建立短的 PostgreSQL `REPEATABLE READ READ ONLY` 事务，并设置 statement timeout；模型调用不持有数据库事务。候选分数、人工作答确认、人工评分接受/修订、拒绝/重新评分与正式成绩是不同概念；当前工具只读处理索引和人工存在性计数，不提供评分结果。索引状态明确标记未重新验证，因此不代表当前来源有效或可评分。缺乏正式登录、RBAC和租户授权是本地使用边界，不能用 reviewer_ref 或命令参数声称已经完成认证。
 
 默认限制4次模型、6次工具、12个节点步骤、16384上下文预算、1024输出Token、8192工具结果字节；单模型30秒、工具5秒、全轮90秒。上下文按UTF-8字节加封装余量估计，费用按Flash高峰无缓存价格提前预留，默认估算上限$0.05；不是服务商硬扣费保证。未知费用的失败也不退还预留。相同工具/参数不会重复执行；失败后禁用后续工具，模型只可说明错误。超限不会无界补问或自动调用本地模型。
 
 内存轨迹和CLI仅输出模型ID、Agent/配置版本、调用顺序、参数/结果hash、状态、字节数、Token和耗时，不记录完整工具正文或reasoning_content，不持久化新审计表。哈希可用于一致性核对，不等同完整可恢复审计。Prompt Injection不能扩充注册表或取消数据库只读，但仍可能影响自然语言解释，模型回答必须核查。[开发指南](development/teacher-copilot.md)说明CLI和扩展约束；[真实验收记录](evaluation/teacher-copilot-validation.md)区分调用、数据库结果与模型解释质量。
+
+## Assignment作用域教师知识检索
+
+`modules/knowledge`只处理受控操作员显式导入的教师参考Markdown/TXT，不扫描S3、不自动读取学生作业、OCR、标准答案或评分/复核产物。许可是操作员的synthetic/authorized声明，不代表已经实现真实教师认证。导入、撤销、历史和原文检索均为本地CLI，没有新增匿名HTTP入口。
+
+`KnowledgeDocument.id`标识不可变来源版本；`document_id`标识逻辑资料，绑定Assignment。版本保存source_version、原文SHA、输入元数据摘要、许可、chunker版本、状态、私有S3定位和UTC时间。`KnowledgeChunk`通过document_version_id外键指向唯一来源版本，保存有界索引正文、顺序、原文Unicode半开范围、`/text` pointer和文本SHA。原文在私有S3，PG中的小块文本用于本轮词法索引；不是把学生PDF二进制塞进数据库。
+
+相同输入摘要幂等；改变正文或元数据建立新版本，旧active版本标为superseded。Assignment行锁、版本/输入唯一约束、每逻辑资料唯一active的部分索引约束保护并发；新版本和全部Chunk同事务提交，失败回滚旧版本状态。撤销保留原文和Chunk但退出当前检索。S3每次使用独立UUID对象，不覆盖旧对象。明确回滚和并发输家尽力清理；COMMIT结果未知、取消或进程崩溃可留下孤立对象，不能因一次空查询删除，当前没有跨系统原子提交或GC。
+
+确定性分块最多400码点，优先段落/标题边界，overlap 48，ID绑定版本、顺序、范围和hash；不按UTF-8字节切断中文。Retriever接口区分`search`与`validate_citations`。当前实现为NFKC/casefold的中文单字/二元组和英文数字词覆盖率，排序使用固定平局规则；不是BM25、概率、语义置信度或教学评分。查询强制Assignment与active许可过滤，容量与工具字节预算有硬边界，输出说明truncated。
+
+Copilot注册表新增`search_assignment_materials(query, top_k)`，scope只能来自BusinessTools。检索前关闭数据库短只读事务，随后有界读取S3并验证原文/Chunk SHA和字符范围，再检查当前状态。模型只见逻辑ID、版本、片段及citation_id，不见存储定位字段。每轮单独收集实际命中的Citation；最终回答必须使用`[[citation_id]]`，严格资料模式要求本轮有效引用，即使模型跳过检索也拒绝无证据完成；一般说明模式保留无工具回答。程序拒绝未知/缺少/畸形引用，再检查当前版本、原文SHA及范围。检索无命中由服务端直接结束为证据不足；工具故障沿用不重试与禁用后续工具规则。
+
+引用校验只证明来源身份与时点有效性，不证明答案语义正确；资料内指令始终是不可信数据。不同系统之间没有原子读取保证，返回后的撤销不回溯改变历史回答。没有跨作业授权或公网RAG服务。未来P4-B2可以在同一Retriever/Chunk合同下接入本地Embedding、Dense/Sparse召回与本地Rerank；生成和Agent规划继续使用云端API，本轮没有新增模型或向量服务依赖。

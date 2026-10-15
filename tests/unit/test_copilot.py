@@ -136,7 +136,7 @@ async def test_injection_cannot_expand_scope_and_registry_is_fixed():
         )
     )
     assert result.finish_reason == "tool_not_allowed" and not t.calls
-    assert len(tool_schemas()) == 4
+    assert len(tool_schemas()) == 5
     with pytest.raises(CopilotError, match="scope_mismatch"):
         await CopilotRuntime(p, t, Settings(_env_file=None)).run(
             CopilotRequest(assignment_id=uuid4(), question="任意查询")
@@ -431,3 +431,18 @@ async def test_cli_disabled_error_is_safe_and_does_not_call_network(monkeypatch,
     code = await cli.run(Namespace(assignment_id=uuid4(), question="说明", use_grading_key=False))
     assert code == 1
     assert json.loads(capsys.readouterr().err)["code"] == "remote_copilot_not_authorized"
+
+
+@pytest.mark.anyio
+async def test_strict_material_mode_rejects_answer_when_model_skips_retrieval():
+    tools = MemoryTools()
+    p = ScriptedProvider([reply(content="没有查资料却试图作出课程事实回答。")])
+    result = await CopilotRuntime(p, tools, Settings(_env_file=None)).run(
+        CopilotRequest(
+            assignment_id=tools.assignment_id,
+            question="请根据本作业资料回答",
+            require_material_evidence=True,
+        )
+    )
+    assert result.status == "stopped" and result.finish_reason == "material_evidence_required"
+    assert result.answer == "" and result.citations == [] and not tools.calls

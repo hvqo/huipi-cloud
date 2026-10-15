@@ -17,7 +17,7 @@
 - **Rubric 候选评分**：受控本地 CLI 可调用配置的文本模型，为每个评分项生成候选分数、理由和可核验的原文引用；不会发布成绩，也不会修改人工复核记录。
 - **候选评分人工复核**：受控本地 CLI 可接受、修订、拒绝候选分数或标记需要重新评分，并保留不可变修订历史；记录不等于正式成绩。
 
-- **教师 Copilot**：受控本地 CLI 可调用云端模型查询指定作业、题目、Rubric 和提交处理状态；只读、不发布成绩。
+- **教师 Copilot**：受控本地 CLI 可调用云端模型查询指定作业、题目、Rubric 和提交处理状态，检索显式导入的教师资料并校验来源引用；只读、不发布成绩。
 
 ## 系统架构
 
@@ -121,6 +121,7 @@ API 文档位于 <http://127.0.0.1:8000/docs>，存活检查为 `GET /api/v1/hea
 - [Rubric 候选评分 CLI 指南](docs/development/grade-proposals.md)
 - [候选评分人工复核 CLI 指南](docs/development/grade-review.md)
 - [教师 Copilot 本地 CLI](docs/development/teacher-copilot.md)
+- [教师知识材料与来源检索](docs/development/scoped-retrieval.md)
 - [路线图](docs/roadmap.md)
 - [视觉证据评测方法与基线](docs/evaluation/visual-evidence.md)
 - [题目来源对齐评测说明](docs/evaluation/answer-alignment.md)

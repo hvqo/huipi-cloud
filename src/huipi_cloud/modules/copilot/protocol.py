@@ -8,7 +8,9 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-AGENT_VERSION = "teacher-copilot-v1"
+from huipi_cloud.modules.knowledge.schemas import RetrievalHit
+
+AGENT_VERSION = "teacher-copilot-retrieval-v1"
 
 
 class StrictModel(BaseModel):
@@ -24,6 +26,7 @@ class CopilotError(Exception):
 class CopilotRequest(StrictModel):
     assignment_id: UUID
     question: str = Field(min_length=1, max_length=2000)
+    require_material_evidence: bool = Field(default=False, strict=True)
 
     @field_validator("question")
     @classmethod
@@ -84,6 +87,7 @@ class CopilotResult(StrictModel):
     known_usage_cost_upper_usd: str = "0"
     elapsed_ms: int = 0
     trace: list[TraceEvent] = Field(default_factory=list)
+    citations: list[RetrievalHit] = Field(default_factory=list)
     limitations: list[str] = Field(
         default_factory=lambda: [
             "local_operator_scope_is_not_authentication",
