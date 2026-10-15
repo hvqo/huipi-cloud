@@ -16,3 +16,5 @@
 所有示例默认用于本地受控环境。项目尚未实现登录、RBAC 或租户隔离。
 
 - [教师知识材料导入、版本与作用域检索](scoped-retrieval.md)
+
+- [本地Embedding与混合检索](hybrid-retrieval.md)

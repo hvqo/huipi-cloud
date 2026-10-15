@@ -77,5 +77,11 @@ class RetrievalHit(Contract):
 class SearchResult(Contract):
     hits: list[RetrievalHit] = Field(default_factory=list, max_length=5)
     truncated: bool = False
+    retrieval_mode: Literal["lexical", "dense", "hybrid"] = "lexical"
+    requested_mode: Literal["lexical", "dense", "hybrid"] | None = None
+    degraded: bool = False
+    degradation_reason: str | None = None
+    embedding_model_version: str | None = None
+    index_status: Literal["not_used", "not_ready", "ready", "rebuilt"] = "not_used"
     retriever_version: str = RETRIEVER_VERSION
     score_meaning: str = "lexical_query_term_coverage_not_teaching_score_or_probability"

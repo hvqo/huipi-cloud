@@ -9,6 +9,7 @@ from pydantic import Field, ValidationError
 from sqlalchemy import func, select, text
 from sqlalchemy.exc import SQLAlchemyError
 
+from huipi_cloud.infrastructure.embedding.protocol import EmbeddingError
 from huipi_cloud.modules.answer_alignment.models import AnswerAlignmentArtifact
 from huipi_cloud.modules.answer_review.models import AnswerReviewDecision
 from huipi_cloud.modules.assignments import repository as assignment_repository
@@ -109,10 +110,21 @@ class BusinessTools:
             session_factory, storage, max_result_bytes=max_result_bytes
         )
 
+    @property
+    def retrieval_config(self):
+        dense = getattr(self.retriever, "dense", self.retriever)
+        embedding = getattr(dense, "embedding", None)
+        return {
+            "implementation": type(self.retriever).__name__,
+            "embedding_digest": embedding.identity.digest if embedding else None,
+            "min_cosine": getattr(dense, "min_cosine", None),
+            "allow_lexical_fallback": getattr(self.retriever, "allow_lexical_fallback", False),
+        }
+
     async def validate_citations(self, hits):
         try:
             await self.retriever.validate_citations(self.assignment_id, hits)
-        except KnowledgeError as error:
+        except (KnowledgeError, EmbeddingError) as error:
             raise CopilotError(error.code) from None
 
     async def execute(self, name: str, args: StrictModel) -> dict:
@@ -141,7 +153,7 @@ class BusinessTools:
         try:
             result = await self.retriever.search(self.assignment_id, args.query, args.top_k)
             return result.model_dump(mode="json")
-        except KnowledgeError as error:
+        except (KnowledgeError, EmbeddingError) as error:
             raise CopilotError(error.code) from None
 
     async def _read(self, session, name, args):

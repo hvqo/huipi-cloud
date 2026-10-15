@@ -1,0 +1,30 @@
+{
+  "version": "retrieval-experiment-v1",
+  "dataset_sha256": "675ff665a65abfede6117e3e6b1b84dcb6c67e682cbc746f983299dae64798f4",
+  "top_k": [
+    1,
+    3,
+    5
+  ],
+  "rrf_k": 60,
+  "min_cosine": 0.55,
+  "model_id": "Qwen/Qwen3-Embedding-0.6B",
+  "model_revision": "97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3",
+  "dimension": 1024,
+  "query_instruction": "Given a teacher question, retrieve relevant teaching reference passages",
+  "metrics": {
+    "recall": "mean(relevant returned / all relevant) over answerable cases",
+    "mrr": "mean reciprocal first relevant rank over answerable cases",
+    "precision": "relevant returned / requested K; macro over answerable cases",
+    "no_answer_false_hit": "any returned / all unanswerable cases",
+    "leakage": "foreign assignment returned chunk count",
+    "stale": "non-active version returned chunk count",
+    "latency": "warm search end-to-end incl PG/S3 checks; nearest-rank P50/P95"
+  },
+  "limits": {
+    "scope_chunks": 4096,
+    "chunk_chars": 400,
+    "local_only": true
+  },
+  "default_policy": "lexical until independent quality review; no threshold tuning in this run"
+}

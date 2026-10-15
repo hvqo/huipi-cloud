@@ -9,14 +9,17 @@ from uuid import UUID
 
 from pydantic import ValidationError
 
+from huipi_cloud.core.config import Settings
 from huipi_cloud.infrastructure.database.session import dispose_database_engine, session_factory
+from huipi_cloud.infrastructure.embedding.protocol import EmbeddingError
 from huipi_cloud.infrastructure.storage.dependencies import _configured_storage
-from huipi_cloud.modules.knowledge.retriever import LexicalRetriever
+from huipi_cloud.modules.knowledge.dependencies import configured_retriever
 from huipi_cloud.modules.knowledge.schemas import MAX_SOURCE_BYTES, ImportRequest, KnowledgeError
 from huipi_cloud.modules.knowledge.service import import_material, material_history, revoke_material
 
 
 async def run(args):
+    retriever = None
     try:
         if session_factory is None:
             raise KnowledgeError("knowledge_database_unavailable")
@@ -51,20 +54,19 @@ async def run(args):
                     mode="json"
                 )
             else:
+                retriever = configured_retriever(session_factory, storage, Settings())
                 output = (
-                    await LexicalRetriever(session_factory, storage).search(
-                        args.assignment_id, args.query, args.top_k
-                    )
+                    await retriever.search(args.assignment_id, args.query, args.top_k)
                 ).model_dump(mode="json")
         print(json.dumps(output, ensure_ascii=False, indent=2))
         return 0
-    except (KnowledgeError, ValidationError) as error:
+    except (KnowledgeError, EmbeddingError, ValidationError) as error:
         print(
             json.dumps(
                 {
                     "status": "failed",
                     "code": error.code
-                    if isinstance(error, KnowledgeError)
+                    if isinstance(error, (KnowledgeError, EmbeddingError))
                     else "knowledge_invalid_input",
                 }
             ),
@@ -72,6 +74,8 @@ async def run(args):
         )
         return 1
     finally:
+        if retriever is not None and hasattr(retriever, "aclose"):
+            await retriever.aclose()
         await dispose_database_engine()
 
 

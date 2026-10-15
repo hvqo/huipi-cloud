@@ -62,6 +62,9 @@ class TraceEvent(StrictModel):
     arguments_sha256: str | None = None
     result_sha256: str | None = None
     result_bytes: int = 0
+    retrieval_mode: str | None = None
+    degraded: bool | None = None
+    degradation_reason: str | None = None
     model_id: str | None = None
     prompt_tokens: int = 0
     completion_tokens: int = 0

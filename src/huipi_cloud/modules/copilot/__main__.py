@@ -11,10 +11,13 @@ from pydantic import ValidationError
 from huipi_cloud.core.config import Settings
 from huipi_cloud.infrastructure.copilot.provider import DeepSeekCopilotProvider
 from huipi_cloud.infrastructure.database.session import dispose_database_engine, session_factory
+from huipi_cloud.infrastructure.embedding.protocol import EmbeddingError
 from huipi_cloud.infrastructure.storage.dependencies import _configured_storage
 from huipi_cloud.modules.copilot.protocol import CopilotError, CopilotRequest
 from huipi_cloud.modules.copilot.runtime import CopilotRuntime
 from huipi_cloud.modules.copilot.tools import BusinessTools
+from huipi_cloud.modules.knowledge.dependencies import configured_retriever
+from huipi_cloud.modules.knowledge.schemas import KnowledgeError
 
 
 async def run(args):
@@ -22,6 +25,7 @@ async def run(args):
     # Explicit, optional reuse of the locally configured key, never silent fallback.
     if args.use_grading_key:
         config = config.model_copy(update={"copilot_api_key": config.grading_api_key})
+    retriever = None
     try:
         request = CopilotRequest(
             assignment_id=args.assignment_id,
@@ -33,12 +37,17 @@ async def run(args):
             storage = _configured_storage()
         except ValueError:
             storage = None  # The original four tools do not require object storage.
+        retriever = configured_retriever(session_factory, storage, config)
+        if hasattr(retriever, "prepare"):
+            # Warm local model/index before any paid call or 5s Agent tool deadline.
+            await retriever.prepare(request.assignment_id)
         runtime = CopilotRuntime(
             provider,
             BusinessTools(
                 session_factory,
                 request.assignment_id,
                 storage=storage,
+                retriever=retriever,
                 max_result_bytes=config.copilot_max_tool_result_bytes,
             ),
             config,
@@ -46,18 +55,22 @@ async def run(args):
         result = await runtime.run(request)
         print(result.model_dump_json(indent=2))
         return 0 if result.status == "completed" else 1
-    except (CopilotError, ValidationError) as error:
+    except (CopilotError, KnowledgeError, EmbeddingError, ValidationError) as error:
         print(
             json.dumps(
                 {
                     "status": "failed",
-                    "code": error.code if isinstance(error, CopilotError) else "invalid_cli_input",
+                    "code": error.code
+                    if isinstance(error, (CopilotError, KnowledgeError, EmbeddingError))
+                    else "invalid_cli_input",
                 }
             ),
             file=sys.stderr,
         )
         return 1
     finally:
+        if retriever is not None and hasattr(retriever, "aclose"):
+            await retriever.aclose()
         await dispose_database_engine()
 
 

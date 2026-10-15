@@ -41,6 +41,8 @@ markers = [
     "grade_llm_e2e: requires the explicitly enabled local real text-grading model",
     "deepseek_e2e: explicitly paid opt-in synthetic DeepSeek API smoke; never enabled in CI",
     "copilot_e2e: explicitly paid opt-in synthetic DeepSeek Agent; never enabled in CI",
+    "embedding_e2e: explicit local model weights/runtime required; never downloaded in CI",
+    "hybrid_cloud_e2e: paid opt-in synthetic DeepSeek plus local Embedding; never CI",
     "retrieval_e2e: explicitly paid opt-in synthetic DeepSeek RAG; never enabled in CI",
 ]
 
