@@ -207,8 +207,10 @@ class BusinessTools:
                         "points": str(r.points),
                         "sort_order": r.sort_order,
                     }
-                    for r in rows
+                    for r in rows[:100]
                 ],
+                "returned_criteria_count": min(len(rows), 100),
+                "criteria_truncated": len(rows) > 100,
                 "meaning": "rubric_maximum_points_not_student_grades",
             }
         sid = args.submission_id

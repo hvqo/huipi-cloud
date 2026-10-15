@@ -41,7 +41,7 @@ CLI 输出单轮 JSON：答案、状态、结束原因、计数、用量、成�
 
 - `get_assignment_summary({})`：名称、学科、年级、作业状态、题目数和提交数。
 - `list_assignment_questions({limit, offset})`：每页默认 10、最多 25；只列 ID、题号、题型、满分和答案/细则配置状态。不返回标准答案或题干全文。
-- `get_question_rubric_summary({question_id})`：校验 Question 属于作用域；返回顺序、分值和每条最多 300 字的描述，截断有明确标记。
+- `get_question_rubric_summary({question_id})`：校验 Question 属于作用域；返回顺序、分值和每条最多 300 字的描述，截断有明确标记。最多返回100项，`criteria_truncated`表示是否有未返回的评分项，`returned_criteria_count`表示实际返回数量。
 - `get_submission_processing_status({submission_id})`：校验 Submission 属于作用域；返回解析、Canonical/Alignment 索引状态和每题最新人工判断的汇总。不返回学生标识、答案、对象 Key 或凭据。
 
 处理状态标记为 `not_verified_not_scoring_readiness`：只读当前索引，不重新下载 S3、验证来源版本或推断可以评分。人工确认数量可能包含历史来源的判断，不能解释成当前可信评分输入数。所有工具都没有正式成绩信息。

@@ -277,3 +277,29 @@ async def test_real_deepseek_tools_and_answer_opt_in(
     assert all(e.status == "ok" for e in result.trace if e.kind == "tool")
     assert await counts(factory) == before
     assert "10" in result.answer and "1" in result.answer
+
+
+@pytest.mark.anyio
+async def test_rubric_summary_explicitly_marks_row_and_description_truncation(
+    submission_client,
+    recording_minio_storage,
+    postgres_engine,
+):
+    factory, aid, _, qid = await seeded(submission_client, recording_minio_storage, postgres_engine)
+    async with factory() as session, session.begin():
+        session.add_all(
+            [
+                RubricCriterion(
+                    question_id=qid, description="合成细则" * 100, points=1, sort_order=i
+                )
+                for i in range(2, 103)
+            ]
+        )
+    result = await BusinessTools(factory, aid).execute(
+        "get_question_rubric_summary",
+        validate_arguments("get_question_rubric_summary", json.dumps({"question_id": str(qid)})),
+    )
+    assert len(result["criteria"]) == result["returned_criteria_count"] == 100
+    assert result["criteria_truncated"] is True
+    assert result["criteria"][1]["description_truncated"] is True
+    assert len(result["criteria"][1]["description"]) == 300
