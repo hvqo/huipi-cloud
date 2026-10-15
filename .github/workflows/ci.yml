@@ -71,6 +71,8 @@ jobs:
         run: createdb --host 127.0.0.1 --username postgres huipi_cloud_test
         env:
           PGPASSWORD: postgres
+      - name: Independent identity migration round trip
+        run: uv run python scripts/check_identity_migration.py
       - name: Pytest
         run: uv run pytest
       - name: Stop MinIO test service

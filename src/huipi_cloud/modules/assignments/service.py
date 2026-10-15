@@ -26,6 +26,7 @@ from huipi_cloud.modules.assignments.schemas import (
     QuestionCreate,
     RubricReplace,
 )
+from huipi_cloud.modules.identity.models import AssignmentMembership
 
 
 def _require_draft(assignment: Assignment) -> None:
@@ -36,11 +37,17 @@ def _require_draft(assignment: Assignment) -> None:
 async def create_assignment(
     session: AsyncSession,
     payload: AssignmentCreate,
+    *, owner_id: UUID | None = None,
 ) -> Assignment:
     async with session.begin():
         assignment = Assignment(**payload.model_dump())
         session.add(assignment)
         await session.flush()
+        if owner_id is not None:
+            session.add(AssignmentMembership(
+                assignment_id=assignment.id, user_id=owner_id, can_write=True,
+            ))
+            await session.flush()
         result = await repository.get_assignment(session, assignment.id)
         assert result is not None
         return result
@@ -51,8 +58,9 @@ async def list_assignments(
     *,
     limit: int,
     offset: int,
+    user_id: UUID | None = None,
 ) -> list[Assignment]:
-    return await repository.list_assignments(session, limit=limit, offset=offset)
+    return await repository.list_assignments(session, limit=limit, offset=offset, user_id=user_id)
 
 
 async def get_assignment(session: AsyncSession, assignment_id: UUID) -> Assignment:

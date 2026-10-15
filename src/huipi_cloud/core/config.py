@@ -15,10 +15,30 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    @model_validator(mode="after")
+    def validate_identity_config(self) -> Self:
+        from urllib.parse import urlparse
+        for value in (self.auth_issuer, self.auth_jwks_url):
+            if value:
+                parsed = urlparse(value)
+                if (parsed.scheme != "https" or not parsed.hostname or parsed.username
+                        or parsed.password or parsed.fragment or parsed.query):
+                    raise ValueError("OIDC issuer/JWKS 必须为固定 HTTPS URL，无凭据或查询串")
+        if self.auth_jwks_refresh_seconds > self.auth_jwks_cache_seconds:
+            raise ValueError("JWKS refresh cooldown cannot exceed cache lifetime")
+        return self
+
     app_name: str = "慧批云端"
     app_env: str = "development"
     api_v1_prefix: str = "/api/v1"
     log_level: str = "INFO"
+    # Missing OIDC configuration closes protected HTTP access; there is no anonymous switch.
+    auth_issuer: str | None = Field(default=None, max_length=512)
+    auth_audience: str | None = None
+    auth_jwks_url: str | None = None
+    auth_jwks_cache_seconds: int = Field(default=300, ge=10, le=3600)
+    auth_jwks_refresh_seconds: int = Field(default=10, ge=1, le=60)
+    auth_clock_skew_seconds: int = Field(default=0, ge=0, le=30)
     database_url: str | None = None
     test_database_url: str | None = None
     minio_endpoint_url: str | None = None

@@ -20,6 +20,7 @@ from huipi_cloud.modules.assignments.schemas import (
     RubricRead,
     RubricReplace,
 )
+from huipi_cloud.modules.identity.dependencies import AuthorizedPrincipal
 
 assignment_router = APIRouter(prefix="/assignments", tags=["assignments"])
 question_router = APIRouter(tags=["questions"])
@@ -40,8 +41,10 @@ DOMAIN_ERROR_RESPONSES = {
     status_code=status.HTTP_201_CREATED,
     responses=DATABASE_ERROR_RESPONSES,
 )
-async def create_assignment(payload: AssignmentCreate, session: DbSession) -> AssignmentDetail:
-    return await service.create_assignment(session, payload)
+async def create_assignment(
+    payload: AssignmentCreate, session: DbSession, principal: AuthorizedPrincipal,
+) -> AssignmentDetail:
+    return await service.create_assignment(session, payload, owner_id=principal.user_id)
 
 
 @assignment_router.get(
@@ -51,10 +54,14 @@ async def create_assignment(payload: AssignmentCreate, session: DbSession) -> As
 )
 async def list_assignments(
     session: DbSession,
+    principal: AuthorizedPrincipal,
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> list[AssignmentSummary]:
-    return await service.list_assignments(session, limit=limit, offset=offset)
+    return await service.list_assignments(
+        session, limit=limit, offset=offset,
+        user_id=None if principal.is_admin else principal.user_id,
+    )
 
 
 @assignment_router.get(

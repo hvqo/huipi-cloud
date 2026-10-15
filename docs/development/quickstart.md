@@ -38,6 +38,10 @@ docker compose stop postgres minio
 
 此命令不删除 Compose 数据卷。不要用 `down -v` 清理包含开发数据的环境。
 
+## 教师访问
+
+业务 HTTP 请求需要配置外部 OIDC access token 验证并建立本地 User 与成员授权；缺失配置不会退回匿名访问，见[教师认证与作业授权](teacher-auth.md)。已有作业不会自动授予新教师。
+
 ## 开发验证
 
 ```bash

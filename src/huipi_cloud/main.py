@@ -33,6 +33,7 @@ from huipi_cloud.modules.canonical_documents.errors import (
     CanonicalDocumentNotReadyError,
     CanonicalPageNotFoundError,
 )
+from huipi_cloud.modules.identity.protocol import AccessError
 from huipi_cloud.modules.parsing.errors import ParsingResultNotReadyError
 from huipi_cloud.modules.submissions.errors import (
     InvalidUploadError,
@@ -280,3 +281,13 @@ def _constraint_name(error: IntegrityError) -> str | None:
         if isinstance(name, str):
             return name
     return None
+
+
+@app.exception_handler(AccessError)
+async def access_error_handler(_: Request, error: AccessError) -> JSONResponse:
+    return JSONResponse(
+        status_code=error.status_code, content={"detail": error.code},
+        headers={"Cache-Control": "no-store", **(
+            {"WWW-Authenticate": "Bearer"} if error.status_code == 401 else {}
+        )},
+    )

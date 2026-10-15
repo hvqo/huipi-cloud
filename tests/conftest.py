@@ -5,6 +5,7 @@ import os
 import subprocess
 import sys
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlparse
 from uuid import uuid4
@@ -12,7 +13,7 @@ from uuid import uuid4
 import httpx
 import pytest
 from botocore.exceptions import ClientError
-from sqlalchemy import text
+from sqlalchemy import delete, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -26,6 +27,13 @@ from huipi_cloud.infrastructure.database.session import get_db_session
 from huipi_cloud.infrastructure.storage.dependencies import get_object_storage
 from huipi_cloud.infrastructure.storage.s3 import S3ObjectStorage
 from huipi_cloud.main import app
+from huipi_cloud.modules.identity.dependencies import (
+    authorize_request,
+    get_auth_session,
+    get_current_principal,
+)
+from huipi_cloud.modules.identity.models import User
+from huipi_cloud.modules.identity.protocol import Principal
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -128,7 +136,21 @@ async def client(
         async with session_factory() as session:
             yield session
 
+    # Existing P1-P4 suites test business behavior behind an explicit trusted boundary.
+    # New identity tests remove these two overrides and use real signed JWT/JWKS/PG.
+    async with session_factory() as session, session.begin():
+        operator = User(issuer="https://business-tests.invalid", subject=str(uuid4()),
+                        is_admin=True, is_active=True)
+        session.add(operator)
+        await session.flush()
+        principal = Principal(user_id=operator.id, issuer=operator.issuer,
+                              subject=operator.subject, is_admin=True,
+                              expires_at=datetime.now(UTC) + timedelta(hours=1))
+
     previous_overrides = app.dependency_overrides.copy()
+    app.dependency_overrides[authorize_request] = lambda: principal
+    app.dependency_overrides[get_current_principal] = lambda: principal
+    app.dependency_overrides[get_auth_session] = override_session
     app.dependency_overrides[get_db_session] = override_session
     try:
         transport = httpx.ASGITransport(app=app)
@@ -139,6 +161,7 @@ async def client(
         app.dependency_overrides.update(previous_overrides)
         async with postgres_engine.begin() as connection:
             await connection.execute(text("TRUNCATE TABLE assignments CASCADE"))
+            await connection.execute(delete(User).where(User.id == principal.user_id))
 
 
 class RecordingS3Storage:
