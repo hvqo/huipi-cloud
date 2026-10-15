@@ -488,10 +488,12 @@ async def test_real_database_unavailability_is_safe_for_retriever():
 
 
 @pytest.mark.anyio
+@pytest.mark.parametrize("retrieval_mode", ["lexical", "hybrid"])
 async def test_retrieval_and_agent_leave_real_candidate_and_human_revision_unchanged(
     submission_client,
     postgres_engine,
     recording_minio_storage,
+    retrieval_mode,
 ):
     from huipi_cloud.modules.grading.grade_review_models import GradeReviewRevision
     from huipi_cloud.modules.grading.grade_review_service import record_grade_review
@@ -524,7 +526,15 @@ async def test_retrieval_and_agent_leave_real_candidate_and_human_revision_uncha
     async with factory() as session:
         aid = await session.scalar(select(Submission.assignment_id).where(Submission.id == sid))
     await put(factory, recording_minio_storage, aid)
-    result = await run_agent(factory, recording_minio_storage, aid, RagProvider())
+    if retrieval_mode == "hybrid":
+        from tests.integration.test_hybrid_retrieval import retrievers
+
+        _, _, _, retriever = retrievers(factory, recording_minio_storage)
+        result = await CopilotRuntime(
+            RagProvider(), BusinessTools(factory, aid, retriever=retriever), Settings()
+        ).run(CopilotRequest(assignment_id=aid, question="查询热传导"))
+    else:
+        result = await run_agent(factory, recording_minio_storage, aid, RagProvider())
     assert result.status == "completed"
     assert await snapshot() == before
 

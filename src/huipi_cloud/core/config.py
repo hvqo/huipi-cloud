@@ -70,6 +70,13 @@ class Settings(BaseSettings):
         ge=4096,
         le=16 * 1024 * 1024,
     )
+    retrieval_mode: Literal["lexical", "dense", "hybrid"] = "lexical"
+    embedding_python: str = ""
+    embedding_model_path: str = ""
+    embedding_device: Literal["cpu", "cuda"] = "cpu"
+    embedding_timeout_seconds: float = Field(default=30, gt=0, le=120)
+    embedding_min_cosine: float = Field(default=0.55, ge=-1, le=1)
+    retrieval_allow_lexical_fallback: bool = True
     grading_enabled: bool = False
     copilot_enabled: bool = False
     copilot_api_key: SecretStr | None = None

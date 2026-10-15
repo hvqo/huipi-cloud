@@ -6,7 +6,7 @@
 
 仅导入操作员确认可用的教师参考Markdown/TXT，编码为UTF-8，最大64KiB。必须明确声明`synthetic`或`authorized`并提供原文件SHA-256。许可声明是操作员确认，系统不能自动判断版权、隐私或真实授权。
 
-不自动索引学生原始作业、个人信息、未确认OCR、教师私人标准答案、GradeProposal或GradeReview。不枚举现有S3桶，不安装Embedding、Rerank、OCR或向量数据库。正文需由操作员确认不含私有凭据或不应外传的数据；字段投影不等于自动正文脱敏。
+不自动索引学生原始作业、个人信息、未确认OCR、教师私人标准答案、GradeProposal或GradeReview。不枚举现有S3桶，词法模式不安装Embedding、Rerank、OCR或向量数据库。正文需由操作员确认不含私有凭据或不应外传的数据；字段投影不等于自动正文脱敏。
 
 ## 初始化与导入
 
@@ -90,4 +90,4 @@ RUN_RETRIEVAL_E2E=1 RETRIEVAL_SYNTHETIC_TRANSFER_AUTHORIZED=1 \
 
 默认CI只用Fake Provider，真实PG/S3；收费E2E显式opt-in且只导入合成文本，不依赖MinerU。真实结果与局限见[检索验收记录](../evaluation/scoped-retrieval.md)。
 
-`Retriever.search(assignment_id, query, top_k)`与`validate_citations`分开，P4-B2可替换召回/排序实现；Chunk的版本、原文范围和SHA保持为来源合同。未来Embedding与Rerank可以本地运行，但不得让向量查询或模型自行决定权限。密集/稀疏融合、Recall@K/MRR、真实资料质量、授权HTTP和教师身份均未实现。
+`Retriever.search(assignment_id, query, top_k)`与`validate_citations`分开，P4-B2可替换召回/排序实现；Chunk的版本、原文范围和SHA保持为来源合同。未来Embedding与Rerank可以本地运行，但不得让向量查询或模型自行决定权限。本地Embedding、混合召回与合成Recall@K/MRR见[混合检索指南](hybrid-retrieval.md)。真实资料质量、授权HTTP和教师身份仍未实现。

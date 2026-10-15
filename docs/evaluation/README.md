@@ -16,3 +16,5 @@
 - [教师 Copilot 云端与业务闭环验收](teacher-copilot-validation.md)
 
 - [作用域知识检索基线与真实合成验收](scoped-retrieval.md)
+
+- [本地Embedding与混合检索基线](hybrid-retrieval.md)
