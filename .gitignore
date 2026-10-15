@@ -85,3 +85,9 @@ dist/
 *.gguf
 *.engine
 *.ckpt
+
+# Frozen synthetic rubric semantics experiments
+!/data/evaluation/grading/rubric-cases-v4-semantics*.json*
+!/data/evaluation/grading/rubric-semantics*.json*
+!/data/evaluation/grading/rubric-semantics-2026-10-14-run-01/
+!/data/evaluation/grading/rubric-semantics-2026-10-14-run-01/**

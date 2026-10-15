@@ -369,3 +369,33 @@ def test_mixed_plain_text_and_unreadable_image_blocks_the_whole_selection():
     assert len(manifest) == 1
     assert manifest[0].representation == "unsupported"
     assert manifest[0].reason_code == "markdown_image_reference"
+
+
+def test_missing_canonical_asset_inventory_is_rejected_before_grade_extraction():
+    from pydantic import ValidationError
+
+    asset = CanonicalAssetReference(
+        kind="stored", asset_id=uuid4(), sha256="e" * 64, size_bytes=1, content_type="image/png"
+    )
+    image = CanonicalContentNode(
+        normalized_type="image",
+        source_type="image",
+        content_kind="scalar",
+        value="",
+        asset_refs=[asset],
+    )
+    document = _document([[image]])
+    payload = document.model_dump(mode="json")
+    payload["assets"] = []
+    with pytest.raises(ValidationError, match="references must resolve"):
+        CanonicalDocument.model_validate(payload)
+
+
+def test_empty_confirmed_text_and_missing_node_have_distinct_source_errors():
+    document = _document([[_scalar("   ")]])
+    region = _region(document, 0, 0, "/pages/0/blocks/0/content", 0, 3)
+    with pytest.raises(_InvalidReviewSource, match="review_region_has_no_text"):
+        _extract_confirmed_regions(document, [region])
+    missing = region.model_copy(update={"content_pointer": "/pages/0/blocks/99/content"})
+    with pytest.raises(_InvalidReviewSource, match="review_region_not_in_canonical"):
+        _extract_confirmed_regions(document, [missing])

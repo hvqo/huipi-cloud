@@ -1,0 +1,106 @@
+{
+  "dataset_sha256": "f769ccef257d11393e6b5b7ddfc088a6c7859ba6fe88f909a9ec9647191aedbf",
+  "ordering": "one request per case; no retries; excluded probes stay outside score metrics",
+  "request_order": [
+    {
+      "case_id": "v3-linear-arithmetic-slip",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-mixed-right-wrong",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-partial-quarter",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-english-keyword",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-eq-no-work",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-lucky-arithmetic",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-quadratic-factor",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-completing-square",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-fraction-equivalent",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-decimal-strict",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-linear-system",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-physics-wrong-unit",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-chem-balanced",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-chem-unbalanced",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-bio-photosynthesis",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-chinese-paraphrase",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-english-answer-only",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-cross-page-proof",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-rubric-boundary",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "v3-quote-short-duplicate",
+      "kind": "scored",
+      "mode": "quote_selection"
+    }
+  ]
+}

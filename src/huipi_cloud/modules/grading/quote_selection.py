@@ -21,6 +21,11 @@ from huipi_cloud.modules.grading.proposal_service import (
     _validate_quote_reference,
 )
 from huipi_cloud.modules.grading.protocol import GradeInputDocument
+from huipi_cloud.modules.grading.quote_semantics import (
+    SEMANTIC_CHECKLIST,
+    SEMANTIC_RULES,
+    SEMANTICS_PROMPT_VERSION,
+)
 
 QUOTE_SELECTION_PROMPT_VERSION = "rubric-quote-selection-v1"
 QUOTE_SELECTION_SCHEMA = "huipi.grading.quote-selection"
@@ -74,6 +79,22 @@ def build_quote_selection_prompt(document: GradeInputDocument) -> str:
     ]
     payload["response_shape_rule"] += "；quote_selection只提交片段索引和原文，不提交字符偏移"
     return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+
+
+def quote_selection_prompts(
+    document: GradeInputDocument, prompt_version: str = QUOTE_SELECTION_PROMPT_VERSION
+) -> tuple[str, str]:
+    """Select a frozen experimental prompt; v1 remains the default."""
+    if prompt_version == QUOTE_SELECTION_PROMPT_VERSION:
+        return QUOTE_SELECTION_SYSTEM_PROMPT, build_quote_selection_prompt(document)
+    if prompt_version != SEMANTICS_PROMPT_VERSION:
+        raise ValueError("unknown_quote_selection_prompt_version")
+    payload = json.loads(build_quote_selection_prompt(document))
+    payload["criterion_reasoning_checklist"] = SEMANTIC_CHECKLIST
+    return (
+        QUOTE_SELECTION_SYSTEM_PROMPT + "\n" + SEMANTIC_RULES,
+        json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
+    )
 
 
 def locate_quote(

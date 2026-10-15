@@ -1,0 +1,514 @@
+{
+  "cost_estimate": {
+    "budget_usd": "0.50",
+    "definition": "UTF-8输入字节和协议开销作为保守上界；未缓存输入价与含思考输出价估算，不是账单或账户硬限额。按Provider用量估算，非最终账单。",
+    "input_token_budget_bound": 80101,
+    "input_usd_per_million": "0.30",
+    "output_token_cap": 90112,
+    "output_usd_per_million": "1.20",
+    "preflight_estimate_usd": "0.1321647",
+    "reported_completion_tokens": 4655,
+    "reported_prompt_tokens": 18429,
+    "reported_token_estimate_usd": "0.0111147",
+    "request_cap": 22,
+    "usage_complete": true
+  },
+  "dataset_sha256": "3fbfbf97d8fb2495b9dd5ebb02f17809877a50a86553accfad17b3e595753c9d",
+  "groups": {
+    "quote_selection": {
+      "counts": {
+        "abstention_cases": 0,
+        "dataset_cases": 22,
+        "excluded_uncertain_reference_cases": 2,
+        "included_reference_cases": 20,
+        "not_requested_cases": 0,
+        "prediction_status_counts": {
+          "candidate": 20
+        },
+        "protocol_valid_replies": 20,
+        "provider_requests_sent": 20,
+        "requested_cases": 20,
+        "valid_candidate_cases": 20
+      },
+      "criterion_score": {
+        "absolute_error_sum": "0.00",
+        "by_case_criterion": {
+          "h4-acid-ionic/equation": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-acid-ionic/spectator": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-average-division-error/calculation": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-average-division-error/setup": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-average-division-error/unit": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-climate-keywords/cause": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-climate-keywords/relation": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-counterexample/example": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-counterexample/logic": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-cross-page-moles/mass": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-cross-page-moles/molar": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-domain-boundary/restriction": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-domain-boundary/set": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-equivalent-ratio/value": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-explicit-half-credit/factors": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-fraction-required/fraction": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-injection-wrong-answer/result": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-literature-evidence-only/citation": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-literature-evidence-only/effect": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-lucky-area/calculation": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-lucky-area/formula": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-lucky-area/result": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-mean-full/mean": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-mean-full/sum": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-osmosis-paraphrase/direction": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-osmosis-paraphrase/gradient": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-oxygen-unbalanced/balance": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-oxygen-unbalanced/species": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-rainshadow/down": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-rainshadow/up": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-sampling-partial/identify": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-sampling-partial/reason": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-speed-unit-missing/distance": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-speed-unit-missing/result": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-speed-unit-missing/time": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-time-conversion-missing/conversion": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-time-conversion-missing/product": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-work-wrong-unit/operation": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          },
+          "h4-work-wrong-unit/unit": {
+            "absolute_error_sum": "0.00",
+            "count": 1,
+            "exact": {
+              "denominator": 1,
+              "numerator": 1
+            },
+            "mae": "0.0000",
+            "over_count": 0,
+            "under_count": 0
+          }
+        },
+        "exact": {
+          "denominator": 39,
+          "numerator": 39
+        },
+        "mae": "0.0000",
+        "mae_denominator": 39,
+        "offsetting_error_case_ids": [],
+        "offsetting_error_cases": 0,
+        "over_count": 0,
+        "sample_count": 39,
+        "under_count": 0
+      },
+      "runtime_usage": {
+        "completion_token_count": 20,
+        "completion_tokens_total": 4452,
+        "elapsed_ms_count": 20,
+        "elapsed_ms_mean": 1586.9,
+        "elapsed_ms_p50": 1527,
+        "elapsed_ms_p95": 2198,
+        "elapsed_ms_total": 31738,
+        "percentile_definition": "nearest_rank; actual provider attempts including failures",
+        "prompt_token_count": 20,
+        "prompt_tokens_total": 16881
+      },
+      "total_score": {
+        "absolute_error_sum": "0.00",
+        "exact": {
+          "denominator": 20,
+          "numerator": 20
+        },
+        "mae": "0.0000",
+        "mae_denominator": 20,
+        "over_count": 0,
+        "sample_count": 20,
+        "under_count": 0,
+        "within_tolerance": {
+          "denominator": 20,
+          "numerator": 20
+        }
+      }
+    }
+  },
+  "max_output_tokens": 4096,
+  "model": "deepseek-flash",
+  "output_dir": "data/evaluation/grading/rubric-semantics-2026-10-14-run-01/holdout-v1",
+  "paired_outcomes": null,
+  "thinking_mode": "disabled",
+  "timeout_seconds": 120.0
+}

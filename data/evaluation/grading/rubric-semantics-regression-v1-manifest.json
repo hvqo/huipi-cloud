@@ -1,0 +1,14 @@
+{
+  "manifest_version": "1.0",
+  "dataset_version": "3-regression-1",
+  "dataset_sha256": "f769ccef257d11393e6b5b7ddfc088a6c7859ba6fe88f909a9ec9647191aedbf",
+  "case_count": 20,
+  "labels_locked_before_predictions": true,
+  "model_predictions_used_to_author_labels": false,
+  "teacher_double_scored": false,
+  "acceptance_criteria_locked_before_model_requests": true,
+  "acceptance_criteria_file": "rubric-semantics-acceptance-v1.json",
+  "acceptance_criteria_sha256": "e3bdd99c1cd80bbfaa2098c4ad18cc1250b7e0418cc5cf8e3c3e64b38cbb7b47",
+  "reference_label_provenance": "synthetic_curated_reference",
+  "source_v3_sha256": "de59c65d31669043ffd49c062318861a542bd039cfd04c7df4d4645dc4df620d"
+}

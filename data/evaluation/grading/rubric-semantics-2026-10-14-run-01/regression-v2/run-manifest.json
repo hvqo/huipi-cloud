@@ -1,0 +1,32 @@
+{
+  "abstention_probe_case_ids": [],
+  "abstention_probe_count": 0,
+  "configured_model": "deepseek-flash",
+  "cost_preflight": {
+    "budget_usd": "0.50",
+    "definition": "UTF-8输入字节和协议开销作为保守上界；未缓存输入价与含思考输出价估算，不是账单或账户硬限额。",
+    "input_token_budget_bound": 118860,
+    "input_usd_per_million": "0.30",
+    "output_token_cap": 81920,
+    "output_usd_per_million": "1.20",
+    "preflight_estimate_usd": "0.133962",
+    "request_cap": 20
+  },
+  "data_classification": "synthetic_only",
+  "dataset_sha256": "f769ccef257d11393e6b5b7ddfc088a6c7859ba6fe88f909a9ec9647191aedbf",
+  "invalid_response_retries": 0,
+  "max_output_tokens": 4096,
+  "preregistered": {
+    "acceptance_criteria_sha256": "e3bdd99c1cd80bbfaa2098c4ad18cc1250b7e0418cc5cf8e3c3e64b38cbb7b47",
+    "manifest_file": "rubric-semantics-regression-v1-manifest.json",
+    "manifest_sha256": "2954ed873695dc51efabc581bf17715768f536f947c83f00c4d0c1b22a0d3bcb"
+  },
+  "prompt_version": "rubric-quote-selection-v2",
+  "provider": "openai_compatible",
+  "request_cap": 20,
+  "requested_call_count": 20,
+  "standalone_quote_selection": true,
+  "strict_predictions_sha256": null,
+  "thinking_mode": "disabled",
+  "timeout_seconds": 120.0
+}

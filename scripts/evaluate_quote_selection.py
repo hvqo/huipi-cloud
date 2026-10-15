@@ -40,6 +40,8 @@ from huipi_cloud.modules.grading.quote_evaluation import (  # noqa: E402
     request_experiment_prediction,
     unrequested_prediction,
 )
+from huipi_cloud.modules.grading.quote_selection import QUOTE_SELECTION_PROMPT_VERSION  # noqa: E402
+from huipi_cloud.modules.grading.quote_semantics import SEMANTICS_PROMPT_VERSION  # noqa: E402
 
 DEFAULT_DATASET = PROJECT_ROOT / "data/evaluation/grading/rubric-cases-v2.json"
 
@@ -47,6 +49,11 @@ DEFAULT_DATASET = PROJECT_ROOT / "data/evaluation/grading/rubric-cases-v2.json"
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     parser.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)
+    parser.add_argument(
+        "--prompt-version",
+        choices=[QUOTE_SELECTION_PROMPT_VERSION, SEMANTICS_PROMPT_VERSION],
+        default=QUOTE_SELECTION_PROMPT_VERSION,
+    )
     actions = parser.add_mutually_exclusive_group()
     actions.add_argument("--dry-run", action="store_true")
     actions.add_argument("--run-model", action="store_true")
@@ -212,12 +219,14 @@ async def _run_model(args) -> dict:
 
     cost_preflight = _cost_preflight(all_requested, config, args)
     mode = "quote_selection"
-    predictions = [unrequested_prediction(case, mode) for case in dataset.cases]
+    predictions = [
+        unrequested_prediction(case, mode, args.prompt_version) for case in dataset.cases
+    ]
     args.output_dir.mkdir(parents=True, exist_ok=False)
 
     def snapshot():
         document = create_experiment_predictions(
-            dataset, digest, mode, provider, config, predictions
+            dataset, digest, mode, provider, config, predictions, prompt_version=args.prompt_version
         )
         _write_checkpoint(
             args.output_dir / "quote_selection-predictions.json", document.model_dump(mode="json")
@@ -238,6 +247,7 @@ async def _run_model(args) -> dict:
         args.output_dir / "run-manifest.json",
         {
             "dataset_sha256": digest,
+            "prompt_version": args.prompt_version,
             "strict_predictions_sha256": (
                 hashlib.sha256(strict_raw).hexdigest() if strict_raw is not None else None
             ),
@@ -269,7 +279,7 @@ async def _run_model(args) -> dict:
                 "dataset_version": dataset.dataset_version,
                 "dataset_sha256": digest,
                 "model_id": provider.model_id,
-                "prompt_version": "rubric-quote-selection-v1",
+                "prompt_version": args.prompt_version,
                 "expected_behavior": "abstain",
                 "score_metrics_included": False,
                 "cases": [],
@@ -279,11 +289,15 @@ async def _run_model(args) -> dict:
     request_order = []
     for index, case in enumerate(dataset.cases):
         if case.reference_status == "included":
-            prediction = await request_experiment_prediction(case, mode, provider, config)
+            prediction = await request_experiment_prediction(
+                case, mode, provider, config, prompt_version=args.prompt_version
+            )
             predictions[index] = prediction
             request_order.append({"case_id": case.case_id, "mode": mode, "kind": "scored"})
         elif case.case_id in probe_ids:
-            prediction = await request_experiment_prediction(case, mode, provider, config)
+            prediction = await request_experiment_prediction(
+                case, mode, provider, config, prompt_version=args.prompt_version
+            )
             probe_predictions.append(prediction)
             request_order.append(
                 {
@@ -300,7 +314,7 @@ async def _run_model(args) -> dict:
                     "dataset_version": dataset.dataset_version,
                     "dataset_sha256": digest,
                     "model_id": provider.model_id,
-                    "prompt_version": "rubric-quote-selection-v1",
+                    "prompt_version": args.prompt_version,
                     "expected_behavior": "abstain",
                     "score_metrics_included": False,
                     "cases": [item.model_dump(mode="json") for item in probe_predictions],
@@ -428,7 +442,9 @@ def _cost_preflight(cases, config: Settings, args) -> dict:
         raise ValueError("deepseek_prices_and_budget_must_be_finite_positive")
     input_bound = 0
     for case in cases:
-        system, user = experiment_prompts(case, "quote_selection")
+        system, user = experiment_prompts(
+            case, "quote_selection", getattr(args, "prompt_version", QUOTE_SELECTION_PROMPT_VERSION)
+        )
         _check_prompt_budget(system, user, config)
         input_bound += (
             len(system.encode("utf-8"))
@@ -509,16 +525,23 @@ def main() -> int:
             )
         else:
             modes = ["strict", "quote_selection"] if args.mode == "paired" else [args.mode]
-            config = Settings()
-            included_cases = [
-                case for case in dataset.cases if case.reference_status == "included"
-            ]
+            config = Settings().model_copy(
+                update={
+                    **(
+                        {"grading_max_output_tokens": args.max_output_tokens}
+                        if args.max_output_tokens
+                        else {}
+                    ),
+                    **(
+                        {"grading_timeout_seconds": args.timeout_seconds}
+                        if args.timeout_seconds
+                        else {}
+                    ),
+                }
+            )
+            included_cases = [case for case in dataset.cases if case.reference_status == "included"]
             uncertain_cases = (
-                [
-                    case
-                    for case in dataset.cases
-                    if case.reference_status == "excluded_uncertain"
-                ]
+                [case for case in dataset.cases if case.reference_status == "excluded_uncertain"]
                 if args.probe_excluded_uncertain
                 else []
             )
@@ -527,7 +550,9 @@ def main() -> int:
             for mode in modes:
                 sizes = []
                 for case in dry_cases:
-                    system, user = experiment_prompts(case, mode)
+                    system, user = experiment_prompts(
+                        case, mode, args.prompt_version if mode == "quote_selection" else None
+                    )
                     _check_prompt_budget(system, user, config)
                     sizes.append(len(system.encode()) + len(user.encode()))
                 prompt_sizes[mode] = max(sizes)
@@ -538,6 +563,7 @@ def main() -> int:
                 cost_preflight = _cost_preflight(dry_cases, config, args)
             report = {
                 "mode": "dry_run",
+                "prompt_version": args.prompt_version,
                 "dataset_version": dataset.dataset_version,
                 "dataset_sha256": digest,
                 "dataset_cases": len(dataset.cases),

@@ -1,0 +1,116 @@
+{
+  "dataset_sha256": "3fbfbf97d8fb2495b9dd5ebb02f17809877a50a86553accfad17b3e595753c9d",
+  "ordering": "one request per case; no retries; excluded probes stay outside score metrics",
+  "request_order": [
+    {
+      "case_id": "h4-mean-full",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "h4-average-division-error",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "h4-lucky-area",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "h4-time-conversion-missing",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "h4-speed-unit-missing",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "h4-equivalent-ratio",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "h4-fraction-required",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "h4-osmosis-paraphrase",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "h4-climate-keywords",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "h4-acid-ionic",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "h4-oxygen-unbalanced",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "h4-work-wrong-unit",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "h4-domain-boundary",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "h4-rainshadow",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "h4-counterexample",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "h4-literature-evidence-only",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "h4-sampling-partial",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "h4-explicit-half-credit",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "h4-cross-page-moles",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "h4-injection-wrong-answer",
+      "kind": "scored",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "h4-missing-triangle",
+      "kind": "excluded_uncertain_abstention_probe",
+      "mode": "quote_selection"
+    },
+    {
+      "case_id": "h4-cropped-proof",
+      "kind": "excluded_uncertain_abstention_probe",
+      "mode": "quote_selection"
+    }
+  ]
+}
