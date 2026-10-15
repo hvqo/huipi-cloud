@@ -172,3 +172,40 @@ async def test_budget_and_agent_trace_are_explicit_without_new_tool_permissions(
     search.max_result_bytes = 200
     with pytest.raises(KnowledgeError, match="budget_too_small"):
         await search.search(aid, "热传导", 1)
+
+
+@pytest.mark.anyio
+async def test_version_replacement_never_reuses_old_reranked_citation(
+    client,
+    postgres_engine,
+    recording_minio_storage,
+):
+    factory, aid = await assignment(client, postgres_engine)
+    original = await put(factory, recording_minio_storage, aid)
+    _, scorer, search = wrapper(factory, recording_minio_storage)
+    first = await search.search(aid, "热传导", 1)
+    await put(
+        factory,
+        recording_minio_storage,
+        aid,
+        "热传导新版本接触传热。",
+        document_id=original.document_id,
+    )
+    second = await search.search(aid, "热传导", 1)
+    assert second.hits[0].source_version == 2
+    assert first.hits[0].chunk_id != second.hits[0].chunk_id
+    with pytest.raises(KnowledgeError, match="citation_source_stale"):
+        await search.validate_citations(aid, first.hits)
+    assert scorer.calls[-1] == [second.hits[0].chunk_id]
+
+
+@pytest.mark.anyio
+async def test_database_and_storage_failures_cannot_be_converted_to_rerank_fallback():
+    from huipi_cloud.modules.knowledge.retriever import LexicalRetriever
+
+    source = LexicalRetriever(None, None)
+    scorer = FakeReranker()
+    retriever = RerankRetriever(source, scorer, requested_mode="hybrid_rerank", allow_fallback=True)
+    with pytest.raises(KnowledgeError, match="database_unavailable"):
+        await retriever.search(uuid4(), "材料", 1)
+    assert not scorer.calls

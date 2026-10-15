@@ -488,7 +488,7 @@ async def test_real_database_unavailability_is_safe_for_retriever():
 
 
 @pytest.mark.anyio
-@pytest.mark.parametrize("retrieval_mode", ["lexical", "hybrid"])
+@pytest.mark.parametrize("retrieval_mode", ["lexical", "hybrid", "dense_rerank", "hybrid_rerank"])
 async def test_retrieval_and_agent_leave_real_candidate_and_human_revision_unchanged(
     submission_client,
     postgres_engine,
@@ -526,7 +526,14 @@ async def test_retrieval_and_agent_leave_real_candidate_and_human_revision_uncha
     async with factory() as session:
         aid = await session.scalar(select(Submission.assignment_id).where(Submission.id == sid))
     await put(factory, recording_minio_storage, aid)
-    if retrieval_mode == "hybrid":
+    if retrieval_mode.endswith("_rerank"):
+        from tests.integration.test_rerank_retrieval import wrapper
+
+        _, _, retriever = wrapper(factory, recording_minio_storage, mode=retrieval_mode)
+        result = await CopilotRuntime(
+            RagProvider(), BusinessTools(factory, aid, retriever=retriever), Settings()
+        ).run(CopilotRequest(assignment_id=aid, question="查询热传导"))
+    elif retrieval_mode == "hybrid":
         from tests.integration.test_hybrid_retrieval import retrievers
 
         _, _, _, retriever = retrievers(factory, recording_minio_storage)

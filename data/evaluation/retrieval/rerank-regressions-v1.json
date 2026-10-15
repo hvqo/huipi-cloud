@@ -1,0 +1,50 @@
+{
+  "version": "rerank-regressions-v1",
+  "human_review_status": "unreviewed",
+  "historical_dataset_sha256": "675ff665a65abfede6117e3e6b1b84dcb6c67e682cbc746f983299dae64798f4",
+  "historical_cases": [
+    {
+      "case_id": "speed-paraphrase",
+      "risk": "RRF_tie_can_push_correct_dense_hit_to_second",
+      "status": "not_rerun_in_this_stage"
+    },
+    {
+      "case_id": "simile-paraphrase",
+      "risk": "dense_threshold_miss_and_lexical_weak_overlap",
+      "status": "not_rerun_in_this_stage"
+    }
+  ],
+  "newly_observed_cases": [
+    {
+      "case_id": "pressure-concept",
+      "risk": "candidate_miss_in_dense_and_false_negative_rerank",
+      "status": "technical_observation_needs_human_review"
+    },
+    {
+      "case_id": "refraction-concept",
+      "risk": "candidate_miss_in_dense_and_false_negative_rerank",
+      "status": "technical_observation_needs_human_review"
+    },
+    {
+      "case_id": "parallel-concept",
+      "risk": "hybrid_candidate_recovers_dense_miss_and_rerank_promotes",
+      "status": "technical_observation_needs_human_review"
+    },
+    {
+      "case_id": "old-source",
+      "risk": "current_source_is_topically_related_but_wrong_requested_identifier",
+      "status": "technical_observation_needs_human_review"
+    },
+    {
+      "case_id": "unknown-code",
+      "risk": "identifier_not_present_but_current_source_scored_relevant",
+      "status": "technical_observation_needs_human_review"
+    },
+    {
+      "case_id": "missing-pressure",
+      "risk": "formula_is_not_evidence_of_missing_numeric_value",
+      "status": "technical_observation_needs_human_review"
+    }
+  ],
+  "label_policy": "Frozen references and model outputs unchanged; relevance is not factual answerability."
+}

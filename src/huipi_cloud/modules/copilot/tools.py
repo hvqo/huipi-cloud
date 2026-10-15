@@ -128,7 +128,7 @@ class BusinessTools:
             "candidate_limit": getattr(self.retriever, "candidate_limit", None),
             "rerank_allow_fallback": getattr(self.retriever, "allow_fallback", False),
             "min_cosine": getattr(dense, "min_cosine", None),
-            "allow_lexical_fallback": getattr(self.retriever, "allow_lexical_fallback", False),
+            "allow_lexical_fallback": getattr(base, "allow_lexical_fallback", False),
         }
 
     async def validate_citations(self, hits):

@@ -101,3 +101,4 @@ dist/
 !/data/evaluation/retrieval/experiment-v3.json*
 !/data/evaluation/retrieval/rerank-holdout-v1.json*
 !/data/evaluation/retrieval/rerank-experiment-v1.json*
+!/data/evaluation/retrieval/rerank-regressions-v1.json*

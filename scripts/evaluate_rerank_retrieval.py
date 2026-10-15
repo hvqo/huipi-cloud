@@ -338,18 +338,14 @@ def main():
     parser.add_argument("--run-local", action="store_true")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
-    version = (
-        "rerank-holdout-v1"
-        if args.dataset.name == "rerank-holdout-v1.json"
-        else "scoped-retrieval-v1"
-    )
+    version = "rerank-holdout-v1"
     data, digest = load_dataset(args.dataset, expected_version=version)
     path = ROOT / "rerank-experiment-v1.json"
     raw = path.read_bytes()
     if sha256(raw) != path.with_suffix(".json.sha256").read_text().split()[0]:
         raise ValueError("manifest_sha_mismatch")
     manifest = json.loads(raw)
-    if version == "rerank-holdout-v1" and manifest["dataset_sha256"] != digest:
+    if manifest["dataset_sha256"] != digest:
         raise ValueError("dataset_manifest_mismatch")
     if not args.run_local:
         print(
