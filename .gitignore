@@ -91,3 +91,9 @@ dist/
 !/data/evaluation/grading/rubric-semantics*.json*
 !/data/evaluation/grading/rubric-semantics-2026-10-14-run-01/
 !/data/evaluation/grading/rubric-semantics-2026-10-14-run-01/**
+
+# Frozen synthetic scoped retrieval experiments only
+!/data/evaluation/retrieval/
+/data/evaluation/retrieval/*
+!/data/evaluation/retrieval/scoped-cases-v1.json*
+!/data/evaluation/retrieval/experiment-v1.json*

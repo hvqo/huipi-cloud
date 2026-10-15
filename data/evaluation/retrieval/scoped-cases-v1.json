@@ -1,0 +1,871 @@
+{
+  "dataset_version": "scoped-retrieval-v1",
+  "reference_origin": "synthetic_curated_reference",
+  "human_review_status": "unreviewed",
+  "chunker_version": "paragraph-unicode-v1",
+  "documents": [
+    {
+      "id": "heat",
+      "assignment": "A",
+      "title": "热传导",
+      "text": "# 热传导\n\n热传导是物质直接接触时由高温处向低温处传递能量的方式。金属通常是良导体。",
+      "status": "active",
+      "source_version": 1
+    },
+    {
+      "id": "convection",
+      "assignment": "A",
+      "title": "热对流",
+      "text": "# 热对流\n\n热对流通过液体或气体整体流动传递热量，热空气上升和冷空气下降形成循环。",
+      "status": "active",
+      "source_version": 1
+    },
+    {
+      "id": "radiation",
+      "assignment": "A",
+      "title": "热辐射",
+      "text": "# 热辐射\n\n热辐射依靠电磁波传递能量，不要求物质介质，太阳辐射可以穿过真空到达地球。",
+      "status": "active",
+      "source_version": 1
+    },
+    {
+      "id": "photo",
+      "assignment": "A",
+      "title": "光合作用",
+      "text": "# 光合作用\n\n光合作用中绿色植物利用光能，把二氧化碳和水合成为有机物并释放氧气。",
+      "status": "active",
+      "source_version": 1
+    },
+    {
+      "id": "respire",
+      "assignment": "A",
+      "title": "细胞呼吸",
+      "text": "# 细胞呼吸\n\n细胞有氧呼吸分解葡萄糖，消耗氧气，产生二氧化碳和水并释放可利用的能量。",
+      "status": "active",
+      "source_version": 1
+    },
+    {
+      "id": "neutral",
+      "assignment": "A",
+      "title": "酸碱中和",
+      "text": "# 酸碱中和\n\n酸碱中和反应中酸与碱生成盐和水。氢离子和氢氧根离子结合形成水。",
+      "status": "active",
+      "source_version": 1
+    },
+    {
+      "id": "oxidation",
+      "assignment": "A",
+      "title": "氧化还原",
+      "text": "# 氧化还原\n\n氧化还原反应涉及电子转移。失去电子是氧化，得到电子是还原。",
+      "status": "active",
+      "source_version": 1
+    },
+    {
+      "id": "speed",
+      "assignment": "A",
+      "title": "平均速度",
+      "text": "# 平均速度\n\n平均速度计算为路程除以时间，即v=s/t。单位需要一致，千米每小时可以换算成米每秒。",
+      "status": "active",
+      "source_version": 1
+    },
+    {
+      "id": "friction",
+      "assignment": "A",
+      "title": "滑动摩擦",
+      "text": "# 滑动摩擦\n\n滑动摩擦力阻碍物体间相对滑动。接触面性质和正压力会影响其大小。",
+      "status": "active",
+      "source_version": 1
+    },
+    {
+      "id": "energy",
+      "assignment": "A",
+      "title": "机械能守恒",
+      "text": "# 机械能守恒\n\n只有重力或弹力做功时，动能与势能可以互相转化，机械能总量保持不变。",
+      "status": "active",
+      "source_version": 1
+    },
+    {
+      "id": "fraction",
+      "assignment": "A",
+      "title": "约分",
+      "text": "# 约分\n\n分子和分母同时除以最大公因数可以把分数约成最简形式，例如6/8约分为3/4。",
+      "status": "active",
+      "source_version": 1
+    },
+    {
+      "id": "probability",
+      "assignment": "A",
+      "title": "概率",
+      "text": "# 概率\n\n等可能有限样本空间内，事件概率等于满足条件的结果数除以所有可能结果数。",
+      "status": "active",
+      "source_version": 1
+    },
+    {
+      "id": "simile",
+      "assignment": "A",
+      "title": "比喻",
+      "text": "# 比喻\n\n比喻通过事物之间的相似点把本体比作喻体，使描述更加形象。比喻不等于拟人。",
+      "status": "active",
+      "source_version": 1
+    },
+    {
+      "id": "thesis",
+      "assignment": "A",
+      "title": "论点和论据",
+      "text": "# 论点和论据\n\n论点是作者要证明的观点，论据是用来支持观点的事实或道理。引用事实不能替代明确的观点。",
+      "status": "active",
+      "source_version": 1
+    },
+    {
+      "id": "past",
+      "assignment": "A",
+      "title": "一般过去时",
+      "text": "# 一般过去时\n\n英语一般过去时表示过去发生的动作，规则动词通常加ed，不规则动词需要记忆其过去式。",
+      "status": "active",
+      "source_version": 1
+    },
+    {
+      "id": "water",
+      "assignment": "A",
+      "title": "水循环",
+      "text": "# 水循环\n\n水循环包括蒸发、凝结、降水和径流。太阳能驱动蒸发，水汽凝结可以形成云。",
+      "status": "active",
+      "source_version": 1
+    },
+    {
+      "id": "opportunity",
+      "assignment": "A",
+      "title": "机会成本",
+      "text": "# 机会成本\n\n机会成本是选择一个方案所放弃的其他可行方案中的最大收益，不是所有放弃收益之和。",
+      "status": "active",
+      "source_version": 1
+    },
+    {
+      "id": "circle",
+      "assignment": "A",
+      "title": "圆面积",
+      "text": "# 圆面积\n\n半径为r的圆，其面积S=πr²，周长C=2πr。面积和周长的量纲不同。",
+      "status": "active",
+      "source_version": 1
+    },
+    {
+      "id": "unit",
+      "assignment": "A",
+      "title": "长度单位",
+      "text": "# 长度单位\n\n长度换算中1米等于100厘米。由厘米换成米需要除以100，数字变化不改变实际长度。",
+      "status": "active",
+      "source_version": 1
+    },
+    {
+      "id": "density",
+      "assignment": "A",
+      "title": "密度",
+      "text": "# 密度\n\n密度是物质单位体积的质量，公式ρ=m/V，常用单位为千克每立方米。",
+      "status": "active",
+      "source_version": 1
+    },
+    {
+      "id": "conductor",
+      "assignment": "A",
+      "title": "导体和绝缘体",
+      "text": "# 导体和绝缘体\n\n导体允许电荷自由移动，绝缘体限制电荷定向移动。",
+      "status": "active",
+      "source_version": 1
+    },
+    {
+      "id": "evaporation",
+      "assignment": "A",
+      "title": "蒸发冷却",
+      "text": "# 蒸发冷却\n\n蒸发从液体表面吸收热量，温度、表面积和空气流速影响快慢。",
+      "status": "active",
+      "source_version": 1
+    },
+    {
+      "id": "ratio",
+      "assignment": "A",
+      "title": "比和比例",
+      "text": "# 比和比例\n\n比例表示两个比相等，解比例可以利用内项之积等于外项之积。",
+      "status": "active",
+      "source_version": 1
+    },
+    {
+      "id": "present",
+      "assignment": "A",
+      "title": "一般现在时",
+      "text": "# 一般现在时\n\n一般现在时描述经常发生的动作或客观事实，第三人称单数动词通常加s。",
+      "status": "active",
+      "source_version": 1
+    },
+    {
+      "id": "versioned",
+      "assignment": "A",
+      "title": "合成口令",
+      "text": "旧课程暗号为过期铜铃ZXOLD888。",
+      "status": "superseded",
+      "source_version": 1
+    },
+    {
+      "id": "versioned",
+      "assignment": "A",
+      "title": "合成口令",
+      "text": "新课程暗号为橙色云杉ZXNEW777。",
+      "status": "active",
+      "source_version": 2
+    },
+    {
+      "id": "revoked",
+      "assignment": "A",
+      "title": "已撤销资料",
+      "text": "已撤销课程代号ZXREVOKED111。",
+      "status": "revoked",
+      "source_version": 1
+    },
+    {
+      "id": "foreign",
+      "assignment": "B",
+      "title": "合成口令",
+      "text": "另一作业代号ZXFOREIGN222，标签蓝色鲸鱼。",
+      "status": "active",
+      "source_version": 1
+    }
+  ],
+  "queries": [
+    {
+      "case_id": "heat-lexical",
+      "assignment": "A",
+      "query": "热传导是什么？",
+      "category": "lexical",
+      "relevant": [
+        {
+          "document": "heat",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "heat-paraphrase",
+      "assignment": "A",
+      "query": "两块不同温度的金属贴在一起为什么会传热？",
+      "category": "paraphrase",
+      "relevant": [
+        {
+          "document": "heat",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "convection-lexical",
+      "assignment": "A",
+      "query": "热对流的特征是什么？",
+      "category": "lexical",
+      "relevant": [
+        {
+          "document": "convection",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "convection-paraphrase",
+      "assignment": "A",
+      "query": "房间里暖空气往上冷空气往下循环属于哪种传热？",
+      "category": "paraphrase",
+      "relevant": [
+        {
+          "document": "convection",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "radiation-lexical",
+      "assignment": "A",
+      "query": "热辐射需要介质吗？",
+      "category": "lexical",
+      "relevant": [
+        {
+          "document": "radiation",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "radiation-paraphrase",
+      "assignment": "A",
+      "query": "太阳的能量穿过真空怎样送到地球？",
+      "category": "paraphrase",
+      "relevant": [
+        {
+          "document": "radiation",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "photo-lexical",
+      "assignment": "A",
+      "query": "光合作用释放什么？",
+      "category": "lexical",
+      "relevant": [
+        {
+          "document": "photo",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "photo-paraphrase",
+      "assignment": "A",
+      "query": "plants use sunlight to produce organic matter and which gas?",
+      "category": "paraphrase",
+      "relevant": [
+        {
+          "document": "photo",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "respire-lexical",
+      "assignment": "A",
+      "query": "细胞有氧呼吸消耗什么？",
+      "category": "lexical",
+      "relevant": [
+        {
+          "document": "respire",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "respire-paraphrase",
+      "assignment": "A",
+      "query": "生物把糖分解来获得能量的过程是什么？",
+      "category": "paraphrase",
+      "relevant": [
+        {
+          "document": "respire",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "neutral-lexical",
+      "assignment": "A",
+      "query": "酸碱中和的生成物是什么？",
+      "category": "lexical",
+      "relevant": [
+        {
+          "document": "neutral",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "neutral-paraphrase",
+      "assignment": "A",
+      "query": "酸溶液与碱混合后为什么会形成水和盐？",
+      "category": "paraphrase",
+      "relevant": [
+        {
+          "document": "neutral",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "oxidation-lexical",
+      "assignment": "A",
+      "query": "氧化还原如何判断？",
+      "category": "lexical",
+      "relevant": [
+        {
+          "document": "oxidation",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "oxidation-paraphrase",
+      "assignment": "A",
+      "query": "某粒子丢掉电子属于哪一种变化？",
+      "category": "paraphrase",
+      "relevant": [
+        {
+          "document": "oxidation",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "speed-lexical",
+      "assignment": "A",
+      "query": "平均速度公式是什么？",
+      "category": "lexical",
+      "relevant": [
+        {
+          "document": "speed",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "speed-paraphrase",
+      "assignment": "A",
+      "query": "已知走过的总距离和总用时，怎样求运动快慢？",
+      "category": "paraphrase",
+      "relevant": [
+        {
+          "document": "speed",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "friction-lexical",
+      "assignment": "A",
+      "query": "滑动摩擦力的方向？",
+      "category": "lexical",
+      "relevant": [
+        {
+          "document": "friction",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "friction-paraphrase",
+      "assignment": "A",
+      "query": "物块在粗糙桌面滑动时哪个力阻碍相对运动？",
+      "category": "paraphrase",
+      "relevant": [
+        {
+          "document": "friction",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "energy-lexical",
+      "assignment": "A",
+      "query": "机械能守恒条件？",
+      "category": "lexical",
+      "relevant": [
+        {
+          "document": "energy",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "energy-paraphrase",
+      "assignment": "A",
+      "query": "自由落体时速度增大而高度下降，总的哪种能量不变？",
+      "category": "paraphrase",
+      "relevant": [
+        {
+          "document": "energy",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "fraction-lexical",
+      "assignment": "A",
+      "query": "约分如何做？",
+      "category": "lexical",
+      "relevant": [
+        {
+          "document": "fraction",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "fraction-paraphrase",
+      "assignment": "A",
+      "query": "怎样把一个分数写成不能再同时除的形式？",
+      "category": "paraphrase",
+      "relevant": [
+        {
+          "document": "fraction",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "probability-lexical",
+      "assignment": "A",
+      "query": "概率怎样计算？",
+      "category": "lexical",
+      "relevant": [
+        {
+          "document": "probability",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "probability-paraphrase",
+      "assignment": "A",
+      "query": "抽签时有利结果数与全部结果数的比值叫什么？",
+      "category": "paraphrase",
+      "relevant": [
+        {
+          "document": "probability",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "simile-lexical",
+      "assignment": "A",
+      "query": "比喻与拟人一样吗？",
+      "category": "lexical",
+      "relevant": [
+        {
+          "document": "simile",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "simile-paraphrase",
+      "assignment": "A",
+      "query": "文章将月亮说成玉盘，这是怎样的修辞？",
+      "category": "paraphrase",
+      "relevant": [
+        {
+          "document": "simile",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "thesis-lexical",
+      "assignment": "A",
+      "query": "论点与论据的区别？",
+      "category": "lexical",
+      "relevant": [
+        {
+          "document": "thesis",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "thesis-paraphrase",
+      "assignment": "A",
+      "query": "议论文里支持作者主张的事实叫什么？",
+      "category": "paraphrase",
+      "relevant": [
+        {
+          "document": "thesis",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "past-lexical",
+      "assignment": "A",
+      "query": "一般过去时如何构成？",
+      "category": "lexical",
+      "relevant": [
+        {
+          "document": "past",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "past-paraphrase",
+      "assignment": "A",
+      "query": "English verbs for actions completed yesterday use which tense?",
+      "category": "paraphrase",
+      "relevant": [
+        {
+          "document": "past",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "water-lexical",
+      "assignment": "A",
+      "query": "水循环包括哪些环节？",
+      "category": "lexical",
+      "relevant": [
+        {
+          "document": "water",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "water-paraphrase",
+      "assignment": "A",
+      "query": "地表水变成水汽又落回地面经过什么过程？",
+      "category": "paraphrase",
+      "relevant": [
+        {
+          "document": "water",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "opportunity-lexical",
+      "assignment": "A",
+      "query": "机会成本是不是收益之和？",
+      "category": "lexical",
+      "relevant": [
+        {
+          "document": "opportunity",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "opportunity-paraphrase",
+      "assignment": "A",
+      "query": "做一个选择时被放弃的最佳替代收益叫什么？",
+      "category": "paraphrase",
+      "relevant": [
+        {
+          "document": "opportunity",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "circle-lexical",
+      "assignment": "A",
+      "query": "圆面积公式是什么？",
+      "category": "lexical",
+      "relevant": [
+        {
+          "document": "circle",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "circle-paraphrase",
+      "assignment": "A",
+      "query": "知道圆的半径，求平面覆盖大小应使用哪个式子？",
+      "category": "paraphrase",
+      "relevant": [
+        {
+          "document": "circle",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "unit-lexical",
+      "assignment": "A",
+      "query": "长度单位厘米如何转米？",
+      "category": "lexical",
+      "relevant": [
+        {
+          "document": "unit",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "unit-paraphrase",
+      "assignment": "A",
+      "query": "一根绳子的读数是三百厘米，换成公尺怎样计算？",
+      "category": "paraphrase",
+      "relevant": [
+        {
+          "document": "unit",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "density-lexical",
+      "assignment": "A",
+      "query": "密度公式是什么？",
+      "category": "lexical",
+      "relevant": [
+        {
+          "document": "density",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "density-paraphrase",
+      "assignment": "A",
+      "query": "怎样从质量和体积求每立方米物质有多重？",
+      "category": "paraphrase",
+      "relevant": [
+        {
+          "document": "density",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "old",
+      "assignment": "A",
+      "query": "ZXOLD888",
+      "category": "old_version",
+      "relevant": []
+    },
+    {
+      "case_id": "revoked",
+      "assignment": "A",
+      "query": "ZXREVOKED111",
+      "category": "revoked",
+      "relevant": []
+    },
+    {
+      "case_id": "foreign-deny",
+      "assignment": "A",
+      "query": "ZXFOREIGN222",
+      "category": "cross_assignment",
+      "relevant": []
+    },
+    {
+      "case_id": "foreign-own",
+      "assignment": "B",
+      "query": "ZXFOREIGN222",
+      "category": "cross_assignment",
+      "relevant": [
+        {
+          "document": "foreign",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "new",
+      "assignment": "A",
+      "query": "ZXNEW777",
+      "category": "current_version",
+      "relevant": [
+        {
+          "document": "versioned",
+          "source_version": 2,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    },
+    {
+      "case_id": "absent",
+      "assignment": "A",
+      "query": "ZXABSENT999",
+      "category": "no_answer",
+      "relevant": []
+    },
+    {
+      "case_id": "weak",
+      "assignment": "A",
+      "query": "的",
+      "category": "single_han_weak",
+      "relevant": []
+    },
+    {
+      "case_id": "long",
+      "assignment": "A",
+      "query": "请结合教师参考资料说明，已知物体运动的总路程和花费的总时间，应该如何计算平均速度，并注意单位是否一致？",
+      "category": "long_query",
+      "relevant": [
+        {
+          "document": "speed",
+          "source_version": 1,
+          "chunk_index": 0,
+          "relevance": 2
+        }
+      ]
+    }
+  ]
+}
