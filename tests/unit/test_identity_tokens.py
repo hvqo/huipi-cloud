@@ -213,7 +213,7 @@ def test_http_permission_inventory_matches_openapi_and_exact_fixed_policy():
         (method.upper(), path)
         for path, operations in app.openapi()["paths"].items()
         for method in operations
-        if method in {"get", "post", "put", "delete"}
+        if method in {"get", "post", "put", "patch", "delete"}
     }
     documented = {
         (row["method"], row["path"]) for row in rows if row["path"].startswith("/api/v1/")

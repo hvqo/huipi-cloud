@@ -20,7 +20,21 @@ bearer = HTTPBearer(auto_error=False)
 verifier = TokenVerifier(settings)
 
 # Exact route names + allowed methods: a new route has no implicit permission.
+ADMIN_POLICIES = {
+    "list_teachers": "/admin/teachers",
+    "register_teacher": "/admin/teachers",
+    "set_teacher_active": "/admin/teachers/{user_id}",
+    "list_teacher_memberships": "/admin/teachers/{user_id}/memberships",
+    "list_admin_audit_events": "/admin/audit-events",
+}
+
 POLICIES = {
+    "get_current_user": {"GET"},
+    "list_teachers": {"GET"},
+    "register_teacher": {"POST"},
+    "set_teacher_active": {"PATCH"},
+    "list_teacher_memberships": {"GET"},
+    "list_admin_audit_events": {"GET"},
     "get_assignment_workbench": {"GET"},
     "inspect_grade_review": {"GET"},
     "list_grade_reviews": {"GET"},
@@ -55,6 +69,8 @@ GRADE_REVIEW_PATH = (
 )
 
 POLICY_PATHS = {
+    "get_current_user": "/me",
+    **ADMIN_POLICIES,
     "get_assignment_workbench": "/assignments/{assignment_id}/workbench",
     "inspect_grade_review": GRADE_REVIEW_PATH + "/review",
     "list_grade_reviews": GRADE_REVIEW_PATH + "/reviews",
@@ -138,11 +154,12 @@ async def authorize_request(
         async with asyncio.timeout(5), session.begin():
             await session.execute(text("SET LOCAL statement_timeout = '3000ms'"))
             current = await service.refresh_principal(session, principal)
-            if name in {"grant_assignment_membership", "revoke_assignment_membership"}:
+            if name in {*ADMIN_POLICIES, "grant_assignment_membership",
+                        "revoke_assignment_membership"}:
                 if not current.is_admin:
                     raise AccessError("administrator_required")
                 return current
-            if name in {"create_assignment", "list_assignments"}:
+            if name in {"get_current_user", "create_assignment", "list_assignments"}:
                 return current
             if name in {
                 "inspect_grade_review",

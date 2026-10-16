@@ -68,3 +68,10 @@
 - 原作答 inspect 的 confirmed_regions 只返回与当前来源版本相符的最新人工坐标，按角色有界分页，最多 50 条/48KiB；不返回素材 URI、S3 Key 或全文。该字段不会改变写协议或授权要求。
 
 Vue 客户端没有可信授权能力；只允许标准 PKCE 登录并向固定同源 API 发送 Bearer Header。Mock OIDC、测试签名私钥及控制端点只存在测试 fixture，不包含于静态构建。完整刷新需要重新认证，不长期保存 JWT。原始文件 Blob URL 在离开预览或组件销毁时释放。
+
+
+## 当前用户与管理员管理
+
+`GET /api/v1/me` 需要启用的可信用户，只投影其数据库角色与范围型能力；不返回 OIDC subject。`/admin/teachers`（GET/POST）、`/admin/teachers/{user_id}`（PATCH）、`/admin/teachers/{user_id}/memberships`（GET）、`/admin/audit-events`（GET）均需当前数据库管理员。旧成员 PUT/DELETE 继续为管理员专用，现已接入事务内权限复核与审计。未列入固定策略的新路由默认拒绝。
+
+[产品能力矩阵与前端合同](../product/teacher-admin-contract.md)逐项区分教师、只读成员及全局管理员。管理员仍能读取全部作业及敏感文件，未变成仅系统管理角色；后续拆分计划在该文档说明。普通教师无提权、账号停用或管理审计读取/改写接口。管理写入的 request_id 重放仍复核当前管理员；账号停用或降权后拒绝。部署 CLI 与数据库所有者不属于教师 HTTP 权限体系。

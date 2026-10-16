@@ -337,6 +337,92 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Current User */
+        get: operations["get_current_user_api_v1_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/teachers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Teachers */
+        get: operations["list_teachers_api_v1_admin_teachers_get"];
+        put?: never;
+        /** Register Teacher */
+        post: operations["register_teacher_api_v1_admin_teachers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/teachers/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Set Teacher Active */
+        patch: operations["set_teacher_active_api_v1_admin_teachers__user_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/teachers/{user_id}/memberships": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Teacher Memberships */
+        get: operations["list_teacher_memberships_api_v1_admin_teachers__user_id__memberships_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/audit-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Admin Audit Events */
+        get: operations["list_admin_audit_events_api_v1_admin_audit_events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/submissions/{submission_id}/answer-reviews": {
         parameters: {
             query?: never;
@@ -428,6 +514,106 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AdminAction
+         * @enum {string}
+         */
+        AdminAction: "teacher_registered" | "teacher_activation_changed" | "assignment_membership_granted" | "assignment_membership_revoked";
+        /** AdminAuditPage */
+        AdminAuditPage: {
+            /** Records */
+            records: components["schemas"]["AdminAuditSummary"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Has Next */
+            has_next: boolean;
+            /** Next Offset */
+            next_offset: number | null;
+        };
+        /** AdminAuditSummary */
+        AdminAuditSummary: {
+            /**
+             * Operation Id
+             * Format: uuid
+             */
+            operation_id: string;
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            action: components["schemas"]["AdminAction"];
+            /**
+             * Target User Id
+             * Format: uuid
+             */
+            target_user_id: string;
+            /** Assignment Id */
+            assignment_id: string | null;
+            /** State */
+            state: {
+                [key: string]: boolean;
+            };
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Actor User Id
+             * Format: uuid
+             */
+            actor_user_id: string;
+        };
+        /** AdminOperationResult */
+        AdminOperationResult: {
+            /**
+             * Operation Id
+             * Format: uuid
+             */
+            operation_id: string;
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            action: components["schemas"]["AdminAction"];
+            /**
+             * Target User Id
+             * Format: uuid
+             */
+            target_user_id: string;
+            /** Assignment Id */
+            assignment_id: string | null;
+            /** State */
+            state: {
+                [key: string]: boolean;
+            };
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** AdminUserSummary */
+        AdminUserSummary: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** @default teacher */
+            role: components["schemas"]["Role"];
+            /** Is Active */
+            is_active: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /**
          * AlignedAnswer
          * @description Question-mapped source regions; the type name does not confirm a response.
@@ -587,6 +773,30 @@ export interface components {
             updated_at: string;
             /** Questions */
             questions: components["schemas"]["QuestionRead"][];
+        };
+        /** AssignmentMembershipSummary */
+        AssignmentMembershipSummary: {
+            /**
+             * Assignment Id
+             * Format: uuid
+             */
+            assignment_id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Can Write */
+            can_write: boolean;
+            /** Is Active */
+            is_active: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Revoked At */
+            revoked_at: string | null;
         };
         /**
          * AssignmentStatus
@@ -863,6 +1073,11 @@ export interface components {
             bbox_coordinate_space: string;
             page: components["schemas"]["CanonicalPage"];
         };
+        /**
+         * Capability
+         * @enum {string}
+         */
+        Capability: "assignment:create" | "assignment:read_scoped" | "assignment:write_scoped" | "review:write_scoped" | "assignment:access_all" | "teacher:manage" | "membership:manage" | "audit:read";
         /** ConfirmedRegionSummary */
         ConfirmedRegionSummary: {
             /**
@@ -878,6 +1093,21 @@ export interface components {
             text_start: number | null;
             /** Text End */
             text_end: number | null;
+        };
+        /** CurrentUser */
+        CurrentUser: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Display Name */
+            display_name?: string | null;
+            role: components["schemas"]["Role"];
+            /** Capabilities */
+            capabilities: components["schemas"]["Capability"][];
+            /** Is Active */
+            is_active: boolean;
         };
         /** ErrorResponse */
         ErrorResponse: {
@@ -1200,6 +1430,37 @@ export interface components {
              * @default false
              */
             can_write: boolean;
+            /** Request Id */
+            request_id?: string | null;
+        };
+        /** MembershipPage */
+        MembershipPage: {
+            /** Records */
+            records: components["schemas"]["AssignmentMembershipSummary"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Has Next */
+            has_next: boolean;
+            /** Next Offset */
+            next_offset: number | null;
+        };
+        /** MembershipWriteResult */
+        MembershipWriteResult: {
+            /**
+             * Assignment Id
+             * Format: uuid
+             */
+            assignment_id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Can Write */
+            can_write: boolean;
+            operation: components["schemas"]["AdminOperationResult"];
         };
         /**
          * NoEvidenceReference
@@ -1667,6 +1928,11 @@ export interface components {
             /** Reason Codes */
             reason_codes: string[];
         };
+        /**
+         * Role
+         * @enum {string}
+         */
+        Role: "teacher" | "admin";
         /** RubricCriterionInput */
         RubricCriterionInput: {
             /** Description */
@@ -1804,6 +2070,41 @@ export interface components {
             submitted_at: string;
             file: components["schemas"]["SubmissionFileRead"];
             parsing_task: components["schemas"]["ParsingTaskRead"];
+        };
+        /** TeacherActivation */
+        TeacherActivation: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Is Active */
+            is_active: boolean;
+        };
+        /** TeacherPage */
+        TeacherPage: {
+            /** Records */
+            records: components["schemas"]["AdminUserSummary"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Has Next */
+            has_next: boolean;
+            /** Next Offset */
+            next_offset: number | null;
+        };
+        /** TeacherRegistration */
+        TeacherRegistration: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Issuer */
+            issuer: string;
+            /** Subject */
+            subject: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -3353,9 +3654,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["MembershipWriteResult"];
                 };
             };
             /** @description 缺少或无效教师Token */
@@ -3399,7 +3698,9 @@ export interface operations {
     };
     revoke_assignment_membership_api_v1_assignments__assignment_id__members__user_id__delete: {
         parameters: {
-            query?: never;
+            query?: {
+                request_id?: string | null;
+            };
             header?: never;
             path: {
                 assignment_id: string;
@@ -3445,6 +3746,402 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+            /** @description 认证或授权服务不可用，拒绝访问 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_current_user_api_v1_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurrentUser"];
+                };
+            };
+            /** @description 缺少或无效教师Token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 无权执行操作 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 资源不存在或没有作业授权 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 身份已登记、教师已停用或 request_id 内容冲突 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 输入不合法或 Issuer 不匹配服务配置 */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 认证或授权服务不可用，拒绝访问 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_teachers_api_v1_admin_teachers_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeacherPage"];
+                };
+            };
+            /** @description 缺少或无效教师Token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 无权执行操作 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 资源不存在或没有作业授权 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 身份已登记、教师已停用或 request_id 内容冲突 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 输入不合法或 Issuer 不匹配服务配置 */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 认证或授权服务不可用，拒绝访问 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    register_teacher_api_v1_admin_teachers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TeacherRegistration"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminOperationResult"];
+                };
+            };
+            /** @description 缺少或无效教师Token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 无权执行操作 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 资源不存在或没有作业授权 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 身份已登记、教师已停用或 request_id 内容冲突 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 输入不合法或 Issuer 不匹配服务配置 */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 认证或授权服务不可用，拒绝访问 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    set_teacher_active_api_v1_admin_teachers__user_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TeacherActivation"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminOperationResult"];
+                };
+            };
+            /** @description 缺少或无效教师Token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 无权执行操作 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 资源不存在或没有作业授权 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 身份已登记、教师已停用或 request_id 内容冲突 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 输入不合法或 Issuer 不匹配服务配置 */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 认证或授权服务不可用，拒绝访问 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_teacher_memberships_api_v1_admin_teachers__user_id__memberships_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipPage"];
+                };
+            };
+            /** @description 缺少或无效教师Token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 无权执行操作 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 资源不存在或没有作业授权 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 身份已登记、教师已停用或 request_id 内容冲突 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 输入不合法或 Issuer 不匹配服务配置 */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 认证或授权服务不可用，拒绝访问 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_admin_audit_events_api_v1_admin_audit_events_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+                target_user_id?: string | null;
+                assignment_id?: string | null;
+                request_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminAuditPage"];
+                };
+            };
+            /** @description 缺少或无效教师Token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 无权执行操作 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 资源不存在或没有作业授权 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 身份已登记、教师已停用或 request_id 内容冲突 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 输入不合法或 Issuer 不匹配服务配置 */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description 认证或授权服务不可用，拒绝访问 */
             503: {

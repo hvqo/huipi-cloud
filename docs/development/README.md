@@ -13,7 +13,7 @@
 
 - [教师 Copilot 本地 Agent CLI](teacher-copilot.md)
 
-所有示例默认用于本地受控环境。HTTP 业务接口已有教师身份和作业成员授权；仍没有登录界面、学生认证、完整组织 RBAC 或租户隔离。
+所有示例默认用于本地受控环境。HTTP 业务接口已有教师身份和作业成员授权；已有 PKCE 登录客户端；仍没有学生认证、完整组织 RBAC 或租户隔离。
 
 - [教师知识材料导入、版本与作用域检索](scoped-retrieval.md)
 
@@ -29,3 +29,6 @@
 - [教师候选评分审核 HTTP](grade-review-http.md)：可信审核人、完整评分快照、来源核对与分页历史。
 
 - [教师浏览器工作台](teacher-workbench.md)：Vue 启动、OIDC/PKCE、API 类型、Unicode 选区和浏览器验收。
+
+- [教师/管理员角色与管理接口](admin-roles.md)
+- [前端角色、页面能力与 API 合同](../product/teacher-admin-contract.md)

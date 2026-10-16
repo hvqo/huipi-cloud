@@ -12,6 +12,7 @@ from huipi_cloud.modules.assignments.router import (
 from huipi_cloud.modules.assignments.workbench_router import router as workbench_router
 from huipi_cloud.modules.canonical_documents.router import router as canonical_document_router
 from huipi_cloud.modules.grading.grade_review_router import router as grade_review_router
+from huipi_cloud.modules.identity.admin_router import router as admin_router
 from huipi_cloud.modules.identity.dependencies import authorize_request
 from huipi_cloud.modules.identity.router import router as identity_router
 from huipi_cloud.modules.parsing.router import router as parsing_router
@@ -38,6 +39,7 @@ protected_router.include_router(canonical_document_router)
 protected_router.include_router(answer_alignment_router)
 
 protected_router.include_router(identity_router)
+protected_router.include_router(admin_router)
 protected_router.include_router(answer_review_router)
 protected_router.include_router(grade_review_router)
 protected_router.include_router(workbench_router)

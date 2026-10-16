@@ -128,7 +128,7 @@ async def client(
 ) -> AsyncIterator[httpx.AsyncClient]:
     """Use the dedicated migrated PostgreSQL test database for API requests."""
     async with postgres_engine.begin() as connection:
-        await connection.execute(text("TRUNCATE TABLE assignments CASCADE"))
+        await connection.execute(text("TRUNCATE TABLE admin_operations, assignments CASCADE"))
 
     session_factory = async_sessionmaker(postgres_engine, expire_on_commit=False)
 
@@ -160,7 +160,7 @@ async def client(
         app.dependency_overrides.clear()
         app.dependency_overrides.update(previous_overrides)
         async with postgres_engine.begin() as connection:
-            await connection.execute(text("TRUNCATE TABLE assignments CASCADE"))
+            await connection.execute(text("TRUNCATE TABLE admin_operations, assignments CASCADE"))
             await connection.execute(delete(User).where(User.id == principal.user_id))
 
 
