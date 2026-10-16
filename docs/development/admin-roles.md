@@ -6,6 +6,7 @@
 
 - `User` 沿用 id、issuer、subject、is_active、is_admin；`AssignmentMembership` 沿用唯一 user/assignment、can_write、revoked_at。没有新增密码或客户端角色字段。
 - `/me` 重新查询本地身份，role/capabilities 由数据库计算。Principal 合同不变，禁止模型或调用者伪造身份。
+- 身份查询使用 populate_existing 刷新 ORM 属性；即使服务调用复用 Session 且持有 User 引用，也不能复用旧管理员标志。
 - 管理路由进入精确的固定策略表，并在业务短事务中再次检查启用管理员，以 SHARE 锁持有到提交。停用/降权先完成则操作拒绝；操作先取得锁则停用等待本次提交。不承诺取消已经开始的文件流。
 - 管理员可登记的 Issuer 仅为配置的 AUTH_ISSUER。不会根据 JWT 自动创建账号，也不向外部 IdP 发请求。
 

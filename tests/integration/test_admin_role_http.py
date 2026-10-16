@@ -416,3 +416,33 @@ async def test_membership_admin_demoted_after_route_check_cannot_write(admin_api
             is None
         )
         assert await session.scalar(select(func.count()).select_from(AdminOperation)) == 0
+
+
+@pytest.mark.anyio
+async def test_cached_orm_user_cannot_keep_revoked_administrator_authority(admin_api):
+    ctx = admin_api
+    identity = await ctx.verifier.verify(ctx.headers("admin")["Authorization"].split()[1])
+    async with ctx.factory() as cached_session:
+        async with cached_session.begin():
+            cached_user = await cached_session.get(User, ctx.users["admin"].id)
+            principal = await service.resolve_principal(cached_session, identity)
+        assert cached_user.is_admin
+        async with ctx.factory() as other, other.begin():
+            await other.execute(
+                update(User)
+                .where(
+                    User.id == cached_user.id,
+                )
+                .values(is_admin=False)
+            )
+        # Keep a strong reference: SQLAlchemy's identity map must not reuse stale authority.
+        with pytest.raises(AccessError, match="administrator_required"):
+            await admin_service.activate_teacher(
+                cached_session,
+                principal,
+                ctx.users["b"].id,
+                TeacherActivation(request_id=uuid4(), is_active=False),
+            )
+    async with ctx.factory() as session:
+        assert (await session.get(User, ctx.users["b"].id)).is_active
+        assert await session.scalar(select(func.count()).select_from(AdminOperation)) == 0

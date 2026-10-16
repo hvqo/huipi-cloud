@@ -29,11 +29,13 @@ async def resolve_principal(
     *,
     lock: bool = False,
 ) -> Principal:
+    # A reused Session may retain a User with stale administrator flags. Refresh from
+    # this query's database snapshot, including when a SHARE lock is requested.
     query = select(User).where(
         User.issuer == identity.issuer,
         User.subject == identity.subject,
         User.is_active.is_(True),
-    )
+    ).execution_options(populate_existing=True)
     user = await session.scalar(query.with_for_update(read=True) if lock else query)
     if user is None:
         raise AccessError("teacher_not_provisioned")
