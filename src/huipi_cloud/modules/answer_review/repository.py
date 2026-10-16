@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from huipi_cloud.modules.answer_alignment import repository as alignment_repository
@@ -12,6 +12,7 @@ from huipi_cloud.modules.answer_alignment.protocol import ALIGNER_VERSION
 from huipi_cloud.modules.answer_review.errors import (
     AnswerReviewIdempotencyConflictError,
     AnswerReviewQuestionNotFoundError,
+    AnswerReviewRevisionConflictError,
     AnswerReviewSourceChangedError,
     AnswerReviewSourceNotReadyError,
     AnswerReviewSubmissionNotFoundError,
@@ -19,6 +20,8 @@ from huipi_cloud.modules.answer_review.errors import (
 from huipi_cloud.modules.answer_review.models import AnswerReviewDecision
 from huipi_cloud.modules.assignments.models import Assignment
 from huipi_cloud.modules.canonical_documents.models import CanonicalArtifact
+from huipi_cloud.modules.identity.protocol import Principal
+from huipi_cloud.modules.identity.service import require_assignment
 from huipi_cloud.modules.submissions.models import Submission
 
 SessionFactory = async_sessionmaker[AsyncSession]
@@ -46,6 +49,8 @@ async def append_decision(
     reviewer_ref: str,
     request_id: UUID,
     request_sha256: str,
+    principal: Principal | None = None,
+    expected_revision: int | None = None,
 ) -> tuple[AnswerReviewDecision, bool]:
     """Append a revision while serializing updates for one Submission.
 
@@ -56,6 +61,9 @@ async def append_decision(
     """
 
     async with session_factory() as session, session.begin():
+        if principal is not None:
+            await session.execute(text("SET LOCAL lock_timeout = '3000ms'"))
+            await session.execute(text("SET LOCAL statement_timeout = '5000ms'"))
         submission = await session.scalar(
             select(Submission).where(Submission.id == submission_id).with_for_update()
         )
@@ -63,6 +71,11 @@ async def append_decision(
             raise AnswerReviewSubmissionNotFoundError
         if submission.assignment_id != assignment_id:
             raise AnswerReviewSourceChangedError
+
+        if principal is not None:
+            # Short commit guard only: no permission locks during S3 reads or user think time.
+            # User + membership SHARE locks serialize this append with disable/revoke.
+            await require_assignment(session, principal, assignment_id, write=True, lock=True)
 
         replay = await session.scalar(
             select(AnswerReviewDecision).where(
@@ -131,6 +144,9 @@ async def append_decision(
             .order_by(AnswerReviewDecision.revision.desc())
             .limit(1)
         )
+        actual_revision = 0 if latest is None else latest.revision
+        if expected_revision is not None and expected_revision != actual_revision:
+            raise AnswerReviewRevisionConflictError
         record = AnswerReviewDecision(
             submission_id=submission_id,
             assignment_id=assignment_id,
@@ -150,6 +166,7 @@ async def append_decision(
             uncertain_regions=uncertain_regions,
             reason_codes=reason_codes,
             reviewer_ref=reviewer_ref,
+            reviewer_user_id=principal.user_id if principal else None,
             request_id=request_id,
             request_sha256=request_sha256,
             revision=1 if latest is None else latest.revision + 1,
@@ -188,3 +205,75 @@ async def list_decisions(
             )
         ).all()
     )
+
+
+def _summary_query():
+    columns = (
+        "id",
+        "submission_id",
+        "assignment_id",
+        "question_id",
+        "decision",
+        "revision",
+        "request_id",
+        "supersedes_decision_id",
+        "created_at",
+        "reviewer_ref",
+        "reviewer_user_id",
+        "canonical_document_id",
+        "canonical_sha256",
+        "alignment_artifact_id",
+        "alignment_sha256",
+        "aligner_version",
+        "assignment_questions_digest",
+        "reason_codes",
+    )
+    return select(
+        *(getattr(AnswerReviewDecision, name) for name in columns),
+        *(
+            func.jsonb_array_length(getattr(AnswerReviewDecision, name)).label(name + "_count")
+            for name in ("response_regions", "excluded_prompt_regions", "uncertain_regions")
+        ),
+    )
+
+
+async def decision_page(session, submission_id, *, question_id=None, limit=25, offset=0):
+    query = _summary_query().where(AnswerReviewDecision.submission_id == submission_id)
+    if question_id is not None:
+        query = query.where(AnswerReviewDecision.question_id == question_id)
+    return list(
+        (
+            await session.execute(
+                query.order_by(
+                    AnswerReviewDecision.question_number,
+                    AnswerReviewDecision.revision,
+                )
+                .offset(offset)
+                .limit(limit + 1)
+            )
+        ).all()
+    )
+
+
+async def latest_decision(session, submission_id, question_id):
+    return (
+        await session.execute(
+            _summary_query()
+            .where(
+                AnswerReviewDecision.submission_id == submission_id,
+                AnswerReviewDecision.question_id == question_id,
+            )
+            .order_by(AnswerReviewDecision.revision.desc())
+            .limit(1)
+        )
+    ).one_or_none()
+
+
+async def decision_summary(session, decision_id):
+    return (
+        await session.execute(
+            _summary_query().where(
+                AnswerReviewDecision.id == decision_id,
+            )
+        )
+    ).one_or_none()

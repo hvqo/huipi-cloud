@@ -291,3 +291,28 @@ async def access_error_handler(_: Request, error: AccessError) -> JSONResponse:
             {"WWW-Authenticate": "Bearer"} if error.status_code == 401 else {}
         )},
     )
+
+
+# Safe, fixed classifications; source text, pointers and database internals are not echoed.
+from huipi_cloud.modules.answer_review import errors as review_errors  # noqa: E402
+
+_REVIEW_ERRORS = {
+    review_errors.AnswerReviewSubmissionNotFoundError: (404, "resource_not_found_or_forbidden"),
+    review_errors.AnswerReviewQuestionNotFoundError: (404, "resource_not_found_or_forbidden"),
+    review_errors.AnswerReviewRegionInvalidError: (422, "review_region_invalid"),
+    review_errors.AnswerReviewUnavailableError: (503, "review_unavailable"),
+    review_errors.AnswerReviewSourceChangedError: (409, "review_source_changed"),
+    review_errors.AnswerReviewSourceNotReadyError: (409, "review_source_not_ready"),
+    review_errors.AnswerReviewRevisionConflictError: (409, "review_revision_conflict"),
+    review_errors.AnswerReviewIdempotencyConflictError: (409, "review_request_conflict"),
+}
+
+
+async def review_error_handler(_: Request, error: Exception) -> JSONResponse:
+    response_status, code = _REVIEW_ERRORS[type(error)]
+    return JSONResponse(status_code=response_status, content={"detail": code},
+                        headers={"Cache-Control": "no-store"})
+
+
+for _error_class in _REVIEW_ERRORS:
+    app.add_exception_handler(_error_class, review_error_handler)

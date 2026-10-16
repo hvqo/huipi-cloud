@@ -23,3 +23,11 @@ class AnswerReviewRegionInvalidError(Exception):
 
 class AnswerReviewIdempotencyConflictError(Exception):
     """An idempotency request ID was reused with a different payload."""
+
+
+class AnswerReviewRevisionConflictError(Exception):
+    """The HTTP client edited an outdated revision; inspect again."""
+
+
+class AnswerReviewUnavailableError(Exception):
+    """A database operation or commit result is unavailable; retry the same request ID."""

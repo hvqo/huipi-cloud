@@ -21,6 +21,7 @@ from huipi_cloud.modules.answer_review import repository
 from huipi_cloud.modules.answer_review.errors import (
     AnswerReviewQuestionNotFoundError,
     AnswerReviewRegionInvalidError,
+    AnswerReviewSourceChangedError,
     AnswerReviewSourceNotReadyError,
     AnswerReviewSubmissionNotFoundError,
 )
@@ -32,6 +33,7 @@ from huipi_cloud.modules.answer_review.protocol import (
     ReviewAssetReference,
     ReviewEvidenceRegion,
     ReviewRegionSelection,
+    ReviewSourceVersion,
 )
 from huipi_cloud.modules.canonical_documents.protocol import (
     CanonicalAssetReference,
@@ -39,6 +41,7 @@ from huipi_cloud.modules.canonical_documents.protocol import (
     CanonicalContentNode,
     CanonicalDocument,
 )
+from huipi_cloud.modules.identity.protocol import Principal
 
 
 @dataclass(frozen=True)
@@ -59,6 +62,9 @@ async def record_decision(
     question_id: UUID,
     request_id: UUID,
     payload: AnswerReviewDecisionCreate,
+    principal: Principal | None = None,
+    expected_revision: int | None = None,
+    expected_source: ReviewSourceVersion | None = None,
 ) -> tuple[AnswerReviewDecisionRead, bool]:
     """Validate human-selected evidence, then append one version-bound revision."""
 
@@ -67,6 +73,10 @@ async def record_decision(
         storage,
         submission_id,
     )
+    if expected_source is not None and ReviewSourceVersion.from_bundle(bundle) != expected_source:
+        raise AnswerReviewSourceChangedError
+    if principal is not None and payload.reviewer_ref != f"teacher_{principal.user_id.hex}":
+        raise AnswerReviewRegionInvalidError
     question = next(
         (item for item in bundle.context.questions if item.id == question_id),
         None,
@@ -107,6 +117,8 @@ async def record_decision(
         assignment_questions_digest=bundle.questions_digest,
         review_schema_version=ANSWER_REVIEW_SCHEMA_VERSION,
         payload=payload,
+        reviewer_user_id=principal.user_id if principal else None,
+        expected_revision=expected_revision,
     )
 
     record, created = await repository.append_decision(
@@ -130,6 +142,8 @@ async def record_decision(
         reviewer_ref=payload.reviewer_ref,
         request_id=request_id,
         request_sha256=request_sha256,
+        principal=principal,
+        expected_revision=expected_revision,
     )
     return decision_read(record), created
 
@@ -557,6 +571,8 @@ def _request_digest(
     assignment_questions_digest: str,
     review_schema_version: str,
     payload: AnswerReviewDecisionCreate,
+    reviewer_user_id: UUID | None = None,
+    expected_revision: int | None = None,
 ) -> str:
     value = {
         "submission_id": str(submission_id),
@@ -570,6 +586,9 @@ def _request_digest(
         "review_schema_version": review_schema_version,
         "payload": payload.model_dump(mode="json"),
     }
+    if reviewer_user_id is not None:
+        value["http_reviewer_user_id"] = str(reviewer_user_id)
+        value["http_expected_revision"] = expected_revision
     encoded = json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 

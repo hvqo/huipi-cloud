@@ -23,14 +23,18 @@ def membership_filter(user_id: UUID, *, write: bool = False):
     return predicates
 
 
-async def resolve_principal(session: AsyncSession, identity: VerifiedIdentity) -> Principal:
-    user = await session.scalar(
-        select(User).where(
-            User.issuer == identity.issuer,
-            User.subject == identity.subject,
-            User.is_active.is_(True),
-        )
+async def resolve_principal(
+    session: AsyncSession,
+    identity: VerifiedIdentity,
+    *,
+    lock: bool = False,
+) -> Principal:
+    query = select(User).where(
+        User.issuer == identity.issuer,
+        User.subject == identity.subject,
+        User.is_active.is_(True),
     )
+    user = await session.scalar(query.with_for_update(read=True) if lock else query)
     if user is None:
         raise AccessError("teacher_not_provisioned")
     return Principal(
@@ -42,7 +46,12 @@ async def resolve_principal(session: AsyncSession, identity: VerifiedIdentity) -
     )
 
 
-async def refresh_principal(session: AsyncSession, principal: Principal) -> Principal:
+async def refresh_principal(
+    session: AsyncSession,
+    principal: Principal,
+    *,
+    lock: bool = False,
+) -> Principal:
     if principal.expires_at <= datetime.now(UTC):
         raise AccessError("invalid_token", 401)
     current = await resolve_principal(
@@ -52,7 +61,10 @@ async def refresh_principal(session: AsyncSession, principal: Principal) -> Prin
             principal.subject,
             principal.expires_at,
         ),
+        lock=lock,
     )
+    if principal.expires_at <= datetime.now(UTC):
+        raise AccessError("invalid_token", 401)
     if current.user_id != principal.user_id:
         raise AccessError("teacher_not_provisioned")
     return current
@@ -64,10 +76,22 @@ async def require_assignment(
     assignment_id: UUID,
     *,
     write: bool = False,
+    lock: bool = False,
 ) -> None:
     """Called once per operation; no permission cache or JWT-role shortcut."""
-    current = await refresh_principal(session, principal)
+    current = await refresh_principal(session, principal, lock=lock)
     query = select(Assignment.id).where(Assignment.id == assignment_id)
+    if not current.is_admin and lock:
+        membership = await session.scalar(
+            select(AssignmentMembership)
+            .where(
+                AssignmentMembership.assignment_id == assignment_id,
+                *membership_filter(current.user_id, write=write),
+            )
+            .with_for_update(read=True)
+        )
+        if membership is None:
+            raise AccessError("resource_not_found_or_forbidden", 404)
     if not current.is_admin:
         query = query.where(
             select(AssignmentMembership.id)
