@@ -252,7 +252,7 @@ proposal JSON 以每次执行不同的不可变 Key 上传到私有 S3，`grade_
 
 记录绑定 Proposal/GradeInput ID 与 SHA、Submission、Question、request 摘要、review revision 和 supersedes ID。写入前读取并验证私有 S3 对象、索引和来源；PostgreSQL 事务再锁 Proposal 行，以串行分配 revision，并调用 GradeInput 来源校验重新确认 Canonical、Alignment、Question、AnswerKey、Rubric 与最新 AnswerReview。相同 request ID 和内容返回既有记录，不同内容冲突；expected revision 不匹配时返回业务冲突。数据库唯一约束保护 revision、request 和单一后继关系，数据库触发器拒绝 UPDATE/DELETE。COMMIT 确认不明时使用原 request ID 重试，服务先查已有记录以恢复结果。
 
-人工记录直接保存在 PostgreSQL JSONB 中，因此该流程没有 S3/PG 双写。记录保存模型候选与复核分数、理由、引用、原因码和自声明 `reviewer_ref`，这些字段按敏感数据管理。受控 CLI 的 inspect/history 输出经过筛选，不显示学生原文、AnswerKey、模型完整理由、对象 Key 或评论。当前没有 HTTP 写 API、登录、RBAC 或正式成绩表；`reviewer_ref` 不是认证身份，`accepted`/`revised` 也不表示成绩发布。单条人工复核可用于未来分歧分析，但不能直接作为高可信参考标签，需经过授权、独立评分和仲裁。
+人工记录直接保存在 PostgreSQL JSONB 中，因此该流程没有 S3/PG 双写。记录保存模型候选与复核分数、理由、引用、原因码和自声明 `reviewer_ref`，这些字段按敏感数据管理。受控 CLI 的 inspect/history 输出经过筛选，不显示学生原文、AnswerKey、模型完整理由、对象 Key 或评论。CLI 自声明 `reviewer_ref` 不是认证身份；教师 HTTP 另以 Principal/User 外键绑定身份，仍无正式成绩表；`accepted`/`revised` 也不表示成绩发布。单条人工复核可用于未来分歧分析，但不能直接作为高可信参考标签，需经过授权、独立评分和仲裁。
 
 ## 教师 Copilot 核心
 
@@ -321,3 +321,14 @@ record_decision 继续验证整份 Canonical/Alignment 大小、SHA 和原有区
 历史列表 SQL 只投影元数据和区域计数，最多 25 条；最新检查返回有界指针，正文从已授权 Canonical 页面获取。历史 not_checked 不代表可评分；当前来源变化则旧决定仅保留历史，当前 answer_presence 回到 unreviewed。新的请求冲突不修改旧行。
 
 本流程是教师确认作答证据，不是候选评分复核、自动语义裁判或正式成绩发布。没有新增聊天或学生认证；P3 和 RAG 默认设置保持。详情见[作答复核 HTTP](development/answer-review-http.md)与[权限矩阵](security/http-permissions.md)。
+
+
+## 教师候选评分审核 HTTP
+
+`grading/grade_review_router.py` 复用既有人工评分复核服务，提供候选检查、有界历史及追加决定。统一固定权限策略先校验 Proposal→GradeInput→Submission/Question→Assignment 的真实关系与摘要；管理员也不能拼接资源。授权早于 S3 与幂等重放读取。HTTP DTO 与原 1.0 合同分离，可信 Principal 派生 reviewer_ref 和 reviewer_user_id；历史 CLI 行为 NULL，原摘要与文档保持兼容。
+
+追加事务锁定 Proposal，复查 GradeInput 的全部来源、最新 expected_revision、启用 User 与可写 Membership。身份 SHARE 锁仅在短事务持有，不跨 S3；事务内重放也先授权。不可变触发器、revision/request/successor 唯一约束保持；COMMIT 结果未知允许同一教师用原请求恢复，不上传或删除 S3 对象。
+
+inspect 沿用真实大小/SHA/Quote/Rubric 校验，基础设施不可用与真实来源失效分别报告。历史 SQL 只取评分元数据，不加载长理由/Quote；最多十条、每条最多一百个评分项。可选证据投影仅返回有界 Unicode 坐标及受保护页面路径，不输出私有对象定位。accepted 接受原始候选；revised 是完整快照；rejected/regrading_required 不产生人工总分，也不触发模型。grade_published 恒为 false，实验评分质量门禁未获准。
+
+新增迁移只添加可信审核人元数据；保留旧 CLI 记录与原 UPDATE/DELETE 禁止触发器。降级会丢失新增身份来源，不重写旧评分，重新升级不会伪造身份。留存/删除仍须独立设计。接口合同及前端边界见[评分审核 HTTP](development/grade-review-http.md)。

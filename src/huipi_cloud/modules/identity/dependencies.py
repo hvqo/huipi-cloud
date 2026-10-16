@@ -21,6 +21,9 @@ verifier = TokenVerifier(settings)
 
 # Exact route names + allowed methods: a new route has no implicit permission.
 POLICIES = {
+    "inspect_grade_review": {"GET"},
+    "list_grade_reviews": {"GET"},
+    "record_teacher_grade_review": {"POST"},
     "list_answer_reviews": {"GET"},
     "inspect_answer_review": {"GET"},
     "record_answer_review": {"POST"},
@@ -46,7 +49,14 @@ POLICIES = {
     "revoke_assignment_membership": {"DELETE"},
 }
 
+GRADE_REVIEW_PATH = (
+    "/submissions/{submission_id}/questions/{question_id}/grade-proposals/{proposal_id}"
+)
+
 POLICY_PATHS = {
+    "inspect_grade_review": GRADE_REVIEW_PATH + "/review",
+    "list_grade_reviews": GRADE_REVIEW_PATH + "/reviews",
+    "record_teacher_grade_review": GRADE_REVIEW_PATH + "/reviews",
     "list_answer_reviews": "/submissions/{submission_id}/answer-reviews",
     "inspect_answer_review": "/submissions/{submission_id}/answer-reviews/questions/{question_id}",
     "record_answer_review": "/submissions/{submission_id}/answer-reviews/questions/{question_id}",
@@ -131,6 +141,24 @@ async def authorize_request(
                     raise AccessError("administrator_required")
                 return current
             if name in {"create_assignment", "list_assignments"}:
+                return current
+            if name in {
+                "inspect_grade_review",
+                "list_grade_reviews",
+                "record_teacher_grade_review",
+            }:
+                from huipi_cloud.modules.grading.grade_review_repository import authorize_proposal
+
+                try:
+                    ids = {
+                        key: UUID(str(request.path_params[key]))
+                        for key in ("submission_id", "question_id", "proposal_id")
+                    }
+                except ValueError:
+                    raise AccessError("invalid_resource_id", 422) from None
+                await authorize_proposal(
+                    session, principal=current, write=request.method != "GET", **ids
+                )
                 return current
             scopes = []
             for kind in ("assignment_id", "question_id", "submission_id"):

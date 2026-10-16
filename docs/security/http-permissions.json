@@ -192,6 +192,24 @@
       "path": "/api/v1/submissions/{submission_id}/answer-reviews/questions/{question_id}",
       "policy": "record_answer_review",
       "permission": "assignment_write"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/submissions/{submission_id}/questions/{question_id}/grade-proposals/{proposal_id}/review",
+      "policy": "inspect_grade_review",
+      "permission": "assignment_read"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/submissions/{submission_id}/questions/{question_id}/grade-proposals/{proposal_id}/reviews",
+      "policy": "list_grade_reviews",
+      "permission": "assignment_read"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/submissions/{submission_id}/questions/{question_id}/grade-proposals/{proposal_id}/reviews",
+      "policy": "record_teacher_grade_review",
+      "permission": "assignment_write"
     }
   ]
 }

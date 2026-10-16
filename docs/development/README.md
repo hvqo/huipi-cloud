@@ -25,3 +25,5 @@
 - [全部 HTTP 权限矩阵](../security/http-permissions.md)
 
 - [教师作答证据复核 HTTP 工作流](answer-review-http.md)
+
+- [教师候选评分审核 HTTP](grade-review-http.md)：可信审核人、完整评分快照、来源核对与分页历史。

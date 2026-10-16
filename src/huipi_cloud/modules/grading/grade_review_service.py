@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from uuid import UUID, uuid4
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from huipi_cloud.core.config import Settings, settings
@@ -48,7 +49,9 @@ from huipi_cloud.modules.grading.proposal_service import (
     _validate_quote_reference,
     read_grade_proposal_artifact,
 )
+from huipi_cloud.modules.grading.protocol import canonical_json_bytes
 from huipi_cloud.modules.grading.service import read_grade_input_artifact
+from huipi_cloud.modules.identity.protocol import Principal
 
 SessionFactory = async_sessionmaker[AsyncSession]
 
@@ -65,8 +68,15 @@ async def inspect_grade_proposal(
     if indexed is None:
         raise GradeReviewNotFoundError("proposal_not_found")
 
-    history = await repository.list_reviews(session_factory, proposal_id)
-    latest = history[-1] if history else None
+    async with session_factory() as session:
+        latest = (
+            await session.execute(
+                select(GradeReviewRevision.review_revision, GradeReviewRevision.review_status)
+                .where(GradeReviewRevision.proposal_id == proposal_id)
+                .order_by(GradeReviewRevision.review_revision.desc())
+                .limit(1)
+            )
+        ).first()
     source_status = "current"
     proposal_sha: str | None = None
     proposal: GradeProposalDocument | None = None
@@ -135,8 +145,11 @@ async def record_grade_review(
     request_id: UUID,
     expected_revision: int,
     payload: GradeReviewDecisionCreate,
+    principal: Principal | None = None,
     config: Settings = settings,
 ) -> GradeReviewRecordResult:
+    if principal is not None and payload.reviewer_ref != f"teacher_{principal.user_id.hex}":
+        raise GradeReviewInvalidDecisionError("authenticated_reviewer_mismatch")
     if expected_revision < 0:
         raise GradeReviewConflictError("expected_revision_must_be_nonnegative")
     request_sha256 = grade_review_request_sha256(
@@ -144,6 +157,7 @@ async def record_grade_review(
         request_id=request_id,
         expected_revision=expected_revision,
         payload=payload,
+        reviewer_user_id=principal.user_id if principal else None,
     )
 
     # Resolve a retry before checking current sources. A committed review remains
@@ -152,6 +166,7 @@ async def record_grade_review(
         session_factory,
         proposal_id=proposal_id,
         request_id=request_id,
+        principal=principal,
     )
     if replay is not None:
         if replay.request_sha256 != request_sha256:
@@ -218,6 +233,7 @@ async def record_grade_review(
         expected_revision=expected_revision,
         grade_input_document=grade_input,
         review_draft=review_draft,
+        principal=principal,
     )
     return GradeReviewRecordResult(review=_row_to_document(record), created=created)
 
@@ -455,3 +471,57 @@ def _row_to_history_item(
         source_status=source_status,
         created_at=document.created_at,
     )
+
+
+async def review_evidence_locations(
+    session_factory: SessionFactory,
+    storage: S3ObjectStorage,
+    *,
+    proposal_id: UUID,
+    offset: int,
+    limit: int,
+    config: Settings = settings,
+) -> tuple[list[dict], int]:
+    """Verified source coordinates only; never return student quotes or long rationales."""
+    proposal, _ = await read_grade_proposal_artifact(
+        session_factory,
+        storage,
+        proposal_id,
+        config=config,
+    )
+    grade_input = await read_grade_input_artifact(
+        session_factory,
+        storage,
+        proposal.grade_input_artifact_id,
+        config=config,
+    )
+    _validate_proposal_binding(proposal, grade_input, config)
+    segments = {item.segment_index: item for item in grade_input.selected_answer_segments}
+    references = [
+        (score.criterion_id, ref)
+        for score in proposal.criterion_scores
+        for ref in score.evidence_references
+        if isinstance(ref, QuoteEvidenceReference)
+    ]
+    result, size = [], 0
+    for criterion_id, ref in references[offset : offset + limit]:
+        segment = segments[ref.segment_index]
+        item = dict(
+            criterion_id=str(criterion_id),
+            segment_index=ref.segment_index,
+            content_pointer=segment.content_pointer,
+            page_number=segment.page_number,
+            text_start=ref.text_start,
+            text_end=ref.text_end,
+            canonical_text_start=segment.text_start + ref.text_start,
+            canonical_text_end=segment.text_start + ref.text_end,
+            canonical_page_path=(
+                f"{config.api_v1_prefix}/submissions/{proposal.submission_id}"
+                f"/canonical-document/pages/{segment.page_number}"
+            ),
+        )
+        size += len(canonical_json_bytes(item))
+        if size > 48 * 1024:
+            break
+        result.append(item)
+    return result, len(references)

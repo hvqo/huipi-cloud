@@ -16,7 +16,7 @@
 - **人工复核与评测**：通过受认证 HTTP 记录版本化的人工作答判断；提供合成数据评测工具，用于检查协议、作答判断和区域定位表现。
 - **评分输入准备**：从当前人工确认的 Canonical 文本范围构建不可变输入包，并快照教师标准答案与 Rubric；不调用评分模型或产生分数。
 - **Rubric 候选评分**：受控本地 CLI 可调用配置的文本模型，为每个评分项生成候选分数、理由和可核验的原文引用；不会发布成绩，也不会修改人工复核记录。
-- **候选评分人工复核**：受控本地 CLI 可接受、修订、拒绝候选分数或标记需要重新评分，并保留不可变修订历史；记录不等于正式成绩。
+- **候选评分人工复核**：受认证 HTTP 或受控本地 CLI 可接受、修订、拒绝候选分数或标记需要重新评分，并保留不可变修订历史；记录不等于正式成绩。
 
 - **教师 Copilot**：受控本地 CLI 可调用云端模型查询指定作业、题目、Rubric 和提交处理状态，检索显式导入的教师资料并校验来源引用；只读、不发布成绩。
 
@@ -104,7 +104,7 @@ API 文档位于 <http://127.0.0.1:8000/docs>，存活检查为 `GET /api/v1/hea
 | 读取 Canonical 页面 | `/submissions/{id}/canonical-document/pages/{page_number}` |
 | 读取题目来源对齐 | `/submissions/{id}/answer-alignment/questions/{question_id}` |
 
-教师作答证据可通过[受保护 HTTP 工作流](docs/development/answer-review-http.md)复核；视觉建议与候选评分复核仍通过受控本地 CLI 运行，操作步骤见[开发指南](docs/development/README.md)。
+教师可通过受保护 HTTP 复核[作答证据](docs/development/answer-review-http.md)与[候选评分](docs/development/grade-review-http.md)，保留修订历史；审核结果不自动发布成绩。视觉建议仍由受控 CLI 运行，步骤见[开发指南](docs/development/README.md)。
 
 ## 当前边界
 

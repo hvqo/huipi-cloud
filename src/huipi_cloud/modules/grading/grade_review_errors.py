@@ -39,3 +39,7 @@ class GradeReviewRegistrationRolledBackError(GradeReviewError):
 
 class GradeReviewArtifactCorruptError(GradeReviewError):
     status = "review_history_corrupt"
+
+
+class GradeReviewUnavailableError(GradeReviewError):
+    status = "grade_review_unavailable"
