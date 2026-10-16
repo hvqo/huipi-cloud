@@ -657,3 +657,33 @@ async def test_idempotency_key_cannot_be_replayed_as_another_authenticated_teach
     assert replay.status_code == 409 and replay.json()["detail"] == "review_request_conflict"
     stored = await records(ctx)
     assert len(stored) == 1 and stored[0].reviewer_user_id == ctx.users["a"].id
+
+
+@pytest.mark.anyio
+async def test_hash_valid_alignment_with_nonexistent_canonical_node_returns_safe_503(review_http):
+    import hashlib
+    import json
+    from io import BytesIO
+
+    from huipi_cloud.modules.answer_alignment.models import AnswerAlignmentArtifact
+
+    ctx = review_http
+    document = ctx.bundle.alignment_document.model_dump(mode="json")
+    document["answers"][0]["source_regions"][0]["content_pointer"] = "/pages/0/blocks/999/content"
+    data = json.dumps(document, ensure_ascii=False, sort_keys=True).encode()
+    artifact = ctx.bundle.alignment_artifact
+    await ctx.storage.upload_fileobj(BytesIO(data), artifact.object_key, "application/json")
+    async with ctx.factory() as session, session.begin():
+        await session.execute(
+            update(AnswerAlignmentArtifact)
+            .where(
+                AnswerAlignmentArtifact.id == artifact.id,
+            )
+            .values(
+                alignment_sha256=hashlib.sha256(data).hexdigest(), alignment_size_bytes=len(data)
+            )
+        )
+    response = await ctx.client.get(ctx.detail)
+    assert response.status_code == 503
+    assert "unknown Canonical" not in response.text and artifact.object_key not in response.text
+    assert not await records(ctx)

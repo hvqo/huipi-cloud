@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from huipi_cloud.core.config import settings
 from huipi_cloud.modules.answer_alignment import service as alignment_service
+from huipi_cloud.modules.answer_alignment.errors import AnswerAlignmentArtifactCorruptError
 from huipi_cloud.modules.answer_review import repository, service
 from huipi_cloud.modules.answer_review.errors import (
     AnswerReviewQuestionNotFoundError,
@@ -154,7 +155,9 @@ async def inspect_answer_review(
     nodes = service._index_canonical_nodes(bundle.canonical_document)
     evidence, size = [], 0
     for region in answer.source_regions[evidence_offset : evidence_offset + evidence_limit]:
-        node = nodes[region.content_pointer]
+        node = nodes.get(region.content_pointer)
+        if node is None:
+            raise AnswerAlignmentArtifactCorruptError("unknown Canonical evidence node")
         item = EvidenceSummary(
             content_pointer=region.content_pointer,
             page_number=node.page_number,
