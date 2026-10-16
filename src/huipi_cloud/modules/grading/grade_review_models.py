@@ -33,6 +33,12 @@ class GradeReviewRevision(Base):
             "review_status IN ('accepted', 'revised', 'rejected', 'regrading_required')",
             name="ck_grade_review_status",
         ),
+        CheckConstraint(
+            "reviewer_user_id IS NULL OR reviewer_ref = 'teacher_' || "
+            "replace(reviewer_user_id::text, '-', '')",
+            name="ck_grade_review_authenticated_reviewer",
+        ),
+        Index("ix_grade_review_reviewer_user", "reviewer_user_id"),
         CheckConstraint("review_revision > 0", name="ck_grade_review_revision_positive"),
         CheckConstraint(
             "review_schema_version = '1.0' AND length(trim(reviewer_ref)) > 0 "
@@ -87,6 +93,11 @@ class GradeReviewRevision(Base):
         nullable=True,
     )
     reviewer_ref: Mapped[str] = mapped_column(String(64), nullable=False)
+    reviewer_user_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", name="fk_grade_review_reviewer_user", ondelete="RESTRICT"),
+        nullable=True,
+    )
     request_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
     request_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
     review_status: Mapped[str] = mapped_column(String(24), nullable=False)

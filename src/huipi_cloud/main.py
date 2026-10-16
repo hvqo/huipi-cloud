@@ -316,3 +316,28 @@ async def review_error_handler(_: Request, error: Exception) -> JSONResponse:
 
 for _error_class in _REVIEW_ERRORS:
     app.add_exception_handler(_error_class, review_error_handler)
+
+
+from huipi_cloud.modules.grading import grade_review_errors as grade_errors  # noqa: E402
+
+_GRADE_REVIEW_ERRORS = {
+    grade_errors.GradeReviewNotFoundError: (404, "resource_not_found_or_forbidden"),
+    grade_errors.GradeReviewSourceStaleError: (409, "grade_review_source_stale"),
+    grade_errors.GradeReviewInvalidDecisionError: (422, "grade_review_decision_invalid"),
+    grade_errors.GradeReviewConflictError: (409, "grade_review_revision_conflict"),
+    grade_errors.GradeReviewIdempotencyConflictError: (409, "grade_review_request_conflict"),
+    grade_errors.GradeReviewCommitOutcomeUnknownError: (503, "grade_review_commit_outcome_unknown"),
+    grade_errors.GradeReviewRegistrationRolledBackError: (503, "grade_review_registration_failed"),
+    grade_errors.GradeReviewArtifactCorruptError: (503, "grade_review_artifact_unavailable"),
+    grade_errors.GradeReviewUnavailableError: (503, "grade_review_unavailable"),
+}
+
+
+async def grade_review_error_handler(_: Request, error: Exception) -> JSONResponse:
+    response_status, code = _GRADE_REVIEW_ERRORS[type(error)]
+    return JSONResponse(status_code=response_status, content={"detail": code},
+                        headers={"Cache-Control": "no-store"})
+
+
+for _error_class in _GRADE_REVIEW_ERRORS:
+    app.add_exception_handler(_error_class, grade_review_error_handler)

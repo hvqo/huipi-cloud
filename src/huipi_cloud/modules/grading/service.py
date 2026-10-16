@@ -266,6 +266,11 @@ async def read_grade_input_artifact(
         request_id=record.request_id,
         config=config,
     )
+    if {"storage_unavailable", "database_unavailable"}.intersection(
+        current.inspection.reason_codes
+    ):
+        # Dependency failure is not evidence that a previously valid source version changed.
+        raise StorageUnavailableError("grade input dependencies unavailable")
     if current.core is None or json_sha256(current.core) != record.input_sha256:
         raise GradeInputSourceChangedError("grade_input_no_longer_current")
     if record.bucket != storage.bucket:

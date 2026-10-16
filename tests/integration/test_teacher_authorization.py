@@ -290,7 +290,7 @@ async def test_all_old_http_routes_require_token_including_every_private_downloa
             if method not in {"get", "post", "put", "delete"}:
                 continue
             url = path
-            for name in ("assignment_id", "question_id", "submission_id", "user_id"):
+            for name in ("assignment_id", "question_id", "submission_id", "user_id", "proposal_id"):
                 url = url.replace("{" + name + "}", str(uuid4()))
             url = url.replace("{page_number}", "1")
             response = await ctx.client.request(method, url, json={})
@@ -298,7 +298,7 @@ async def test_all_old_http_routes_require_token_including_every_private_downloa
             assert response.headers["www-authenticate"] == "Bearer"
             assert "security" in operations[method]
             count += 1
-    assert count == 23
+    assert count == 26
     assert (await ctx.client.get("/api/v1/health")).json() == {"status": "ok"}
 
 

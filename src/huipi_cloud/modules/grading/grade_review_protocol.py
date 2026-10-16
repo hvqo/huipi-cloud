@@ -274,6 +274,7 @@ def grade_review_request_sha256(
     request_id: UUID,
     expected_revision: int,
     payload: GradeReviewDecisionCreate,
+    reviewer_user_id: UUID | None = None,
 ) -> str:
     semantic_request = {
         "proposal_id": str(proposal_id),
@@ -281,4 +282,7 @@ def grade_review_request_sha256(
         "expected_revision": expected_revision,
         "payload": payload.model_dump(mode="json"),
     }
+    # Preserve every legacy CLI digest; only authenticated HTTP requests add actor identity.
+    if reviewer_user_id is not None:
+        semantic_request["reviewer_user_id"] = str(reviewer_user_id)
     return hashlib.sha256(canonical_json_bytes(semantic_request)).hexdigest()

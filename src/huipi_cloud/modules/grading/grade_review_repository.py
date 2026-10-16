@@ -5,10 +5,11 @@ from __future__ import annotations
 import logging
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import literal_column, select, text
 from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from huipi_cloud.modules.assignments.models import Question
 from huipi_cloud.modules.grading import repository as grade_input_repository
 from huipi_cloud.modules.grading.errors import GradeInputNotFoundError, GradeInputSourceChangedError
 from huipi_cloud.modules.grading.grade_review_errors import (
@@ -23,6 +24,9 @@ from huipi_cloud.modules.grading.grade_review_models import GradeReviewRevision
 from huipi_cloud.modules.grading.grade_review_protocol import GradeReviewRevisionDocument
 from huipi_cloud.modules.grading.models import GradeInputArtifact, GradeProposalArtifact
 from huipi_cloud.modules.grading.protocol import GradeInputCore
+from huipi_cloud.modules.identity.protocol import AccessError, Principal
+from huipi_cloud.modules.identity.service import require_assignment
+from huipi_cloud.modules.submissions.models import Submission
 
 SessionFactory = async_sessionmaker[AsyncSession]
 logger = logging.getLogger(__name__)
@@ -39,8 +43,11 @@ async def get_review_by_request(
     *,
     proposal_id: UUID,
     request_id: UUID,
+    principal: Principal | None = None,
 ) -> GradeReviewRevision | None:
-    async with session_factory() as session:
+    async with session_factory() as session, session.begin():
+        if principal is not None:
+            await authorize_proposal(session, proposal_id, principal, write=True, lock=True)
         return await session.scalar(
             select(GradeReviewRevision).where(
                 GradeReviewRevision.proposal_id == proposal_id,
@@ -74,6 +81,7 @@ async def append_review(
     expected_revision: int,
     grade_input_document,
     review_draft: GradeReviewRevisionDocument,
+    principal: Principal | None = None,
 ) -> tuple[GradeReviewRevision, bool]:
     """Lock one proposal, recheck all GradeInput sources, then append a revision."""
 
@@ -82,6 +90,9 @@ async def append_review(
         async with session_factory() as session:
             transaction = await session.begin()
             try:
+                if principal is not None:
+                    await session.execute(text("SET LOCAL lock_timeout = '3000ms'"))
+                    await session.execute(text("SET LOCAL statement_timeout = '5000ms'"))
                 proposal = await session.scalar(
                     select(GradeProposalArtifact)
                     .where(GradeProposalArtifact.id == proposal_id)
@@ -91,6 +102,8 @@ async def append_review(
                 if proposal is None:
                     raise GradeReviewNotFoundError("proposal_not_found")
 
+                if principal is not None:
+                    await authorize_proposal(session, proposal_id, principal, write=True, lock=True)
                 replay = await session.scalar(
                     select(GradeReviewRevision).where(
                         GradeReviewRevision.proposal_id == proposal_id,
@@ -163,6 +176,7 @@ async def append_review(
                     review_revision=document.review_revision,
                     supersedes_review_id=document.supersedes_review_id,
                     reviewer_ref=document.reviewer_ref,
+                    reviewer_user_id=principal.user_id if principal else None,
                     request_id=document.request_id,
                     request_sha256=document.request_sha256,
                     review_status=document.review_status,
@@ -196,6 +210,7 @@ async def append_review(
         if isinstance(
             error,
             (
+                AccessError,
                 GradeReviewNotFoundError,
                 GradeReviewSourceStaleError,
                 GradeReviewConflictError,
@@ -217,3 +232,101 @@ async def _rollback_before_commit(transaction) -> None:
         await transaction.rollback()
     except Exception as error:
         logger.warning("GradeReview pre-commit rollback failed (%s)", type(error).__name__)
+
+
+async def authorize_proposal(
+    session: AsyncSession,
+    proposal_id: UUID,
+    principal: Principal,
+    *,
+    write: bool = False,
+    lock: bool = False,
+    submission_id: UUID | None = None,
+    question_id: UUID | None = None,
+) -> None:
+    """Resolve all real resource bindings before object reads, history, or replay."""
+    if lock:
+        await session.execute(text("SET LOCAL lock_timeout = '3000ms'"))
+        await session.execute(text("SET LOCAL statement_timeout = '5000ms'"))
+    query = (
+        select(GradeInputArtifact.assignment_id)
+        .select_from(GradeProposalArtifact)
+        .join(
+            GradeInputArtifact,
+            GradeInputArtifact.id == GradeProposalArtifact.grade_input_artifact_id,
+        )
+        .join(Submission, Submission.id == GradeProposalArtifact.submission_id)
+        .join(Question, Question.id == GradeProposalArtifact.question_id)
+        .where(
+            GradeProposalArtifact.id == proposal_id,
+            GradeInputArtifact.input_sha256 == GradeProposalArtifact.grade_input_sha256,
+            GradeInputArtifact.submission_id == GradeProposalArtifact.submission_id,
+            GradeInputArtifact.question_id == GradeProposalArtifact.question_id,
+            GradeInputArtifact.assignment_id == Submission.assignment_id,
+            GradeInputArtifact.assignment_id == Question.assignment_id,
+        )
+    )
+    if submission_id is not None:
+        query = query.where(GradeProposalArtifact.submission_id == submission_id)
+    if question_id is not None:
+        query = query.where(GradeProposalArtifact.question_id == question_id)
+    assignment_id = await session.scalar(query)
+    if assignment_id is None:
+        raise AccessError("resource_not_found_or_forbidden", 404)
+    await require_assignment(session, principal, assignment_id, write=write, lock=lock)
+
+
+def summary_query():
+    # Project only bounded score metadata in PostgreSQL: never fetch long rationales/quotes.
+    scores = literal_column("""(SELECT coalesce(jsonb_agg(jsonb_build_object(
+        'criterion_id', c->'criterion_id', 'proposed_points', c->'proposed_points',
+        'reviewed_points', c->'reviewed_points', 'max_points', c->'max_points',
+        'changed', c->'changed')), '[]'::jsonb)
+        FROM (SELECT value AS c FROM jsonb_array_elements(criterion_reviews) LIMIT 100) items)
+        """).label("criterion_scores")
+    fields = (
+        "review_id",
+        "proposal_id",
+        "grade_input_artifact_id",
+        "proposal_sha256",
+        "grade_input_sha256",
+        "review_revision",
+        "supersedes_review_id",
+        "reviewer_ref",
+        "reviewer_user_id",
+        "request_id",
+        "review_status",
+        "proposed_total_score",
+        "reviewed_total_score",
+        "created_at",
+        "review_reason_codes",
+    )
+    return select(
+        *(getattr(GradeReviewRevision, name) for name in fields),
+        scores,
+        GradeReviewRevision.review_comment.is_not(None).label("review_comment_present"),
+    )
+
+
+async def review_page(session, proposal_id, *, limit=10, offset=0):
+    return (
+        (
+            await session.execute(
+                summary_query()
+                .where(GradeReviewRevision.proposal_id == proposal_id)
+                .order_by(GradeReviewRevision.review_revision.desc())
+                .offset(offset)
+                .limit(limit + 1)
+            )
+        )
+        .mappings()
+        .all()
+    )
+
+
+async def review_summary(session, review_id):
+    return (
+        (await session.execute(summary_query().where(GradeReviewRevision.review_id == review_id)))
+        .mappings()
+        .one()
+    )

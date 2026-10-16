@@ -1,5 +1,7 @@
 # Rubric 候选评分人工复核
 
+已认证的教师 HTTP 工作流见[HTTP 指南](grade-review-http.md)。以下介绍兼容的本地操作员 CLI。
+
 本地 CLI 为已有的 `GradeProposalArtifact` 追加人工复核记录。它不调用模型，不建立正式成绩，也不修改 P2-D2A 的作答存在性决定。`reviewer_ref` 由操作者填写，目前没有身份认证或 RBAC；只能在受控本地环境使用。
 
 ## 前置条件
