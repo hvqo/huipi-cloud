@@ -1,4 +1,3 @@
-
 """Run one locally scoped conversation; cloud transfer requires explicit configuration."""
 
 import argparse
@@ -15,9 +14,11 @@ from huipi_cloud.infrastructure.database.session import dispose_database_engine,
 from huipi_cloud.infrastructure.embedding.protocol import EmbeddingError
 from huipi_cloud.infrastructure.reranking.protocol import RerankError
 from huipi_cloud.infrastructure.storage.dependencies import _configured_storage
+from huipi_cloud.modules.copilot.authorized import AuthorizedBusinessTools
 from huipi_cloud.modules.copilot.protocol import CopilotError, CopilotRequest
 from huipi_cloud.modules.copilot.runtime import CopilotRuntime
 from huipi_cloud.modules.copilot.tools import BusinessTools
+from huipi_cloud.modules.identity.protocol import AccessError
 from huipi_cloud.modules.knowledge.dependencies import configured_retriever
 from huipi_cloud.modules.knowledge.schemas import KnowledgeError
 
@@ -40,31 +41,47 @@ async def run(args):
         except ValueError:
             storage = None  # The original four tools do not require object storage.
         retriever = configured_retriever(session_factory, storage, config)
-        if hasattr(retriever, "prepare"):
-            # Warm local model/index before any paid call or 5s Agent tool deadline.
-            await retriever.prepare(request.assignment_id)
-        runtime = CopilotRuntime(
-            provider,
-            BusinessTools(
+        tool_options = dict(
+            storage=storage,
+            retriever=retriever,
+            max_result_bytes=config.copilot_max_tool_result_bytes,
+        )
+        if getattr(args, "token_stdin", False):
+            token = sys.stdin.readline(16386).strip()
+            tools = await AuthorizedBusinessTools.from_bearer(
+                token,
+                config,
                 session_factory,
                 request.assignment_id,
-                storage=storage,
-                retriever=retriever,
-                max_result_bytes=config.copilot_max_tool_result_bytes,
-            ),
-            config,
-        )
+                **tool_options,
+            )
+            del token
+        else:
+            # Legacy CLI remains a local DB-operator entry, not a teacher identity.
+            tools = BusinessTools(session_factory, request.assignment_id, **tool_options)
+        if hasattr(retriever, "prepare"):
+            # Identity and scope have been checked before any local source/index preload.
+            await retriever.prepare(request.assignment_id)
+        runtime = CopilotRuntime(provider, tools, config)
         result = await runtime.run(request)
         print(result.model_dump_json(indent=2))
         return 0 if result.status == "completed" else 1
-    except (CopilotError, KnowledgeError, EmbeddingError, RerankError, ValidationError) as error:
+    except (
+        CopilotError,
+        KnowledgeError,
+        EmbeddingError,
+        RerankError,
+        ValidationError,
+        AccessError,
+    ) as error:
         print(
             json.dumps(
                 {
                     "status": "failed",
                     "code": error.code
                     if isinstance(
-                        error, (CopilotError, KnowledgeError, EmbeddingError, RerankError)
+                        error,
+                        (CopilotError, KnowledgeError, EmbeddingError, RerankError, AccessError),
                     )
                     else "invalid_cli_input",
                 }
@@ -79,7 +96,14 @@ async def run(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="受控本地教师Copilot；没有身份认证或成绩发布权限")
+    parser = argparse.ArgumentParser(
+        description="受控本地Copilot；默认DB操作员，--token-stdin验证教师身份；不发布成绩"
+    )
+    parser.add_argument(
+        "--token-stdin",
+        action="store_true",
+        help="从标准输入读取OIDC access token，禁止通过命令行参数传Token",
+    )
     parser.add_argument("--assignment-id", required=True, type=UUID)
     parser.add_argument("--question", required=True)
     parser.add_argument(

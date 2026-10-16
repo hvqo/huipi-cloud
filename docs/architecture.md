@@ -1,6 +1,6 @@
 # 架构与模块边界
 
-慧批云端采用 src 布局的模块化单体，围绕作业提交、文档解析、来源对齐、视觉建议和人工复核建立可追溯的数据流。离线视觉评测与线上视觉建议使用同一严格回复协议，但评测工具不修改线上 Provider 行为。自动成绩发布、完整认证和 RBAC 仍未实现；教师 Copilot 仅提供受控本地只读核心。
+慧批云端采用 src 布局的模块化单体，围绕作业提交、文档解析、来源对齐、视觉建议和人工复核建立可追溯的数据流。离线视觉评测与线上视觉建议使用同一严格回复协议，但评测工具不修改线上 Provider 行为。HTTP 业务接口已有 OIDC JWT 验证与作业成员授权；登录界面、学生身份、完整组织 RBAC、租户隔离和自动成绩发布仍未实现。教师 Copilot 仍是受控本地只读核心。
 
 业务推理默认使用云端DeepSeek API（文本评分与视觉建议均为 `deepseek-flash`），无密钥、无授权或服务失败时不降级到本地模型。Ollama仅保留显式开发兼容能力。DeepSeek非思考请求显式设置 `thinking.type=disabled`，不发送会开启思考的 `reasoning_effort`；配置档位max不表示实际启用max推理。正常结束、JSON协议、Rubric和Quote来源是独立门禁；截断响应不能登记成功结果。真实合成验收与后续基线计划见[DeepSeek验收文档](evaluation/deepseek-provider-validation.md)。
 
@@ -39,7 +39,7 @@ revision 的排序不依赖时间戳。写入前锁住 `Submission` 行，同一
 
 区域只以 JSON Pointer 指向已校验 Canonical 节点。提供文本范围时，范围使用节点字符串中的 Unicode 码点半开区间 `[start, end)`，服务使用 Python 字符串长度检查边界。同一节点只把实际相交的半开范围视为重叠，相邻范围可以分开标注；不同节点上相同的数字偏移不是同一段文字。服务按 Canonical 树的父子关系判断来源覆盖：选择父容器会覆盖其后代，若后代已有其他 Question 或 unassigned 来源，不能把父容器登记为本题的确定作答证据。整节点选择只接受有可定位素材引用的 `image` 节点；仅有 Block 级图片引用不会让空白文本、布局或容器子节点成为图片证据。Block 级图片没有字符位置，若同一 Block 还有其他 Question 来源，则不能把图像确认成某一题的专属素材；可将对应图像节点和归属原因记为 `uncertain`。图片引用按稳定资产身份去重，Block 与 ContentNode 重复指向同一素材时不会形成两个证据。服务从 Canonical 节点复制页码、Block ID、BBox、类型和安全资产元数据；不保存节点文本，不修改 Canonical。无法归属到本 Question 或来自 P2-D1 unassigned 区域的自动来源，只能明确以 `uncertain` 和 `response_not_linked_to_question` 记录，不能包装成已确认的该题答案。外部图片 URL 不返回，也不被下载。
 
-复核只有本地 CLI：`inspect` 显示被截断的来源片段和映射状态，并显示原始 `SubmissionFile` 的 ID、MIME、大小和 SHA-256，供本地人员定位原始 PDF/图片；它不输出文件名、对象 Key 或学生标识。`record` 追加决定，`history` 显示修订及当前来源是否匹配，`export` 输出脱敏 JSON。当前没有认证或 RBAC；`reviewer_ref` 是操作者自声明标记，不是身份凭据。未认证 API、复核数据和原始提交仅可在受控本地环境使用。导出会使用每次导出独有的 HMAC 盐替换数据库 ID 和摘要引用，并省略 reviewer、原始学生 ID、S3 Key 与 URI；该伪名不能跨两次导出关联。去标识化不等于彻底匿名：题号、区域位置、标签和外部数据仍可能组合识别个人，导出文件仍按敏感数据管理。
+复核只有本地 CLI：`inspect` 显示被截断的来源片段和映射状态，并显示原始 `SubmissionFile` 的 ID、MIME、大小和 SHA-256，供本地人员定位原始 PDF/图片；它不输出文件名、对象 Key 或学生标识。`record` 追加决定，`history` 显示修订及当前来源是否匹配，`export` 输出脱敏 JSON。当前复核 CLI 不提供教师认证或 RBAC；`reviewer_ref` 是操作者自声明标记，不是身份凭据。HTTP 读取已受教师授权保护，复核 CLI、数据及原始提交仍需受控管理。导出会使用每次导出独有的 HMAC 盐替换数据库 ID 和摘要引用，并省略 reviewer、原始学生 ID、S3 Key 与 URI；该伪名不能跨两次导出关联。去标识化不等于彻底匿名：题号、区域位置、标签和外部数据仍可能组合识别个人，导出文件仍按敏感数据管理。
 
 `tests/fixtures/answer_presence_synthetic_v1.json` 包含 13 个合成复核范围，含仅印刷题干、普通文本、跨页、无题号、公式、图像/几何、表格、OCR 遗漏、共享图形、多区域、歧义及未复核。评测脚本验证标注一致性并统计人工覆盖率、不确定比例；当前没有自动作答检测器，模型 Precision/Recall/FPR 均为 `not_evaluated`，不会把人工标签当作预测。纯文本合成协议不能验证真实手写识别。还需收集经许可且脱敏的真实样本，制定双人标注与仲裁规则，并在开放教师界面前实现认证和审计访问控制。
 
@@ -146,7 +146,7 @@ P2-D1 从已持久化的 Canonical Document 读取学生内容，不重新运行
 
 `AnswerAlignmentDocument` 使用 `huipi.answer.alignment` 1.0 合同，当前 `ALIGNER_VERSION=1.1.0`。该算法版本增加了答案结束边界可信度和同来源图片归属检查，没有改变 JSON 字段结构；既有 1.0.0 产物保留不覆盖，当前查询只按当前 aligner 版本和 Question digest 选择索引。结果包含 Canonical SHA-256、Canonical ID、Question 集合 digest、候选证据、每道作业题的状态、source region 和未分配区域。数据库表 `answer_alignment_artifacts` 保存轻量索引，唯一约束为 `(canonical_artifact_id, aligner_version, assignment_questions_digest)`。结果 ID 由版本化输入确定；每次执行写入 UUID run Key，避免并发覆盖。Repository 用 PostgreSQL `ON CONFLICT DO NOTHING` 覆盖所有唯一冲突后读取已提交的唯一索引。确定性提交输家可删除自身未引用对象；数据库提交结果不确定时保留对象，避免删除数据库可能已经引用的对象。跨 S3/PG 仍没有原子事务，进程退出可能留下孤立对象。
 
-对齐由 `python -m huipi_cloud.workers.align_answers --submission-id UUID` 在 FastAPI 请求之外运行。两个 GET API 只查询已写入的结果，不隐式运行识别。摘要不包含 S3 Key；单题接口检查当前 Canonical 和 Question digest，并对对象大小、SHA-256 和版本合同做校验。`ANSWER_ALIGNMENT_MAX_DOCUMENT_BYTES` 默认最多 32 MiB、硬上限 64 MiB；`ANSWER_ALIGNMENT_MAX_QUESTION_RESPONSE_BYTES` 默认最多 2 MiB、硬上限 8 MiB。读取单题仍会将整份有界 JSON 解码成对象，内存峰值高于对象字节数，并随并发请求增加；当前没有全局并发读取配额。当前接口没有认证、RBAC、归属检查或租户隔离，只适用于本地或受控环境。
+对齐由 `python -m huipi_cloud.workers.align_answers --submission-id UUID` 在 FastAPI 请求之外运行。两个 GET API 只查询已写入的结果，不隐式运行识别。摘要不包含 S3 Key；单题接口检查当前 Canonical 和 Question digest，并对对象大小、SHA-256 和版本合同做校验。`ANSWER_ALIGNMENT_MAX_DOCUMENT_BYTES` 默认最多 32 MiB、硬上限 64 MiB；`ANSWER_ALIGNMENT_MAX_QUESTION_RESPONSE_BYTES` 默认最多 2 MiB、硬上限 8 MiB。读取单题仍会将整份有界 JSON 解码成对象，内存峰值高于对象字节数，并随并发请求增加；当前没有全局并发读取配额。这些 HTTP 接口现由统一教师身份和作业归属校验保护；尚无完整组织 RBAC 或租户隔离。
 
 离线人工标注集当前为 13 个合成 Canonical 案例，保留原 12 个案例标签，并增加“明确题号 + 仅有印刷题干、没有确认学生回应”的负样本。指标定义版本 2.1 使用 `(case_id, Question, content_pointer, start, end)` 作为答案范围键。`content_pointer` 指向具体的 Canonical ContentNode；偏移相对该节点文本，使用 Python Unicode 码点和半开区间。脚本只归并同一节点内重叠或相邻范围，不让不同节点的相同偏移匹配。候选检测和候选到 Question 关联指标也包含完整节点路径。原 13 个顶层案例仍使用旧标注并推导顶层 pointer；嵌套标注必须显式给出且通过节点路径和范围验证。嵌套专项样本单独报告，不混入原 13 案例统计。脚本分别输出候选检测、候选到 Question 关联、来源映射的自动接受 Precision/Recall、字符区间交并、精确边界和素材引用保留。`aligned` 自动接受指标只衡量来源到 Question 的映射，不衡量作答存在或批改就绪。分子、分母和定义都会输出；没有预测时 Precision 为 `null`，不伪报为高分。这些数字只描述小型合成集，不代表真实学生手写作业质量。当前没有真实手写评测集、教师评分发布流程、概率校准、自动发布成绩或 P2-D2。
 
@@ -190,7 +190,7 @@ MinerU 运行在新 session 的 Linux 子进程组中。输入命令使用参数
 
 ## 安全与可用性边界
 
-`student_ref` 不是认证身份。作业提交、文件下载、任务状态和解析结果查询没有登录、RBAC、归属校验或租户隔离，只能在本地或受控环境使用。任务状态 API 不返回 `lease_token`、对象 Key、文件内容、堆栈或原始异常信息；解析摘要也不返回 bucket 和私有对象 Key。执行错误只保存固定的错误码和短摘要。`GET /api/v1/health` 是存活探针，不检查 PostgreSQL 或对象存储就绪状态。数据库/对象存储连接故障由 API 返回不含内部凭据的安全响应。
+`student_ref` 不是认证身份。作业提交（教师代录）、文件下载、任务状态和解析结果查询统一验证教师身份及作业归属；学生认证、组织 RBAC 和租户隔离尚未实现。任务状态 API 不返回 `lease_token`、对象 Key、文件内容、堆栈或原始异常信息；解析摘要也不返回 bucket 和私有对象 Key。执行错误只保存固定的错误码和短摘要。`GET /api/v1/health` 是存活探针，不检查 PostgreSQL 或对象存储就绪状态。数据库/对象存储连接故障由 API 返回不含内部凭据的安全响应。
 
 ## 并发与故障语义
 
@@ -226,7 +226,7 @@ opt-in 本机 E2E 对三个合成样本均通过；三个文件都为一页，�
 
 上传对象使用每次尝试独立的不可变 Key。写 PostgreSQL 前以 `Submission → Assignment → Question` 的顺序加锁，与人工复核、作业写入路径保持一致；再锁定并重新核对 Canonical、Alignment、最新 Review、AnswerKey 和 Rubric。唯一约束 `(submission_id, question_id, request_id)` 保护并发重放。同 request ID 与相同 `input_sha256` 返回既有包；内容不同返回冲突。只有确认事务在 COMMIT 前失败或确认其他对象已登记为赢家后，服务才尽力删除本次对象；COMMIT 结果未知时保留对象。S3 与 PostgreSQL 不共享事务，进程中断或上传取消仍可能留下孤立对象，当前没有对账清理器。
 
-`read_grade_input_artifact()` 重新计算当前输入摘要，拒绝已被新复核修订替代的旧包；随后校验对象大小、SHA-256、严格 Pydantic 协议和索引字段。CLI 位于 `workers/prepare_grade_input.py`，只支持本地 `inspect` 与 `prepare`，没有匿名 HTTP 写 API。项目没有认证或 RBAC，原始作业、复核证据和评分输入只适用于受控环境。
+`read_grade_input_artifact()` 重新计算当前输入摘要，拒绝已被新复核修订替代的旧包；随后校验对象大小、SHA-256、严格 Pydantic 协议和索引字段。CLI 位于 `workers/prepare_grade_input.py`，只支持本地 `inspect` 与 `prepare`，没有匿名 HTTP 写 API。评分 CLI 仍是数据库操作员入口，不代表教师认证；原始作业、复核证据和评分输入按敏感数据管理。
 
 ## P3-B Rubric 候选评分
 
@@ -299,3 +299,14 @@ Reranker选用Qwen/Qwen3-Reranker-0.6B，固定快照e61197ed45024b0ed8a2d74b80b
 内部retrieve_candidates最多20条，64KiB；外部search/top_k仍最多5条、沿用工具字节预算。候选进入精排前验证PG作用域/active/许可及S3原文SHA，精排后与最终回答前再验证。Dense/Hybrid候选分别精排，不默认融合更优。精排故障仅在显式配置时恢复原始排序；PG/S3/SHA与权限错误不能降级掩盖。Embedding与Rerank的独立故障及最终实际模式都留在轨迹中。
 
 两个独立本地模型进程共享控制器Semaphore，串行加载/计算，但可共同常驻。它不是跨CLI进程的GPU调度或显存硬配额。部署限定单GPU上一个Copilot实例；跨进程并行与其他GPU软件仍可能OOM。各子进程超时/取消杀进程组并有界回收，无新增向量数据库、Schema或评分业务协议。
+
+
+## 教师身份与作业成员授权
+
+`infrastructure/auth/jwt.py` 使用 PyJWT/cryptography 验证固定 RS256 签名、Issuer、Audience 与有效期，通过受控 HTTPS JWKS 取键。未知 kid 有冷却刷新，缓存到期取键失败即拒绝，不信任 Token 内 URL 或角色。User 以 `(issuer, subject)` 唯一定位，管理员标记来自数据库，不保存密码或 Token。
+
+`identity/dependencies.py` 对所有业务 HTTP 路由执行精确方法/模板策略、Principal 解析及当前授权检查。认证会话与写业务会话分离，认证短事务不延伸到文件流或模型调用。Question/Submission 必须查到相同 Assignment，普通教师必须有当前有效 Membership；`can_write` 进一步限制修改。未知路由策略拒绝。完整清单见[权限矩阵](security/http-permissions.md)。公开的只有存活探针与静态 API 文档。
+
+新作业与创建者 Membership 在同一事务提交；列表先按授权过滤再分页。迁移仅新增 User/Membership，不改历史作业，未绑定的历史数据默认拒绝普通教师访问。授权不跨请求缓存，撤销提交后的后续请求立即生效；进行中的事务/流不强制取消。内部管理员是本地可信操作员配置的全局角色，还没有独立租户管理员体系。
+
+Copilot 的 `AuthorizedBusinessTools.from_bearer()` 先验签并从服务器解析 Principal，然后固定 Assignment；每次工具及 Citation 检查前后重查授权。旧 BusinessTools/无 Token CLI 仍仅限持有数据库凭据的操作员，不能包装成教师 HTTP 接口。没有开放对话 API，RAG 仍默认 Lexical，正式评分和复核协议不变。[部署与测试边界](development/teacher-auth.md)。

@@ -11,6 +11,7 @@ from huipi_cloud.modules.assignments.models import (
     Assignment,
     Question,
 )
+from huipi_cloud.modules.identity.models import AssignmentMembership
 
 
 def assignment_detail_options():
@@ -26,9 +27,17 @@ async def list_assignments(
     *,
     limit: int,
     offset: int,
+    user_id: UUID | None = None,
 ) -> list[Assignment]:
+    query = select(Assignment)
+    if user_id is not None:
+        query = query.where(select(AssignmentMembership.id).where(
+            AssignmentMembership.assignment_id == Assignment.id,
+            AssignmentMembership.user_id == user_id,
+            AssignmentMembership.revoked_at.is_(None),
+        ).exists())
     result = await session.scalars(
-        select(Assignment)
+        query
         .order_by(Assignment.created_at.desc(), Assignment.id)
         .limit(limit)
         .offset(offset)

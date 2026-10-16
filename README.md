@@ -6,6 +6,7 @@
 
 ## 功能特性
 
+- **教师身份与作业授权**：验证外部 OIDC access token，按服务端成员授权控制作业、题目、提交和文件访问。
 - **作业与题目管理**：创建作业、维护题目、人工录入标准答案和评分细则，并校验后发布。
 - **作业提交与文件存储**：提交 PDF、JPG 或 PNG，使用私有 S3 兼容存储保存原文件。
 - **文档解析**：通过独立配置的 MinerU 4.x Basic/ONNX 运行时生成 Markdown 和结构化解析产物。
@@ -83,7 +84,7 @@ uv run alembic upgrade head
 uv run uvicorn huipi_cloud.main:app --reload
 ```
 
-API 文档位于 <http://127.0.0.1:8000/docs>，存活检查为 `GET /api/v1/health`。数据库表由 Alembic 管理，应用启动时不会自动创建表。
+API 文档位于 <http://127.0.0.1:8000/docs>，存活检查为 `GET /api/v1/health`。数据库表由 Alembic 管理，应用启动时不会自动创建表。业务 API 还需配置可信 OIDC 发行方并建立本地教师映射，见[教师认证与授权指南](docs/development/teacher-auth.md)；缺省只开放存活检查和 API 文档。
 
 ## 基本使用
 
@@ -107,15 +108,16 @@ API 文档位于 <http://127.0.0.1:8000/docs>，存活检查为 `GET /api/v1/hea
 
 ## 当前边界
 
-- 系统没有完整登录、RBAC 或租户隔离。`student_ref` 是本地模拟标识；提交、查询、下载和复核工具只适用于受控环境，不能直接暴露到公网。
+- HTTP 业务接口已要求可信教师身份与作业授权；仍缺少登录界面、学生认证、完整组织 RBAC 和租户隔离。`student_ref` 是模拟标识，上传为教师代录；本地操作员 CLI 和部署凭据仍需受控管理。
 - `aligned` 只表示来源区域与作业题目的映射证据足够，不表示学生已作答、OCR 完整或可以评分。
 - `ready_text` 只表示文本评分输入通过来源门禁，不表示已产生分数、图像/表格/公式均可评分或人工标签绝对正确。
-- 视觉和文本模型都只生成候选建议；候选分数不是最终成绩，尚无经充分验证的真实教学作业评分质量，没有自动发布成绩；教师 Copilot 只提供本地只读 CLI，不具备教师认证或公网服务权限。
+- 视觉和文本模型都只生成候选建议；候选分数不是最终成绩，尚无经充分验证的真实教学作业评分质量，没有自动发布成绩；教师 Copilot 只提供本地只读 CLI，可显式传入可信教师身份；没有公开聊天服务。
 - 当前视觉评测集由合成样本构成；合成结果不能代表真实学生作业表现。
 
 ## 项目文档
 
 - [架构与模块边界](docs/architecture.md)
+- [教师认证、作业授权与权限矩阵](docs/development/teacher-auth.md)
 - [本地开发指南](docs/development/README.md)
 - [评分输入准备指南](docs/development/grade-input.md)
 - [Rubric 候选评分 CLI 指南](docs/development/grade-proposals.md)

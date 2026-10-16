@@ -13,10 +13,13 @@
 
 - [教师 Copilot 本地 Agent CLI](teacher-copilot.md)
 
-所有示例默认用于本地受控环境。项目尚未实现登录、RBAC 或租户隔离。
+所有示例默认用于本地受控环境。HTTP 业务接口已有教师身份和作业成员授权；仍没有登录界面、学生认证、完整组织 RBAC 或租户隔离。
 
 - [教师知识材料导入、版本与作用域检索](scoped-retrieval.md)
 
 - [本地Embedding与混合检索](hybrid-retrieval.md)
 
 - [本地Rerank与两阶段检索](rerank-retrieval.md)
+
+- [教师身份、作业授权与迁移](teacher-auth.md)
+- [全部 HTTP 权限矩阵](../security/http-permissions.md)
