@@ -1,61 +1,58 @@
-"""DB-admin only grants. No public signup, role promotion or password endpoints."""
+"""Compatibility membership endpoints; all writes use the audited administrator service."""
 
-from uuid import UUID
+from uuid import UUID, uuid4
 
-from fastapi import APIRouter
-from pydantic import BaseModel, ConfigDict
-from sqlalchemy import select, update
-from sqlalchemy.dialects.postgresql import insert
+from fastapi import APIRouter, Response
+from pydantic import BaseModel, ConfigDict, StrictBool
 
-from huipi_cloud.infrastructure.database.base import utc_now
-from huipi_cloud.modules.assignments.models import Assignment
 from huipi_cloud.modules.assignments.router import DbSession
+from huipi_cloud.modules.identity import admin_service
+from huipi_cloud.modules.identity.admin_router import IdentityRoute
 from huipi_cloud.modules.identity.dependencies import AuthorizedPrincipal
-from huipi_cloud.modules.identity.models import AssignmentMembership, User
-from huipi_cloud.modules.identity.protocol import AccessError
+from huipi_cloud.modules.identity.http_schemas import AdminOperationResult
 
-router = APIRouter(prefix="/assignments", tags=["assignment-authorization"])
+router = APIRouter(
+    prefix="/assignments",
+    tags=["assignment-authorization"],
+    route_class=IdentityRoute,
+)
 
 
 class MembershipGrant(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    can_write: bool = False
+    can_write: StrictBool = False
+    request_id: UUID | None = None
 
 
-@router.put("/{assignment_id}/members/{user_id}")
+class MembershipWriteResult(BaseModel):
+    assignment_id: UUID
+    user_id: UUID
+    can_write: bool
+    operation: AdminOperationResult
+
+
+@router.put("/{assignment_id}/members/{user_id}", response_model=MembershipWriteResult)
 async def grant_assignment_membership(
     assignment_id: UUID,
     user_id: UUID,
     payload: MembershipGrant,
     session: DbSession,
     principal: AuthorizedPrincipal,
-) -> dict:
-    async with session.begin():
-        if await session.get(Assignment, assignment_id) is None:
-            raise AccessError("resource_not_found_or_forbidden", 404)
-        if (
-            await session.scalar(
-                select(User.id).where(
-                    User.id == user_id,
-                    User.is_active.is_(True),
-                )
-            )
-            is None
-        ):
-            raise AccessError("teacher_not_found", 404)
-        await session.execute(
-            insert(AssignmentMembership)
-            .values(
-                assignment_id=assignment_id,
-                user_id=user_id,
-                can_write=payload.can_write,
-            )
-            .on_conflict_do_update(
-                constraint="uq_assignment_memberships_user",
-                set_={"can_write": payload.can_write, "revoked_at": None},
-            )
-        )
-    return {"assignment_id": assignment_id, "user_id": user_id, "can_write": payload.can_write}
+) -> MembershipWriteResult:
+    operation = await admin_service.change_membership(
+        session,
+        principal,
+        assignment_id,
+        user_id,
+        payload.request_id or uuid4(),
+        can_write=payload.can_write,
+    )
+    return MembershipWriteResult(
+        assignment_id=assignment_id,
+        user_id=user_id,
+        can_write=payload.can_write,
+        operation=operation,
+    )
 
 
 @router.delete("/{assignment_id}/members/{user_id}", status_code=204)
@@ -64,14 +61,16 @@ async def revoke_assignment_membership(
     user_id: UUID,
     session: DbSession,
     principal: AuthorizedPrincipal,
+    response: Response,
+    request_id: UUID | None = None,
 ) -> None:
-    async with session.begin():
-        await session.execute(
-            update(AssignmentMembership)
-            .where(
-                AssignmentMembership.assignment_id == assignment_id,
-                AssignmentMembership.user_id == user_id,
-                AssignmentMembership.revoked_at.is_(None),
-            )
-            .values(revoked_at=utc_now())
-        )
+    operation = await admin_service.change_membership(
+        session,
+        principal,
+        assignment_id,
+        user_id,
+        request_id or uuid4(),
+        can_write=None,
+    )
+    response.headers["X-Operation-ID"] = str(operation.operation_id)
+    response.headers["X-Request-ID"] = str(operation.request_id)

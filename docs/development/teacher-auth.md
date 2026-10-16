@@ -49,7 +49,7 @@ curl -H "Authorization: Bearer ${HUIPI_ACCESS_TOKEN}" \
   http://127.0.0.1:8000/api/v1/assignments
 ```
 
-管理员可以 `PUT /api/v1/assignments/{id}/members/{user_id}`，正文 `{"can_write":false}` 授予只读成员，`true` 授予作业内写权限；`DELETE` 撤销。普通教师即使是作业创建者也不能操作成员管理接口或授予管理员。用户建立/停用仅有本地操作员 CLI：
+管理员可以 `PUT /api/v1/assignments/{id}/members/{user_id}`，正文 `{"can_write":false}` 授予只读成员，`true` 授予作业内写权限；`DELETE` 撤销。普通教师即使是作业创建者也不能操作成员管理接口或授予管理员。用户建立/停用现也可通过[受保护管理员 API](admin-roles.md)进行；管理员晋升与管理员账号变更仍属于独立部署流程。以下是持有数据库凭据的本地操作员 CLI：
 
 ```bash
 uv run python -m huipi_cloud.modules.identity grant --assignment-id UUID --user-id UUID --write

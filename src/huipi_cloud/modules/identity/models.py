@@ -16,6 +16,7 @@ from sqlalchemy import (
     func,
     true,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from huipi_cloud.infrastructure.database.base import Base
@@ -51,3 +52,30 @@ class AssignmentMembership(Base):
     can_write: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=false())
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class AdminOperation(Base):
+    """Append-only administrative facts; UUID references survive account/resource removal."""
+
+    __tablename__ = "admin_operations"
+    __table_args__ = (
+        UniqueConstraint("actor_user_id", "request_id", name="uq_admin_operations_request"),
+        CheckConstraint("length(payload_sha256) = 64", name="ck_admin_operations_digest"),
+        CheckConstraint("jsonb_typeof(state) = 'object'", name="ck_admin_operations_state"),
+        CheckConstraint(
+            "action IN ('teacher_registered', 'teacher_activation_changed', "
+            "'assignment_membership_granted', 'assignment_membership_revoked')",
+            name="ck_admin_operations_action",
+        ),
+        Index("ix_admin_operations_target_created", "target_user_id", "created_at"),
+        Index("ix_admin_operations_assignment_created", "assignment_id", "created_at"),
+    )
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    actor_user_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
+    target_user_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
+    assignment_id: Mapped[UUID | None] = mapped_column(Uuid)
+    request_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
+    action: Mapped[str] = mapped_column(String(48), nullable=False)
+    payload_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    state: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

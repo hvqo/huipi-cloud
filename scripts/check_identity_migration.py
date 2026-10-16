@@ -47,11 +47,34 @@ async def main():
                 {"id": uuid4()},
             )
         await engine.dispose()
+        await alembic("upgrade", "b61c8e72a490")
+        legacy_user_id = uuid4()
+        engine = create_async_engine(target)
+        async with engine.begin() as connection:
+            await connection.execute(
+                text("""
+                INSERT INTO users (id, issuer, subject, is_active, is_admin)
+                VALUES (:id, 'https://migration.invalid', 'synthetic-teacher', true, false)
+            """),
+                {"id": legacy_user_id},
+            )
+        await engine.dispose()
+        await alembic("upgrade", "head")
+        await alembic("check")
+        await alembic("downgrade", "b61c8e72a490")
+        engine = create_async_engine(target)
+        async with engine.connect() as connection:
+            assert await connection.scalar(text("SELECT id FROM users")) == legacy_user_id
+            assert await connection.scalar(text("SELECT to_regclass('admin_operations')")) is None
+        await engine.dispose()
         await alembic("upgrade", "head")
         await alembic("check")
         engine = create_async_engine(target)
         async with engine.connect() as connection:
             assert await connection.scalar(text("SELECT count(*) FROM assignments")) == 1
+            assert await connection.scalar(text("SELECT id FROM users")) == legacy_user_id
+            assert await connection.scalar(text("SELECT is_admin FROM users")) is False
+            assert await connection.scalar(text("SELECT count(*) FROM admin_operations")) == 0
             assert await connection.scalar(text("SELECT count(*) FROM assignment_memberships")) == 0
         await engine.dispose()
         await alembic("downgrade", "0fd471e9f785")

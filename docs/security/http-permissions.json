@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "operations": [
     {
       "method": "POST",
@@ -216,6 +216,42 @@
       "path": "/api/v1/assignments/{assignment_id}/workbench",
       "policy": "get_assignment_workbench",
       "permission": "assignment_read"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/me",
+      "policy": "get_current_user",
+      "permission": "current_identity"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/teachers",
+      "policy": "list_teachers",
+      "permission": "database_admin"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/teachers",
+      "policy": "register_teacher",
+      "permission": "database_admin"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/admin/teachers/{user_id}",
+      "policy": "set_teacher_active",
+      "permission": "database_admin"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/teachers/{user_id}/memberships",
+      "policy": "list_teacher_memberships",
+      "permission": "database_admin"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/audit-events",
+      "policy": "list_admin_audit_events",
+      "permission": "database_admin"
     }
   ]
 }
