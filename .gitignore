@@ -102,3 +102,9 @@ dist/
 !/data/evaluation/retrieval/rerank-holdout-v1.json*
 !/data/evaluation/retrieval/rerank-experiment-v1.json*
 !/data/evaluation/retrieval/rerank-regressions-v1.json*
+
+# Teacher workbench dependencies and browser artifacts
+node_modules/
+playwright-report/
+frontend/test-results/
+frontend/.cache/

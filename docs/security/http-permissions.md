@@ -61,3 +61,10 @@
 - `POST /reviews`：Assignment 写权限；HTTP DTO 禁止所有自声明审核人字段，服务端派生 Principal 身份并记录 User 外键。提交前以及幂等重放前复查当前身份/授权，短事务 SHARE 锁保护撤权顺序。
 
 历史 CLI 不自动成为可信教师记录。摘要不暴露原文 Quote、标准答案或对象 Key；可选证据坐标指向受保护的 Canonical 页面。来源过期阻止新审核；COMMIT 结果未知返回安全 503，原请求可按当前授权重试。accepted/revised 都不发布成绩。详情见[评分审核 HTTP](../development/grade-review-http.md)。
+
+## 工作台只读投影
+
+- `GET /api/v1/assignments/{assignment_id}/workbench`：Assignment 读权限，最多 25 题；可选 question_id 同时按 Assignment 过滤，不允许跨作业查询。每题仅前 5 个 Rubric 摘要，带真实总数/截断标记，完全不读 AnswerKey。can_write 来自数据库权限，不信任前端角色。
+- 原作答 inspect 的 confirmed_regions 只返回与当前来源版本相符的最新人工坐标，按角色有界分页，最多 50 条/48KiB；不返回素材 URI、S3 Key 或全文。该字段不会改变写协议或授权要求。
+
+Vue 客户端没有可信授权能力；只允许标准 PKCE 登录并向固定同源 API 发送 Bearer Header。Mock OIDC、测试签名私钥及控制端点只存在测试 fixture，不包含于静态构建。完整刷新需要重新认证，不长期保存 JWT。原始文件 Blob URL 在离开预览或组件销毁时释放。
