@@ -210,6 +210,12 @@
       "path": "/api/v1/submissions/{submission_id}/questions/{question_id}/grade-proposals/{proposal_id}/reviews",
       "policy": "record_teacher_grade_review",
       "permission": "assignment_write"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/assignments/{assignment_id}/workbench",
+      "policy": "get_assignment_workbench",
+      "permission": "assignment_read"
     }
   ]
 }

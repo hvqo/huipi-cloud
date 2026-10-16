@@ -277,3 +277,35 @@ async def decision_summary(session, decision_id):
             )
         )
     ).one_or_none()
+
+
+async def decision_region_page(session, decision_id, *, limit=50, offset=0):
+    """Coordinates only; no student content, resource URI or S3 locator in this projection."""
+    query = text("""
+        WITH regions AS (
+            SELECT 'response_regions' AS role, ordinality, value
+            FROM answer_review_decisions,
+                 jsonb_array_elements(response_regions) WITH ORDINALITY
+            WHERE id=:id
+            UNION ALL
+            SELECT 'excluded_prompt_regions', ordinality, value
+            FROM answer_review_decisions,
+                 jsonb_array_elements(excluded_prompt_regions) WITH ORDINALITY
+            WHERE id=:id
+            UNION ALL
+            SELECT 'uncertain_regions', ordinality, value
+            FROM answer_review_decisions,
+                 jsonb_array_elements(uncertain_regions) WITH ORDINALITY
+            WHERE id=:id
+        )
+        SELECT role, value->>'content_pointer' AS content_pointer,
+               (value->>'page_number')::int AS page_number,
+               (value->>'text_start')::int AS text_start,
+               (value->>'text_end')::int AS text_end
+        FROM regions ORDER BY role, ordinality OFFSET :offset LIMIT :limit
+    """)
+    return (
+        (await session.execute(query, {"id": decision_id, "offset": offset, "limit": limit}))
+        .mappings()
+        .all()
+    )

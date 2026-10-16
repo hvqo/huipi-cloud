@@ -18,6 +18,7 @@ from huipi_cloud.modules.answer_review.errors import (
     AnswerReviewUnavailableError,
 )
 from huipi_cloud.modules.answer_review.http_schemas import (
+    ConfirmedRegionSummary,
     EvidenceSummary,
     ReviewHistory,
     ReviewInspection,
@@ -137,6 +138,8 @@ async def inspect_answer_review(
     response: Response,
     evidence_limit: Annotated[int, Query(ge=1, le=50)] = 25,
     evidence_offset: Annotated[int, Query(ge=0, le=100000)] = 0,
+    confirmed_offset: Annotated[int, Query(ge=0, le=100000)] = 0,
+    confirmed_limit: Annotated[int, Query(ge=1, le=50)] = 25,
 ):
     response.headers["Cache-Control"] = "private, no-store"
     bundle = await alignment_service.load_verified_alignment_bundle(
@@ -176,7 +179,30 @@ async def inspect_answer_review(
         evidence.append(item)
     next_offset = evidence_offset + len(evidence)
     truncated = next_offset < len(answer.source_regions)
+    confirmed, confirmed_size = [], 0
+    confirmed_count = 0
+    if matches:
+        confirmed_count = sum(
+            getattr(latest, name + "_count")
+            for name in ("response_regions", "excluded_prompt_regions", "uncertain_regions")
+        )
+        for row in await repository.decision_region_page(
+            session,
+            latest.id,
+            limit=confirmed_limit,
+            offset=confirmed_offset,
+        ):
+            item = ConfirmedRegionSummary(**dict(row))
+            confirmed_size += len(item.model_dump_json().encode())
+            if confirmed_size > 48 * 1024:
+                break
+            confirmed.append(item)
+    confirmed_next = confirmed_offset + len(confirmed)
     return ReviewInspection(
+        confirmed_regions=confirmed,
+        confirmed_offset=confirmed_offset,
+        confirmed_truncated=confirmed_next < confirmed_count,
+        next_confirmed_offset=confirmed_next if confirmed_next < confirmed_count else None,
         submission_id=submission_id,
         question_id=question_id,
         source=ReviewSourceVersion.from_bundle(bundle),

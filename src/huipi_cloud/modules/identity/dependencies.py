@@ -21,6 +21,7 @@ verifier = TokenVerifier(settings)
 
 # Exact route names + allowed methods: a new route has no implicit permission.
 POLICIES = {
+    "get_assignment_workbench": {"GET"},
     "inspect_grade_review": {"GET"},
     "list_grade_reviews": {"GET"},
     "record_teacher_grade_review": {"POST"},
@@ -54,6 +55,7 @@ GRADE_REVIEW_PATH = (
 )
 
 POLICY_PATHS = {
+    "get_assignment_workbench": "/assignments/{assignment_id}/workbench",
     "inspect_grade_review": GRADE_REVIEW_PATH + "/review",
     "list_grade_reviews": GRADE_REVIEW_PATH + "/reviews",
     "record_teacher_grade_review": GRADE_REVIEW_PATH + "/reviews",

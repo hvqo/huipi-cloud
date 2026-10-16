@@ -22,7 +22,7 @@ class ParsingTaskRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
-    status: Literal["pending"]
+    status: Literal["pending", "running", "retry_wait", "succeeded", "failed"]
     created_at: datetime
     updated_at: datetime
 

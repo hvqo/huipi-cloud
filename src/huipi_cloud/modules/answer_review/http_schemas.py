@@ -86,6 +86,14 @@ class EvidenceSummary(BaseModel):
     canonical_page_path: str
 
 
+class ConfirmedRegionSummary(BaseModel):
+    role: Literal["response_regions", "excluded_prompt_regions", "uncertain_regions"]
+    content_pointer: str
+    page_number: int
+    text_start: int | None
+    text_end: int | None
+
+
 class ReviewInspection(BaseModel):
     submission_id: UUID
     question_id: UUID
@@ -99,6 +107,10 @@ class ReviewInspection(BaseModel):
     evidence_offset: int
     evidence_truncated: bool
     next_evidence_offset: int | None
+    confirmed_regions: list[ConfirmedRegionSummary] = Field(default_factory=list, max_length=50)
+    confirmed_offset: int = 0
+    confirmed_truncated: bool = False
+    next_confirmed_offset: int | None = None
     meaning: Literal["human_answer_presence_not_grading"] = "human_answer_presence_not_grading"
 
 

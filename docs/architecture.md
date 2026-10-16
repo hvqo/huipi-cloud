@@ -332,3 +332,17 @@ record_decision 继续验证整份 Canonical/Alignment 大小、SHA 和原有区
 inspect 沿用真实大小/SHA/Quote/Rubric 校验，基础设施不可用与真实来源失效分别报告。历史 SQL 只取评分元数据，不加载长理由/Quote；最多十条、每条最多一百个评分项。可选证据投影仅返回有界 Unicode 坐标及受保护页面路径，不输出私有对象定位。accepted 接受原始候选；revised 是完整快照；rejected/regrading_required 不产生人工总分，也不触发模型。grade_published 恒为 false，实验评分质量门禁未获准。
 
 新增迁移只添加可信审核人元数据；保留旧 CLI 记录与原 UPDATE/DELETE 禁止触发器。降级会丢失新增身份来源，不重写旧评分，重新升级不会伪造身份。留存/删除仍须独立设计。接口合同及前端边界见[评分审核 HTTP](development/grade-review-http.md)。
+
+## 教师浏览器工作台
+
+`frontend/` 为独立 Vue 3/TypeScript/Vite SPA，Vue Router 管理作业、提交和单题作答复核路由，Element Plus 提供按钮/对话框等可访问组件。认证状态为小型共享响应式状态，不引入额外全局状态框架。源码 API 类型由真实 OpenAPI 生成，CI 检查合同漂移。
+
+标准 OIDC Code + PKCE/nonce/state 建立会话，access token 只保存在内存。没有前端签发 JWT 或匿名认证旁路；服务器依旧通过签名、Issuer、Audience、User 与 Membership 授权。UI 中的姓名只用于展示，can_write 由受保护工作台投影提供，不能替代服务器写权限。真实学校 IdP 尚未验收；独立 TLS Mock OIDC 仅属于自动化测试。
+
+工作台读取不含 AnswerKey 的有界 Assignment/Question/Rubric 投影，原文件经认证 fetch 转 Blob URL，并在关闭/卸载时释放。Canonical 只以原样文本显示，不执行 HTML 或加载外部 URI。浏览器 Range 的 UTF-16 offset 转为后端 Unicode 码点，比较原始 textContent 后才接受；不同 ContentNode 必须分别选择。已有人工范围只读高亮，Alignment 关联和新人工选区不互相冒充。
+
+作答 inspect 在原合同上增加有界坐标投影：只返回与当前 Canonical/Alignment 一致的最新人工范围，最多 50 条、48KiB，明确后续页。不会返回私有 URI、素材 Key 或学生正文；过期历史不作为当前确认。Submission 摘要支持任务完整状态机，避免已解析状态被旧 pending-only 响应 Schema 拒绝。
+
+新逻辑操作用新 request_id；发送前冻结 JSON，503/超时保留原字节，只重试原请求。未确认请求在 tab 内按身份与资源保存元数据，不含 Token 或作答正文；明确退出会清理。409 要求人工刷新，不自动覆盖其他教师。POST 前的前端来源复查仅改善交互，服务端短事务权限锁、来源校验、幂等与修订仍是权威边界。
+
+生产产物是静态站点，同源 /api 反向代理 FastAPI；Vite 和测试 IdP 不属于生产服务。本轮不增加表、迁移、模型调用、聊天接口或成绩发布。候选评分 HTTP 保留，工作台页面留待后续独立实现。见[工作台指南](development/teacher-workbench.md)。
