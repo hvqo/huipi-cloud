@@ -39,7 +39,7 @@ revision 的排序不依赖时间戳。写入前锁住 `Submission` 行，同一
 
 区域只以 JSON Pointer 指向已校验 Canonical 节点。提供文本范围时，范围使用节点字符串中的 Unicode 码点半开区间 `[start, end)`，服务使用 Python 字符串长度检查边界。同一节点只把实际相交的半开范围视为重叠，相邻范围可以分开标注；不同节点上相同的数字偏移不是同一段文字。服务按 Canonical 树的父子关系判断来源覆盖：选择父容器会覆盖其后代，若后代已有其他 Question 或 unassigned 来源，不能把父容器登记为本题的确定作答证据。整节点选择只接受有可定位素材引用的 `image` 节点；仅有 Block 级图片引用不会让空白文本、布局或容器子节点成为图片证据。Block 级图片没有字符位置，若同一 Block 还有其他 Question 来源，则不能把图像确认成某一题的专属素材；可将对应图像节点和归属原因记为 `uncertain`。图片引用按稳定资产身份去重，Block 与 ContentNode 重复指向同一素材时不会形成两个证据。服务从 Canonical 节点复制页码、Block ID、BBox、类型和安全资产元数据；不保存节点文本，不修改 Canonical。无法归属到本 Question 或来自 P2-D1 unassigned 区域的自动来源，只能明确以 `uncertain` 和 `response_not_linked_to_question` 记录，不能包装成已确认的该题答案。外部图片 URL 不返回，也不被下载。
 
-复核只有本地 CLI：`inspect` 显示被截断的来源片段和映射状态，并显示原始 `SubmissionFile` 的 ID、MIME、大小和 SHA-256，供本地人员定位原始 PDF/图片；它不输出文件名、对象 Key 或学生标识。`record` 追加决定，`history` 显示修订及当前来源是否匹配，`export` 输出脱敏 JSON。当前复核 CLI 不提供教师认证或 RBAC；`reviewer_ref` 是操作者自声明标记，不是身份凭据。HTTP 读取已受教师授权保护，复核 CLI、数据及原始提交仍需受控管理。导出会使用每次导出独有的 HMAC 盐替换数据库 ID 和摘要引用，并省略 reviewer、原始学生 ID、S3 Key 与 URI；该伪名不能跨两次导出关联。去标识化不等于彻底匿名：题号、区域位置、标签和外部数据仍可能组合识别个人，导出文件仍按敏感数据管理。
+作答复核保留本地 CLI，并新增教师授权 HTTP（见文末）。CLI：`inspect` 显示被截断的来源片段和映射状态，并显示原始 `SubmissionFile` 的 ID、MIME、大小和 SHA-256，供本地人员定位原始 PDF/图片；它不输出文件名、对象 Key 或学生标识。`record` 追加决定，`history` 显示修订及当前来源是否匹配，`export` 输出脱敏 JSON。当前复核 CLI 不提供教师认证或 RBAC；`reviewer_ref` 是操作者自声明标记，不是身份凭据。HTTP 读取已受教师授权保护，复核 CLI、数据及原始提交仍需受控管理。导出会使用每次导出独有的 HMAC 盐替换数据库 ID 和摘要引用，并省略 reviewer、原始学生 ID、S3 Key 与 URI；该伪名不能跨两次导出关联。去标识化不等于彻底匿名：题号、区域位置、标签和外部数据仍可能组合识别个人，导出文件仍按敏感数据管理。
 
 `tests/fixtures/answer_presence_synthetic_v1.json` 包含 13 个合成复核范围，含仅印刷题干、普通文本、跨页、无题号、公式、图像/几何、表格、OCR 遗漏、共享图形、多区域、歧义及未复核。评测脚本验证标注一致性并统计人工覆盖率、不确定比例；当前没有自动作答检测器，模型 Precision/Recall/FPR 均为 `not_evaluated`，不会把人工标签当作预测。纯文本合成协议不能验证真实手写识别。还需收集经许可且脱敏的真实样本，制定双人标注与仲裁规则，并在开放教师界面前实现认证和审计访问控制。
 
@@ -310,3 +310,14 @@ Reranker选用Qwen/Qwen3-Reranker-0.6B，固定快照e61197ed45024b0ed8a2d74b80b
 新作业与创建者 Membership 在同一事务提交；列表先按授权过滤再分页。迁移仅新增 User/Membership，不改历史作业，未绑定的历史数据默认拒绝普通教师访问。授权不跨请求缓存，撤销提交后的后续请求立即生效；进行中的事务/流不强制取消。内部管理员是本地可信操作员配置的全局角色，还没有独立租户管理员体系。
 
 Copilot 的 `AuthorizedBusinessTools.from_bearer()` 先验签并从服务器解析 Principal，然后固定 Assignment；每次工具及 Citation 检查前后重查授权。旧 BusinessTools/无 Token CLI 仍仅限持有数据库凭据的操作员，不能包装成教师 HTTP 接口。没有开放对话 API，RAG 仍默认 Lexical，正式评分和复核协议不变。[部署与测试边界](development/teacher-auth.md)。
+
+
+## 教师作答证据复核 HTTP
+
+`answer_review/router.py` 在原有统一授权路由内提供历史、单题检查和追加决定。HTTP DTO 不接受审核人身份；从 Principal 派生稳定 reviewer_ref，并存入可空 reviewer_user_id 外键，历史 CLI 行保持 NULL。数据库新增 UPDATE/DELETE 拒绝触发器；不把历史自声明字符串当成已认证身份，不修改旧 1.0 文档合同。
+
+record_decision 继续验证整份 Canonical/Alignment 大小、SHA 和原有区域归属。HTTP 必须传查看到的来源版本与 expected_revision。append_decision 在 Submission 串行修订锁内再查用户和可写成员，并持有 User/Membership SHARE 锁到提交；撤权与写入有明确顺序。原来源锁和题目集合摘要复核保持。纯 PostgreSQL 追加不上传新 S3 对象，COMMIT 未知时同 request_id 重试，不能假称失败必然回滚。
+
+历史列表 SQL 只投影元数据和区域计数，最多 25 条；最新检查返回有界指针，正文从已授权 Canonical 页面获取。历史 not_checked 不代表可评分；当前来源变化则旧决定仅保留历史，当前 answer_presence 回到 unreviewed。新的请求冲突不修改旧行。
+
+本流程是教师确认作答证据，不是候选评分复核、自动语义裁判或正式成绩发布。没有新增聊天或学生认证；P3 和 RAG 默认设置保持。详情见[作答复核 HTTP](development/answer-review-http.md)与[权限矩阵](security/http-permissions.md)。

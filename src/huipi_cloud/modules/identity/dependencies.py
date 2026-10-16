@@ -21,6 +21,9 @@ verifier = TokenVerifier(settings)
 
 # Exact route names + allowed methods: a new route has no implicit permission.
 POLICIES = {
+    "list_answer_reviews": {"GET"},
+    "inspect_answer_review": {"GET"},
+    "record_answer_review": {"POST"},
     "create_assignment": {"POST"},
     "list_assignments": {"GET"},
     "get_assignment": {"GET"},
@@ -44,6 +47,9 @@ POLICIES = {
 }
 
 POLICY_PATHS = {
+    "list_answer_reviews": "/submissions/{submission_id}/answer-reviews",
+    "inspect_answer_review": "/submissions/{submission_id}/answer-reviews/questions/{question_id}",
+    "record_answer_review": "/submissions/{submission_id}/answer-reviews/questions/{question_id}",
     "create_assignment": "/assignments",
     "list_assignments": "/assignments",
     "get_assignment": "/assignments/{assignment_id}",

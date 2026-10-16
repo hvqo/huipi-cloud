@@ -44,3 +44,11 @@
 缺 Token/无效 Token 为 401；未建立/停用用户、非管理员管理成员为 403；不存在或无资源授权统一 404；认证配置、JWKS、授权数据库故障为 503；无精确方法/路径策略为 403。未绑定历史作业不自动分配给教师。除上述公开端点外，没有保留匿名敏感 HTTP 访问。
 
 没有用户自助注册、管理员提权、学生身份认证、Copilot 聊天或评分/复核 HTTP 写接口。Worker、知识导入、评分和复核 CLI 仍是拥有数据库凭据的受控操作员功能，不向互联网暴露。文件流开始前授权，运行中的流与已通过检查的事务不承诺撤销后立即终止。
+
+## 教师作答证据复核 HTTP
+
+- `GET /api/v1/submissions/{submission_id}/answer-reviews`：所属 Assignment 读权限；`question_id` 筛选也须属于同一作业。分页 1–25 条，明确 has_next/next_offset。历史不宣称当前来源有效。
+- `GET /api/v1/submissions/{submission_id}/answer-reviews/questions/{question_id}`：所属作业读权限；验证当前 Canonical/Alignment，返回来源版本、最新状态与有界证据指针，不返回标准答案、私有对象 Key、图片 URI 或完整大文档。
+- `POST /api/v1/submissions/{submission_id}/answer-reviews/questions/{question_id}`：所属作业写权限；必须提交 expected_source 与 expected_revision。审核人由可信 Principal 绑定，不能自声明身份。两 ID 即使对管理员也须同属一作业。
+
+新复核在 S3 校验后、短追加事务内重新验证 User 和 Membership，并以 SHARE 锁持有到提交；撤权先提交则本次写入拒绝，复核先取得保护锁则撤权等待其提交。已有其他 HTTP 接口的请求边界保证没有扩展成全系统在途取消。复核是作答存在性判断，不是评分复核或成绩发布。

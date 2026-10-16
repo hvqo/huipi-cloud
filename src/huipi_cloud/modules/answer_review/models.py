@@ -7,6 +7,7 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     UniqueConstraint,
@@ -25,6 +26,12 @@ class AnswerReviewDecision(Base):
 
     __tablename__ = "answer_review_decisions"
     __table_args__ = (
+        CheckConstraint(
+            "reviewer_user_id IS NULL OR reviewer_ref = 'teacher_' || "
+            "replace(reviewer_user_id::text, '-', '')",
+            name="ck_answer_review_authenticated_reviewer",
+        ),
+        Index("ix_answer_review_reviewer_user", "reviewer_user_id"),
         CheckConstraint(
             "decision IN ('response_present', 'response_absent', 'uncertain')",
             name="ck_answer_review_decision_value",
@@ -126,6 +133,11 @@ class AnswerReviewDecision(Base):
     )
     reason_codes: Mapped[list[str]] = mapped_column(
         JSONB, nullable=False, default=list, server_default=text("'[]'::jsonb")
+    )
+    reviewer_user_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="RESTRICT", name="fk_answer_review_reviewer_user"),
+        nullable=True,
     )
     reviewer_ref: Mapped[str] = mapped_column(String(64), nullable=False)
     request_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)

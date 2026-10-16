@@ -199,3 +199,26 @@ def _selections_overlap(
         return True
     assert first.text_end is not None and second.text_end is not None
     return max(first.text_start, second.text_start) < min(first.text_end, second.text_end)
+
+
+class ReviewSourceVersion(BaseModel):
+    """Explicit HTTP source precondition; the legacy 1.0 DTO is unchanged."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    canonical_document_id: UUID
+    canonical_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    alignment_artifact_id: UUID
+    alignment_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    aligner_version: str = Field(min_length=1, max_length=32)
+    assignment_questions_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+    @classmethod
+    def from_bundle(cls, bundle) -> ReviewSourceVersion:
+        return cls(
+            canonical_document_id=bundle.canonical_artifact.id,
+            canonical_sha256=bundle.canonical_artifact.canonical_sha256,
+            alignment_artifact_id=bundle.alignment_artifact.id,
+            alignment_sha256=bundle.alignment_artifact.alignment_sha256,
+            aligner_version=bundle.alignment_artifact.aligner_version,
+            assignment_questions_digest=bundle.questions_digest,
+        )

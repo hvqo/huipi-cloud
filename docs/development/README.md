@@ -23,3 +23,5 @@
 
 - [教师身份、作业授权与迁移](teacher-auth.md)
 - [全部 HTTP 权限矩阵](../security/http-permissions.md)
+
+- [教师作答证据复核 HTTP 工作流](answer-review-http.md)
