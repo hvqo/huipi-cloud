@@ -135,6 +135,8 @@ jobs:
       - name: Install browser
         working-directory: frontend
         run: npx playwright install --with-deps chromium
+      - name: Offline teacher and administrator browser flows
+        run: npm run e2e:demo --prefix frontend
       - name: Start private S3 and independent browser test database
         run: |
           docker run -d --name huipi-browser-minio \

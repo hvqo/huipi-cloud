@@ -61,8 +61,11 @@ export function accessToken(): string | null {
   return user.access_token
 }
 export function safeReturn(value: unknown) {
+  if (value === '/') return '/'
   return typeof value === 'string' &&
-    /^\/(assignments|submissions)(\/|$)/.test(value) &&
+    /^\/(workbench|assignments|submissions|assistant|knowledge|insights|settings|admin)(\/|\?|$)/.test(
+      value,
+    ) &&
     !value.includes('\\')
     ? value
     : '/assignments'
@@ -85,7 +88,8 @@ export async function logout() {
   await expireAuth()
   // Clear local evidence drafts on explicit sign-out, never retain a teacher's workspace.
   for (const key of Object.keys(sessionStorage))
-    if (key.startsWith('huipi.review.')) sessionStorage.removeItem(key)
+    if (key.startsWith('huipi.review.') || key.startsWith('huipi.grading.'))
+      sessionStorage.removeItem(key)
   if (manager && hint) await manager.signoutRedirect({ id_token_hint: hint })
 }
 manager?.events.addAccessTokenExpired(() => {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { contentTypeLabels } from '../lib/labels'
 import type { Node, Schema } from '../api/client'
 const props = defineProps<{
   node: Node
@@ -28,7 +29,7 @@ const pieces = computed(() => {
 <template>
   <div class="source-node" :class="{ related: related.has(pointer) }">
     <div v-if="node.value !== null && node.value !== undefined" class="source-content">
-      <span class="source-type">{{ node.normalized_type }}</span
+      <span class="source-type">{{ contentTypeLabels[node.normalized_type] ?? '内容' }}</span
       ><span :data-source-pointer="pointer" class="selectable-text"
         ><template v-for="(piece, index) in pieces" :key="index"
           ><mark v-if="piece.role" :class="piece.role">{{ piece.text }}</mark

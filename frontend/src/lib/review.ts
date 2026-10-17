@@ -80,9 +80,10 @@ export class PendingReview {
       }
     }
   }
-  freeze(payload: ReviewBody) {
+  /** 冻结待确认请求：字符串按原字节保存（幂等重试必须逐字节一致）。 */
+  freeze(payload: ReviewBody | object | string) {
     if (this.body) throw new Error('请先确认上一笔保存结果。')
-    this.body = JSON.stringify(payload)
+    this.body = typeof payload === 'string' ? payload : JSON.stringify(payload)
     sessionStorage.setItem(this.key, this.body)
     return this.body
   }
