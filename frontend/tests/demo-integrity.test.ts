@@ -326,6 +326,40 @@ it('独立图片证据可复核，不能移借到另一题，重复图片被拒�
   ).rejects.toMatchObject({ status: 422 })
 })
 
+it('作答复核版本改变后既有评分候选过期，不能继续接受旧分数', async () => {
+  const svc = createMockServices(),
+    sid = 'sub-1',
+    qid = 'q-1-3'
+  const proposal = demoState().proposals.find(
+    (p) => p.submission_id === sid && p.question_id === qid,
+  )!
+  expect(proposal.source_status).toBe('current')
+  const view = await svc.reviews.inspect(sid, qid)
+  const e = view.evidence.find((e) => e.normalized_type === 'text')!
+  await svc.reviews.save(
+    sid,
+    qid,
+    JSON.stringify(
+      makeReview(view, 'uncertain', 'source_quality_insufficient', [
+        { content_pointer: e.content_pointer, text_start: e.text_start, text_end: e.text_end },
+      ]),
+    ),
+  )
+  expect((await svc.grading.inspect(sid, qid, proposal.id)).source_status).toBe('source_stale')
+  await expect(
+    svc.grading.save(
+      sid,
+      qid,
+      proposal.id,
+      JSON.stringify({
+        request_id: crypto.randomUUID(),
+        expected_revision: proposal.reviews.length,
+        review_status: 'accepted',
+      }),
+    ),
+  ).rejects.toMatchObject({ status: 409 })
+})
+
 describe('真实模式不能失败后降级至合成数据', () => {
   it.each(['knowledge', 'assistant', 'insights'] as const)(
     '%s 缺失HTTP端点明确不可用',

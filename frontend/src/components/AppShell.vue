@@ -74,12 +74,29 @@ const crumbs = computed(() => {
 
 const roleLabel = computed(() => (session.role === 'admin' ? '管理员' : '教师'))
 
-function resetDemo() {
+async function resetDemo() {
   if (DEMO_MODE) {
     // 仅清除本地演示状态并重载；不引用演示数据模块，生产构建无演示代码路径。
     try {
       localStorage.removeItem(DEMO_STATE_KEY)
-      indexedDB.deleteDatabase('huipi-demo-files-v2')
+      for (const key of Object.keys(sessionStorage))
+        if (
+          key.startsWith('huipi.review.') ||
+          key.startsWith('huipi.grading.') ||
+          key.startsWith('huipi.question.partial.')
+        )
+          sessionStorage.removeItem(key)
+      await new Promise<void>((resolve) => {
+        const timer = setTimeout(resolve, 2000)
+        const done = () => {
+          clearTimeout(timer)
+          resolve()
+        }
+        const request = indexedDB.deleteDatabase('huipi-demo-files-v2')
+        request.onsuccess = done
+        request.onerror = done
+        request.onblocked = done
+      })
     } catch {
       /* 忽略 */
     }

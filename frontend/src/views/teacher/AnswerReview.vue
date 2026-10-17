@@ -75,6 +75,7 @@ const loading = ref(false),
   originalError = ref(''),
   originalBusy = ref(false),
   zoom = ref(1)
+const nextAfterSave = ref(false)
 const decision = ref<Decision>('response_present'),
   reason = ref('student_work_visible'),
   regions = ref<Region[]>([])
@@ -229,11 +230,12 @@ function addAsset(pointer: string) {
   }
 }
 
-function openPreview() {
+function openPreview(thenNext = false) {
   if (!view.value || !editable.value) return
   try {
     makeReview(view.value, decision.value, reason.value, regions.value)
     verified.value = false
+    nextAfterSave.value = thenNext
     preview.value = true
     notice.value = ''
   } catch (e) {
@@ -810,14 +812,14 @@ onBeforeUnmount(() => {
                   size="large"
                   class="full"
                   :disabled="!editable"
-                  @click="openPreview"
+                  @click="openPreview(false)"
                   >预览并保存复核</el-button
                 >
                 <button
                   class="hp-btn hp-btn-secondary"
                   type="button"
                   :disabled="!editable"
-                  @click="send(false, true)"
+                  @click="openPreview(true)"
                 >
                   保存并核对下一题<ArrowRight aria-hidden="true" />
                 </button>
@@ -971,7 +973,11 @@ onBeforeUnmount(() => {
           >
           <template #footer>
             <el-button @click="preview = false">继续核对</el-button>
-            <el-button type="primary" :disabled="!verified" :loading="busy" @click="send()"
+            <el-button
+              type="primary"
+              :disabled="!verified"
+              :loading="busy"
+              @click="send(false, nextAfterSave)"
               >确认保存</el-button
             >
           </template>

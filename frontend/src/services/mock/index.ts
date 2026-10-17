@@ -965,6 +965,10 @@ const reviews: ReviewsService = {
       record.regions[decisionId] = regions
       record.source = currentSource
       state.reviews[key] = record
+      // GradeInput is bound to an immutable answer-review version, not just Canonical text.
+      for (const proposal of state.proposals)
+        if (proposal.submission_id === sid && proposal.question_id === qid)
+          proposal.source_status = 'source_stale'
       const question = state.questions[qid]
       logOp(
         '保存了作答核对记录',

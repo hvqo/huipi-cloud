@@ -92,14 +92,24 @@ test('教师创建题目、发布校验、多文件提交与原始文件回读',
   await page.reload()
   await page.getByRole('button', { name: '查看原始文件' }).click()
   await expect(page.getByRole('img', { name: 'synthetic-a.png' })).toHaveAttribute('src', /^blob:/)
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: /Close this dialog|关闭此对话框/ })
+    .click()
+  await Promise.all([
+    page.waitForEvent('load'),
+    page.getByRole('button', { name: '重置', exact: true }).click(),
+  ])
+  await page.goto('/assignments')
+  await expect(page.getByText('浏览器合成作业', { exact: true })).toHaveCount(0)
   expect(errors).toEqual([])
 })
 
 test('三栏作答核对和完整评分修订历史', async ({ page }) => {
   await login(page)
-  await page.goto('/assignments/asg-1/submissions/sub-1/questions/q-1-3/review')
+  await page.goto('/assignments/asg-1/submissions/sub-1/questions/q-1-1/review')
   await expect(page.getByTestId('canonical-paper')).toBeVisible()
-  await selectText(page, '[data-source-pointer]', '学生作答：解：f(1)')
+  await selectText(page, '[data-source-pointer]', '学生作答：选 B')
   await page.getByRole('button', { name: '将当前文字选区加入证据' }).click()
   await page.getByRole('button', { name: '预览并保存复核' }).click()
   await page
@@ -109,6 +119,14 @@ test('三栏作答核对和完整评分修订历史', async ({ page }) => {
   await expect(page.getByRole('status')).toContainText('已确认保存')
   await page.reload()
   await expect(page.locator('.history-row')).not.toHaveCount(0)
+  await selectText(page, '[data-source-pointer]', '学生作答：选 B')
+  await page.getByRole('button', { name: '将当前文字选区加入证据' }).click()
+  await page.getByRole('button', { name: '保存并核对下一题' }).click()
+  await page
+    .getByRole('checkbox', { name: '我已对照来源核对，本次仅确认作答证据，不发布成绩。' })
+    .check()
+  await page.getByRole('button', { name: '确认保存', exact: true }).click()
+  await expect(page).toHaveURL(/questions\/q-1-2\/review$/)
   await page.goto('/assignments/asg-1/submissions/sub-1/questions/q-1-3/grading')
   await page.getByRole('button', { name: '逐项修订', exact: true }).click()
   await page.getByLabel('修订分值').nth(1).fill('0')
