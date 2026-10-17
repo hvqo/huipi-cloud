@@ -1,12 +1,13 @@
 import type { S } from '../types'
+import { ApiError } from '../../api/client'
 import type { AssistantMessage } from '../types'
-import { DEMO_STATE_KEY } from '../../app/demo-auth'
+import { DEMO_STATE_KEY, currentDemoRole } from '../../app/demo-auth'
 import { seedDemoState } from './seed'
 
 /**
  * 演示模式的共享业务状态。
  *
- * - 持久化策略：localStorage（键 huipi.demo.state.v1）。刷新后保留演示期间的
+ * - 持久化策略：localStorage（键 huipi.demo.state.v3）。刷新后保留演示期间的
  *   全部修改；「重置演示环境」会清空并重新生成种子数据。
  * - 所有 Mock 服务都读写同一份状态，作业/题目/提交/复核/授权/审计之间的关系保持一致。
  */
@@ -64,6 +65,7 @@ export interface DemoSubmission {
   file_name: string
   file_type: string
   file_size: number
+  uploaded?: boolean
   submitted_at: string
   created_at: string
   updated_at: string
@@ -206,7 +208,7 @@ export interface DemoState {
 }
 
 const STORAGE_KEY = DEMO_STATE_KEY
-const STATE_VERSION = 1
+const STATE_VERSION = 3
 
 let state: DemoState | null = null
 
@@ -249,8 +251,13 @@ export function resetDemoState(): void {
 
 export function nextId(prefix: string): string {
   const current = demoState()
-  current.counters[prefix] = (current.counters[prefix] || 0) + 1
-  return `${prefix}-${current.counters[prefix]}`
+  const serialized = JSON.stringify(current)
+  let candidate: string
+  do {
+    current.counters[prefix] = (current.counters[prefix] || 0) + 1
+    candidate = `${prefix}-${current.counters[prefix]}`
+  } while (serialized.includes(JSON.stringify(candidate)))
+  return candidate
 }
 
 /** 追加教师端动态（工作台“最近教学操作”）。 */
@@ -263,6 +270,7 @@ export function logOp(summary: string, detail: string): void {
 /** 追加管理审计事件。 */
 export function logAudit(input: {
   action: S['AdminAction']
+  request_id?: string
   actor_user_id: string
   target_user_id: string
   assignment_id?: string | null
@@ -271,7 +279,7 @@ export function logAudit(input: {
   const current = demoState()
   const event: S['AdminAuditSummary'] = {
     operation_id: nextId('opid'),
-    request_id: nextId('req'),
+    request_id: input.request_id ?? nextId('req'),
     action: input.action,
     target_user_id: input.target_user_id,
     assignment_id: input.assignment_id ?? null,
@@ -287,22 +295,22 @@ export function logAudit(input: {
 /** 校验 request_id 幂等：重复提交返回原结果，不同内容返回 409。 */
 export function idempotent<T>(requestId: string, content: unknown, run: () => T): T {
   const current = demoState()
-  const cached = current.requestCache[requestId] as { content: unknown; result: T } | undefined
+  const cacheKey = `${currentDemoRole()}:${requestId}`
+  const cached = current.requestCache[cacheKey] as { content: unknown; result: T } | undefined
   if (cached) {
     if (JSON.stringify(cached.content) !== JSON.stringify(content)) {
-      const error = new Error('同一请求标识已被不同内容使用，请刷新后重试。')
-      Object.assign(error, { status: 409 })
-      throw error
+      throw demoError(409, '同一请求标识已被不同内容使用，请刷新后重试。')
     }
-    return cached.result
+    return structuredClone(cached.result)
   }
   const result = run()
-  current.requestCache[requestId] = { content, result }
+  current.requestCache[cacheKey] = structuredClone({ content, result })
+  persist()
   return result
 }
 
 export function demoError(status: number, message: string): Error {
-  const error = new Error(message)
-  Object.assign(error, { status })
+  const error = new ApiError(status, `demo_${status}`)
+  error.message = message
   return error
 }

@@ -120,8 +120,8 @@ export async function request<T>(
 }
 export const id = (value: string) => encodeURIComponent(value)
 export const api = {
-  assignments: (offset = 0, signal?: AbortSignal) =>
-    request<Schema['AssignmentSummary'][]>(`/api/v1/assignments?limit=12&offset=${offset}`, {
+  assignments: (offset = 0, signal?: AbortSignal, limit = 12) =>
+    request<Schema['AssignmentSummary'][]>(`/api/v1/assignments?limit=${limit}&offset=${offset}`, {
       signal,
     }),
   create: (body: Schema['AssignmentCreate']) =>
@@ -131,9 +131,9 @@ export const api = {
       `/api/v1/assignments/${id(aid)}/workbench?limit=20&offset=${offset}${questionId ? `&question_id=${id(questionId)}` : ''}`,
       { signal },
     ),
-  submissions: (aid: string, offset = 0, signal?: AbortSignal) =>
+  submissions: (aid: string, offset = 0, signal?: AbortSignal, limit = 12) =>
     request<Schema['SubmissionRead'][]>(
-      `/api/v1/assignments/${id(aid)}/submissions?limit=12&offset=${offset}`,
+      `/api/v1/assignments/${id(aid)}/submissions?limit=${limit}&offset=${offset}`,
       { signal },
     ),
   submission: (sid: string, signal?: AbortSignal) =>

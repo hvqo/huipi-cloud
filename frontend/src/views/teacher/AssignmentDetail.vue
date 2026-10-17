@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, onBeforeUnmount, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   ArrowLeft,
@@ -39,6 +39,18 @@ const state = reactive({
   questionEditable: false,
 })
 const tab = ref<'questions' | 'submissions'>('questions')
+const studentFilter = ref(''),
+  parsingFilter = ref('all')
+const filteredSubmissions = computed(() =>
+  state.submissions.filter(
+    (s) =>
+      (!studentFilter.value ||
+        `${s.student_ref} ${s.file.original_filename}`
+          .toLowerCase()
+          .includes(studentFilter.value.trim().toLowerCase())) &&
+      (parsingFilter.value === 'all' || s.parsing_task.status === parsingFilter.value),
+  ),
+)
 
 const uploadOpen = ref(false)
 const uploadFiles = ref<
@@ -75,7 +87,7 @@ async function load() {
     ])
     state.detail = detail
     state.can_write = workbench.can_write
-    state.questionEditable = workbench.can_write
+    state.questionEditable = workbench.can_write && detail.status === 'draft'
     state.submissions = submissions.records
     state.submissionsHasNext = submissions.has_next
   } catch (e) {
@@ -164,7 +176,24 @@ function parseBadgeClass(status: string) {
   return 'hp-badge-warning'
 }
 
-onMounted(load)
+let timer: ReturnType<typeof setInterval> | undefined
+onMounted(() => {
+  void load()
+  timer = setInterval(async () => {
+    if (
+      state.submissions.some((s) =>
+        ['pending', 'running', 'retry_wait'].includes(s.parsing_task.status),
+      )
+    ) {
+      try {
+        await loadSubmissions(state.submissionOffset)
+      } catch {
+        notice.value = '提交状态刷新未完成，请重新加载。'
+      }
+    }
+  }, 3000)
+})
+onBeforeUnmount(() => clearInterval(timer))
 </script>
 <template>
   <div class="hp-section-gap">
@@ -198,7 +227,12 @@ onMounted(load)
             >
               <Rocket aria-hidden="true" />发布作业
             </button>
-            <button class="hp-btn hp-btn-secondary" type="button" @click="uploadOpen = true">
+            <button
+              class="hp-btn hp-btn-secondary"
+              type="button"
+              :disabled="!state.can_write || state.detail.status !== 'published'"
+              @click="uploadOpen = true"
+            >
               <FileUp aria-hidden="true" />上传答卷
             </button>
           </div>
@@ -313,7 +347,7 @@ onMounted(load)
             </div>
           </article>
           <RouterLink
-            v-if="state.can_write && questions.length"
+            v-if="state.questionEditable && questions.length"
             class="hp-btn hp-btn-secondary"
             :to="`/assignments/${aid}/questions/new`"
             ><Plus aria-hidden="true" />新增题目</RouterLink
@@ -327,13 +361,28 @@ onMounted(load)
             <button
               class="hp-card-side hp-btn hp-btn-secondary hp-btn-sm"
               type="button"
+              :disabled="!state.can_write || state.detail.status !== 'published'"
               @click="uploadOpen = true"
             >
               <FileUp aria-hidden="true" />上传答卷
             </button>
           </div>
+          <div class="hp-filterbar" style="padding: 14px 20px">
+            <input
+              v-model="studentFilter"
+              class="hp-input"
+              style="max-width: 280px"
+              aria-label="搜索当前页学生提交"
+              placeholder="搜索学生标识或文件名"
+            /><select v-model="parsingFilter" class="hp-select" aria-label="解析状态筛选">
+              <option value="all">全部解析状态</option>
+              <option v-for="(text, status) in parsingLabels" :key="status" :value="status">
+                {{ text }}
+              </option></select
+            ><span class="hp-fine">仅筛选当前加载页</span>
+          </div>
           <div class="hp-table-wrap">
-            <table v-if="state.submissions.length" class="hp-table">
+            <table v-if="filteredSubmissions.length" class="hp-table">
               <thead>
                 <tr>
                   <th>学生</th>
@@ -344,7 +393,7 @@ onMounted(load)
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="submission in state.submissions" :key="submission.id">
+                <tr v-for="submission in filteredSubmissions" :key="submission.id">
                   <td>
                     <RouterLink
                       class="hp-cell-title hp-linkbtn"
@@ -405,7 +454,7 @@ onMounted(load)
           />
         </label>
         <p class="hp-fine">
-          每份文件对应一名学生；学生标识用于区分提交（当前为本地标识，不代表学生认证身份）。上传后系统自动解析，解析完成即可批阅。
+          每份文件对应一名学生；学生标识用于区分提交（当前为本地标识，不代表学生认证身份）。上传成功后登记待解析任务，解析服务运行时会自动处理；未运行时保持等待状态。
         </p>
         <div v-if="uploadFiles.length" style="display: flex; flex-direction: column; gap: 8px">
           <div

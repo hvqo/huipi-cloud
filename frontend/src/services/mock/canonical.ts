@@ -65,15 +65,15 @@ export function buildCanonical(
   const stemPointers: Record<string, string> = {}
   const perPage = 3
   const pageCount = Math.ceil(script.length / perPage)
-  let blockIndex = 0
   let blockCount = 0
   for (let pageIndex = 0; pageIndex < pageCount; pageIndex++) {
+    let blockIndex = 0
     const blocks: S['CanonicalBlock'][] = []
     const entries = script.slice(pageIndex * perPage, (pageIndex + 1) * perPage)
     for (const entry of entries) {
       const stemPointer = `/pages/${pageIndex}/blocks/${blockIndex}/content`
       const stemBlock: S['CanonicalBlock'] = {
-        block_id: `blk-${sid}-${blockIndex}`,
+        block_id: `blk-${sid}-${pageIndex}-${blockIndex}`,
         normalized_type: 'text',
         reading_order: blockIndex,
         page_index: pageIndex,
@@ -97,7 +97,7 @@ export function buildCanonical(
       if (entry.answer != null) {
         const answerPointer = `/pages/${pageIndex}/blocks/${blockIndex}/content`
         const answerBlock: S['CanonicalBlock'] = {
-          block_id: `blk-${sid}-${blockIndex}`,
+          block_id: `blk-${sid}-${pageIndex}-${blockIndex}`,
           normalized_type: 'text',
           reading_order: blockIndex,
           page_index: pageIndex,
@@ -126,7 +126,7 @@ export function buildCanonical(
       if (entry.imageAsset) {
         const imagePointer = `/pages/${pageIndex}/blocks/${blockIndex}/content`
         const imageBlock: S['CanonicalBlock'] = {
-          block_id: `blk-${sid}-${blockIndex}`,
+          block_id: `blk-${sid}-${pageIndex}-${blockIndex}`,
           normalized_type: 'image',
           reading_order: blockIndex,
           page_index: pageIndex,

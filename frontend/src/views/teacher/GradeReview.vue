@@ -19,7 +19,8 @@ import { session } from '../../app/session'
 import { ApiError, type Node } from '../../api/client'
 import { selectedRegion } from '../../lib/selection'
 import { PendingReview } from '../../lib/review'
-import { formatDecimal, sumDecimals, validateScoreInput } from '../../lib/decimal'
+import { mapGradeQuote } from '../../lib/grade-quote'
+import { compareDecimals, formatDecimal, sumDecimals, validateScoreInput } from '../../lib/decimal'
 import {
   formatRelative,
   formatScore,
@@ -53,7 +54,12 @@ const loading = ref(false),
   list = ref<GradeProposalSummary[] | null>(null),
   listUnsupported = ref(false),
   selectedPid = ref(''),
-  inspection = ref<S['GradeReviewHTTPInspection'] | null>(null),
+  inspection = ref<
+    | (S['GradeReviewHTTPInspection'] & {
+        candidate_rationales?: { criterion_id: string; rationale: string }[]
+      })
+    | null
+  >(null),
   history = ref<S['GradeReviewHTTPHistory'] | null>(null),
   notice = ref(''),
   saveError = ref(''),
@@ -66,7 +72,7 @@ const revisedRows = ref<
     criterion_id: string
     points: string
     rationale: string
-    quote: { text_start: number; text_end: number; quote: string } | null
+    quote: S['QuoteEvidenceReference'] | null
   }[]
 >([])
 const quoteTarget = ref<string | null>(null)
@@ -75,6 +81,14 @@ const confirmOpen = ref(false)
 
 const pendingKey = `huipi.grading.${session.actor}.${sid}.${qid}`
 const pending = new PendingReview(pendingKey)
+const pendingTarget = ref(sessionStorage.getItem(pendingKey + '.target') ?? '')
+const historyOffset = ref(0)
+const fullRubric = ref<S['RubricCriterionRead'][]>([])
+function clearPending() {
+  pending.clear()
+  pendingTarget.value = ''
+  sessionStorage.removeItem(pendingKey + '.target')
+}
 const nodes = new Map<string, string>(),
   currentNodes = new Map<string, Node>()
 const nodePages = new Map<string, number>()
@@ -82,9 +96,7 @@ const nodePages = new Map<string, number>()
 const quoteNodes = ref<{ pointer: string; text: string; page: number }[]>([])
 
 const question = computed(() => workbench.value?.questions.find((q) => q.id === qid))
-const rubricById = computed(
-  () => new Map((question.value?.rubric_criteria ?? []).map((c) => [c.id, c])),
-)
+const rubricById = computed(() => new Map(fullRubric.value.map((c) => [c.id, c])))
 const editable = computed(
   () =>
     !!workbench.value?.can_write &&
@@ -106,13 +118,19 @@ const revisedTotal = computed(() => {
 const revisedChanged = computed(() =>
   revisedRows.value.filter(
     (row) =>
-      (inspection.value?.criterion_scores ?? []).find((c) => c.criterion_id === row.criterion_id)
-        ?.proposed_points !== row.points,
+      !/^[0-9]+(?:\.[0-9]{1,2})?$/.test(row.points.trim()) ||
+      compareDecimals(
+        (inspection.value?.criterion_scores ?? []).find((c) => c.criterion_id === row.criterion_id)
+          ?.proposed_points ?? '0',
+        row.points,
+      ) !== 0,
   ),
 )
 const revisedError = computed(() => {
   for (const row of revisedRows.value) {
-    const max = rubricById.value.get(row.criterion_id)?.points ?? '0'
+    const max =
+      inspection.value?.criterion_scores?.find((c) => c.criterion_id === row.criterion_id)
+        ?.max_points ?? '0'
     const issue = validateScoreInput(row.points, max)
     if (issue) return `${rubricById.value.get(row.criterion_id)?.description ?? '评分项'}：${issue}`
   }
@@ -120,7 +138,7 @@ const revisedError = computed(() => {
     return '修改评分项时必须选择处理原因'
   for (const row of revisedChanged.value) {
     const points = row.points.trim()
-    if (points !== '0' && points !== '0.00' && !row.quote)
+    if (compareDecimals(points, '0') > 0 && !row.quote)
       return `「${rubricById.value.get(row.criterion_id)?.description ?? ''}」需选择原文引文证据`
     if (!row.rationale.trim())
       return `「${rubricById.value.get(row.criterion_id)?.description ?? ''}」需填写修改理由`
@@ -134,13 +152,15 @@ async function load() {
   listUnsupported.value = false
   try {
     const svc = await services()
-    const [s, w] = await Promise.all([
+    const [s, w, detail] = await Promise.all([
       svc.submissions.detail(sid),
-      svc.assignments.workbench(aid, 0),
+      svc.assignments.workbench(aid, 0, qid),
+      svc.assignments.detail(aid),
     ])
     if (s.assignment_id !== aid) throw new Error('提交与作业不匹配。')
     submission.value = s
     workbench.value = w
+    fullRubric.value = detail.questions.find((q) => q.id === qid)?.rubric_criteria ?? []
     try {
       list.value = await svc.grading.list(sid, qid)
     } catch (e) {
@@ -148,7 +168,9 @@ async function load() {
       if (e instanceof UnsupportedCapabilityError) listUnsupported.value = true
       else throw e
     }
-    const preferred = String(route.query.p ?? list.value?.[0]?.proposal_id ?? '')
+    const preferred = String(
+      pendingTarget.value || route.query.p || list.value?.[0]?.proposal_id || '',
+    )
     if (preferred) await selectProposal(preferred)
   } catch (e) {
     error.value = e instanceof Error ? e.message : '读取未完成。'
@@ -158,7 +180,19 @@ async function load() {
   frozen.value = !!pending.body
 }
 
+async function chooseProposal(pid: string) {
+  try {
+    await selectProposal(pid)
+  } catch (e) {
+    saveError.value = e instanceof Error ? e.message : '候选读取失败，请重试。'
+  }
+}
 async function selectProposal(pid: string) {
+  if (pending.body && pendingTarget.value !== pid) {
+    saveError.value = '请先确认上一笔评分审核结果，不能切换候选。'
+    return
+  }
+  historyOffset.value = 0
   selectedPid.value = pid
   inspection.value = null
   history.value = null
@@ -182,14 +216,48 @@ async function selectProposal(pid: string) {
   await loadQuotePages()
 }
 
+async function moreHistory(offset: number) {
+  try {
+    history.value = await (await services()).grading.history(sid, qid, selectedPid.value, offset)
+    historyOffset.value = offset
+  } catch (e) {
+    saveError.value = e instanceof Error ? e.message : '历史读取失败'
+  }
+}
+async function moreEvidence() {
+  if (!inspection.value?.next_evidence_offset) return
+  try {
+    const next = await (
+      await services()
+    ).grading.inspect(sid, qid, selectedPid.value, inspection.value.next_evidence_offset)
+    if (
+      next.proposal_sha256 !== inspection.value.proposal_sha256 ||
+      next.grade_input_sha256 !== inspection.value.grade_input_sha256 ||
+      next.source_status !== 'current'
+    )
+      throw new Error('候选来源已变化，请刷新后重新审核。')
+    inspection.value = {
+      ...next,
+      evidence_locations: [
+        ...(inspection.value.evidence_locations ?? []),
+        ...(next.evidence_locations ?? []),
+      ],
+      candidate_rationales: inspection.value.candidate_rationales,
+    }
+    await loadQuotePages()
+  } catch (e) {
+    saveError.value = e instanceof Error ? e.message : '引文读取失败'
+  }
+}
 async function loadQuotePages() {
   const svc = await services()
-  const status = await svc.submissions.canonicalStatus(sid)
-  const count = Math.min(status.canonical_document?.page_count ?? 1, 4)
+  const pages = [
+    ...new Set(inspection.value?.evidence_locations?.map((e) => e.page_number) ?? []),
+  ].sort((a, b) => a - b)
   nodes.clear()
   currentNodes.clear()
   quoteNodes.value = []
-  for (let pageNumber = 1; pageNumber <= count; pageNumber++) {
+  for (const pageNumber of pages) {
     const result = await svc.submissions.page(sid, pageNumber)
     result.page.blocks.forEach((b, i) => {
       const pointer = `/pages/${result.page.page_index}/blocks/${i}/content`
@@ -197,7 +265,8 @@ async function loadQuotePages() {
     })
   }
   for (const [pointer, text] of nodes)
-    quoteNodes.value.push({ pointer, text, page: nodePages.get(pointer) ?? 1 })
+    if (inspection.value?.evidence_locations?.some((e) => e.content_pointer === pointer))
+      quoteNodes.value.push({ pointer, text, page: nodePages.get(pointer) ?? 1 })
 }
 
 function indexNode(node: Node, pointer: string, pageNumber: number) {
@@ -251,15 +320,8 @@ function captureQuote() {
   if (!quoteTarget.value) return
   try {
     const region = selectedRegion(window.getSelection(), nodes)
-    const text = snippetOf(region.content_pointer, region.text_start ?? 0, region.text_end ?? 0)
-    if (!text.trim()) throw new Error('选区没有文字内容。')
     const row = revisedRows.value.find((r) => r.criterion_id === quoteTarget.value)
-    if (row)
-      row.quote = {
-        text_start: region.text_start ?? 0,
-        text_end: region.text_end ?? 0,
-        quote: text.slice(0, 120),
-      }
+    if (row) row.quote = mapGradeQuote(region, nodes, inspection.value?.evidence_locations ?? [])
     quoteOpen.value = false
     saveError.value = ''
   } catch (e) {
@@ -297,17 +359,7 @@ function buildBody(): string {
       criterion_id: row.criterion_id,
       reviewed_points: row.points.trim(),
       rationale: row.rationale.trim() || null,
-      evidence_references: row.quote
-        ? [
-            {
-              kind: 'quote',
-              segment_index: 0,
-              text_start: row.quote.text_start,
-              text_end: row.quote.text_end,
-              quote: row.quote.quote,
-            },
-          ]
-        : null,
+      evidence_references: row.quote ? [row.quote] : null,
     })),
   })
 }
@@ -320,10 +372,12 @@ async function submit() {
   try {
     const body = buildBody()
     pending.freeze(body)
+    pendingTarget.value = selectedPid.value
+    sessionStorage.setItem(pendingKey + '.target', selectedPid.value)
     frozen.value = true
     const svc = await services()
     const result = await svc.grading.save(sid, qid, selectedPid.value, pending.body!)
-    pending.clear()
+    clearPending()
     frozen.value = false
     mode.value = 'idle'
     reasonCodes.value = []
@@ -331,11 +385,11 @@ async function submit() {
     notice.value = `已保存审核决定（${label(reviewStatusLabels, result.record.review_status)}）。候选与人工审核均不发布正式成绩。`
   } catch (e) {
     if (e instanceof ApiError && e.status === 409) {
-      pending.clear()
+      clearPending()
       frozen.value = false
       saveError.value = e.message
     } else if (e instanceof ApiError && !e.uncertain) {
-      pending.clear()
+      clearPending()
       frozen.value = false
       saveError.value = e.message
     } else {
@@ -352,18 +406,22 @@ async function submit() {
 
 async function retryPending() {
   if (!pending.body || busy.value) return
+  if (!pendingTarget.value || pendingTarget.value !== selectedPid.value) {
+    saveError.value = '原请求缺少可确认的候选目标，已阻止重放。请由管理员核查历史记录。'
+    return
+  }
   busy.value = true
   try {
     const svc = await services()
     const result = await svc.grading.save(sid, qid, selectedPid.value, pending.body)
-    pending.clear()
+    clearPending()
     frozen.value = false
     mode.value = 'idle'
     await selectProposal(selectedPid.value)
     notice.value = `已确认保存（${label(reviewStatusLabels, result.record.review_status)}）。`
   } catch (e) {
     if (e instanceof ApiError && !e.uncertain) {
-      pending.clear()
+      clearPending()
       frozen.value = false
       saveError.value = e.message
     } else {
@@ -448,12 +506,13 @@ onBeforeUnmount(() => (quoteOpen.value = false))
                   type="button"
                   class="rv-option"
                   :class="{ 'is-selected': item.proposal_id === selectedPid }"
-                  @click="selectProposal(item.proposal_id)"
+                  :disabled="busy || frozen"
+                  @click="chooseProposal(item.proposal_id)"
                 >
                   <span class="rv-radio" aria-hidden="true"></span>
                   <span style="min-width: 0">
                     <span class="rv-option-name"
-                      >候选 {{ item.proposal_id.replace('prop-', '') }} ·
+                      >候选 {{ (list ?? []).indexOf(item) + 1 }} ·
                       {{
                         item.grading_status === 'grading_abstained'
                           ? '模型弃权'
@@ -570,7 +629,14 @@ onBeforeUnmount(() => (quoteOpen.value = false))
                     <span class="hp-fine">上限 {{ formatScore(row.max_points) }} 分</span>
                   </div>
                   <p class="hp-fine" style="margin-top: 4px">
-                    {{ quoteForCriterion(row.criterion_id)?.text || '（无候选理由摘要）' }}
+                    {{
+                      inspection.candidate_rationales?.find(
+                        (c) => c.criterion_id === row.criterion_id,
+                      )?.rationale ?? '当前接口不提供模型理由正文，请结合原文与评分细则审核。'
+                    }}
+                  </p>
+                  <p v-if="quoteForCriterion(row.criterion_id)?.text" class="hp-fine">
+                    “{{ quoteForCriterion(row.criterion_id)?.text }}”
                   </p>
                   <p v-if="quoteForCriterion(row.criterion_id)" class="hp-fine">
                     <Quote
@@ -580,6 +646,20 @@ onBeforeUnmount(() => (quoteOpen.value = false))
                     原文引文 · 第 {{ quoteForCriterion(row.criterion_id)!.page }} 页
                   </p>
                 </div>
+                <button
+                  v-if="
+                    inspection.evidence_truncated &&
+                    (inspection.evidence_locations?.length ?? 0) < 100
+                  "
+                  type="button"
+                  class="hp-btn hp-btn-secondary hp-btn-sm"
+                  @click="moreEvidence"
+                >
+                  加载更多引文
+                </button>
+                <p v-if="inspection.evidence_truncated" class="hp-fine">
+                  当前为部分引文，最多加载100条；未显示的片段不能在此选用。
+                </p>
                 <p class="hp-fine" style="margin-top: 8px">
                   AI 候选仅供教师参考；接受、修订或拒绝均不发布正式成绩。
                 </p>
@@ -649,7 +729,7 @@ onBeforeUnmount(() => (quoteOpen.value = false))
 
               <template v-else-if="mode === 'revised'">
                 <p class="hp-fine">
-                  修改评分项需填写理由，且正分项必须有原文引文证据；分值使用十进制字符串运算。
+                  修改评分项需填写理由，且正分项必须有原文引文证据；保留未改动的评分项，以保存完整的审核记录。
                 </p>
                 <div
                   v-for="row in revisedRows"
@@ -832,8 +912,42 @@ onBeforeUnmount(() => (quoteOpen.value = false))
                             .join('、')
                         }}
                       </div>
+                      <details class="hp-details">
+                        <summary>逐项评分与前序记录</summary>
+                        <div
+                          class="hp-fine"
+                          v-for="c in record.criterion_scores"
+                          :key="c.criterion_id"
+                        >
+                          {{ criterionLabel(c.criterion_id) }}：候选
+                          {{ formatScore(c.proposed_points) }} / 人工
+                          {{ formatScore(c.reviewed_points) }} 分{{
+                            c.changed ? '（相对候选已修改）' : '（与候选一致）'
+                          }}
+                        </div>
+                        <p class="hp-fine">
+                          {{
+                            record.supersedes_review_id ? '承接前一次人工审核' : '首条人工审核'
+                          }}；历史只读。
+                        </p>
+                      </details>
                     </div>
                   </article>
+                  <div class="hp-flex hp-between">
+                    <button
+                      class="hp-linkbtn"
+                      :disabled="historyOffset === 0"
+                      @click="moreHistory(Math.max(0, historyOffset - 5))"
+                    >
+                      上一页历史</button
+                    ><button
+                      class="hp-linkbtn"
+                      :disabled="!history?.has_next"
+                      @click="moreHistory(history?.next_offset ?? 0)"
+                    >
+                      下一页历史
+                    </button>
+                  </div>
                 </div>
               </details>
 
@@ -901,8 +1015,7 @@ onBeforeUnmount(() => (quoteOpen.value = false))
           :close-on-click-modal="false"
         >
           <p class="hp-fine" style="margin-bottom: 10px">
-            在下方作答内容中拖选一段文字作为该评分项的证据，然后点击“使用当前选区”。选区按 Unicode
-            码点记录。
+            在下方作答内容中拖选一段文字作为该评分项的证据，然后点击“使用当前选区”。一次选取同一段落中的文字，不跨越未验证的来源范围。
           </p>
           <div
             style="

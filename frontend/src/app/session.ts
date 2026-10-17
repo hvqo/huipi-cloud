@@ -47,6 +47,10 @@ async function loadProfile() {
   } catch (error) {
     // 已登录但 /me 不可用：不伪造任何角色，进入阻断提示。
     session.role = ''
+    session.capabilities = []
+    session.userId = ''
+    session.actor = ''
+    session.name = ''
     session.provisionError =
       error instanceof Error ? error.message : '无法读取账号档案，请稍后重试。'
   }
@@ -72,6 +76,7 @@ export async function initSession(): Promise<void> {
 }
 
 export async function signInDemo(role: DemoRole): Promise<void> {
+  if (!DEMO_MODE) throw new Error('真实模式禁止使用演示身份。')
   setDemoRole(role)
   session.authenticated = true
   session.signOutReason = ''
@@ -100,4 +105,13 @@ export function hasCapability(capability: string): boolean {
 
 export function refreshSession(): Promise<void> {
   return loadProfile()
+}
+
+/** Complete PKCE callback before protected routing; the /me profile supplies authority. */
+export async function acceptOidcSession(): Promise<void> {
+  if (!identity.authenticated) throw new Error('登录未完成')
+  session.authenticated = true
+  session.signOutReason = ''
+  await loadProfile()
+  session.ready = true
 }

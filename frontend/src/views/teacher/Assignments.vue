@@ -3,6 +3,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Plus, Search, X } from 'lucide-vue-next'
 import { services, type S } from '../../services'
+import { DEMO_MODE } from '../../app/mode'
 import { assignmentStatusLabels, formatRelative } from '../../lib/labels'
 import { hasCapability } from '../../app/session'
 import EmptyState from '../../components/EmptyState.vue'
@@ -157,6 +158,9 @@ onMounted(() => {
       </button>
     </div>
 
+    <p v-if="!DEMO_MODE" class="hp-fine">
+      搜索与状态筛选仅作用于当前加载页，尚未提供全量搜索接口；可继续翻页查看。
+    </p>
     <PageState
       :loading="state.loading && !state.rows.length"
       :error="state.error"

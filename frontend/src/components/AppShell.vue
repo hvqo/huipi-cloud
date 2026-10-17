@@ -79,6 +79,7 @@ function resetDemo() {
     // 仅清除本地演示状态并重载；不引用演示数据模块，生产构建无演示代码路径。
     try {
       localStorage.removeItem(DEMO_STATE_KEY)
+      indexedDB.deleteDatabase('huipi-demo-files-v2')
     } catch {
       /* 忽略 */
     }
@@ -104,7 +105,11 @@ function resetDemo() {
           :key="item.to"
           :to="item.to"
           class="hp-nav-item"
-          :class="{ 'is-active': route.path === item.to || route.path.startsWith(item.to + '/') }"
+          :class="{
+            'is-active':
+              route.path === item.to ||
+              (item.to !== '/admin' && route.path.startsWith(item.to + '/')),
+          }"
         >
           <component :is="item.icon" aria-hidden="true" />
           <span>{{ item.label }}</span>

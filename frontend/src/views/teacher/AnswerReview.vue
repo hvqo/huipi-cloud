@@ -30,6 +30,7 @@ import {
 } from '../../lib/review'
 import {
   formatDateTime,
+  contentTypeLabels,
   formatRelative,
   label,
   presenceLabels,
@@ -179,7 +180,7 @@ async function loadOriginal() {
   originalBusy.value = true
   originalError.value = ''
   try {
-    const blob = await (await services()).submissions.file(sid)
+    const blob = await (await services()).submissions.file(sid, originalController.signal)
     if (originalController.signal.aborted) return
     if (!['application/pdf', 'image/png', 'image/jpeg'].includes(blob.type))
       throw new Error('此文件类型不能安全预览。')
@@ -263,7 +264,7 @@ async function send(retry = false, thenNext = false) {
     frozen.value = false
     historyOffset.value = 0
     await load()
-    notice.value = `已确认保存 · 审核记录 revision ${saved.record.revision}。这不是成绩发布。`
+    notice.value = `已确认保存 · 第 ${saved.record.revision} 次审核。这不是成绩发布。`
     if (thenNext) await gotoQuestion(1)
   } catch (e) {
     if (e instanceof ApiError && [403, 404].includes(e.status)) permissionDenied.value = true
@@ -612,7 +613,7 @@ onBeforeUnmount(() => {
                   }"
                 >
                   <span class="rv-block-tag">
-                    {{ index + 1 }} · {{ block.normalized_type }}
+                    {{ index + 1 }} · {{ contentTypeLabels[block.normalized_type] ?? '内容' }}
                     {{
                       related.has(`/pages/${page.page.page_index}/blocks/${index}/content`)
                         ? '· 与本题关联'
@@ -692,7 +693,7 @@ onBeforeUnmount(() => {
                 class="hp-fine"
                 style="padding: 2px 4px"
               >
-                第 {{ e.page_number }} 页 · {{ e.normalized_type }}
+                第 {{ e.page_number }} 页 · {{ contentTypeLabels[e.normalized_type] ?? '内容' }}
                 {{
                   e.text_start != null ? `· 文本范围 [${e.text_start}, ${e.text_end})` : '· 整节点'
                 }}
@@ -821,8 +822,8 @@ onBeforeUnmount(() => {
                   保存并核对下一题<ArrowRight aria-hidden="true" />
                 </button>
                 <p class="hp-fine">
-                  保存后生成不可变审核记录（revision
-                  {{ view.expected_revision + 1 }}）；此操作不产生、也不发布成绩。
+                  保存后生成第
+                  {{ view.expected_revision + 1 }} 次审核记录；此操作不产生、也不发布成绩。
                 </p>
               </div>
               <div class="rv-keys">
@@ -955,8 +956,9 @@ onBeforeUnmount(() => {
             原因：{{ reasonLabels[reason] }} · 已选 {{ regions.length }} 个证据范围
           </p>
           <p class="hp-fine" style="margin-bottom: 10px">
-            基于审核记录 revision {{ view.expected_revision }} 与本次读取的 Canonical / Alignment
-            版本提交；提交前会再次校验。
+            基于当前第
+            {{ view.expected_revision }}
+            次审核及本次读取的作答来源提交；保存前会再次检查是否有人修改。
           </p>
           <ol class="selection-list rv-evi-list">
             <li v-for="(r, index) in regions" :key="index" class="rv-evi">{{ snippet(r) }}</li>

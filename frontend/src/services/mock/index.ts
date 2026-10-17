@@ -22,6 +22,7 @@ import type {
 } from '../types'
 import { buildCanonical } from './canonical'
 import { renderExamPage } from './files'
+import { loadDemoFile, saveDemoFile } from './file-store'
 import {
   demoError,
   demoState,
@@ -45,12 +46,13 @@ import {
 const CODE_POINTS = (text: string) => Array.from(text).length
 
 function currentUser() {
-  const role = currentDemoRole() ?? 'teacher'
+  const role = currentDemoRole()
+  if (!role) throw demoError(401, '请先选择演示身份。')
   const state = demoState()
   const user = state.users.find((u) =>
     role === 'admin' ? u.role === 'admin' : u.role === 'teacher',
   )
-  if (!user) throw demoError(403, '演示账号不存在，请重置演示环境。')
+  if (!user || !user.is_active) throw demoError(403, '演示账号不存在，请重置演示环境。')
   return user
 }
 
@@ -89,6 +91,20 @@ function assertVisible(aid: string) {
   return assignment
 }
 
+function assertDraft(aid: string) {
+  const a = assertVisible(aid)
+  if (!canWrite(aid)) throw demoError(403, '当前账号对该作业没有写权限。')
+  if (a.status !== 'draft') throw demoError(409, '已发布作业不能修改题目、答案和评分细则。')
+  return a
+}
+function assertSubmission(sid: string, qid?: string) {
+  const sub = demoState().submissions.find((s) => s.id === sid)
+  if (!sub) throw demoError(404, '提交不存在或无权访问。')
+  assertVisible(sub.assignment_id)
+  if (qid && demoState().questions[qid]?.assignment_id !== sub.assignment_id)
+    throw demoError(404, '题目与提交不属于同一作业。')
+  return sub
+}
 function assignmentQuestions(aid: string) {
   const state = demoState()
   const assignment = state.assignments.find((a) => a.id === aid)
@@ -326,6 +342,8 @@ const assignments: AssignmentsService = {
   async publish(aid) {
     const assignment = assertVisible(aid)
     if (!canWrite(aid)) throw demoError(403, '当前账号对该作业没有写权限。')
+    const check = await assignments.publishCheck(aid)
+    if (!check.ready) throw demoError(409, '作业尚未满足发布条件。')
     assignment.status = 'published'
     assignment.updated_at = new Date().toISOString()
     logOp('发布了作业', assignment.title)
@@ -336,6 +354,17 @@ const assignments: AssignmentsService = {
     const state = demoState()
     const assignment = assertVisible(aid)
     if (!canWrite(aid)) throw demoError(403, '当前账号对该作业没有写权限。')
+    assertDraft(aid)
+    if (
+      body.question_number < 1 ||
+      assignmentQuestions(aid).some((q) => q.question_number === body.question_number)
+    )
+      throw demoError(409, '题号必须为正整数且不可重复。')
+    if (
+      !isValidDecimal(String(body.max_score)) ||
+      compareDecimals(String(body.max_score), '0') <= 0
+    )
+      throw demoError(422, '满分应为正数。')
     const id = nextId(`q-${aid.slice(4)}`)
     const now = new Date().toISOString()
     state.questions[id] = {
@@ -362,6 +391,16 @@ const assignments: AssignmentsService = {
     if (!question || question.assignment_id !== aid)
       throw demoError(404, '题目不存在或不属于该作业。')
     if (!canWrite(aid)) throw demoError(403, '当前账号对该作业没有写权限。')
+    assertDraft(aid)
+    if (
+      assignmentQuestions(aid).some(
+        (q) => q.id !== qid && q.question_number === body.question_number,
+      ) ||
+      body.question_number < 1
+    )
+      throw demoError(409, '题号重复或不合法。')
+    if (!isValidDecimal(body.max_score) || compareDecimals(body.max_score, '0') <= 0)
+      throw demoError(422, '满分不合法。')
     question.question_number = body.question_number
     question.question_type = body.question_type
     question.stem = body.stem
@@ -375,6 +414,8 @@ const assignments: AssignmentsService = {
     const state = demoState()
     const question = state.questions[qid]
     if (!question) throw demoError(404, '题目不存在。')
+    assertDraft(question.assignment_id)
+    if (!content.trim()) throw demoError(422, '标准答案不能为空。')
     state.answerKeys[qid] = { content, updated_at: new Date().toISOString() }
     logOp('更新了标准答案', `第 ${question.question_number} 题`)
     persist()
@@ -387,6 +428,17 @@ const assignments: AssignmentsService = {
     const total = sumDecimals(body.criteria.map((c) => String(c.points)))
     if (compareDecimals(total, question.max_score) > 0)
       throw demoError(422, `评分项合计 ${total} 分超过题目满分 ${question.max_score} 分。`)
+    assertDraft(question.assignment_id)
+    if (
+      !body.criteria.length ||
+      body.criteria.some(
+        (c) =>
+          !c.description.trim() ||
+          !isValidDecimal(String(c.points)) ||
+          compareDecimals(String(c.points), '0') <= 0,
+      )
+    )
+      throw demoError(422, '请配置合法的评分项和分值。')
     state.rubrics[qid] = body.criteria.map((c, index) => ({
       id: `crit-${qid}-${index + 1}`,
       question_id: qid,
@@ -405,6 +457,10 @@ const assignments: AssignmentsService = {
       const issues: string[] = []
       if (!(state.rubrics[q.id] ?? []).length) issues.push('未配置评分细则')
       if (!state.answerKeys[q.id]?.content) issues.push('未设置标准答案')
+      if (
+        sumDecimals((state.rubrics[q.id] ?? []).map((c) => c.points)) !== sumDecimals([q.max_score])
+      )
+        issues.push('评分项总分与题目满分不一致')
       return {
         question_id: q.id,
         question_number: q.question_number,
@@ -421,6 +477,12 @@ const assignments: AssignmentsService = {
       throw demoError(403, '仅作业创建者可删除（演示）。')
     for (const submission of state.submissions.filter((s) => s.assignment_id === aid))
       delete state.canonicals[submission.id]
+    const removedIds = new Set(
+      state.submissions.filter((s) => s.assignment_id === aid).map((s) => s.id),
+    )
+    state.proposals = state.proposals.filter((p) => !removedIds.has(p.submission_id))
+    for (const key of Object.keys(state.reviews))
+      if (removedIds.has(key.split(':')[0]!)) delete state.reviews[key]
     state.submissions = state.submissions.filter((s) => s.assignment_id !== aid)
     for (const qid of assignment.question_ids) {
       delete state.questions[qid]
@@ -436,7 +498,10 @@ const assignments: AssignmentsService = {
 
 /* ---------------- Submissions ---------------- */
 
+const scheduledParsing = new Set<string>()
 function scheduleParseTransition(submissionId: string) {
+  if (scheduledParsing.has(submissionId)) return
+  scheduledParsing.add(submissionId)
   // 演示解析：约 4 秒后进入解析完成，并生成 Canonical。
   window.setTimeout(() => {
     const state = demoState()
@@ -494,15 +559,43 @@ const submissions: SubmissionsService = {
     const state = demoState()
     assertVisible(aid)
     if (!canWrite(aid)) throw demoError(403, '当前账号对该作业没有写权限。')
+    if (assertVisible(aid).status !== 'published') throw demoError(409, '只有已发布作业可以提交。')
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(input.student_ref))
+      throw demoError(422, '学生标识格式不正确。')
+    if (
+      state.submissions.some((s) => s.assignment_id === aid && s.student_ref === input.student_ref)
+    )
+      throw demoError(409, '该学生已提交过这份作业。')
+    if (input.file.size > 20 * 1024 * 1024) throw demoError(413, '文件超过20MiB上限。')
+    const header = new Uint8Array(await input.file.slice(0, 8).arrayBuffer())
+    const ext = input.file.name.split('.').pop()?.toLowerCase()
+    const valid =
+      (ext === 'pdf' &&
+        input.file.type === 'application/pdf' &&
+        new TextDecoder().decode(header).startsWith('%PDF-')) ||
+      (['jpg', 'jpeg'].includes(ext || '') &&
+        input.file.type === 'image/jpeg' &&
+        header[0] === 255 &&
+        header[1] === 216 &&
+        header[2] === 255) ||
+      (ext === 'png' &&
+        input.file.type === 'image/png' &&
+        header[0] === 137 &&
+        header[1] === 80 &&
+        header[2] === 78 &&
+        header[3] === 71)
+    if (!valid) throw demoError(415, '文件扩展名、类型与内容不一致，仅支持PDF、JPG或PNG。')
     const id = nextId('sub')
     const now = new Date().toISOString()
+    await saveDemoFile(id, input.file)
     state.submissions.push({
       id,
       assignment_id: aid,
       student_ref: input.student_ref,
       file_name: input.file.name,
-      file_type: 'image/png',
-      file_size: input.file.size || 400_000,
+      file_type: input.file.type,
+      file_size: input.file.size,
+      uploaded: true,
       submitted_at: now,
       created_at: now,
       updated_at: now,
@@ -536,6 +629,7 @@ const submissions: SubmissionsService = {
     return toSubmissionRead(submission)
   },
   async parsingStatus(sid) {
+    assertSubmission(sid)
     const submission = demoState().submissions.find((s) => s.id === sid)
     if (!submission) throw demoError(404, '资源不可用或没有访问权限。')
     return {
@@ -553,6 +647,7 @@ const submissions: SubmissionsService = {
     }
   },
   async canonicalStatus(sid) {
+    assertSubmission(sid)
     const state = demoState()
     const submission = state.submissions.find((s) => s.id === sid)
     if (!submission) throw demoError(404, '资源不可用或没有访问权限。')
@@ -580,6 +675,7 @@ const submissions: SubmissionsService = {
     }
   },
   async page(sid, pageNumber) {
+    assertSubmission(sid)
     const canonical = demoState().canonicals[sid]
     if (!canonical) throw demoError(404, '作答内容尚未生成。')
     const page = canonical.pages[pageNumber - 1]
@@ -587,6 +683,7 @@ const submissions: SubmissionsService = {
     return page
   },
   async alignment(sid) {
+    assertSubmission(sid)
     const state = demoState()
     const canonical = state.canonicals[sid]
     const submission = state.submissions.find((s) => s.id === sid)
@@ -613,6 +710,7 @@ const submissions: SubmissionsService = {
     }
   },
   async questionAlignment(sid, qid) {
+    assertSubmission(sid, qid)
     const state = demoState()
     const canonical = state.canonicals[sid]
     const submission = state.submissions.find((s) => s.id === sid)
@@ -678,6 +776,7 @@ const submissions: SubmissionsService = {
     const submission = state.submissions.find((s) => s.id === sid)
     if (!submission) throw demoError(404, '资源不可用或没有访问权限。')
     assertVisible(submission.assignment_id)
+    if (submission.uploaded) return loadDemoFile(sid)
     const canonical = state.canonicals[sid]
     const questions: { number: number; stem: string; answer?: string }[] = []
     if (canonical) {
@@ -708,6 +807,7 @@ const submissions: SubmissionsService = {
 
 const reviews: ReviewsService = {
   async inspect(sid, qid, _evidenceOffset = 0, _confirmedOffset = 0) {
+    assertSubmission(sid, qid)
     const state = demoState()
     const canonical = state.canonicals[sid]
     const submission = state.submissions.find((s) => s.id === sid)
@@ -770,6 +870,7 @@ const reviews: ReviewsService = {
     }
   },
   async history(sid, qid, offset = 0) {
+    assertSubmission(sid, qid)
     const state = demoState()
     const record = state.reviews[`${sid}:${qid}`]
     const limit = 10
@@ -784,6 +885,7 @@ const reviews: ReviewsService = {
     }
   },
   async save(sid, qid, body) {
+    assertSubmission(sid, qid)
     const state = demoState()
     const canonical = state.canonicals[sid]
     const submission = state.submissions.find((s) => s.id === sid)
@@ -791,7 +893,7 @@ const reviews: ReviewsService = {
     assertVisible(submission.assignment_id)
     if (!canWrite(submission.assignment_id)) throw demoError(403, '当前账号对该作业没有写权限。')
     const parsed = JSON.parse(body) as S['ReviewRequest']
-    return idempotent(parsed.request_id, parsed, () => {
+    return idempotent(parsed.request_id, { sid, qid, ...parsed }, () => {
       const key = `${sid}:${qid}`
       const record = state.reviews[key] ?? { source: sourceOf(sid), history: [], regions: {} }
       const currentSource = sourceOf(sid)
@@ -808,6 +910,35 @@ const reviews: ReviewsService = {
       ]
       if (!regions.length && parsed.decision !== 'uncertain')
         throw demoError(422, '请选择真实证据范围，未选中文字不等于学生没有作答。')
+      const allowed = canonical.aligned[qid]?.evidence_pointers ?? []
+      for (const region of regions) {
+        const node = canonical.pointers[region.content_pointer]
+        const image =
+          node?.normalized_type === 'image' && region.text_start == null && region.text_end == null
+        if (
+          !node ||
+          !allowed.some((e) => e.pointer === region.content_pointer) ||
+          (!image &&
+            (region.text_start == null ||
+              region.text_end == null ||
+              region.text_start < 0 ||
+              region.text_end <= region.text_start ||
+              region.text_end > CODE_POINTS(node.text ?? '')))
+        )
+          throw demoError(422, '证据必须来自本题已定位的独立来源；文字需使用合法字符范围。')
+      }
+      for (let i = 0; i < regions.length; i++)
+        for (let j = i + 1; j < regions.length; j++) {
+          const a = regions[i]!,
+            b = regions[j]!
+          if (
+            a.content_pointer === b.content_pointer &&
+            (a.text_start == null ||
+              b.text_start == null ||
+              (a.text_start < b.text_end! && b.text_start < a.text_end!))
+          )
+            throw demoError(422, '同一文字范围不能重复标注。')
+        }
       const revision = record.history.length + 1
       const decisionId = nextId('dec')
       const user = currentUser()
@@ -951,7 +1082,7 @@ const reviews: ReviewsService = {
       submissions_recent: submissionsRecent,
       parsing_active: parsingActive,
       parse_alerts: parseAlerts,
-      scope_note: '演示数据：统计基于演示环境全部作业（合成数据）。',
+      scope_note: '演示数据：按当前可访问作业的提交批次统计，趋势图最多展示365天（合成数据）。',
       tasks: tasks.slice(0, 8),
       recent_submissions: recent.slice(0, 8),
       recent_ops: state.ops
@@ -979,6 +1110,7 @@ function makeGradeRevision(input: {
   reasonCodes: S['GradeReviewRequest']['review_reason_codes']
   reviewerId: string
   at: string
+  requestId?: string
 }): S['GradeRevisionSummary'] {
   return {
     review_id: nextId('gr'),
@@ -987,13 +1119,16 @@ function makeGradeRevision(input: {
     proposal_sha256: `sha-p-${input.pid}`,
     grade_input_sha256: `sha-gi-${input.pid}`,
     review_revision: input.revision,
-    supersedes_review_id: input.revision > 1 ? `prev-${input.pid}-${input.revision - 1}` : null,
+    supersedes_review_id:
+      demoState()
+        .proposals.find((p) => p.id === input.pid)
+        ?.reviews.at(-1)?.review_id ?? null,
     reviewer_ref: `teacher_${input.reviewerId.replace(/-/g, '')}`,
     reviewer_user_id: input.reviewerId,
     reviewer_kind: 'authenticated_teacher',
     review_reason_codes: input.reasonCodes ?? [],
     review_comment_present: false,
-    request_id: nextId('greq'),
+    request_id: input.requestId ?? nextId('greq'),
     review_status: input.status,
     proposed_total_score: input.proposed,
     reviewed_total_score: input.reviewed,
@@ -1011,6 +1146,7 @@ function makeGradeRevision(input: {
 
 const grading: GradingService = {
   async list(sid, qid) {
+    assertSubmission(sid, qid)
     const state = demoState()
     const submission = state.submissions.find((s) => s.id === sid)
     const question = state.questions[qid]
@@ -1034,6 +1170,7 @@ const grading: GradingService = {
       }))
   },
   async inspect(sid, qid, pid, _evidenceOffset = 0) {
+    assertSubmission(sid, qid)
     const state = demoState()
     const proposal = state.proposals.find(
       (p) => p.id === pid && p.submission_id === sid && p.question_id === qid,
@@ -1051,6 +1188,10 @@ const grading: GradingService = {
     })
     return {
       proposal_id: pid,
+      candidate_rationales: proposal.criteria.map((c) => ({
+        criterion_id: c.criterion_id,
+        rationale: c.rationale,
+      })),
       grading_status: proposal.grading_status,
       source_status: proposal.source_status,
       grade_input_artifact_id: `gi-${pid}`,
@@ -1072,7 +1213,9 @@ const grading: GradingService = {
       has_review_history: proposal.reviews.length > 0,
       evidence_locations: proposal.evidence.map((e) => ({
         criterion_id: e.criterion_id,
-        segment_index: 0,
+        segment_index: [...new Set(proposal.evidence.map((item) => item.content_pointer))].indexOf(
+          e.content_pointer,
+        ),
         content_pointer: e.content_pointer,
         page_number: e.page_number,
         text_start: e.text_start,
@@ -1087,6 +1230,7 @@ const grading: GradingService = {
     }
   },
   async history(sid, qid, pid, offset = 0) {
+    assertSubmission(sid, qid)
     const state = demoState()
     const proposal = state.proposals.find(
       (p) => p.id === pid && p.submission_id === sid && p.question_id === qid,
@@ -1109,6 +1253,7 @@ const grading: GradingService = {
     }
   },
   async save(sid, qid, pid, body) {
+    assertSubmission(sid, qid)
     const state = demoState()
     const proposal = state.proposals.find(
       (p) => p.id === pid && p.submission_id === sid && p.question_id === qid,
@@ -1119,7 +1264,7 @@ const grading: GradingService = {
     if (proposal.source_status === 'source_stale')
       throw demoError(409, '候选来源已过期，不能追加新的评分审核。')
     const parsed = JSON.parse(body) as S['GradeReviewRequest']
-    return idempotent(parsed.request_id, parsed, () => {
+    return idempotent(parsed.request_id, { sid, qid, pid, ...parsed }, () => {
       if (parsed.expected_revision !== proposal.reviews.length)
         throw demoError(409, '该候选的审核已更新，请刷新后重新处理。')
       const user = currentUser()
@@ -1139,7 +1284,7 @@ const grading: GradingService = {
           revision: proposal.reviews.length + 1,
           status: 'accepted',
           proposed: proposal.proposed_total_score,
-          reviewed: null,
+          reviewed: proposal.proposed_total_score,
           criteria: criteria.map((c) => ({
             criterion_id: c.base.criterion_id,
             proposed: c.base.proposed_points,
@@ -1150,6 +1295,7 @@ const grading: GradingService = {
           reasonCodes: [],
           reviewerId: user.id,
           at: now,
+          requestId: parsed.request_id,
         })
         proposal.reviews.push(record)
         logOp(
@@ -1163,7 +1309,11 @@ const grading: GradingService = {
         if (proposal.grading_status === 'grading_abstained')
           throw demoError(422, '模型弃权的候选没有可修订的分数。')
         const rubric = state.rubrics[qid] ?? []
-        if ((parsed.criterion_reviews ?? []).length !== rubric.length)
+        if (
+          (parsed.criterion_reviews ?? []).length !== rubric.length ||
+          new Set(parsed.criterion_reviews?.map((r) => r.criterion_id)).size !== rubric.length ||
+          parsed.criterion_reviews?.some((r) => !rubric.some((c) => c.id === r.criterion_id))
+        )
           throw demoError(422, '修订必须提交全部评分项的完整快照。')
         let reviewedTotal = '0.00'
         const rows: {
@@ -1182,6 +1332,26 @@ const grading: GradingService = {
             )
           if (compareDecimals(points, item.criterion?.points ?? '0.00') > 0)
             throw demoError(422, `评分项「${item.criterion?.description ?? ''}」超过上限。`)
+          if (compareDecimals(points, item.base.proposed_points) !== 0) {
+            if (!item.review?.rationale?.trim()) throw demoError(422, '修改评分项时需填写理由。')
+            const refs = item.review.evidence_references ?? []
+            const pointers = [...new Set(proposal.evidence.map((e) => e.content_pointer))]
+            if (compareDecimals(points, '0') > 0 && !refs.some((r) => r.kind === 'quote'))
+              throw demoError(422, '正分修订需要可追溯的原文引文。')
+            for (const ref of refs)
+              if (ref.kind === 'quote') {
+                const pointer = pointers[ref.segment_index]
+                const text = pointer ? demoState().canonicals[sid]?.pointers[pointer]?.text : null
+                if (
+                  !text ||
+                  ref.text_start < 0 ||
+                  ref.text_end <= ref.text_start ||
+                  ref.text_end > CODE_POINTS(text) ||
+                  Array.from(text).slice(ref.text_start, ref.text_end).join('') !== ref.quote
+                )
+                  throw demoError(422, '引文与评分输入范围不一致。')
+              }
+          }
           reviewedTotal = addDecimals(reviewedTotal, points)
           rows.push({
             criterion_id: item.base.criterion_id,
@@ -1204,6 +1374,7 @@ const grading: GradingService = {
           reasonCodes: parsed.review_reason_codes ?? [],
           reviewerId: user.id,
           at: now,
+          requestId: parsed.request_id,
         })
         proposal.reviews.push(record)
         logOp(
@@ -1231,6 +1402,7 @@ const grading: GradingService = {
         reasonCodes: parsed.review_reason_codes ?? [],
         reviewerId: user.id,
         at: now,
+        requestId: parsed.request_id,
       })
       proposal.reviews.push(record)
       logOp(
@@ -1284,16 +1456,19 @@ const admin: AdminService = {
         throw demoError(422, 'Issuer 与部署配置不一致（演示环境固定为演示 IdP）。')
       if (!body.subject.trim()) throw demoError(422, 'Subject 不能为空。')
       const id = nextId('u-teacher')
+      if (state.users.some((u) => u.subject === body.subject))
+        throw demoError(409, '该外部身份已登记。')
       state.users.push({
         id,
         name: `演示教师${state.users.filter((u) => u.role === 'teacher').length + 1}`,
         role: 'teacher',
         is_active: true,
-        subject: '未分配',
+        subject: body.subject,
         created_at: new Date().toISOString(),
       })
       const event = logAudit({
         action: 'teacher_registered',
+        request_id: body.request_id,
         actor_user_id: currentUser().id,
         target_user_id: id,
         state: { is_active: true },
@@ -1313,7 +1488,7 @@ const admin: AdminService = {
   async setActive(uid, body) {
     if (!isAdmin()) throw demoError(403, '当前身份不能执行此操作。')
     const state = demoState()
-    return idempotent(body.request_id, body, () => {
+    return idempotent(body.request_id, { uid, ...body }, () => {
       const user = state.users.find((u) => u.id === uid && u.role === 'teacher')
       if (!user) throw demoError(404, '教师账号不存在。')
       user.is_active = body.is_active
@@ -1321,6 +1496,7 @@ const admin: AdminService = {
         membership.is_active = body.is_active && !membership.revoked_at
       const event = logAudit({
         action: 'teacher_activation_changed',
+        request_id: body.request_id,
         actor_user_id: currentUser().id,
         target_user_id: uid,
         state: { is_active: body.is_active },
@@ -1381,6 +1557,7 @@ const admin: AdminService = {
       }
       const event = logAudit({
         action: 'assignment_membership_granted',
+        request_id: body.request_id,
         actor_user_id: currentUser().id,
         target_user_id: uid,
         assignment_id: aid,
@@ -1413,10 +1590,11 @@ const admin: AdminService = {
       membership.is_active = false
       logAudit({
         action: 'assignment_membership_revoked',
+        request_id: requestId,
         actor_user_id: currentUser().id,
         target_user_id: uid,
         assignment_id: aid,
-        state: { can_write: membership.can_write },
+        state: { is_active: false, can_write: false },
       })
       persist()
     })
@@ -1445,48 +1623,63 @@ const admin: AdminService = {
       modules: await system.modules(),
     }
   },
-  async assignableAssignments() {
+  async assignableAssignments(query = {}) {
     if (!isAdmin()) throw demoError(403, '当前身份不能执行此操作。')
-    return demoState().assignments.map(toSummary)
+    const all = demoState().assignments.map(toSummary),
+      offset = query.offset ?? 0,
+      limit = query.limit ?? 50
+    return { records: all.slice(offset, offset + limit), has_next: offset + limit < all.length }
   },
 }
 
 /* ---------------- Knowledge ---------------- */
 
+const scheduledIndexing = new Set<string>()
 function scheduleIndexing(docId: string) {
+  if (scheduledIndexing.has(docId)) return
+  scheduledIndexing.add(docId)
   window.setTimeout(() => {
     const state = demoState()
     const doc = state.knowledge.find((d) => d.id === docId)
     if (!doc || doc.status !== 'indexing') return
     doc.status = 'indexed'
-    doc.chunk_count = 3
-    doc.chunks = [1, 2, 3].map((n) => ({
-      id: `${docId}-c${n}`,
-      text: `《${doc.title}》第 ${n} 段（演示合成索引内容）：围绕${doc.category}的核心概念展开，包含定义、例题与教学建议，可用于检索演示与 AI 助教引用。`,
-      page_hint: `第 ${n} 页`,
-    }))
+    if (!doc.chunks.length)
+      doc.chunks = [1, 2, 3].map((n) => ({
+        id: `${docId}-c${n}`,
+        text: `《${doc.title}》第 ${n} 段（演示合成索引内容）：围绕${doc.category}的核心概念展开，包含定义、例题与教学建议，可用于检索演示与 AI 助教引用。`,
+        page_hint: `第 ${n} 页`,
+      }))
+    doc.chunk_count = doc.chunks.length
     persist()
   }, 5000)
 }
 
 const knowledge: KnowledgeService = {
   async list() {
-    return demoState().knowledge.map((d) => ({
-      id: d.id,
-      title: d.title,
-      category: d.category,
-      file_type: d.file_type,
-      size_bytes: d.size_bytes,
-      status: d.status,
-      chunk_count: d.chunk_count,
-      version: d.version,
-      assignment_id: d.assignment_id,
-      created_at: d.created_at,
-    }))
+    return demoState()
+      .knowledge.filter(
+        (d) => !d.assignment_id || visibleAssignments().some((a) => a.id === d.assignment_id),
+      )
+      .map((d) => ({
+        id: d.id,
+        title: d.title,
+        category: d.category,
+        file_type: d.file_type,
+        size_bytes: d.size_bytes,
+        status: d.status,
+        chunk_count: d.chunk_count,
+        version: d.version,
+        assignment_id: d.assignment_id,
+        created_at: d.created_at,
+      }))
   },
   async detail(id) {
     const doc = demoState().knowledge.find((d) => d.id === id)
-    if (!doc) throw demoError(404, '资料不存在。')
+    if (
+      !doc ||
+      (doc.assignment_id && !visibleAssignments().some((a) => a.id === doc.assignment_id))
+    )
+      throw demoError(404, '资料不存在。')
     return {
       id: doc.id,
       title: doc.title,
@@ -1504,7 +1697,19 @@ const knowledge: KnowledgeService = {
   async upload(input) {
     const state = demoState()
     const id = nextId('kd')
+    if (input.assignment_id) assertVisible(input.assignment_id)
+    if (input.file.size > 20 * 1024 * 1024) throw demoError(413, '资料不能超过20MiB。')
+    if (!/\.(pdf|txt|md|docx)$/i.test(input.file.name))
+      throw demoError(415, '请选择支持的教学资料格式。')
     const title = input.file.name.replace(/\.[^.]+$/, '')
+    const raw = /\.(txt|md)$/i.test(input.file.name) ? await input.file.text() : ''
+    if (Array.from(raw).length > 100000) throw demoError(413, '文本资料最多十万字符。')
+    const chars = Array.from(raw)
+    const chunks = Array.from({ length: Math.ceil(chars.length / 800) }, (_, i) => ({
+      id: `${id}-c${i + 1}`,
+      text: chars.slice(i * 800, (i + 1) * 800).join(''),
+      page_hint: `第${i + 1}段`,
+    }))
     state.knowledge.unshift({
       id,
       title,
@@ -1516,7 +1721,7 @@ const knowledge: KnowledgeService = {
       version: 1,
       assignment_id: input.assignment_id ?? null,
       created_at: new Date().toISOString(),
-      chunks: [],
+      chunks,
     })
     logOp('上传了教学资料', title)
     persist()
@@ -1537,19 +1742,38 @@ const knowledge: KnowledgeService = {
   async remove(id) {
     const state = demoState()
     const doc = state.knowledge.find((d) => d.id === id)
-    if (!doc) throw demoError(404, '资料不存在。')
+    if (
+      !doc ||
+      (doc.assignment_id && !visibleAssignments().some((a) => a.id === doc.assignment_id))
+    )
+      throw demoError(404, '资料不存在。')
     state.knowledge = state.knowledge.filter((d) => d.id !== id)
     logOp('删除了教学资料', doc.title)
     persist()
   },
   async retrieve(query) {
-    const terms = query.trim().split(/\s+/).filter(Boolean)
+    const terms = [
+      ...new Set(
+        (query.toLowerCase().match(/[a-z0-9]+|[\u4e00-\u9fff]+/g) ?? []).flatMap((word) =>
+          /^[a-z0-9]+$/.test(word)
+            ? [word]
+            : Array.from({ length: Math.max(0, word.length - 1) }, (_, i) => word.slice(i, i + 2)),
+        ),
+      ),
+    ]
     if (!terms.length) return []
     const hits: RetrievalHit[] = []
     for (const doc of demoState().knowledge) {
-      if (doc.status !== 'indexed') continue
+      if (
+        doc.status !== 'indexed' ||
+        (doc.assignment_id && !visibleAssignments().some((a) => a.id === doc.assignment_id))
+      )
+        continue
       for (const chunk of doc.chunks) {
-        const score = terms.reduce((sum, term) => sum + (chunk.text.includes(term) ? 1 : 0), 0)
+        const score = terms.reduce(
+          (sum, term) => sum + (chunk.text.toLowerCase().includes(term) ? 1 : 0),
+          0,
+        )
         if (score > 0)
           hits.push({
             chunk_id: chunk.id,
@@ -1614,45 +1838,52 @@ const assistant: AssistantService = {
     if (conversation.title === '新对话') conversation.title = text.slice(0, 18)
     conversation.updated_at = new Date().toISOString()
     persist()
-    await sleep(500, signal)
-    const hits = await knowledge.retrieve(text)
-    const toolCalls = [
-      {
-        name: '检索教学资料',
-        status: 'done' as const,
-        summary: hits.length ? `命中 ${hits.length} 段相关资料` : '未命中相关资料',
-      },
-    ]
-    await sleep(700, signal)
+    const userMessageId = conversation.messages.at(-1)!.id
     let answer: AssistantMessage
-    if (!hits.length) {
-      answer = {
-        id: nextId('msg'),
-        role: 'assistant',
-        content:
-          '知识库中暂未找到与该问题直接相关的资料。按照“无证据不回答”的规则，我不能在没有依据的情况下编造教学内容。\n\n建议：先在「教学知识库」上传相关讲义或资料，之后再向我提问，我会基于资料给出可溯源的回答。',
-        created_at: new Date().toISOString(),
-        toolCalls,
-        citations: [],
+    try {
+      await sleep(500, signal)
+      const hits = await knowledge.retrieve(text)
+      const toolCalls = [
+        {
+          name: '检索教学资料',
+          status: 'done' as const,
+          summary: hits.length ? `命中 ${hits.length} 段相关资料` : '未命中相关资料',
+        },
+      ]
+      await sleep(700, signal)
+      if (!hits.length) {
+        answer = {
+          id: nextId('msg'),
+          role: 'assistant',
+          content:
+            '知识库中暂未找到与该问题直接相关的资料。按照“无证据不回答”的规则，我不能在没有依据的情况下编造教学内容。\n\n建议：先在「教学知识库」上传相关讲义或资料，之后再向我提问，我会基于资料给出可溯源的回答。',
+          created_at: new Date().toISOString(),
+          toolCalls,
+          citations: [],
+        }
+      } else {
+        const lines = hits.map(
+          (hit, index) => `[${index + 1}] 《${hit.doc_title}》：${hit.text.slice(0, 60)}…`,
+        )
+        answer = {
+          id: nextId('msg'),
+          role: 'assistant',
+          content: `根据知识库检索到的资料，整理如下：\n\n${lines.join('\n')}\n\n以上内容均来自知识库已索引资料，点击引用标记可查看原文出处。`,
+          created_at: new Date().toISOString(),
+          toolCalls,
+          citations: hits.map((hit, index) => ({
+            index: index + 1,
+            doc_id: hit.doc_id,
+            doc_title: hit.doc_title,
+            chunk_id: hit.chunk_id,
+            quote: hit.text.slice(0, 40),
+          })),
+        }
       }
-    } else {
-      const lines = hits.map(
-        (hit, index) => `[${index + 1}] 《${hit.doc_title}》：${hit.text.slice(0, 60)}…`,
-      )
-      answer = {
-        id: nextId('msg'),
-        role: 'assistant',
-        content: `根据知识库检索到的资料，整理如下：\n\n${lines.join('\n')}\n\n以上内容均来自知识库已索引资料，点击引用标记可查看原文出处。`,
-        created_at: new Date().toISOString(),
-        toolCalls,
-        citations: hits.map((hit, index) => ({
-          index: index + 1,
-          doc_id: hit.doc_id,
-          doc_title: hit.doc_title,
-          chunk_id: hit.chunk_id,
-          quote: hit.text.slice(0, 40),
-        })),
-      }
+    } catch (e) {
+      conversation.messages = conversation.messages.filter((m) => m.id !== userMessageId)
+      persist()
+      throw e
     }
     conversation.messages.push(answer)
     conversation.updated_at = new Date().toISOString()
@@ -1689,10 +1920,23 @@ const insights: InsightsService = {
   async summary(range) {
     const state = demoState()
     const visible = visibleAssignments()
-    const days = range === '7d' ? 7 : range === '30d' ? 30 : 90
+    const oldest = Math.min(
+      Date.now(),
+      ...state.submissions
+        .filter((s) => visible.some((a) => a.id === s.assignment_id))
+        .map((s) => new Date(s.submitted_at).getTime()),
+    )
+    const days =
+      range === '7d'
+        ? 7
+        : range === '30d'
+          ? 30
+          : Math.min(365, Math.ceil((Date.now() - oldest) / 86400000) + 1)
     const since = Date.now() - days * 86_400_000
-    const submissionsAll = state.submissions.filter((s) =>
-      visible.some((a) => a.id === s.assignment_id),
+    const submissionsAll = state.submissions.filter(
+      (s) =>
+        visible.some((a) => a.id === s.assignment_id) &&
+        (range === 'all' || new Date(s.submitted_at).getTime() >= since),
     )
     const series: { date: string; submissions: number; reviews: number }[] = []
     for (let i = days - 1; i >= 0; i--) {
@@ -1701,9 +1945,10 @@ const insights: InsightsService = {
       series.push({
         date: key,
         submissions: submissionsAll.filter((s) => s.submitted_at.slice(0, 10) === key).length,
-        reviews: Object.values(state.reviews).filter((r) =>
-          r.history.some((h) => h.created_at.slice(0, 10) === key),
-        ).length,
+        reviews: Object.entries(state.reviews)
+          .filter(([reviewKey]) => submissionsAll.some((s) => reviewKey.startsWith(s.id + ':')))
+          .flatMap(([, r]) => r.history)
+          .filter((h) => h.created_at.slice(0, 10) === key).length,
       })
     }
     const workload = visible.map((a) => {
@@ -1724,11 +1969,11 @@ const insights: InsightsService = {
     })
     const proposals = state.proposals.filter((p) => {
       const submission = state.submissions.find((s) => s.id === p.submission_id)
-      return submission && visible.some((a) => a.id === submission.assignment_id)
+      return submission && submissionsAll.some((s) => s.id === submission.id)
     })
     return {
       range_label: range === '7d' ? '近 7 天' : range === '30d' ? '近 30 天' : '全部',
-      scope_note: '演示数据：统计基于演示环境全部作业（合成数据）。',
+      scope_note: '演示数据：按当前可访问作业的提交批次统计，趋势图最多展示365天（合成数据）。',
       assignments_total: visible.length,
       submissions_total: submissionsAll.length,
       submissions_recent: submissionsAll.filter((s) => new Date(s.submitted_at).getTime() >= since)
@@ -1776,17 +2021,33 @@ const system: SystemService = {
   },
 }
 
+function guard<T extends object>(provider: T): T {
+  return new Proxy(provider, {
+    get(target, key, receiver) {
+      const fn = Reflect.get(target, key, receiver)
+      return typeof fn === 'function'
+        ? async (...args: unknown[]) => {
+            currentUser()
+            return Reflect.apply(fn, target, args)
+          }
+        : fn
+    },
+  })
+}
 export function createMockServices(): HuipiServices {
+  for (const sub of demoState().submissions)
+    if (sub.parsing.status === 'running') scheduleParseTransition(sub.id)
+  for (const doc of demoState().knowledge) if (doc.status === 'indexing') scheduleIndexing(doc.id)
   return {
-    me,
-    assignments,
-    submissions,
-    reviews,
-    grading,
-    admin,
-    knowledge,
-    assistant,
-    insights,
-    system,
+    me: guard(me),
+    assignments: guard(assignments),
+    submissions: guard(submissions),
+    reviews: guard(reviews),
+    grading: guard(grading),
+    admin: guard(admin),
+    knowledge: guard(knowledge),
+    assistant: guard(assistant),
+    insights: guard(insights),
+    system: guard(system),
   }
 }

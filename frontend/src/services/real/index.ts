@@ -1,3 +1,4 @@
+import { sumDecimals, formatDecimal } from '../../lib/decimal'
 import { api, ApiError, type Schema } from '../../api/client'
 import {
   UnsupportedCapabilityError,
@@ -35,24 +36,18 @@ const me: MeService = {
 
 const assignments: AssignmentsService = {
   async list(query) {
-    // 后端列表接口暂无关键词/状态查询参数：有关键条件时拉取最近 100 条并在客户端过滤。
-    if (query.keyword || (query.status && query.status !== 'all')) {
-      const rows = await api.assignments(0)
-      const keyword = query.keyword?.trim()
-      const filtered = rows.filter((row) => {
-        const hit =
-          !keyword ||
-          row.title.includes(keyword) ||
-          row.subject.includes(keyword) ||
-          row.grade_level.includes(keyword)
-        return hit && (!query.status || query.status === 'all' || row.status === query.status)
-      })
-      return { records: filtered, has_next: false }
-    }
     const limit = query.limit ?? 12
-    const offset = query.offset ?? 0
-    const records = await api.assignments(offset)
-    return { records, has_next: records.length >= limit }
+    const records = await api.assignments(query.offset ?? 0, undefined, limit)
+    const keyword = query.keyword?.trim()
+    return {
+      records: records.filter(
+        (row) =>
+          (!keyword ||
+            [row.title, row.subject, row.grade_level].some((v) => v.includes(keyword))) &&
+          (!query.status || query.status === 'all' || row.status === query.status),
+      ),
+      has_next: records.length >= limit,
+    }
   },
   create: (body) => api.create(body),
   detail: (aid) => api.assignmentDetail(aid),
@@ -68,6 +63,11 @@ const assignments: AssignmentsService = {
       const issues: string[] = []
       if (!question.rubric_criteria.length) issues.push('未配置评分细则')
       if (!question.answer_key?.answer_content) issues.push('未设置标准答案')
+      if (
+        sumDecimals(question.rubric_criteria.map((c) => c.points)) !==
+        formatDecimal(question.max_score)
+      )
+        issues.push('评分项总分与满分不一致')
       return {
         question_id: question.id,
         question_number: question.question_number,
@@ -75,7 +75,7 @@ const assignments: AssignmentsService = {
         issues,
       }
     })
-    return { ready: items.every((item) => item.ok), items }
+    return { ready: items.length > 0 && items.every((item) => item.ok), items }
   },
   removeAssignment: () => unsupported('assignment_delete', '删除作业'),
 }
@@ -84,7 +84,7 @@ const submissions: SubmissionsService = {
   async list(aid, query: PageQuery) {
     const limit = query.limit ?? 12
     const offset = query.offset ?? 0
-    const records = await api.submissions(aid, offset)
+    const records = await api.submissions(aid, offset, undefined, limit)
     return { records, has_next: records.length >= limit }
   },
   async create(aid, input) {
@@ -135,7 +135,7 @@ async function composeDigest(): Promise<WorkbenchDigest> {
     parsing_active: parsingActive,
     parse_alerts: parseAlerts,
     scope_note:
-      '真实模式：最新提交与解析统计来自最近更新的 5 个已发布作业（组合查询），不是全局列表；待办任务与教学动态需要后端聚合接口，暂不展示。',
+      '真实模式：作业概况仅为本次加载的最多12份作业；提交统计取其中最近更新的最多5份已发布作业，每份最多12条，不是全局统计。待办汇总与教学动态尚未接入。',
     tasks: [],
     recent_submissions: merged.slice(0, 10),
     recent_ops: [],
@@ -160,14 +160,14 @@ const grading: GradingService = {
 
 const admin: AdminService = {
   async teachers(query) {
-    const page = await api.teacherPage(100, 0)
+    const page = await api.teacherPage(query.limit ?? 25, query.offset ?? 0)
     let records: TeacherRecord[] = page.records
     const keyword = query.keyword?.trim()
     if (keyword)
       records = records.filter((row) => row.user_id.toLowerCase().includes(keyword.toLowerCase()))
     if (query.active === 'active') records = records.filter((row) => row.is_active)
     if (query.active === 'inactive') records = records.filter((row) => !row.is_active)
-    return { records, has_next: page.has_next, total: page.records.length }
+    return { records, has_next: page.has_next, total: null }
   },
   register: (body) => api.registerTeacher(body),
   setActive: (uid, body) => api.setTeacherActive(uid, body),
@@ -203,8 +203,10 @@ const admin: AdminService = {
       modules,
     }
   },
-  async assignableAssignments() {
-    return api.assignments(0)
+  async assignableAssignments(query = {}) {
+    const limit = query.limit ?? 50
+    const records = await api.assignments(query.offset ?? 0, undefined, limit)
+    return { records, has_next: records.length >= limit }
   },
 }
 

@@ -231,7 +231,7 @@ function buildSeed(): Seeded {
       id: `crit-${id}-${index + 1}`,
       question_id: id,
       description,
-      points,
+      points: points === '满分' ? maxScore : points,
       sort_order: index,
     }))
     answerKeys[id] = { content: answer, updated_at: questions[id].created_at }
@@ -505,6 +505,19 @@ function buildSeed(): Seeded {
           text_start: 0,
           text_end: CODE_POINTS(answer.text),
         })
+      for (const page of canonicals[sid]!.pages)
+        for (const [index, block] of page.page.blocks.entries()) {
+          if (
+            block.content.normalized_type === 'image' &&
+            block.content.asset_refs?.some((a) => a.asset_id === `asset-${qid}-hand`)
+          )
+            evidence.push({
+              pointer: `/pages/${page.page.page_index}/blocks/${index}/content`,
+              page_number: page.page.page_number,
+              text_start: null,
+              text_end: null,
+            })
+        }
       map[qid] = overrides[qid] ?? { matching_status: 'aligned', evidence_pointers: evidence }
     }
     canonicals[sid]!.aligned = map
@@ -1048,7 +1061,7 @@ function buildSeed(): Seeded {
       size_bytes: 65_800,
       status: 'indexed',
       chunk_count: 2,
-      version: 1,
+      version: 2,
       assignment_id: null,
       created_at: agoD(10, 16),
       chunks: [
@@ -1101,7 +1114,7 @@ function buildSeed(): Seeded {
       size_bytes: 48_200,
       status: 'indexing',
       chunk_count: 0,
-      version: 1,
+      version: 2,
       assignment_id: null,
       created_at: ago(25),
       chunks: [],
@@ -1220,7 +1233,7 @@ function buildSeed(): Seeded {
 export function seedDemoState(): DemoState {
   const seeded = buildSeed()
   return {
-    version: 1,
+    version: 3,
     seeded_at: new Date().toISOString(),
     ...seeded,
     counters: {},

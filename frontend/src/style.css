@@ -2255,3 +2255,323 @@ code {
   display: block;
   margin: 0 auto;
 }
+
+/* 管理工作空间与账户：共享设计令牌，独立的教务信息组织。 */
+.hp-admin-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30px 34px;
+  border-radius: var(--hp-radius);
+  background: linear-gradient(112deg, #eaf1fd, #e6f4f3);
+  border: 1px solid #d8e6ef;
+}
+.hp-admin-hero h1 {
+  margin: 4px 0 8px;
+}
+.hp-admin-hero p {
+  margin: 0;
+  color: var(--hp-ink-700);
+}
+.hp-admin-hero > svg {
+  width: 88px;
+  height: 88px;
+  color: var(--hp-primary);
+  opacity: 0.7;
+}
+.hp-eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  color: var(--hp-primary) !important;
+}
+.hp-admin-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 20px;
+}
+.hp-management-link {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--hp-surface-2);
+  transition: background 0.2s;
+}
+.hp-management-link:hover {
+  background: var(--hp-primary-soft);
+}
+.hp-management-link > svg {
+  color: var(--hp-primary);
+  flex-shrink: 0;
+}
+.hp-management-link > svg:last-child {
+  margin-left: auto;
+  width: 17px;
+}
+.hp-management-link p {
+  font-size: 13px;
+  color: var(--hp-ink-500);
+  margin: 4px 0 0;
+}
+.hp-module-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--hp-border);
+}
+.hp-module-row:last-child {
+  border-bottom: 0;
+}
+.hp-audit-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--hp-border);
+}
+.hp-audit-row:last-child {
+  border-bottom: 0;
+}
+.hp-audit-row p {
+  margin: 3px 0 0;
+  color: var(--hp-ink-500);
+  font-size: 12px;
+}
+.hp-audit-row time {
+  margin-left: auto;
+  color: var(--hp-ink-500);
+  font-size: 12px;
+}
+.hp-audit-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--hp-teal);
+  box-shadow: 0 0 0 5px var(--hp-teal-soft);
+  margin: 0 7px;
+}
+.hp-module-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+.hp-module-grid h2 {
+  margin: 18px 0 8px;
+  font-size: 17px;
+}
+.hp-module-icon {
+  width: 28px;
+  height: 28px;
+  color: var(--hp-primary);
+}
+.hp-between {
+  justify-content: space-between;
+}
+.hp-inline-icon {
+  width: 19px;
+  height: 19px;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+.hp-detail-list {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 14px 20px;
+  line-height: 1.7;
+}
+.hp-detail-list dt {
+  color: var(--hp-ink-500);
+}
+.hp-detail-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.hp-detail-list code {
+  font-size: 12px;
+}
+.hp-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 12px;
+}
+.hp-confirm-target {
+  padding: 14px;
+  background: var(--hp-surface-2);
+  font-weight: 600;
+  border-radius: 8px;
+}
+.hp-inset {
+  padding: 0 24px;
+}
+.hp-audit-filter {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.hp-audit-filter label {
+  flex: 1 1 150px;
+  display: grid;
+  gap: 7px;
+  color: var(--hp-ink-700);
+  font-size: 13px;
+}
+.hp-audit-filter .hp-input {
+  min-width: 0;
+  width: 100%;
+}
+.hp-radio-options {
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--hp-border);
+  border-radius: 10px;
+  padding: 14px;
+}
+.hp-account-card {
+  display: flex;
+  gap: 22px;
+  align-items: center;
+}
+.hp-avatar-lg {
+  width: 64px;
+  height: 64px;
+}
+.hp-avatar-lg svg {
+  width: 30px;
+  height: 30px;
+}
+.hp-account-card h2 {
+  margin: 0 0 10px;
+}
+.hp-danger-text {
+  color: var(--hp-danger);
+}
+@media (max-width: 1100px) {
+  .hp-admin-columns {
+    grid-template-columns: 1fr;
+  }
+  .hp-module-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .hp-module-grid {
+    grid-template-columns: 1fr;
+  }
+  .hp-admin-hero {
+    padding: 20px;
+  }
+  .hp-admin-hero > svg {
+    display: none;
+  }
+  .hp-detail-list {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .hp-detail-list dd {
+    margin-bottom: 12px;
+  }
+}
+
+/* Preserve source text without exposing parser enums as inline prose. */
+.source-type {
+  display: none;
+}
+.selectable-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.8;
+}
+.selectable-text mark {
+  color: inherit;
+  border-radius: 3px;
+  padding: 1px 0;
+}
+.selectable-text mark.response_regions {
+  background: var(--hp-success-bg);
+}
+.selectable-text mark.excluded_prompt_regions {
+  background: var(--hp-neutral-bg);
+}
+.selectable-text mark.uncertain_regions {
+  background: var(--hp-warning-bg);
+}
+
+/* Shared administration controls use the same product styles as teaching pages. */
+.hp-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  background: transparent;
+  color: var(--hp-primary);
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.hp-link:hover {
+  background: var(--hp-primary-soft);
+}
+.hp-link:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.hp-link.hp-danger-text {
+  color: var(--hp-danger);
+}
+.hp-wrap {
+  flex-wrap: wrap;
+}
+.hp-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.hp-toolbar form {
+  width: 100%;
+  flex-direction: row;
+  align-items: center;
+}
+.hp-toolbar .hp-select {
+  width: auto;
+  min-width: 140px;
+}
+.hp-search {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid var(--hp-border-strong);
+  border-radius: 10px;
+  background: var(--hp-surface);
+  padding: 9px 12px;
+  flex: 1;
+  max-width: 400px;
+  min-width: 220px;
+}
+.hp-search svg {
+  width: 17px;
+  height: 17px;
+  color: var(--hp-ink-500);
+  flex: none;
+}
+.hp-search input {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  width: 100%;
+  min-width: 0;
+}
+.page-heading.hp-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}

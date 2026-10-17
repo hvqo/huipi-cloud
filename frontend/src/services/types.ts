@@ -271,7 +271,11 @@ export interface GradingService {
     qid: string,
     pid: string,
     evidenceOffset?: number,
-  ): Promise<S['GradeReviewHTTPInspection']>
+  ): Promise<
+    S['GradeReviewHTTPInspection'] & {
+      candidate_rationales?: { criterion_id: string; rationale: string }[]
+    }
+  >
   history(
     sid: string,
     qid: string,
@@ -289,7 +293,7 @@ export interface GradingService {
 export interface AdminService {
   teachers(
     query: PageQuery & { keyword?: string; active?: 'active' | 'inactive' | 'all' },
-  ): Promise<{ records: TeacherRecord[]; has_next: boolean; total: number }>
+  ): Promise<{ records: TeacherRecord[]; has_next: boolean; total: number | null }>
   register(body: S['TeacherRegistration']): Promise<S['AdminOperationResult']>
   setActive(uid: string, body: S['TeacherActivation']): Promise<S['AdminOperationResult']>
   memberships(
@@ -307,7 +311,9 @@ export interface AdminService {
   ): Promise<{ records: S['AdminAuditSummary'][]; has_next: boolean }>
   overview(): Promise<AdminOverview>
   /** 可授权的作业清单（管理员全局可见）。 */
-  assignableAssignments(): Promise<S['AssignmentSummary'][]>
+  assignableAssignments(
+    query?: PageQuery,
+  ): Promise<{ records: S['AssignmentSummary'][]; has_next: boolean }>
 }
 
 export interface KnowledgeService {

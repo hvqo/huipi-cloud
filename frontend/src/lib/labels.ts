@@ -135,11 +135,22 @@ export function formatScore(value: string | null | undefined): string {
   if (value == null) return '—'
   const trimmed = value.trim()
   if (!/^\d+(\.\d+)?$/.test(trimmed)) return value
-  return trimmed.replace(/\.?0+$/, '') || '0'
+  return trimmed.includes('.') ? trimmed.replace(/0+$/, '').replace(/\.$/, '') : trimmed
 }
 
 export function formatBytes(bytes: number): string {
   if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`
   if (bytes >= 1024) return `${(bytes / 1024).toFixed(0)} KB`
   return `${bytes} B`
+}
+
+export const contentTypeLabels: Record<string, string> = {
+  text: '文字',
+  formula: '公式',
+  formula_text: '公式',
+  image: '图片',
+  table: '表格',
+  list: '列表',
+  title: '标题',
+  paragraph: '段落',
 }

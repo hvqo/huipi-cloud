@@ -8,6 +8,8 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 const FORBIDDEN = [
+  'huipi.demo.user',
+  'u-teacher-li',
   'createMockServices',
   'resetDemoState',
   'seedDemoState',

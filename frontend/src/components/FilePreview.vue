@@ -24,7 +24,7 @@ async function open() {
   busy.value = true
   error.value = ''
   try {
-    const blob = await (await services()).submissions.file(props.sid)
+    const blob = await (await services()).submissions.file(props.sid, controller.signal)
     if (controller.signal.aborted) return
     if (!['application/pdf', 'image/png', 'image/jpeg'].includes(blob.type))
       throw new Error('此文件类型不能安全预览。')

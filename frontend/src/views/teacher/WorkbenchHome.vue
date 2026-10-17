@@ -12,6 +12,7 @@ import {
   Upload,
 } from 'lucide-vue-next'
 import { services, type WorkbenchDigest } from '../../services'
+import { DEMO_MODE } from '../../app/mode'
 import { UnsupportedCapabilityError } from '../../services/types'
 import { session } from '../../app/session'
 import { formatRelative, label, parsingLabels } from '../../lib/labels'
@@ -108,14 +109,16 @@ onMounted(load)
               <div class="hp-stat-icon"><BookOpen aria-hidden="true" /></div>
               <div>
                 <div class="hp-stat-num">{{ digest.assignments_total }}<small>个</small></div>
-                <div class="hp-stat-label">我的作业</div>
+                <div class="hp-stat-label">{{ DEMO_MODE ? '我的作业' : '已加载作业' }}</div>
               </div>
             </div>
             <div class="hp-stat">
               <div class="hp-stat-icon is-teal"><CheckCircle2 aria-hidden="true" /></div>
               <div>
                 <div class="hp-stat-num">{{ digest.assignments_published }}<small>个</small></div>
-                <div class="hp-stat-label">已发布作业</div>
+                <div class="hp-stat-label">
+                  {{ DEMO_MODE ? '已发布作业' : '已加载的已发布作业' }}
+                </div>
               </div>
             </div>
             <div class="hp-stat">
@@ -171,8 +174,12 @@ onMounted(load)
               </div>
               <EmptyState
                 v-else
-                title="暂无待办任务"
-                desc="当前没有需要人工处理的核对或审核任务。有新的学生提交或候选评分时会出现在这里。"
+                :title="DEMO_MODE ? '暂无待办任务' : '待办汇总尚未接入'"
+                :desc="
+                  DEMO_MODE
+                    ? '新的提交或候选需要处理时会显示在这里。'
+                    : '可进入作业和提交逐题核对；此处未显示不表示没有待审核任务。'
+                "
               />
             </div>
           </section>

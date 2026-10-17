@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { DEMO_MODE } from './mode'
-import { initSession, session } from './session'
-import { identity, callback } from '../auth'
+import { initSession, session, acceptOidcSession, refreshSession } from './session'
+import { identity, callback, safeReturn } from '../auth'
 import Login from '../views/Login.vue'
 import WorkbenchHome from '../views/teacher/WorkbenchHome.vue'
 import Assignments from '../views/teacher/Assignments.vue'
@@ -38,14 +38,16 @@ export const router = createRouter({
       beforeEnter: async () => {
         if (DEMO_MODE) return '/login'
         try {
-          return await callback()
+          const target = await callback()
+          await acceptOidcSession()
+          return target === '/' ? (session.role === 'admin' ? '/admin' : '/workbench') : target
         } catch {
           identity.error = '登录确认未完成，请重新登录。'
           return '/login'
         }
       },
     },
-    { path: '/', redirect: '/workbench' },
+    { path: '/', redirect: () => (session.role === 'admin' ? '/admin' : '/workbench') },
     { path: '/workbench', component: WorkbenchHome, meta: { breadcrumb: ['工作台'] } },
     {
       path: '/assignments',
@@ -111,12 +113,6 @@ export const router = createRouter({
   ],
 })
 
-function safeReturn(value: unknown): string {
-  if (typeof value !== 'string') return '/workbench'
-  const allowed = /^\/(workbench|assignments|assistant|knowledge|insights|settings|admin)(\/|$)/
-  return allowed.test(value) && !value.includes('\\') ? value : '/workbench'
-}
-
 router.beforeEach(async (to) => {
   if (!session.ready) await initSession()
   if (to.meta.public) {
@@ -128,6 +124,7 @@ router.beforeEach(async (to) => {
   if (!session.authenticated) {
     return { path: '/login', query: { returnTo: safeReturn(to.query.returnTo ?? to.fullPath) } }
   }
+  if (to.meta.admin) await refreshSession()
   if (to.meta.admin && session.role !== 'admin') return '/403'
   return true
 })

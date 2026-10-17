@@ -26,6 +26,7 @@ const state = reactive({
   assignmentTitle: '',
   question: null as S['QuestionRead'] | null,
   canWrite: false,
+  published: false,
 })
 const notice = ref('')
 const saveError = ref('')
@@ -64,7 +65,8 @@ async function load() {
       svc.assignments.workbench(aid, 0),
     ])
     state.assignmentTitle = detail.title
-    state.canWrite = workbench.can_write
+    state.canWrite = workbench.can_write && detail.status === 'draft'
+    state.published = detail.status === 'published'
     if (isNew) {
       form.question_number = detail.questions.length + 1
       return
@@ -126,9 +128,24 @@ async function save() {
         stem: form.stem,
         max_score: form.max_score,
       })
+      try {
+        if (form.answer.trim()) await svc.assignments.replaceAnswerKey(created.id, form.answer)
+        if (criteria.value.length)
+          await svc.assignments.replaceRubric(created.id, {
+            criteria: criteria.value.map((item, index) => ({
+              description: item.description.trim(),
+              points: item.points,
+              sort_order: index,
+            })),
+          })
+      } catch (e) {
+        // Creation is already committed; navigate to that question instead of duplicating it.
+        sessionStorage.setItem(
+          `huipi.question.partial.${created.id}`,
+          e instanceof Error ? e.message : '答案或评分细则尚未保存',
+        )
+      }
       await router.replace(`/assignments/${aid}/questions/${created.id}`)
-      notice.value = '题目已创建。请继续完善标准答案与评分细则。'
-      await load()
       return
     }
     const question = state.question!
@@ -162,7 +179,17 @@ async function save() {
   }
 }
 
-onMounted(load)
+onMounted(async () => {
+  await load()
+  if (!isNew) {
+    const key = `huipi.question.partial.${qidParam}`
+    const partial = sessionStorage.getItem(key)
+    if (partial) {
+      saveError.value = `题目已创建，但答案或评分细则未全部保存：${partial}。请检查并补齐。`
+      sessionStorage.removeItem(key)
+    }
+  }
+})
 </script>
 <template>
   <div class="hp-section-gap">
@@ -180,7 +207,7 @@ onMounted(load)
             <button
               class="hp-btn hp-btn-primary hp-btn-lg"
               type="button"
-              :disabled="saving"
+              :disabled="saving || !state.canWrite"
               @click="save"
             >
               <Save aria-hidden="true" />{{ saving ? '保存中…' : '保存' }}
@@ -191,9 +218,17 @@ onMounted(load)
         <div v-if="notice" class="hp-note hp-note-success" role="status">{{ notice }}</div>
         <div v-if="saveError" class="hp-note hp-note-danger" role="alert">{{ saveError }}</div>
         <div v-if="!state.canWrite" class="hp-note hp-note-info" role="note">
-          当前作业为只读授权，不能编辑题目。
+          {{
+            state.published
+              ? '作业已发布，题目、答案和评分细则不可再修改。'
+              : '当前作业为只读授权，不能编辑题目。'
+          }}
         </div>
-        <div v-if="!bodyEditable && !isNew" class="hp-note hp-note-info" role="note">
+        <div
+          v-if="!bodyEditable && !isNew && !state.published"
+          class="hp-note hp-note-info"
+          role="note"
+        >
           题号、题型、题干与满分修改需要后端“题目更新”接口（开发中）；当前可修改标准答案与评分细则。
         </div>
 

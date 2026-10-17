@@ -14,6 +14,7 @@ import {
 import { services, type S } from '../../services'
 import { UnsupportedCapabilityError, type SubmissionReviewProgress } from '../../services/types'
 import {
+  contentTypeLabels,
   alignmentLabels,
   formatBytes,
   formatDateTime,
@@ -267,7 +268,7 @@ onMounted(load)
                 style="margin-bottom: 10px"
               >
                 <div class="hp-fine" style="margin-bottom: 3px">
-                  {{ index + 1 }} · {{ block.normalized_type }}
+                  {{ index + 1 }} · {{ contentTypeLabels[block.normalized_type] ?? '内容' }}
                 </div>
                 <SourceNode
                   :node="block.content"
