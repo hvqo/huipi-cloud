@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "dev:demo": "vite --mode demo --host 127.0.0.1",
-    "build": "vue-tsc --noEmit && vite build",
+    "build": "vue-tsc --noEmit && vite build && node scripts/check-build.mjs",
     "typecheck": "vue-tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",

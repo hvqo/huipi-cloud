@@ -1,5 +1,6 @@
 import type { S } from '../types'
 import type { AssistantMessage } from '../types'
+import { DEMO_STATE_KEY } from '../../app/demo-auth'
 import { seedDemoState } from './seed'
 
 /**
@@ -204,7 +205,7 @@ export interface DemoState {
   requestCache: Record<string, unknown>
 }
 
-const STORAGE_KEY = 'huipi.demo.state.v1'
+const STORAGE_KEY = DEMO_STATE_KEY
 const STATE_VERSION = 1
 
 let state: DemoState | null = null

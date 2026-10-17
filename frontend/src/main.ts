@@ -1,45 +1,10 @@
 import { createApp } from 'vue'
-import { createRouter, createWebHistory } from 'vue-router'
 import { ElButton, ElDialog, ElInput, ElSelect, ElOption } from 'element-plus'
 import 'element-plus/dist/index.css'
 import './style.css'
 import App from './App.vue'
-import Login from './views/Login.vue'
-import Assignments from './views/Assignments.vue'
-import Assignment from './views/Assignment.vue'
-import Submission from './views/Submission.vue'
-import Review from './views/Review.vue'
-import { initializeAuth, identity, callback } from './auth'
+import { router } from './app/router'
 
-export const router = createRouter({
-  history: createWebHistory(),
-  routes: [
-    { path: '/login', component: Login },
-    {
-      path: '/auth/callback',
-      component: Login,
-      beforeEnter: async () => {
-        try {
-          return await callback()
-        } catch {
-          identity.error = '登录确认未完成，请重新登录。'
-          return '/login'
-        }
-      },
-    },
-    { path: '/', redirect: '/assignments' },
-    { path: '/assignments', component: Assignments },
-    { path: '/assignments/:aid', component: Assignment },
-    { path: '/assignments/:aid/submissions/:sid', component: Submission },
-    { path: '/assignments/:aid/submissions/:sid/questions/:qid/review', component: Review },
-    { path: '/:pathMatch(.*)*', redirect: '/assignments' },
-  ],
-})
-router.beforeEach(async (to) => {
-  if (!identity.ready) await initializeAuth()
-  if (!['/login', '/auth/callback'].includes(to.path) && !identity.authenticated)
-    return { path: '/login', query: { returnTo: to.fullPath } }
-})
 const app = createApp(App).use(router)
 for (const component of [ElButton, ElDialog, ElInput, ElSelect, ElOption])
   app.component(component.name!, component)

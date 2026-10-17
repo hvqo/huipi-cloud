@@ -19,6 +19,7 @@ import {
   Users,
 } from 'lucide-vue-next'
 import { DEMO_MODE } from '../app/mode'
+import { DEMO_STATE_KEY } from '../app/demo-auth'
 import { session, signOut } from '../app/session'
 
 /**
@@ -73,11 +74,16 @@ const crumbs = computed(() => {
 
 const roleLabel = computed(() => (session.role === 'admin' ? '管理员' : '教师'))
 
-async function resetDemo() {
-  if (!DEMO_MODE) return
-  const { resetDemoState } = await import('../services/mock/state')
-  resetDemoState()
-  window.location.reload()
+function resetDemo() {
+  if (DEMO_MODE) {
+    // 仅清除本地演示状态并重载；不引用演示数据模块，生产构建无演示代码路径。
+    try {
+      localStorage.removeItem(DEMO_STATE_KEY)
+    } catch {
+      /* 忽略 */
+    }
+    window.location.reload()
+  }
 }
 </script>
 

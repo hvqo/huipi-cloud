@@ -6,6 +6,9 @@ export type DemoRole = 'teacher' | 'admin'
 
 const KEY = 'huipi.demo.user'
 
+/** 演示状态持久化键（外壳的重置入口与 mock 状态层共用，模块本身不含演示数据）。 */
+export const DEMO_STATE_KEY = 'huipi.demo.state.v1'
+
 export function currentDemoRole(): DemoRole | null {
   try {
     const value = sessionStorage.getItem(KEY)

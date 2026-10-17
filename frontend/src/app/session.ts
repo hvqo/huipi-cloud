@@ -19,6 +19,8 @@ export const session = reactive({
   actor: '',
   /** 已通过身份服务登录，但本地账号未登记/停用/暂时无法读取档案。 */
   provisionError: '',
+  /** 会话结束原因：手动退出不保留 returnTo，过期/401 保留以恢复现场。 */
+  signOutReason: '' as '' | 'manual' | 'expired',
 })
 
 function reset() {
@@ -72,10 +74,12 @@ export async function initSession(): Promise<void> {
 export async function signInDemo(role: DemoRole): Promise<void> {
   setDemoRole(role)
   session.authenticated = true
+  session.signOutReason = ''
   await loadProfile()
 }
 
 export async function signOut(): Promise<void> {
+  session.signOutReason = 'manual'
   if (DEMO_MODE) {
     setDemoRole(null)
     reset()
