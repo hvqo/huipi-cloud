@@ -6,12 +6,14 @@ import { defineConfig } from '@playwright/test'
  */
 export default defineConfig({
   testDir: './e2e',
+  outputDir: 'test-results/demo',
   testMatch: 'demo.spec.ts',
   workers: 1,
   timeout: 60_000,
   reporter: 'list',
   use: {
     baseURL: process.env.DEMO_URL || 'http://127.0.0.1:5273',
+    actionTimeout: 10000,
     viewport: { width: 1440, height: 1000 },
   },
   webServer: {

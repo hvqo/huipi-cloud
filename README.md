@@ -100,7 +100,9 @@ cp -n .env.example .env.local
 npm run dev
 ```
 
-访问 `http://127.0.0.1:5173`。未配置身份服务时业务入口保持锁定；真实学校 IdP 仍需独立验收。部署、选区与测试说明见[工作台指南](docs/development/teacher-workbench.md)。
+无需后端的教师与管理员合成演示可运行 `npm run dev:demo`；使用说明和真实接口边界见[前端对接指南](docs/frontend/backend-integration-handoff.md)。演示不会调用模型或真实身份服务。
+
+真实模式访问 `http://127.0.0.1:5173`。未配置身份服务时业务入口保持锁定；真实学校 IdP 仍需独立验收。部署、选区与测试说明见[工作台指南](docs/development/teacher-workbench.md)。
 
 ## 基本使用
 
