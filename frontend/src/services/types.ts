@@ -229,13 +229,17 @@ export interface SubmissionsService {
     aid: string,
     input: { student_ref: string; file: File },
   ): Promise<{ created: boolean; submission: S['SubmissionRead'] }>
-  detail(sid: string): Promise<S['SubmissionRead']>
-  parsingStatus(sid: string): Promise<S['ParsingTaskStatusRead']>
-  canonicalStatus(sid: string): Promise<S['CanonicalDocumentStatusRead']>
-  page(sid: string, pageNumber: number): Promise<S['CanonicalPageRead']>
-  alignment(sid: string): Promise<S['AlignmentSummaryRead'] | null>
-  questionAlignment(sid: string, qid: string): Promise<S['QuestionAlignmentRead']>
-  file(sid: string): Promise<Blob>
+  detail(sid: string, signal?: AbortSignal): Promise<S['SubmissionRead']>
+  parsingStatus(sid: string, signal?: AbortSignal): Promise<S['ParsingTaskStatusRead']>
+  canonicalStatus(sid: string, signal?: AbortSignal): Promise<S['CanonicalDocumentStatusRead']>
+  page(sid: string, pageNumber: number, signal?: AbortSignal): Promise<S['CanonicalPageRead']>
+  alignment(sid: string, signal?: AbortSignal): Promise<S['AlignmentSummaryRead'] | null>
+  questionAlignment(
+    sid: string,
+    qid: string,
+    signal?: AbortSignal,
+  ): Promise<S['QuestionAlignmentRead']>
+  file(sid: string, signal?: AbortSignal): Promise<Blob>
 }
 
 export interface ReviewsService {
@@ -244,8 +248,14 @@ export interface ReviewsService {
     qid: string,
     evidenceOffset?: number,
     confirmedOffset?: number,
+    signal?: AbortSignal,
   ): Promise<S['ReviewInspection']>
-  history(sid: string, qid: string, offset?: number): Promise<S['ReviewHistory']>
+  history(
+    sid: string,
+    qid: string,
+    offset?: number,
+    signal?: AbortSignal,
+  ): Promise<S['ReviewHistory']>
   save(sid: string, qid: string, body: string): Promise<S['ReviewWriteResult']>
   /** 逐题核对进度聚合；真实后端缺口。 */
   progress(sid: string): Promise<SubmissionReviewProgress>

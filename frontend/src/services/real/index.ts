@@ -91,20 +91,20 @@ const submissions: SubmissionsService = {
     const submission = await api.createSubmission(aid, input)
     return { created: true, submission }
   },
-  detail: (sid) => api.submission(sid),
-  parsingStatus: (sid) => api.parsing(sid),
-  canonicalStatus: (sid) => api.canonical(sid),
-  page: (sid, pageNumber) => api.page(sid, pageNumber),
-  async alignment(sid) {
+  detail: (sid, signal) => api.submission(sid, signal),
+  parsingStatus: (sid, signal) => api.parsing(sid, signal),
+  canonicalStatus: (sid, signal) => api.canonical(sid, signal),
+  page: (sid, pageNumber, signal) => api.page(sid, pageNumber, signal),
+  async alignment(sid, signal) {
     try {
-      return await api.alignment(sid)
+      return await api.alignment(sid, signal)
     } catch (error) {
       if (error instanceof ApiError && error.status === 409) return null
       throw error
     }
   },
-  questionAlignment: (sid, qid) => api.questionAlignment(sid, qid),
-  file: (sid) => api.file(sid),
+  questionAlignment: (sid, qid, signal) => api.questionAlignment(sid, qid, signal),
+  file: (sid, signal) => api.file(sid, signal),
 }
 
 /** 工作台摘要：由最近更新作业的分页提交组合而成（非全局聚合），口径必须如实展示。 */
@@ -143,9 +143,9 @@ async function composeDigest(): Promise<WorkbenchDigest> {
 }
 
 const reviews: ReviewsService = {
-  inspect: (sid, qid, evidenceOffset = 0, confirmedOffset = 0) =>
-    api.review(sid, qid, evidenceOffset, undefined, confirmedOffset),
-  history: (sid, qid, offset = 0) => api.history(sid, qid, offset),
+  inspect: (sid, qid, evidenceOffset = 0, confirmedOffset = 0, signal) =>
+    api.review(sid, qid, evidenceOffset, signal, confirmedOffset),
+  history: (sid, qid, offset = 0, signal) => api.history(sid, qid, offset, signal),
   save: (sid, qid, body) => api.save(sid, qid, body),
   progress: () => unsupported('review_progress', '逐题人工核对进度汇总'),
   digest: () => composeDigest(),
