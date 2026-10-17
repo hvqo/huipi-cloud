@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import { questionDirectory } from '../../lib/question-directory'
 import { useRoute } from 'vue-router'
 import {
   ArrowLeft,
@@ -76,7 +77,7 @@ async function load() {
     ])
     if (submission.assignment_id !== aid) throw new Error('提交与当前作业不匹配。')
     state.submission = submission
-    state.workbench = workbench
+    state.workbench = await questionDirectory(svc.assignments, aid, workbench)
     state.canonical = canonical
     state.parsing = parsing
     state.alignment = alignment

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { questionDirectory } from '../../lib/question-directory'
 import { useRoute, useRouter } from 'vue-router'
 import {
   ArrowLeft,
@@ -153,7 +154,7 @@ async function load() {
     if (s.assignment_id !== aid) throw new Error('提交与作业不匹配。')
     submission.value = s
     view.value = v
-    workbench.value = w
+    workbench.value = await questionDirectory(svc.assignments, aid, w)
     pageCount.value = c.canonical_document?.page_count || 1
     pageNumber.value = Math.min(pageNumber.value, pageCount.value)
     regions.value = []

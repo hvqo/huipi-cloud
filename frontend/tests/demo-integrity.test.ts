@@ -9,6 +9,7 @@ import {
 import { formatScore } from '../src/lib/labels'
 import { mapGradeQuote } from '../src/lib/grade-quote'
 import { buildCanonical } from '../src/services/mock/canonical'
+import { questionDirectory } from '../src/lib/question-directory'
 import { createMockServices } from '../src/services/mock'
 import { demoState, resetDemoState, idempotent, persist } from '../src/services/mock/state'
 import { setDemoRole } from '../src/app/demo-auth'
@@ -375,4 +376,27 @@ describe('真实模式不能失败后降级至合成数据', () => {
       await expect(call).rejects.toBeInstanceOf(UnsupportedCapabilityError)
     },
   )
+})
+
+it('超过20题时读取完整受保护目录，后续题目仍可定位和导航', async () => {
+  const svc = createMockServices()
+  const a = await svc.assignments.create({
+    title: '合成21题作业',
+    subject: '数学',
+    grade_level: '高一',
+  })
+  for (let i = 1; i <= 21; i++)
+    await svc.assignments.addQuestion(a.id, {
+      question_number: i,
+      question_type: 'short_answer',
+      stem: `题${i}`,
+      max_score: '1',
+    })
+  const first = await svc.assignments.workbench(a.id, 0)
+  expect(first.questions).toHaveLength(20)
+  expect(first.has_next).toBe(true)
+  const directory = await questionDirectory(svc.assignments, a.id, first)
+  expect(directory.questions).toHaveLength(21)
+  expect(directory.questions[20]?.question_number).toBe(21)
+  expect(directory.has_next).toBe(false)
 })

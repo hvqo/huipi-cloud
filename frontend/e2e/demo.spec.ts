@@ -223,7 +223,7 @@ test('教师不能进入管理页；主要页面1366/1440/1920无横向溢出及
     for (const [path, name] of routes) {
       await page.goto(path!)
       await expect(page.locator('h1')).toBeVisible()
-      await expect(page.locator('.hp-loading')).toHaveCount(0)
+      await expect(page.locator('.state-card[role="status"]')).toHaveCount(0)
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
         `${name} @${width}`,
