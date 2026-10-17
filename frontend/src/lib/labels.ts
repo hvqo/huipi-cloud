@@ -71,6 +71,18 @@ export const reviewStatusLabels: Record<string, string> = {
   regrading_required: '要求重新评分',
 }
 
+export const gradingReasonLabels: Record<string, string> = {
+  rubric_interpretation_error: '评分细则理解偏差',
+  incorrect_partial_credit: '部分给分不正确',
+  unsupported_score: '分值依据不足',
+  evidence_not_sufficient: '证据不充分',
+  candidate_not_reliable: '候选不可靠',
+  source_quality_problem: '来源质量问题',
+  additional_evidence_required: '需要补充材料',
+  manual_follow_up_needed: '需人工后续处理',
+  other: '其他',
+}
+
 export const knowledgeStatusLabels: Record<string, string> = {
   pending: '等待处理',
   indexing: '索引中',
