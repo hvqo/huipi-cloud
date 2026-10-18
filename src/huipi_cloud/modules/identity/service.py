@@ -31,11 +31,15 @@ async def resolve_principal(
 ) -> Principal:
     # A reused Session may retain a User with stale administrator flags. Refresh from
     # this query's database snapshot, including when a SHARE lock is requested.
-    query = select(User).where(
-        User.issuer == identity.issuer,
-        User.subject == identity.subject,
-        User.is_active.is_(True),
-    ).execution_options(populate_existing=True)
+    query = (
+        select(User)
+        .where(
+            User.issuer == identity.issuer,
+            User.subject == identity.subject,
+            User.is_active.is_(True),
+        )
+        .execution_options(populate_existing=True)
+    )
     user = await session.scalar(query.with_for_update(read=True) if lock else query)
     if user is None:
         raise AccessError("teacher_not_provisioned")
@@ -82,6 +86,7 @@ async def require_assignment(
 ) -> None:
     """Called once per operation; no permission cache or JWT-role shortcut."""
     current = await refresh_principal(session, principal, lock=lock)
+    await require_legacy_assignment(session, assignment_id)
     query = select(Assignment.id).where(Assignment.id == assignment_id)
     if not current.is_admin and lock:
         membership = await session.scalar(
@@ -105,6 +110,20 @@ async def require_assignment(
         )
     if await session.scalar(query) is None:
         # Deliberately indistinguishable from a missing resource.
+        raise AccessError("resource_not_found_or_forbidden", 404)
+
+
+async def require_legacy_assignment(session: AsyncSession, assignment_id: UUID) -> None:
+    """Classification precedes every legacy administrator/membership decision.
+
+    Fixed Core projection also protects provisioning CLIs and identity-map reuse.
+    Unknown/missing classifications never fall back to legacy authority.
+    """
+    table = Assignment.__table__
+    classification = await session.scalar(
+        select(table.c.security_classification).where(table.c.id == assignment_id)
+    )
+    if classification != "legacy_homework":
         raise AccessError("resource_not_found_or_forbidden", 404)
 
 

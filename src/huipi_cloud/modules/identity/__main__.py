@@ -12,6 +12,8 @@ from huipi_cloud.core.config import settings
 from huipi_cloud.infrastructure.database.base import utc_now
 from huipi_cloud.infrastructure.database.session import dispose_database_engine, session_factory
 from huipi_cloud.modules.identity.models import AssignmentMembership, User
+from huipi_cloud.modules.identity.protocol import AccessError
+from huipi_cloud.modules.identity.service import require_legacy_assignment
 
 
 async def run(args):
@@ -49,6 +51,7 @@ async def run(args):
                     )
                 )
             elif args.command == "grant":
+                await require_legacy_assignment(session, args.assignment_id)
                 await session.execute(
                     insert(AssignmentMembership)
                     .values(
@@ -65,6 +68,7 @@ async def run(args):
                     )
                 )
             else:
+                await require_legacy_assignment(session, args.assignment_id)
                 await session.execute(
                     update(AssignmentMembership)
                     .where(
@@ -93,6 +97,8 @@ def main():
             command.add_argument("--write", action="store_true")
     try:
         asyncio.run(run(parser.parse_args()))
+    except AccessError as error:
+        raise SystemExit(error.code) from None
     except (SQLAlchemyError, OSError):
         raise SystemExit("identity_operation_failed: 请检查数据库与输入；未输出敏感参数") from None
 

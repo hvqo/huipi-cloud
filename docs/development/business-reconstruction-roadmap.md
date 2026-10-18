@@ -60,17 +60,17 @@
 
 ### B-1.4 人工分卷、身份确认与旧 Submission 原子桥接
 
-- 前置：B-1.1a、B-1.1b 至 B-1.3、私有存储和解析基础；所有旧路径对新资源隔离已验证。
-- 后端/迁移：SplitPlanRevision、AnswerScript/Version、PageRef/CurrentAllocation、IdentityDecision/CurrentParticipationScript、ExamSubmissionLink、物化 job；完整 manifest 和稳定幂等。
+- 前置：B-1.1a、B-1.1b 至 B-1.3、私有存储和解析基础；所有旧路径对新资源隔离已验证。**同时必须具备受控考试解析处理通道**：全局 legacy 可见性默认拒绝 `exam_protected` 来源，旧 Parsing Worker 按设计不能处理考试答卷；不得通过恢复旧管理员全局访问、把资源改回 legacy 或通用绕过开关解决。
+- 后端/迁移：SplitPlanRevision、AnswerScript/Version、PageRef/CurrentAllocation、IdentityDecision/CurrentParticipationScript、ExamSubmissionLink、物化 job；完整 manifest 和稳定幂等；专用考试解析任务/执行器，内部处理绑定具体任务、资源与来源版本（领取/续租/完成分别复核），产物索引继续受分类过滤。
 - 前端/API：S 中 split-plan/confirm/identity/remediation/operations，人工缩略图分组、姓名/考号候选对照、未认领与错误展示。第一版没有自动建议也可完成。
-- 权限：split.edit/confirm 和 identity.verify 分开；对 Batch 所属场次/卷别二次核验，不能把候选自动视为身份。
-- 测试/验收：混班/同名/漏页/重复页/错误场次/跨批次加页；并发确认只能占页一次；每单卷事务生成一个 Link+Submission+File+Task；未知 COMMIT 原请求恢复；旧列表/原件/Canonical/Review/Admin/Copilot 无匿名旁路。
+- 权限：split.edit/confirm 和 identity.verify 分开；对 Batch 所属场次/卷别二次核验，不能把候选自动视为身份；受控解析通道是部署内部能力，不暴露给教师 HTTP 或模型。
+- 测试/验收：混班/同名/漏页/重复页/错误场次/跨批次加页；并发确认只能占页一次；每单卷事务生成一个 Link+Submission+File+Task；未知 COMMIT 原请求恢复；旧列表/原件/Canonical/Review/Admin/Copilot 无匿名旁路；**考试来源真实解析端到端**（受控通道解析成功且旧路径仍拒绝）。
 - 回滚：冻结批次/当前指针，新事实不物理删除；原始 PageRef/文件/历史 Submission 不改。发生无法安全确认的身份时保留 unclaimed，不补占考生。
 
 ### B-1.5 首条闭环浏览器与旧链路验收
 
-- 前置：B-1.4、已审核的完整前端基线。
-- 后端/迁移：只补必要合同缺口，原则不增表；使用旧解析流程生成 Canonical/Alignment，人工复核可回溯单卷到批次页。
+- 前置：B-1.4、已审核的完整前端基线、受控考试解析处理通道已通过单独验收。
+- 后端/迁移：只补必要合同缺口，原则不增表；使用受控解析通道生成 Canonical/Alignment（旧 Worker 不得直接处理考试来源），人工复核可回溯单卷到批次页。
 - 前端/API：考试/批次/分卷/身份/处理状态，保存未知冻结与原请求查询；只读跳转不能借 Submission 深链泄露整卷。
 - 权限：考务/扫描/教师/无权限账号真实签名身份分开验证；跨班按题阅卷未实现，保持关闭。
 - 测试/验收：2 班、同卷同场、至少两学生同名、无二维码混排 PDF → 人工分卷 → 确认名单身份 → 每学生独立旧 Submission → 私有 PDF SHA/页序和 DB Link 一致 → 解析任务/来源可追溯；未认领/缺页不误写完整提交。再测第二场复用同卷不串场。

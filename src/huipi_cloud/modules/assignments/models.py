@@ -26,6 +26,10 @@ class Assignment(Base):
     __tablename__ = "assignments"
     __table_args__ = (
         CheckConstraint(
+            "security_classification IN ('legacy_homework','exam_protected','unclassified')",
+            name="ck_assignments_security_classification",
+        ),
+        CheckConstraint(
             "status IN ('draft', 'published')",
             name="ck_assignments_status",
         ),
@@ -39,6 +43,9 @@ class Assignment(Base):
     )
 
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    security_classification: Mapped[str] = mapped_column(
+        String(24), nullable=False, default="legacy_homework", server_default="legacy_homework",
+    )
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     subject: Mapped[str] = mapped_column(String(100), nullable=False)
     grade_level: Mapped[str] = mapped_column(String(50), nullable=False)

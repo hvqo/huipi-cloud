@@ -1,0 +1,341 @@
+{
+  "version": "B-1.1a",
+  "operations": [
+    {
+      "method": "POST",
+      "path": "/api/v1/assignments",
+      "policy": "create_assignment",
+      "permission": "teacher_create",
+      "classification_boundary": "AssignmentCreate固定字段；服务端默认legacy；不接受客户端分类",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/assignments",
+      "policy": "list_assignments",
+      "permission": "filtered_list",
+      "classification_boundary": "旧成员或管理员 + ORM分类过滤后分页",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/assignments/{assignment_id}",
+      "policy": "get_assignment",
+      "permission": "assignment_read",
+      "classification_boundary": "authorize_request -> resource_assignment/require_assignment -> legacy分类 ->旧成员/管理员",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assignments/{assignment_id}/questions",
+      "policy": "add_question",
+      "permission": "assignment_write",
+      "classification_boundary": "authorize_request -> resource_assignment/require_assignment -> legacy分类 ->旧成员/管理员",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/questions/{question_id}/answer-key",
+      "policy": "replace_answer_key",
+      "permission": "assignment_write",
+      "classification_boundary": "authorize_request -> resource_assignment/require_assignment -> legacy分类 ->旧成员/管理员",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/questions/{question_id}/rubric",
+      "policy": "replace_rubric",
+      "permission": "assignment_write",
+      "classification_boundary": "authorize_request -> resource_assignment/require_assignment -> legacy分类 ->旧成员/管理员",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assignments/{assignment_id}/publish",
+      "policy": "publish_assignment",
+      "permission": "assignment_write",
+      "classification_boundary": "authorize_request -> resource_assignment/require_assignment -> legacy分类 ->旧成员/管理员",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assignments/{assignment_id}/submissions",
+      "policy": "create_submission",
+      "permission": "assignment_write",
+      "classification_boundary": "authorize_request -> resource_assignment/require_assignment -> legacy分类 ->旧成员/管理员",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/assignments/{assignment_id}/submissions",
+      "policy": "list_submissions",
+      "permission": "assignment_read",
+      "classification_boundary": "authorize_request -> resource_assignment/require_assignment -> legacy分类 ->旧成员/管理员",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/submissions/{submission_id}",
+      "policy": "get_submission",
+      "permission": "assignment_read",
+      "classification_boundary": "authorize_request -> resource_assignment/require_assignment -> legacy分类 ->旧成员/管理员",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/submissions/{submission_id}/file",
+      "policy": "get_submission_file",
+      "permission": "assignment_read",
+      "classification_boundary": "authorize_request -> resource_assignment/require_assignment -> legacy分类 ->旧成员/管理员",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/submissions/{submission_id}/parsing-task",
+      "policy": "get_parsing_task_status",
+      "permission": "assignment_read",
+      "classification_boundary": "authorize_request -> resource_assignment/require_assignment -> legacy分类 ->旧成员/管理员",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/submissions/{submission_id}/parsed-document",
+      "policy": "get_parsed_document",
+      "permission": "assignment_read",
+      "classification_boundary": "authorize_request -> resource_assignment/require_assignment -> legacy分类 ->旧成员/管理员",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/submissions/{submission_id}/parsed-document/markdown",
+      "policy": "get_parsed_markdown",
+      "permission": "assignment_read",
+      "classification_boundary": "authorize_request -> resource_assignment/require_assignment -> legacy分类 ->旧成员/管理员",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/submissions/{submission_id}/canonical-document",
+      "policy": "get_canonical_document_status",
+      "permission": "assignment_read",
+      "classification_boundary": "authorize_request -> resource_assignment/require_assignment -> legacy分类 ->旧成员/管理员",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/submissions/{submission_id}/canonical-document/pages/{page_number}",
+      "policy": "get_canonical_document_page",
+      "permission": "assignment_read",
+      "classification_boundary": "authorize_request -> resource_assignment/require_assignment -> legacy分类 ->旧成员/管理员",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/submissions/{submission_id}/answer-alignment",
+      "policy": "get_answer_alignment_summary",
+      "permission": "assignment_read",
+      "classification_boundary": "authorize_request -> resource_assignment/require_assignment -> legacy分类 ->旧成员/管理员",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/submissions/{submission_id}/answer-alignment/questions/{question_id}",
+      "policy": "get_question_answer_alignment",
+      "permission": "assignment_read",
+      "classification_boundary": "authorize_request -> resource_assignment/require_assignment -> legacy分类 ->旧成员/管理员",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/assignments/{assignment_id}/members/{user_id}",
+      "policy": "grant_assignment_membership",
+      "permission": "admin",
+      "classification_boundary": "管理员事务 + Assignment分类过滤；不能授予考试权限",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/assignments/{assignment_id}/members/{user_id}",
+      "policy": "revoke_assignment_membership",
+      "permission": "admin",
+      "classification_boundary": "管理员事务 + Assignment分类过滤；不能授予考试权限",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/health",
+      "policy": "public_liveness",
+      "permission": "public",
+      "classification_boundary": "无业务数据；公开存活/接口文档",
+      "entrypoint": "huipi_cloud.api.v1.health / FastAPI built-in documentation"
+    },
+    {
+      "method": "GET",
+      "path": "/openapi.json",
+      "policy": "public_documentation",
+      "permission": "public",
+      "classification_boundary": "无业务数据；公开存活/接口文档",
+      "entrypoint": "huipi_cloud.api.v1.health / FastAPI built-in documentation"
+    },
+    {
+      "method": "HEAD",
+      "path": "/openapi.json",
+      "policy": "public_documentation",
+      "permission": "public",
+      "classification_boundary": "无业务数据；公开存活/接口文档",
+      "entrypoint": "huipi_cloud.api.v1.health / FastAPI built-in documentation"
+    },
+    {
+      "method": "GET",
+      "path": "/docs",
+      "policy": "public_documentation",
+      "permission": "public",
+      "classification_boundary": "无业务数据；公开存活/接口文档",
+      "entrypoint": "huipi_cloud.api.v1.health / FastAPI built-in documentation"
+    },
+    {
+      "method": "HEAD",
+      "path": "/docs",
+      "policy": "public_documentation",
+      "permission": "public",
+      "classification_boundary": "无业务数据；公开存活/接口文档",
+      "entrypoint": "huipi_cloud.api.v1.health / FastAPI built-in documentation"
+    },
+    {
+      "method": "GET",
+      "path": "/docs/oauth2-redirect",
+      "policy": "public_documentation",
+      "permission": "public",
+      "classification_boundary": "无业务数据；公开存活/接口文档",
+      "entrypoint": "huipi_cloud.api.v1.health / FastAPI built-in documentation"
+    },
+    {
+      "method": "HEAD",
+      "path": "/docs/oauth2-redirect",
+      "policy": "public_documentation",
+      "permission": "public",
+      "classification_boundary": "无业务数据；公开存活/接口文档",
+      "entrypoint": "huipi_cloud.api.v1.health / FastAPI built-in documentation"
+    },
+    {
+      "method": "GET",
+      "path": "/redoc",
+      "policy": "public_documentation",
+      "permission": "public",
+      "classification_boundary": "无业务数据；公开存活/接口文档",
+      "entrypoint": "huipi_cloud.api.v1.health / FastAPI built-in documentation"
+    },
+    {
+      "method": "HEAD",
+      "path": "/redoc",
+      "policy": "public_documentation",
+      "permission": "public",
+      "classification_boundary": "无业务数据；公开存活/接口文档",
+      "entrypoint": "huipi_cloud.api.v1.health / FastAPI built-in documentation"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/submissions/{submission_id}/answer-reviews",
+      "policy": "list_answer_reviews",
+      "permission": "assignment_read",
+      "classification_boundary": "authorize_request -> resource_assignment/require_assignment -> legacy分类 ->旧成员/管理员",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/submissions/{submission_id}/answer-reviews/questions/{question_id}",
+      "policy": "inspect_answer_review",
+      "permission": "assignment_read",
+      "classification_boundary": "authorize_request -> resource_assignment/require_assignment -> legacy分类 ->旧成员/管理员",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/submissions/{submission_id}/answer-reviews/questions/{question_id}",
+      "policy": "record_answer_review",
+      "permission": "assignment_write",
+      "classification_boundary": "authorize_request -> resource_assignment/require_assignment -> legacy分类 ->旧成员/管理员",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/submissions/{submission_id}/questions/{question_id}/grade-proposals/{proposal_id}/review",
+      "policy": "inspect_grade_review",
+      "permission": "assignment_read",
+      "classification_boundary": "authorize_proposal + require_assignment + ORM真实Submission/Question父级",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/submissions/{submission_id}/questions/{question_id}/grade-proposals/{proposal_id}/reviews",
+      "policy": "list_grade_reviews",
+      "permission": "assignment_read",
+      "classification_boundary": "authorize_proposal + require_assignment + ORM真实Submission/Question父级",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/submissions/{submission_id}/questions/{question_id}/grade-proposals/{proposal_id}/reviews",
+      "policy": "record_teacher_grade_review",
+      "permission": "assignment_write",
+      "classification_boundary": "authorize_proposal + require_assignment + ORM真实Submission/Question父级",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/assignments/{assignment_id}/workbench",
+      "policy": "get_assignment_workbench",
+      "permission": "assignment_read",
+      "classification_boundary": "authorize_request -> resource_assignment/require_assignment -> legacy分类 ->旧成员/管理员",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/me",
+      "policy": "get_current_user",
+      "permission": "current_identity",
+      "classification_boundary": "当前启用User；能力字符串仅适用于legacy，不代表考试授权",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/teachers",
+      "policy": "list_teachers",
+      "permission": "database_admin",
+      "classification_boundary": "数据库管理员事务；不读取Assignment业务正文",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/teachers",
+      "policy": "register_teacher",
+      "permission": "database_admin",
+      "classification_boundary": "数据库管理员事务；不读取Assignment业务正文",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/admin/teachers/{user_id}",
+      "policy": "set_teacher_active",
+      "permission": "database_admin",
+      "classification_boundary": "数据库管理员事务；不读取Assignment业务正文",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/teachers/{user_id}/memberships",
+      "policy": "list_teacher_memberships",
+      "permission": "database_admin",
+      "classification_boundary": "管理员 + ORM父级分类过滤后分页",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/audit-events",
+      "policy": "list_admin_audit_events",
+      "permission": "database_admin",
+      "classification_boundary": "管理员 + ORM父级分类过滤后分页",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    }
+  ]
+}
