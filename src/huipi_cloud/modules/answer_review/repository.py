@@ -281,6 +281,12 @@ async def decision_summary(session, decision_id):
 
 async def decision_region_page(session, decision_id, *, limit=50, offset=0):
     """Coordinates only; no student content, resource URI or S3 locator in this projection."""
+    # The bounded JSONB projection below is raw SQL. Authorize its actual parent
+    # through the same ORM classification boundary before reading any coordinates.
+    if await session.scalar(
+        select(AnswerReviewDecision.id).where(AnswerReviewDecision.id == decision_id)
+    ) is None:
+        return []
     query = text("""
         WITH regions AS (
             SELECT 'response_regions' AS role, ordinality, value

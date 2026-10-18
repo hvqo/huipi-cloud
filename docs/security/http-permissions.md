@@ -1,6 +1,6 @@
 # HTTP 权限矩阵
 
-范围：所有 FastAPI HTTP 路由。机器清单见 [http-permissions.json](http-permissions.json)，测试与 OpenAPI 的方法/路径逐项比对。JWT 的角色字段不授权；下列「管理员」仅指本地 User.is_admin。「成员」必须未撤销且 User 启用。
+范围：所有 FastAPI HTTP 路由。本矩阵中的整份作业权限只适用于 `legacy_homework`；`exam_protected` 和 `unclassified` 一律先拒绝，旧 admin/Membership 不授权新考试资源。机器清单见 [http-permissions.json](http-permissions.json)，测试与 OpenAPI 的方法/路径逐项比对。JWT 的角色字段不授权；下列「管理员」仅指本地 User.is_admin。「成员」必须未撤销且 User 启用。
 
 ## 公开，无业务数据
 
@@ -74,8 +74,8 @@ Vue 客户端没有可信授权能力；只允许标准 PKCE 登录并向固定�
 
 `GET /api/v1/me` 需要启用的可信用户，只投影其数据库角色与范围型能力；不返回 OIDC subject。`/admin/teachers`（GET/POST）、`/admin/teachers/{user_id}`（PATCH）、`/admin/teachers/{user_id}/memberships`（GET）、`/admin/audit-events`（GET）均需当前数据库管理员。旧成员 PUT/DELETE 继续为管理员专用，现已接入事务内权限复核与审计。未列入固定策略的新路由默认拒绝。
 
-[产品能力矩阵与前端合同](../product/teacher-admin-contract.md)逐项区分教师、只读成员及全局管理员。管理员仍能读取全部作业及敏感文件，未变成仅系统管理角色；后续拆分计划在该文档说明。普通教师无提权、账号停用或管理审计读取/改写接口。管理写入的 request_id 重放仍复核当前管理员；账号停用或降权后拒绝。部署 CLI 与数据库所有者不属于教师 HTTP 权限体系。
+[产品能力矩阵与前端合同](../product/teacher-admin-contract.md)逐项区分教师、只读成员及全局管理员。管理员仍能读取全部 legacy 作业及其敏感文件，未变成仅系统管理角色；后续拆分计划在该文档说明。普通教师无提权、账号停用或管理审计读取/改写接口。管理写入的 request_id 重放仍复核当前管理员；账号停用或降权后拒绝。部署 CLI 与数据库所有者不属于教师 HTTP 权限体系。
 
-## 考试扩展设计边界（未实施）
+## 考试扩展安全边界
 
-上述矩阵继续描述当前 legacy 作业合同。[新岗位/资源范围方案](../product/role-permission-matrix.md)将扫描、考务和匿名阅卷权限分离；新考试资源必须在原件、Canonical、列表、复核及 Agent/CLI 等所有路径阻止 legacy admin/Membership 旁路。该设计尚未实现，不应据当前矩阵给扫描员或按题阅卷员整份作业权限。
+上述矩阵继续描述 legacy 作业合同。[资源安全基础](exam-resource-security.md)已加入可信分类、旧入口隔离和最小受控授权。考试资料读取、组织岗位、扫描和匿名阅卷仍未开放；[新岗位/资源范围方案](../product/role-permission-matrix.md)中的未来动作不能靠预留名称或自由 UUID 执行。不得据当前矩阵给扫描员或按题阅卷员整份作业权限。
