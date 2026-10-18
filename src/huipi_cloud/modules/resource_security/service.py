@@ -9,7 +9,7 @@ from uuid import UUID
 
 from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from huipi_cloud.modules.assignments.models import Assignment
 from huipi_cloud.modules.assignments.schemas import AssignmentCreate
@@ -30,14 +30,25 @@ INSTALLATION_SCOPE = UUID("11111111-b11a-4000-8000-000000000001")
 OPERATOR_ROLE = UUID("11111111-b11a-4000-8000-000000000002")
 CREATOR_ROLE = UUID("11111111-b11a-4000-8000-000000000003")
 AUDITOR_ROLE = UUID("11111111-b11a-4000-8000-000000000004")
+# B-1.1b: deployment security operator that can also delegate the installation-scoped
+# organization actions. Bootstrap grants this single role so that the one-grant delegation
+# rule can cover both management and organization actions; narrower staff roles stay separate.
+ORGANIZATION_OPERATOR_ROLE = UUID("11111111-b11b-4000-8000-000000000001")
+ORGANIZATION_MANAGER_ROLE = UUID("11111111-b11b-4000-8000-000000000002")
+STUDENT_IMPORTER_ROLE = UUID("11111111-b11b-4000-8000-000000000003")
 # Both code AND current persisted catalog must allow execution. Future IDs cannot be activated
 # by merely inserting a row/setting enabled in the database.
 CATALOG = {
     "security.grants.manage": frozenset({"installation"}),
     "security.protected.create": frozenset({"installation"}),
     "security.classification.inspect": frozenset({"installation", "assignment"}),
+    "organization.read": frozenset({"installation"}),
+    "organization.manage": frozenset({"installation"}),
+    "student.import.preview": frozenset({"installation"}),
+    "student.import.confirm": frozenset({"installation"}),
 }
 DENIED = "resource_not_found_or_forbidden"
+GRANT_ALREADY_ACTIVE = "security_grant_already_active"
 
 
 async def installation_scope(session):
@@ -257,7 +268,12 @@ async def grant_role(session, principal, request_id, *, user_id, role_version_id
             raise AccessError(DENIED, 404)
         row = SecurityGrant(user_id=user_id, role_version_id=role_version_id, scope_id=scope_id)
         session.add(row)
-        await session.flush()
+        try:
+            await session.flush()
+        except IntegrityError:
+            # Active-Grant partial unique index: a retry with a NEW request_id does not
+            # silently create a second grant that a single revoke could not revoke.
+            raise AccessError(GRANT_ALREADY_ACTIVE, 409) from None
         op.result = {"grant_id": str(row.id), "user_id": str(user_id), "active": True}
         return op.result
 
@@ -344,7 +360,9 @@ async def deployment_bootstrap(session, user_id, request_id, approval_ref):
         ):
             raise AccessError("security_bootstrap_already_initialized", 409)
         root = await installation_scope(session)
-        row = SecurityGrant(user_id=user_id, role_version_id=OPERATOR_ROLE, scope_id=root.id)
+        row = SecurityGrant(
+            user_id=user_id, role_version_id=ORGANIZATION_OPERATOR_ROLE, scope_id=root.id
+        )
         session.add(row)
         await session.flush()
         op.result = {"grant_id": str(row.id), "user_id": str(user_id), "active": True}

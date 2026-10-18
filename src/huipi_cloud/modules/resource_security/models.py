@@ -14,6 +14,7 @@ from sqlalchemy import (
     UniqueConstraint,
     Uuid,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -77,7 +78,17 @@ class SecurityRolePermission(Base):
 
 class SecurityGrant(Base):
     __tablename__ = "security_grants"
-    __table_args__ = (Index("ix_security_grants_user_scope", "user_id", "scope_id"),)
+    __table_args__ = (
+        Index("ix_security_grants_user_scope", "user_id", "scope_id"),
+        Index(
+            "uq_security_grants_active",
+            "user_id",
+            "role_version_id",
+            "scope_id",
+            unique=True,
+            postgresql_where=text("revoked_at IS NULL"),
+        ),
+    )
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
     role_version_id: Mapped[UUID] = mapped_column(

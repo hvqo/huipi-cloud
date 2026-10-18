@@ -15,6 +15,7 @@ from huipi_cloud.modules.grading.grade_review_router import router as grade_revi
 from huipi_cloud.modules.identity.admin_router import router as admin_router
 from huipi_cloud.modules.identity.dependencies import authorize_request
 from huipi_cloud.modules.identity.router import router as identity_router
+from huipi_cloud.modules.organization.router import router as organization_router
 from huipi_cloud.modules.parsing.router import router as parsing_router
 from huipi_cloud.modules.submissions.router import (
     assignment_submission_router,
@@ -43,4 +44,5 @@ protected_router.include_router(admin_router)
 protected_router.include_router(answer_review_router)
 protected_router.include_router(grade_review_router)
 protected_router.include_router(workbench_router)
+protected_router.include_router(organization_router)
 api_router.include_router(protected_router)

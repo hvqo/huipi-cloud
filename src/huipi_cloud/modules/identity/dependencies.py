@@ -28,8 +28,35 @@ ADMIN_POLICIES = {
     "list_admin_audit_events": "/admin/audit-events",
 }
 
+# Organization routes use the fixed installation-scoped permission catalog; they never
+# fall back to legacy User.is_admin or AssignmentMembership authority.
+ORGANIZATION_POLICIES = {
+    "list_academic_years": "organization.read",
+    "list_academic_terms": "organization.read",
+    "list_grade_cohorts": "organization.read",
+    "list_subjects": "organization.read",
+    "list_administrative_classes": "organization.read",
+    "list_students": "organization.read",
+    "list_student_enrollments": "organization.read",
+    "list_student_imports": "organization.read",
+    "get_student_import": "organization.read",
+    "preview_student_import": "student.import.preview",
+    "confirm_student_import": "student.import.confirm",
+}
+
 POLICIES = {
     "get_current_user": {"GET"},
+    "list_academic_years": {"GET"},
+    "list_academic_terms": {"GET"},
+    "list_grade_cohorts": {"GET"},
+    "list_subjects": {"GET"},
+    "list_administrative_classes": {"GET"},
+    "list_students": {"GET"},
+    "list_student_enrollments": {"GET"},
+    "list_student_imports": {"GET"},
+    "get_student_import": {"GET"},
+    "preview_student_import": {"POST"},
+    "confirm_student_import": {"POST"},
     "list_teachers": {"GET"},
     "register_teacher": {"POST"},
     "set_teacher_active": {"PATCH"},
@@ -70,6 +97,17 @@ GRADE_REVIEW_PATH = (
 
 POLICY_PATHS = {
     "get_current_user": "/me",
+    "list_academic_years": "/organization/academic-years",
+    "list_academic_terms": "/organization/academic-terms",
+    "list_grade_cohorts": "/organization/grade-cohorts",
+    "list_subjects": "/organization/subjects",
+    "list_administrative_classes": "/organization/classes",
+    "list_students": "/organization/students",
+    "list_student_enrollments": "/organization/students/{student_id}/enrollments",
+    "list_student_imports": "/organization/student-imports",
+    "get_student_import": "/organization/student-imports/{batch_id}",
+    "preview_student_import": "/organization/student-imports",
+    "confirm_student_import": "/organization/student-imports/{batch_id}/confirm",
     **ADMIN_POLICIES,
     "get_assignment_workbench": "/assignments/{assignment_id}/workbench",
     "inspect_grade_review": GRADE_REVIEW_PATH + "/review",
@@ -177,6 +215,13 @@ async def authorize_request(
                     raise AccessError("invalid_resource_id", 422) from None
                 await authorize_proposal(
                     session, principal=current, write=request.method != "GET", **ids
+                )
+                return current
+            if name in ORGANIZATION_POLICIES:
+                from huipi_cloud.modules.organization import service as organization_service
+
+                await organization_service.authorize(
+                    session, current, ORGANIZATION_POLICIES[name]
                 )
                 return current
             scopes = []
