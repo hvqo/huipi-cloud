@@ -71,7 +71,7 @@ B-1.4/B-1.5 必须新增**受控的考试解析处理通道**，要求：
 
 七张增量表：`security_installations`、`permission_definitions`、`security_scopes`、`security_role_versions`、`security_role_permissions`、`security_grants`、`security_audit_events`。
 
-仅启用三个固定动作：
+仅启用三个固定动作（B-1.1b 追加四个组织动作，见下节）：
 
 - `security.grants.manage`：安装级受控委派/撤销。
 - `security.protected.create`：原子创建受保护载体。
@@ -95,9 +95,29 @@ Scope 只有两种：FK 指向唯一 `SecurityInstallation(id=1)` 的安装范�
 
 ### B-1.1a 合入时的已知限制
 
-- **单 Grant 撤权语义**：`security_grants` 没有“同一 User/RoleVersion/Scope 仅一条有效”的部分唯一索引。授权方若用**不同的 `request_id`** 重复授予同一组合，会留下多条有效 Grant；`revoke --grant-id` 只撤销指定一条，其余仍可能授权成功。因此撤权是单 Grant 语义：操作方必须复用原 `request_id`、按用户/范围核对有效 Grant，不能假设一次 revoke 覆盖全部重复授权。后续切片的迁移应补 `WHERE revoked_at IS NULL` 的部分唯一索引，并把重复授予稳定映射为 409。
+- **单 Grant 撤权语义（B-1.1b 已修）**：B-1.1a 的 `security_grants` 没有“同一 User/RoleVersion/Scope 仅一条有效”的部分唯一索引，用不同 `request_id` 重复授予同一组合会留下多条有效 Grant，`revoke --grant-id` 只撤销一条。B-1.1b 迁移 `b11b0a7c4e21` 增加 `uq_security_grants_active` 部分唯一索引（`WHERE revoked_at IS NULL`），`grant_role` 把重复授予稳定映射为 409 `security_grant_already_active`；升级前若已存在重复有效 Grant，迁移会拒绝并要求先人工清理。
 - **审计 append-only 的应用边界**：`security_audit_events` 的触发器只覆盖 `UPDATE/DELETE`，不覆盖 `TRUNCATE`；它是应用业务角色边界，不是对持有数据库凭据的受控运维的防篡改审计。
 - **ORM 可见性覆盖范围**：全局 legacy 过滤只保证经 `Session.execute`/加载器改写的语句；未来若引入单语句 `joinedload`、`from_statement` 或 `session.connection()` 原生读取，必须单独审计并补回归测试。
+
+## B-1.1b：安装级组织与学生名册权限（最小过渡）
+
+B-1.1b 在迁移 `b11b0a7c4e21` 中新增组织、学生与名册导入表（见[组织与学生名册](../development/organization.md)），**没有新增 Scope 类型**。本切片只启用安装级组织动作：
+
+- `organization.read`：读取学年/学期、入学届别、学科、行政班、最小学生身份与班级归属历史。
+- `organization.manage`：受控创建学年/学期/届别/学科/行政班与显式转班（当前仅受控 CLI）。
+- `student.import.preview`：上传 CSV 并生成冻结预检批次；**不修改**正式学生或班级归属。
+- `student.import.confirm`：在单一事务中重验当前学生/班级状态后正式入库。
+
+约束：
+
+- 这四个动作的 Scope 都只有安装级（单校部署技术根），**不是按年级/班级/考试的学校 RBAC**。组织实体 Scope 只有在真实 FK、归属校验与执行策略落地后才能逐项启用，不能提交自由 UUID/JSON 授权。
+- 旧 `User.is_admin`、旧 `AssignmentMembership`、JWT 自声明 role 均不产生组织权限；组织数据不属于 legacy 资源图，也没有旧业务旁路入口。
+- 新增角色版本：`organization_operator`（`11111111-b11b-4000-8000-000000000001`，含 `security.grants.manage` 与四个组织动作，是部署 bootstrap 可委派组织的根角色）、`organization_manager`（`...0002`）、`student_importer`（`...0003`）。B-1.1b 起 `deployment_bootstrap` 授予 `organization_operator`；已初始化的旧部署必须由受控运维显式补授，不得恢复旧管理员捷径。
+- 普通任课教师查看自己的教学班名单**尚未实现**：缺少可信任教关系、班级 Scope 与名单范围授权，不能以全校学生接口替代。
+- 所有组织写操作使用 `organization_operations` 追加审计与 `request_id` 幂等（相同正文重放、不同正文 409、COMMIT 未知返回 503 后同请求恢复）；变更与审计同事务。
+- 组织 API 的机器清单在 [http-permissions.json](http-permissions.json) 与 [resource-security-paths.json](resource-security-paths.json) 中逐项登记；未登记方法/路径默认拒绝。
+
+已知边界：B-1.1b 只有安装级组织权限，**不得**表述为已完成按年级/班级细分的学校 RBAC；学生登录认证、考试场次/试卷/参试名单/扫描/阅卷/成绩仍未实现。
 
 ## 数据库与冻结准备
 
@@ -108,5 +128,7 @@ B-1.2 必须同时完成：PaperVersion 真外键及不可变版本、可信创�
 ## 验证证据
 
 `tests/integration/test_resource_security.py` 使用真实独立 PostgreSQL、私有 S3、签名 JWT：旧合法文件可读；受保护整图仍在库但 HTTP/CLI/工具不可读；S3 下载调用不得发生；分页/聚合、伪造角色、未知分类、单 Grant 委派、停用撤权、锁等待、审计失败、未知 COMMIT、幂等和迁移往返都有断言。`tests/unit/test_resource_security_catalog.py` 防止漏登记新模型和新 HTTP 方法/路径。所有材料为合成数据；没有模型请求。
+
+B-1.1b 的组织/学生/导入证据见 `tests/integration/test_organization.py`、`tests/integration/test_student_import.py`、`tests/integration/test_organization_migration.py`：真实独立 PostgreSQL 覆盖学年学期边界、同名学生、学号唯一、归属排他约束与转班历史、并发入班、真实签名 JWT 的授权/撤权/停用、旧 admin 无新权限、重复 Grant 409、预检不污染正式数据、确认幂等/409/预检后数据变化、审计失败回滚、COMMIT 未知恢复与迁移往返；全部为合成数据，没有模型请求。
 
 运维步骤见[安全部署指南](../development/resource-security.md)。

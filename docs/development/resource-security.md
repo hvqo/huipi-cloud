@@ -20,6 +20,9 @@ uv run python -m huipi_cloud.modules.resource_security bootstrap \
 - 安全操作员角色版本：`11111111-b11a-4000-8000-000000000002`。
 - 载体创建者角色版本：`11111111-b11a-4000-8000-000000000003`。
 - 分类审计员角色版本：`11111111-b11a-4000-8000-000000000004`。
+- B-1.1b 组织操作员角色版本：`11111111-b11b-4000-8000-000000000001`（`security.grants.manage` + 四个安装级组织动作，部署 bootstrap 使用）。
+- B-1.1b 组织管理员角色版本：`11111111-b11b-4000-8000-000000000002`（`organization.read/manage`）。
+- B-1.1b 学生名单导入员角色版本：`11111111-b11b-4000-8000-000000000003`（`organization.read` + `student.import.preview/confirm`）。
 
 非 bootstrap 命令都需要 `--token-stdin`：从标准输入安全传入真实 Bearer Token，不写进命令行参数、Git、Shell 历史或日志。用户 ID 不替代登录凭据。OIDC 签名/Issuer/Audience/有效期及数据库身份仍由现有验证器检查。
 
@@ -34,6 +37,21 @@ audit --token-stdin
 以上均追加在 `uv run python -m huipi_cloud.modules.resource_security` 后。Token 每次由受控进程管道输入，不把 Token 放进上述模板。payload 使用已有 AssignmentCreate 字段（title、subject、grade_level、可选 description），最大 8KiB；受保护分类由服务决定。输出仅 ID/状态；audit 最多 50 条最近事件，包含操作者内部 ID，不包含教学正文或存储定位。
 
 当前受保护载体**没有旧 HTTP 读写入口**。任何新 Grant 都不能使旧作业接口、文件下载或 Copilot 读取考试内容。不要用它导入真实考试数据；新考试实体、范围、组织和冻结流程尚未完成。Assignment Scope 的受控登记和岗位管理 UI 也未开放；未来须依真实外键建立，不能提交自由 JSON。
+
+## B-1.1b 增量说明
+
+迁移 `b11b0a7c4e21` 需要 PostgreSQL `btree_gist` 扩展（`CREATE EXTENSION IF NOT EXISTS btree_gist`；由迁移以表所有者身份创建）。升级前若数据库已存在同一 User/RoleVersion/Scope 的多条有效 Grant，迁移会以 `security_grant_duplicates_require_cleanup` 拒绝，须先按审计人工清理。
+
+B-1.1b 起 `bootstrap` 授予 `organization_operator`（含组织动作的部署安全操作员），旧 `security_operator` 角色版本保留但不再由 bootstrap 授予。已初始化的旧部署要使用组织能力，必须由受控运维显式为指定用户补授 `organization_operator` 或更窄的组织角色；不要恢复 `security_operator`/旧管理员的全局考试访问来“解决”权限缺失。
+
+受控组织 CLI 示例（Token 必须从 stdin 管道输入，不写进 argv/历史）：
+
+```bash
+uv run python -m huipi_cloud.modules.organization create-academic-year \
+  --token-stdin --request-id <UUID> --payload academic-year.json
+```
+
+payload 字段与 `modules/organization/schemas.py` 的 `*Create` 一致（`request_id` 由 `--request-id` 注入），最大 8KiB；结果只输出内部 UUID/action，不输出学生姓名或学号。组织数据不是 legacy 作业资源，旧作业接口不会因为它增加可见性。
 
 ## 验收与回滚
 

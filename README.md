@@ -20,6 +20,7 @@
 - **候选评分人工复核**：受认证 HTTP 或受控本地 CLI 可接受、修订、拒绝候选分数或标记需要重新评分，并保留不可变修订历史；记录不等于正式成绩。
 
 - **教师 Copilot**：受控本地 CLI 可调用云端模型查询指定作业、题目、Rubric 和提交处理状态，检索显式导入的教师资料并校验来源引用；只读、不发布成绩。
+- **单校组织与可信学生名册**：建立学年/学期、入学届别、学科、行政班、学生稳定身份与半开区间的班级归属历史，支持两阶段 CSV 名册导入（预览→确认）；当前仅安装级组织权限，不含教学班、考试、扫描或阅卷能力。
 
 ## 系统架构
 
@@ -135,6 +136,7 @@ npm run dev
 - [架构与模块边界](docs/architecture.md)
 - [教师认证、作业授权与权限矩阵](docs/development/teacher-auth.md)
 - [本地开发指南](docs/development/README.md)
+- [单校组织、学生身份与两阶段名册导入](docs/development/organization.md)
 - [评分输入准备指南](docs/development/grade-input.md)
 - [Rubric 候选评分 CLI 指南](docs/development/grade-proposals.md)
 - [候选评分人工复核 CLI 指南](docs/development/grade-review.md)
