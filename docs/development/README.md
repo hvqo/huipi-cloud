@@ -34,3 +34,6 @@
 - [前端角色、页面能力与 API 合同](../product/teacher-admin-contract.md)
 
 - [单校组织、学生身份与两阶段名册导入（B-1.1b）](organization.md)：学年学期、入学届别、行政班、学号唯一的学生身份、班级归属历史、CSV 预检/确认与安装级组织权限。
+
+- [快速 CI 与本地验收](validation.md)
+- [共享试卷版本与锁卷](paper-versions.md)

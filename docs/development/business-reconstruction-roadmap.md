@@ -1,6 +1,6 @@
 # 单校业务重构：分阶段实施与验收路线
 
-**设计建议，未执行 B–E。** 前置：[阶段 A 评审索引](../product/stage-a-review.md)、[ADR](../architecture/decisions/0001-school-exam-compatible-extension.md)、[验收矩阵](../evaluation/business-acceptance-matrix.md)。本轮只文档，不改正式评分协议、不升级开发数据库、不合并 #31。
+**阶段 A 设计基线；实施状态按下文各切片标注。** 前置：[阶段 A 评审索引](../product/stage-a-review.md)、[ADR](../architecture/decisions/0001-school-exam-compatible-extension.md)、[验收矩阵](../evaluation/business-acceptance-matrix.md)。阶段 A 只交付文档；后续按独立切片实施，不改正式评分协议、不升级开发数据库、不合并 #31。
 
 ## 1. 集成顺序和代码基线
 
@@ -44,7 +44,14 @@
 - 学校待确认：可信名册来源/责任人、真实数据导入授权、字段最小集与学号规则、CSV 编码、转班生效与更正政策、组织操作员人选与离任撤权（见[组织与学生名册](organization.md#10-需学校确认事项)）。
 - 回滚：停导入和新组织写入，保留原始导入审计与冻结批次；破坏性降级会被迁移拒绝，不猜测回填旧 `grade_level`/`student_ref`。
 
-### B-1.2 考试场次、共享试卷与名单冻结
+### B-1.2a 共享试卷版本与不可变锁卷
+
+- 兼容扩展已在独立切片实现：PaperFamily/PaperVersion/QuestionMapping/Operation；授权的旧作业复制到同事务建立的专用 exam_protected Assignment，不复制成员/提交。真实 FK 的 paper_version Scope 与固定 create/read/edit/lock 动作；CLI/Service 受控执行，没有新 HTTP。
+- 内容版次、并发 revision、来源/内容/题目/Rubric/映射摘要分开；草稿受控编辑，锁定后 Assignment/Question/AnswerKey/Rubric/Mapping 与卷版字段由数据库触发器保护；变化建立后继版本。
+- 详见[试卷版本指南](paper-versions.md)。不以 published 作业当数据库冻结，不把 locked 试卷当成绩发布。
+- 试卷题本 PDF、空白答题卡和版式文件拆为后续独立「试卷原件与版式」切片；当前没有 PaperSourceFile 或 PDF 导入，不能据此提前运行扫描。
+
+### B-1.2b 考试场次与名单冻结（待开发）
 
 - 前置：B-1.1a、B-1.1b；组织导入与最小命题/考务授权。
 - 后端/迁移：Event/Session/SessionPaper、PaperVersion/QuestionMapping/SourceFile、RosterRevision/Snapshot/Participation；PaperVersion 防原位变更；复合 FK/UNIQUE，保持所有旧表/UUID。

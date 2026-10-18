@@ -20,7 +20,7 @@ def test_classification_rules_cover_every_mapped_resource_parent():
     }
     assert resources <= covered
     assert "exam.session.read" not in CATALOG
-    assert set().union(*CATALOG.values()) == {"installation", "assignment"}
+    assert set().union(*CATALOG.values()) == {"installation", "assignment", "paper_version"}
 
 
 def test_resource_security_call_inventory_matches_all_registered_methods_and_paths():

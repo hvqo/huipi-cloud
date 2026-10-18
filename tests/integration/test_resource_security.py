@@ -853,6 +853,7 @@ async def test_independent_migration_roundtrip_preserves_legacy_graph_and_refuse
         "student_import_batches",
         "student_import_rows",
         "organization_operations",
+        "paper_families", "paper_versions", "paper_question_mappings", "paper_operations",
     }
     source = {}
     async with factory() as s:

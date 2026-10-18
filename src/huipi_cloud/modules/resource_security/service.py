@@ -16,6 +16,7 @@ from huipi_cloud.modules.assignments.schemas import AssignmentCreate
 from huipi_cloud.modules.identity import service as identity
 from huipi_cloud.modules.identity.models import User
 from huipi_cloud.modules.identity.protocol import AccessError, Principal
+from huipi_cloud.modules.papers.permissions import PAPER_ACTIONS
 from huipi_cloud.modules.resource_security.models import (
     PermissionDefinition,
     SecurityAudit,
@@ -39,6 +40,7 @@ STUDENT_IMPORTER_ROLE = UUID("11111111-b11b-4000-8000-000000000003")
 # Both code AND current persisted catalog must allow execution. Future IDs cannot be activated
 # by merely inserting a row/setting enabled in the database.
 CATALOG = {
+    **PAPER_ACTIONS,
     "security.grants.manage": frozenset({"installation"}),
     "security.protected.create": frozenset({"installation"}),
     "security.classification.inspect": frozenset({"installation", "assignment"}),
@@ -72,12 +74,23 @@ async def installation_scope(session):
 
 async def scope(session, scope_id):
     row = await session.scalar(select(SecurityScope).where(SecurityScope.id == scope_id))
-    if row is None or row.kind not in {"installation", "assignment"}:
+    if row is None or row.kind not in {"installation", "assignment", "paper_version"}:
         raise AccessError("security_scope_invalid", 422)
     if row.kind == "installation":
         if row.installation_id != 1 or row.assignment_id is not None:
             raise AccessError("security_scope_invalid", 422)
         if await session.get(SecurityInstallation, 1) is None:
+            raise AccessError("security_scope_invalid", 422)
+    elif row.kind == "paper_version":
+        from huipi_cloud.modules.papers.models import PaperVersion
+
+        p, a = PaperVersion.__table__, Assignment.__table__
+        valid = await session.scalar(
+            select(p.c.id)
+            .join(a, a.c.id == p.c.canonical_assignment_id)
+            .where(p.c.id == row.paper_version_id, a.c.security_classification == "exam_protected")
+        )
+        if valid is None or row.installation_id is not None or row.assignment_id is not None:
             raise AccessError("security_scope_invalid", 422)
     else:
         # Fixed Core query deliberately sees the real FK parent, including protected data.

@@ -132,3 +132,10 @@ B-1.2 必须同时完成：PaperVersion 真外键及不可变版本、可信创�
 B-1.1b 的组织/学生/导入证据见 `tests/integration/test_organization.py`、`tests/integration/test_student_import.py`、`tests/integration/test_organization_migration.py`：真实独立 PostgreSQL 覆盖学年学期边界、同名学生、学号唯一、归属排他约束与转班历史、并发入班、真实签名 JWT 的授权/撤权/停用、旧 admin 无新权限、重复 Grant 409、预检不污染正式数据、确认幂等/409/预检后数据变化、审计失败回滚、COMMIT 未知恢复与迁移往返；全部为合成数据，没有模型请求。
 
 运维步骤见[安全部署指南](../development/resource-security.md)。
+
+
+## B-1.2a：真实试卷 Scope
+
+新增 paper.create（仅安装级）、paper.read/edit/lock（安装级或具有 PaperVersion FK 的 paper_version Scope），不扩大旧 Assignment Scope 或旧分类检查动作。新试卷仍被全局 legacy 查询隐藏，新服务仅在当前 Principal/Grant 校验后使用固定 Core 查询。没有通用 ORM 绕过开关或任意 SQL。
+
+版本建立、专用载体、映射、Scope 和审计同事务；数据库/服务的冻结路径、受控部署代操作和权限边界见[试卷指南](../development/paper-versions.md)。普通 paper_editor/locker/reader 应绑定具体卷版，不拥有学生资料或名册权限；paper_operator 是经审批部署安全根，不是普通命题角色。未来 ExamSession/MarkingTask 仍未建立，其保留动作不可执行。原件上传不在本切片，冻结只覆盖实际已纳入的题目内容与映射。
