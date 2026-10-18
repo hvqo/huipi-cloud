@@ -52,9 +52,24 @@
 - Knowledge 导入/历史/撤销先核对真实 Assignment；Lexical/Hybrid/Rerank 检索及 citation 验证由源文档/Chunk 过滤，不按 S3 全桶枚举。默认检索仍 Lexical。
 - JSON 导出只处理已取得的对象，不是任意数据库访问接口；私有对象存储凭据及直接对象读取仍是受控运维能力。
 
+## 后续切片：受控考试处理通道（B-1.4/B-1.5 前置）
+
+全局 legacy 可见性默认只允许 `legacy_homework`。因此未来考试答卷即使桥接为 `Submission`，旧 Parsing Worker、旧业务服务与旧 CLI 也同样无法领取、续租或完成 `exam_protected` 来源——**这是预期的安全边界，不是待修复的兼容缺陷**。不得用下面任一方式“解决”它：
+
+- 把旧 Worker 或旧管理员提升为全局可见/全局绕过；
+- 把考试资源重新标记回 `legacy_homework`；
+- 增加任意业务代码可自行启用的通用安全绕过（execution option、环境变量、`include_protected` 参数、由调用方自报分类）。
+
+B-1.4/B-1.5 必须新增**受控的考试解析处理通道**，要求：
+
+1. 内部处理绑定**具体任务、真实资源和来源版本**（解析任务、答卷版本、页 manifest 与摘要）；领取、续租、完成各阶段分别复核，任务、来源版本或租约失效即拒绝。
+2. 处理经过专用服务/专用 Worker 执行器与任务类型，不把考试任务塞回旧 `ParsingTask` 的旧查询路径；处理的产物索引仍由分类过滤保护，旧列表、旧文件下载、Canonical/Alignment/复核/工具入口继续不可读。
+3. 通道本身是受控部署能力，不是教师或模型可调用的 HTTP 能力；其授权来自服务端任务意图，而不是 JWT 自声明角色或旧 `AssignmentMembership`。
+4. 验收加入**考试来源的真实解析端到端测试**：受保护桥接 Submission 经受控通道完成解析，产物可被受控处理链读取，同时旧业务路径仍拒绝；该通道不在 B-1.1a/B-1.1b 实现。
+
 ## 最小新授权基础
 
-八张增量表：`security_installations`、`permission_definitions`、`security_scopes`、`security_role_versions`、`security_role_permissions`、`security_grants`、`security_audit_events`。
+七张增量表：`security_installations`、`permission_definitions`、`security_scopes`、`security_role_versions`、`security_role_permissions`、`security_grants`、`security_audit_events`。
 
 仅启用三个固定动作：
 
