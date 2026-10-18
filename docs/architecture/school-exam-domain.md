@@ -49,6 +49,9 @@ erDiagram
   Subject ||--o{ ExamSession : subject
   PaperVersion ||--|| Assignment : frozen_content_carrier
   PaperVersion ||--o{ PaperQuestionMapping : maps
+  PaperVersion ||--o{ QuestionGroup : groups
+  QuestionGroup ||--o{ QuestionGroupMember : members
+  PaperQuestionMapping ||--o{ QuestionGroupMember : question
   Question ||--o{ PaperQuestionMapping : references
   PaperVersion ||--o{ PaperLayout : templates
   PaperVersion ||--o{ PaperSourceFile : blank_originals
@@ -198,6 +201,8 @@ MarkingPlan(session_id, revision, rules_digest, effective_at)，MarkingGroupRule
 
 MarkingTask 稳定业务键：`(session_id, participation_id, paper_version_id, script_evidence_revision, question_group_id, round_id, plan_revision)`；题组内题目必须来自该 PaperVersion。更改计划产生新键，但同一有效 work slot（参与者+题组+轮次）只能有一个 current task；CurrentTaskSlot 唯一，旧任务先撤销再换指针，不重复合分。
 
+QuestionGroup/Member 是题组版本与成员（唯一 group+question_key），只能引用同 PaperVersion。一个计划同一评分轮次的正式题组必须形成不重叠题目分区；事务验证并用明确的 PlanQuestionCoverage(plan_revision, round, question_key) 唯一键防止并发重叠配置。抽检/试评走独立 purpose，不能再计一次正式分。重组题组时按覆盖题目回收未完成旧 slot，不依赖新 group_id 自然避免重叠。
+
 领取：事务锁当前任务/slot + 授权 → 新 lease token/deadline/claim → COMMIT。续租/提交使用 PostgreSQL 实际执行时间条件和 token fencing；授予两人同一任务只有一人成功。TaskClaim 是尝试记录；双评不同 round 还需锁 IndependenceGuard(session,participation,question_group,independence_group)，唯一 reviewer 占用，不能只用两个独立任务锁实现独立性。
 
 MarkingRecord(id, task_id, claim_id, reviewer_user_id, request_id, source/rubric digests, full criterion marks, supersedes, reasons, created_at) 追加，不把多个教师评分塞入单一 GradeReview 链。单评/双评/仲裁各 round 是否显示 AI 候选由策略决定，双评默认隐藏另一评分和 AI 分以防锚定。
@@ -206,7 +211,7 @@ ResolvedScore 由确定性 ResolutionPolicyVersion 合成，ResolutionInput 指�
 
 ## 9. 成绩与版本失效
 
-ResultSnapshot(session_id, revision, roster_digest, scoring_policy_digest, completeness_digest, state) + Item(participation,question_key,resolved_score_revision,decimal)。缺考是独立结果类型，没有扫描/未评/无法识别不补零。审批者和发布者独立 action，敏感学校策略要求双人且不能自批。Publication 引用不可变已核验快照和可见范围，后续更正新 Snapshot/Publication，旧版可审计。
+ResultSnapshot(session_id, revision, roster_digest, scoring_policy_digest, completeness_digest, state) + Item(participation,question_key,resolved_score_revision,decimal)，Item 唯一 `(snapshot_id,participation_id,question_key)`；当前有效题分指针唯一 `(participation_id,question_key,scoring_policy_version)`，防止重叠题组/新计划重复计分。缺考是独立结果类型，没有扫描/未评/无法识别不补零。审批者和发布者独立 action，敏感学校策略要求双人且不能自批。Publication 引用不可变已核验快照和可见范围，后续更正新 Snapshot/Publication，旧版可审计。
 
 ```mermaid
 flowchart LR
