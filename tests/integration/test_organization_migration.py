@@ -25,7 +25,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from huipi_cloud.modules.assignments.models import Assignment
 from huipi_cloud.modules.identity.models import User
 from huipi_cloud.modules.organization.models import AcademicYear, Student
-from huipi_cloud.modules.resource_security.models import SecurityGrant, SecurityScope
+from huipi_cloud.modules.resource_security.models import SecurityGrant
 from huipi_cloud.modules.submissions.models import ParsingTask, Submission
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -229,6 +229,14 @@ async def test_independent_organization_migration_roundtrip_and_guarded_downgrad
         assert revision == HEAD_REVISION
         assert constraints == CONSTRAINTS | OLD_UNIQUE_CONSTRAINTS, constraints
         assert triggers == TRIGGERS, triggers
+        scope_rows = await query_all(
+            url,
+            text("SELECT count(*) FROM security_scopes WHERE id = :scope_id").bindparams(
+                scope_id=INSTALLATION_SCOPE
+            ),
+        )
+        # The B-1.1b migration pre-seeds the single installation scope.
+        assert scope_rows == [(1,)]
         table_rows = await query_all(
             url,
             text("SELECT tablename FROM pg_tables WHERE schemaname = 'public'"),
@@ -318,9 +326,6 @@ async def test_independent_organization_migration_roundtrip_and_guarded_downgrad
         await execute_sql(
             url,
             [
-                insert(SecurityScope.__table__).values(
-                    id=INSTALLATION_SCOPE, kind="installation", installation_id=1
-                ),
                 insert(SecurityGrant.__table__).values(
                     id=grant_id,
                     user_id=user_id,
@@ -339,9 +344,6 @@ async def test_independent_organization_migration_roundtrip_and_guarded_downgrad
             [
                 text("DELETE FROM security_grants WHERE id = :grant_id").bindparams(
                     grant_id=grant_id
-                ),
-                text("DELETE FROM security_scopes WHERE id = :scope_id").bindparams(
-                    scope_id=INSTALLATION_SCOPE
                 ),
             ],
         )

@@ -52,15 +52,21 @@ GRANT_ALREADY_ACTIVE = "security_grant_already_active"
 
 
 async def installation_scope(session):
-    await session.execute(
-        insert(SecurityScope)
-        .values(
-            id=INSTALLATION_SCOPE,
-            kind="installation",
-            installation_id=1,
-        )
-        .on_conflict_do_nothing()
+    # B-1.1b migration pre-seeds the installation scope, so ordinary read authorization
+    # is a pure SELECT instead of an INSERT ... ON CONFLICT in the request transaction.
+    existing = await session.scalar(
+        select(SecurityScope).where(SecurityScope.id == INSTALLATION_SCOPE)
     )
+    if existing is None:
+        await session.execute(
+            insert(SecurityScope)
+            .values(
+                id=INSTALLATION_SCOPE,
+                kind="installation",
+                installation_id=1,
+            )
+            .on_conflict_do_nothing()
+        )
     return await scope(session, INSTALLATION_SCOPE)
 
 

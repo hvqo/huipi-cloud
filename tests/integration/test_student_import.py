@@ -925,6 +925,106 @@ async def test_future_enrollment_is_visible_to_preview_on_reimport(org):
 
 
 @pytest.mark.anyio
+@pytest.mark.parametrize("mode", ["student_only", "student_with_enrollment"])
+async def test_cross_batch_case_only_student_code_is_rejected(org, mode):
+    """A second roster using a different case must not create a second identity."""
+    ctx = org
+    year_id = await seed_academic_year(ctx.factory)
+    await seed_administrative_class(ctx.factory, "G101")
+    if mode == "student_only":
+        first_content = student_csv(("S001", "张三"))
+        colliding_content = student_csv(("s001", "张三"))
+    else:
+        first_content = full_csv(("S001", "张三", "G101", "2025-09-01"))
+        colliding_content = full_csv(("s001", "张三", "G101", "2025-09-01"))
+
+    first = await preview(
+        ctx, mode=mode, academic_year_id=year_id, content=first_content
+    )
+    confirmed = await confirm(
+        ctx,
+        first["batch_id"],
+        expected_input_sha256=digest(first_content),
+    )
+    assert confirmed["created_students"] == 1
+    assert (await table_counts(ctx))["students"] == 1
+
+    colliding = await preview(
+        ctx, mode=mode, academic_year_id=year_id, content=colliding_content
+    )
+    rows = await load_rows(ctx, colliding["batch_id"])
+    assert [row.row_state for row in rows] == ["error"]
+    assert [error_codes(row) for row in rows] == [
+        ["student_code_case_ambiguous_existing"]
+    ]
+    assert rows[0].outcome is None
+    assert colliding["can_confirm"] is False
+    assert colliding["counts"]["error_rows"] == 1
+    assert colliding["counts"]["create_students"] == 0
+    with pytest.raises(AccessError) as error:
+        await confirm(
+            ctx,
+            colliding["batch_id"],
+            expected_input_sha256=digest(colliding_content),
+        )
+    assert error.value.code == "student_import_has_blocking_errors"
+    assert error.value.status_code == 409
+    counts = await table_counts(ctx)
+    assert counts["students"] == 1
+    # Only the first confirmed import may write an enrollment.
+    assert counts["enrollments"] == (1 if mode == "student_with_enrollment" else 0)
+
+    # Exact-case re-import is still recognized as the same student (no false positive).
+    exact = await preview(
+        ctx, mode=mode, academic_year_id=year_id, content=first_content
+    )
+    rows = await load_rows(ctx, exact["batch_id"])
+    assert [error_codes(row) for row in rows] == [[]]
+    assert [row.outcome for row in rows] == ["unchanged"]
+    assert exact["can_confirm"] is True
+
+
+@pytest.mark.anyio
+async def test_enrollment_only_rejects_cross_batch_case_only_code(org):
+    ctx = org
+    year_id = await seed_academic_year(ctx.factory)
+    await seed_administrative_class(ctx.factory, "G101")
+    await seed_student(ctx.factory, "S001", "张三")
+    content = enrollment_csv(("s001", "G101", "2025-09-01"))
+    previewed = await preview(
+        ctx, mode="enrollment_only", academic_year_id=year_id, content=content
+    )
+    rows = await load_rows(ctx, previewed["batch_id"])
+    assert [error_codes(row) for row in rows] == [
+        ["student_code_case_ambiguous_existing"]
+    ]
+    assert [row.row_state for row in rows] == ["error"]
+    assert previewed["can_confirm"] is False
+    assert previewed["counts"]["create_enrollments"] == 0
+    counts = await table_counts(ctx)
+    assert counts["students"] == 1
+    assert counts["enrollments"] == 0
+
+
+@pytest.mark.anyio
+async def test_same_batch_case_ambiguity_keeps_parser_error_code(org):
+    ctx = org
+    year_id = await seed_academic_year(ctx.factory)
+    previewed = await preview(
+        ctx,
+        mode="student_only",
+        academic_year_id=year_id,
+        content=student_csv(("C001", "甲"), ("c001", "乙")),
+    )
+    rows = await load_rows(ctx, previewed["batch_id"])
+    assert [error_codes(row) for row in rows] == [
+        ["student_code_case_ambiguous"],
+        ["student_code_case_ambiguous"],
+    ]
+    assert previewed["can_confirm"] is False
+
+
+@pytest.mark.anyio
 async def test_preview_truncates_issue_lists_but_keeps_every_frozen_row(org):
     ctx = org
     year_id = await seed_academic_year(ctx.factory)

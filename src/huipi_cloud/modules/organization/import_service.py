@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -73,6 +73,7 @@ ADMINISTRATIVE_CLASS_INACTIVE = "administrative_class_inactive"
 VALID_FROM_OUTSIDE_ACADEMIC_YEAR = "valid_from_outside_academic_year"
 STUDENT_NAME_MISMATCH = "student_name_mismatch"
 STUDENT_CODE_NOT_FOUND = "student_code_not_found"
+STUDENT_CODE_CASE_AMBIGUOUS_EXISTING = "student_code_case_ambiguous_existing"
 STUDENT_INACTIVE = "student_inactive"
 ENROLLMENT_OVERLAP = "enrollment_overlap"
 ENROLLMENT_CONFLICT_REQUIRES_TRANSFER = "enrollment_conflict_requires_transfer"
@@ -97,6 +98,7 @@ def _evaluate_row(
     academic_year: AcademicYear,
     classes: dict[str, AdministrativeClass],
     students: dict[str, Student],
+    casefold_students: dict[str, Student],
 ) -> None:
     if mode in ENROLLMENT_MODES:
         class_row = classes.get(row.class_code) if row.class_code else None
@@ -118,6 +120,18 @@ def _evaluate_row(
         if row.normalized_student_code is not None
         else None
     )
+    if student is None and row.normalized_student_code is not None:
+        # A pre-existing student whose code differs only by letter case is most likely
+        # the same person, but guessing either identity is unsafe. Never create a second
+        # identity and never silently reuse/merge the existing one; block the row for a
+        # human decision in every mode.
+        if casefold_students.get(row.normalized_student_code.casefold()) is not None:
+            row.add_error(
+                "student_code",
+                STUDENT_CODE_CASE_AMBIGUOUS_EXISTING,
+                "学号与已有学生仅大小写不同，需人工确认",
+            )
+            return
     if mode == "enrollment_only":
         if student is None:
             row.add_error("student_code", STUDENT_CODE_NOT_FOUND, "学号对应的学生不存在")
@@ -300,6 +314,7 @@ async def _evaluate_rows(
         if row.normalized_student_code is not None
     }
     students: dict[str, Student] = {}
+    casefold_students: dict[str, Student] = {}
     if student_codes:
         students = {
             student.school_student_code: student
@@ -307,9 +322,22 @@ async def _evaluate_rows(
                 select(Student).where(Student.school_student_code.in_(student_codes))
             )
         }
+        # Codes are restricted to ASCII by CODE_PATTERN, so SQL lower() and Python
+        # casefold() agree. One batched query, no per-row lookups.
+        casefold_codes = {code.casefold() for code in student_codes}
+        casefold_students = {
+            student.school_student_code.casefold(): student
+            for student in await session.scalars(
+                select(Student).where(
+                    func.lower(Student.school_student_code).in_(casefold_codes)
+                )
+            )
+        }
 
     for row in candidates:
-        _evaluate_row(row, mode, academic_year, classes, students)
+        _evaluate_row(
+            row, mode, academic_year, classes, students, casefold_students
+        )
     await _evaluate_enrollment_rows(session, mode, rows, classes, students)
     await _mark_duplicate_name_warnings(session, mode, rows)
     for row in rows:
@@ -679,6 +707,7 @@ __all__ = [
     "PREVIEW_ACTION",
     "PREVIEW_PERMISSION",
     "PREVIEW_STALE",
+    "STUDENT_CODE_CASE_AMBIGUOUS_EXISTING",
     "STUDENT_CODE_NOT_FOUND",
     "STUDENT_INACTIVE",
     "STUDENT_NAME_MISMATCH",

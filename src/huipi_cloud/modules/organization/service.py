@@ -7,6 +7,7 @@ teaching relation and a class scope first.
 """
 
 import unicodedata
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import and_, exists, func, or_, select
@@ -482,11 +483,15 @@ async def transfer_student(
         )
         if target is None or target.status != "active":
             raise AccessError("administrative_class_unavailable", 409)
-        current = await session.scalar(
+        # Operate on the open-ended tail of the enrollment chain, not only on the row in
+        # force today: a future-dated transfer already scheduled must not be re-dated
+        # (identity columns and valid_to are append-once), while a later transfer can be
+        # appended after it.
+        tail = await session.scalar(
             select(ClassEnrollment)
             .where(
                 ClassEnrollment.student_id == student.id,
-                current_enrollment(),
+                ClassEnrollment.valid_to.is_(None),
             )
             .order_by(
                 ClassEnrollment.valid_from.desc(), ClassEnrollment.created_at.desc()
@@ -495,12 +500,14 @@ async def transfer_student(
             .with_for_update()
         )
         from_class_id: UUID | None = None
-        if current is not None:
-            if current.administrative_class_id == payload.to_administrative_class_id:
+        if tail is not None:
+            if tail.administrative_class_id == payload.to_administrative_class_id:
                 raise AccessError("student_already_in_class", 409)
-            if payload.effective_from <= current.valid_from:
-                raise AccessError("transfer_effective_from_invalid", 409)
-            current.valid_to = payload.effective_from
+            if payload.effective_from <= tail.valid_from:
+                if tail.valid_from <= datetime.now(UTC).date():
+                    raise AccessError("transfer_effective_from_invalid", 409)
+                raise AccessError("enrollment_future_transfer_locked", 409)
+            tail.valid_to = payload.effective_from
             try:
                 await session.flush()
             except IntegrityError as error:
@@ -508,7 +515,7 @@ async def transfer_student(
                     error,
                     {"class_enrollment_history_immutable": "enrollment_overlap"},
                 ) from None
-            from_class_id = current.administrative_class_id
+            from_class_id = tail.administrative_class_id
         overlap = await session.scalar(
             select(ClassEnrollment.id).where(
                 ClassEnrollment.student_id == student.id,

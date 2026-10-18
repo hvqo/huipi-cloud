@@ -285,6 +285,14 @@ def upgrade():
         ),
     )
 
+    # Pre-seed the installation scope so organization read authorization does not need a
+    # write (INSERT ... ON CONFLICT) inside every GET request transaction.
+    op.execute(
+        "INSERT INTO security_scopes (id, kind, installation_id) VALUES ("
+        "'11111111-b11a-4000-8000-000000000001'::uuid, 'installation', 1) "
+        "ON CONFLICT DO NOTHING"
+    )
+
     # B-1.1a audit follow-up: at most one active Grant per user/role/scope. Operators must
     # resolve existing duplicates before upgrading; the API maps a duplicate to 409.
     duplicates = op.get_bind().scalar(

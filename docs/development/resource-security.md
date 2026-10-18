@@ -42,7 +42,15 @@ audit --token-stdin
 
 迁移 `b11b0a7c4e21` 需要 PostgreSQL `btree_gist` 扩展（`CREATE EXTENSION IF NOT EXISTS btree_gist`；由迁移以表所有者身份创建）。升级前若数据库已存在同一 User/RoleVersion/Scope 的多条有效 Grant，迁移会以 `security_grant_duplicates_require_cleanup` 拒绝，须先按审计人工清理。
 
-B-1.1b 起 `bootstrap` 授予 `organization_operator`（含组织动作的部署安全操作员），旧 `security_operator` 角色版本保留但不再由 bootstrap 授予。已初始化的旧部署要使用组织能力，必须由受控运维显式为指定用户补授 `organization_operator` 或更窄的组织角色；不要恢复 `security_operator`/旧管理员的全局考试访问来“解决”权限缺失。
+B-1.1b 起 `bootstrap` 授予 `organization_operator`（B-1.1a 三个安全动作 + 四个组织动作的部署根角色；**不是**名册管理员角色），旧 `security_operator` 角色版本保留但不再由 bootstrap 授予。日常组织维护应委派 `organization_manager` / `student_importer` 等窄角色；不要恢复 `security_operator`/旧管理员的全局考试访问来“解决”权限缺失。
+
+已初始化旧部署的受控升级步骤（本仓库当前没有生产部署；`deployment_bootstrap` 只允许一次，且旧 `security_operator` 无法满足单 Grant 委派规则）：
+
+1. 由持有数据库凭据的受控运维发起变更审批，记录审批编号与目标用户 UUID；
+2. 在同一部署变更事务中直接插入 `security_grants`（`user_id`、`role_version_id='11111111-b11b-4000-8000-000000000001'`、`scope_id='11111111-b11a-4000-8000-000000000001'`），并由运维写部署变更记录/补偿审计；这是文档已声明的“数据库所有者直接 INSERT 是可信运维能力”；
+3. 不删除、不改写既有 `bootstrap` 审计，不给旧管理员补旧全局考试访问；受审计的一次性升级命令属于后续切片，当前不存在。
+
+迁移升级后 `installation` Scope 已预置，组织读授权是纯 SELECT，不再在 GET 请求事务中写入授权表。`btree_gist` 扩展由升级创建，降级不会删除（可能被其他对象使用）。
 
 受控组织 CLI 示例（Token 必须从 stdin 管道输入，不写进 argv/历史）：
 

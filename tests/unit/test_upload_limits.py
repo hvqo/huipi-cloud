@@ -49,3 +49,43 @@ async def test_upload_request_limit_rejects_stream_without_content_length() -> N
 
     assert response.status_code == 413
     assert response.json() == {"detail": "文件超过大小限制"}
+
+
+@pytest.mark.anyio
+async def test_student_import_upload_uses_its_own_smaller_pre_limit() -> None:
+    application = FastAPI()
+
+    @application.exception_handler(UploadTooLargeError)
+    async def handle_upload_too_large(
+        _request: Request,
+        error: UploadTooLargeError,
+    ) -> JSONResponse:
+        return JSONResponse(status_code=413, content={"detail": str(error)})
+
+    @application.post("/api/v1/organization/student-imports")
+    async def receive_import(request: Request) -> Response:
+        return Response(content=str(len(await request.body())))
+
+    limited_application = UploadRequestLimitMiddleware(
+        application,
+        max_upload_size_bytes=64,
+        api_v1_prefix="/api/v1",
+        multipart_overhead_bytes=4,
+        student_import_max_bytes=8,
+    )
+    transport = httpx.ASGITransport(app=limited_application)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        too_large = await client.post(
+            "/api/v1/organization/student-imports",
+            content=OversizedChunkStream(),
+            headers={"Content-Type": "multipart/form-data; boundary=test"},
+        )
+        accepted = await client.post(
+            "/api/v1/organization/student-imports",
+            content=b"12345678",
+            headers={"Content-Type": "multipart/form-data; boundary=test"},
+        )
+
+    assert too_large.status_code == 413
+    assert accepted.status_code == 200
+    assert accepted.text == "8"

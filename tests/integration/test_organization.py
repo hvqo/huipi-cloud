@@ -10,7 +10,6 @@ All data is synthetic. The tests target the dedicated ``*_test`` database select
 """
 
 import asyncio
-import inspect
 import json
 import time
 from datetime import UTC, date, datetime, timedelta
@@ -23,7 +22,7 @@ import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
 from pydantic import ValidationError
 from sqlalchemy import delete, event, func, insert, select, text, update
-from sqlalchemy.exc import IntegrityError, OperationalError
+from sqlalchemy.exc import DBAPIError, IntegrityError, OperationalError
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from huipi_cloud.core.config import Settings
@@ -43,6 +42,8 @@ from huipi_cloud.modules.organization.models import (
     GradeCohort,
     OrganizationOperation,
     Student,
+    StudentImportBatch,
+    StudentImportRow,
     Subject,
 )
 from huipi_cloud.modules.organization.schemas import (
@@ -65,15 +66,6 @@ ORGANIZATION_TABLES = (
     "academic_terms, academic_years"
 )
 ORG_STUDENTS = "/api/v1/organization/students"
-
-
-def _is_stub(function) -> bool:
-    return "NotImplementedError" in inspect.getsource(function)
-
-
-STUDENT_IMPORT_ROUTES_ARE_STUB = _is_stub(import_service.list_student_imports) or _is_stub(
-    import_service.get_student_import
-)
 
 
 # --------------------------------------------------------------------------------------
@@ -1046,10 +1038,6 @@ async def test_pagination_limits_sorting_and_unknown_resources(org_api):
     assert unknown_student.json() == {"detail": "resource_not_found_or_forbidden"}
 
 
-@pytest.mark.skipif(
-    STUDENT_IMPORT_ROUTES_ARE_STUB,
-    reason="student import service still owned/in-flight by the import workstream",
-)
 @pytest.mark.anyio
 async def test_student_import_history_empty_page_and_unknown_batch(org_api):
     ctx = org_api
@@ -1323,3 +1311,643 @@ async def test_legacy_assignment_paths_work_and_protected_data_stays_hidden(org_
         )
         == 1
     )
+
+
+# --------------------------------------------------------------------------------------
+# 9. Follow-up coverage (P2-5/P2-6): transfer-chain tail semantics, trigger guardrails,
+#    import confirmation concurrency, audit privacy and read-only endpoint filters.
+# --------------------------------------------------------------------------------------
+
+IMPORT_YEAR_START = date(2025, 9, 1)
+IMPORT_YEAR_END = date(2026, 7, 31)
+STUDENT_HEADER = "student_code,name"
+FULL_HEADER = "student_code,name,class_code,valid_from"
+
+
+def csv_document(header: str, rows: list[tuple[str, ...]]) -> bytes:
+    lines = [header, *(",".join(cells) for cells in rows)]
+    return ("\n".join(lines) + "\n").encode()
+
+
+def student_csv(*rows: tuple[str, ...]) -> bytes:
+    return csv_document(STUDENT_HEADER, list(rows))
+
+
+def full_csv(*rows: tuple[str, ...]) -> bytes:
+    return csv_document(FULL_HEADER, list(rows))
+
+
+def assert_page_envelope(page: dict) -> None:
+    assert set(page) == {"records", "limit", "offset", "has_next", "next_offset"}
+    assert page["has_next"] is (page["next_offset"] is not None)
+
+
+async def seed_import_calendar(ctx):
+    async with ctx.factory() as session, session.begin():
+        year = AcademicYear(
+            code="AY-IMPORT",
+            display_name="合成导入学年",
+            start_date=IMPORT_YEAR_START,
+            end_date=IMPORT_YEAR_END,
+            status="active",
+        )
+        cohort = GradeCohort(code="GC-IMPORT", display_name="合成导入届别", intake_year=2025)
+        session.add_all([year, cohort])
+        await session.flush()
+        classes = {}
+        for code in ("G101", "G102"):
+            row = AdministrativeClass(
+                grade_cohort_id=cohort.id, code=code, display_name="合成班" + code
+            )
+            session.add(row)
+            await session.flush()
+            classes[code] = row.id
+        return {"year_id": year.id, "cohort_id": cohort.id, "classes": classes}
+
+
+async def preview_import(
+    ctx, *, mode, academic_year_id, content, who: str = "importer", request_id=None
+):
+    async with ctx.factory() as session:
+        return await import_service.preview_student_import(
+            session,
+            ctx.principal(who),
+            request_id or uuid4(),
+            mode=mode,
+            academic_year_id=academic_year_id,
+            filename="synthetic-roster.csv",
+            content=content,
+        )
+
+
+async def confirm_import(ctx, batch_id, *, who: str = "importer", request_id=None):
+    async with ctx.factory() as session:
+        return await import_service.confirm_student_import(
+            session,
+            ctx.principal(who),
+            request_id or uuid4(),
+            batch_id=UUID(str(batch_id)),
+            expected_input_sha256=None,
+        )
+
+
+async def expect_dbapi_error(ctx, statement) -> DBAPIError:
+    async with ctx.factory() as session:
+        with pytest.raises(DBAPIError) as caught:
+            await session.execute(statement)
+        await session.rollback()
+    return caught.value
+
+
+def db_error_text(error: DBAPIError) -> str:
+    return str(getattr(error, "orig", error))
+
+
+async def import_row_ids(ctx, batch_id) -> list[UUID]:
+    return await scalars(
+        ctx,
+        select(StudentImportRow.id)
+        .where(StudentImportRow.batch_id == UUID(str(batch_id)))
+        .order_by(StudentImportRow.row_number),
+    )
+
+
+@pytest.mark.anyio
+async def test_transfer_chain_tail_semantics_lock_future_and_append_later(org_api):
+    ctx = org_api
+    calendar = await seed_calendar(ctx)
+    g101 = await add_class(ctx, calendar["cohort_id"], "G101")
+    g102 = await add_class(ctx, calendar["cohort_id"], "G102")
+    g103 = await add_class(ctx, calendar["cohort_id"], "G103")
+    student = await add_student(ctx, "S001", "合成链式学生")
+    started = TODAY - timedelta(days=30)
+    future_start = TODAY + timedelta(days=10)
+    await add_enrollment(ctx, student, g101, started)
+
+    first = await call(
+        ctx,
+        org_service.transfer_student,
+        StudentTransferRequest(
+            request_id=uuid4(),
+            student_id=student,
+            to_administrative_class_id=g102,
+            effective_from=future_start,
+        ),
+    )
+    assert first["from_administrative_class_id"] == str(g101)
+    assert first["to_administrative_class_id"] == str(g102)
+    history = await scalars(
+        ctx,
+        select(ClassEnrollment)
+        .where(ClassEnrollment.student_id == student)
+        .order_by(ClassEnrollment.valid_from),
+    )
+    assert [(row.administrative_class_id, row.valid_from, row.valid_to) for row in history] == [
+        (g101, started, future_start),
+        (g102, future_start, None),
+    ]
+
+    # A future-dated tail is locked: it may not be re-dated by an earlier effective date.
+    locked = await expect_access_error(
+        ctx,
+        org_service.transfer_student,
+        StudentTransferRequest(
+            request_id=uuid4(),
+            student_id=student,
+            to_administrative_class_id=g103,
+            effective_from=TODAY + timedelta(days=5),
+        ),
+    )
+    assert locked.code == "enrollment_future_transfer_locked"
+    assert locked.status_code == 409
+    assert await count_rows(ctx, ClassEnrollment) == 2
+
+    # A later effective date appends after the future tail and closes it exactly once.
+    later_start = TODAY + timedelta(days=20)
+    later = await call(
+        ctx,
+        org_service.transfer_student,
+        StudentTransferRequest(
+            request_id=uuid4(),
+            student_id=student,
+            to_administrative_class_id=g103,
+            effective_from=later_start,
+        ),
+    )
+    assert later["from_administrative_class_id"] == str(g102)
+    history = await scalars(
+        ctx,
+        select(ClassEnrollment)
+        .where(ClassEnrollment.student_id == student)
+        .order_by(ClassEnrollment.valid_from),
+    )
+    assert len(history) == 3
+    assert [(row.administrative_class_id, row.valid_to) for row in history] == [
+        (g101, future_start),
+        (g102, later_start),
+        (g103, None),
+    ]
+    assert history[1].valid_from == future_start
+    assert history[2].valid_from == later_start
+    # Exactly one current (in-force today) enrollment; the tail is the open-ended row.
+    in_force = await scalars(
+        ctx,
+        select(ClassEnrollment).where(
+            ClassEnrollment.student_id == student, org_service.current_enrollment()
+        ),
+    )
+    assert [row.administrative_class_id for row in in_force] == [g101]
+
+    # Same homeroom as the tail is rejected with the stable state-conflict code.
+    same_class = await expect_access_error(
+        ctx,
+        org_service.transfer_student,
+        StudentTransferRequest(
+            request_id=uuid4(),
+            student_id=student,
+            to_administrative_class_id=g103,
+            effective_from=TODAY + timedelta(days=30),
+        ),
+    )
+    assert same_class.code == "student_already_in_class"
+    assert same_class.status_code == 409
+
+    # An already-started tail cannot be re-dated at or before its own start date.
+    other = await add_student(ctx, "S002", "合成已开始学生")
+    await add_enrollment(ctx, other, g101, TODAY - timedelta(days=60))
+    invalid = await expect_access_error(
+        ctx,
+        org_service.transfer_student,
+        StudentTransferRequest(
+            request_id=uuid4(),
+            student_id=other,
+            to_administrative_class_id=g102,
+            effective_from=TODAY - timedelta(days=60),
+        ),
+    )
+    assert invalid.code == "transfer_effective_from_invalid"
+    assert invalid.status_code == 409
+    assert await count_rows(ctx, ClassEnrollment) == 4
+    assert (
+        await scalar(
+            ctx,
+            select(func.count())
+            .select_from(ClassEnrollment)
+            .where(ClassEnrollment.valid_to.is_(None)),
+        )
+        == 2
+    )
+
+
+@pytest.mark.anyio
+async def test_trigger_guards_reject_direct_dml_and_keep_history_append_only(org_api):
+    ctx = org_api
+    calendar = await seed_import_calendar(ctx)
+    preview = await preview_import(
+        ctx,
+        mode="student_only",
+        academic_year_id=calendar["year_id"],
+        content=student_csv(("S001", "张三")),
+    )
+    batch_id = UUID(preview["batch_id"])
+    row_id = (await import_row_ids(ctx, batch_id))[0]
+
+    row_update = await expect_dbapi_error(
+        ctx,
+        update(StudentImportRow.__table__)
+        .where(StudentImportRow.__table__.c.id == row_id)
+        .values(name="改名"),
+    )
+    assert "organization_record_immutable" in db_error_text(row_update)
+
+    batch_content_update = await expect_dbapi_error(
+        ctx,
+        update(StudentImportBatch.__table__)
+        .where(StudentImportBatch.__table__.c.id == batch_id)
+        .values(mode="enrollment_only"),
+    )
+    assert "student_import_batch_update_forbidden" in db_error_text(batch_content_update)
+
+    await confirm_import(ctx, batch_id)
+    confirmed_update = await expect_dbapi_error(
+        ctx,
+        update(StudentImportBatch.__table__)
+        .where(StudentImportBatch.__table__.c.id == batch_id)
+        .values(row_count=2),
+    )
+    assert "student_import_batch_immutable" in db_error_text(confirmed_update)
+    confirmed_delete = await expect_dbapi_error(
+        ctx,
+        delete(StudentImportBatch.__table__).where(StudentImportBatch.__table__.c.id == batch_id),
+    )
+    assert "student_import_batch_delete_forbidden" in db_error_text(confirmed_delete)
+
+    # Homeroom history: identity columns immutable, valid_to append-once, no DELETE.
+    class_a = await add_class(ctx, calendar["cohort_id"], "A1")
+    class_b = await add_class(ctx, calendar["cohort_id"], "B1")
+    student = await add_student(ctx, "S900", "合成归属生")
+    closed_id = await add_enrollment(
+        ctx,
+        student,
+        class_a,
+        TODAY - timedelta(days=60),
+        TODAY - timedelta(days=30),
+    )
+    open_id = await add_enrollment(ctx, student, class_b, TODAY - timedelta(days=30))
+    identity_update = await expect_dbapi_error(
+        ctx,
+        update(ClassEnrollment.__table__)
+        .where(ClassEnrollment.__table__.c.id == open_id)
+        .values(administrative_class_id=class_a),
+    )
+    assert "class_enrollment_history_immutable" in db_error_text(identity_update)
+    valid_to_update = await expect_dbapi_error(
+        ctx,
+        update(ClassEnrollment.__table__)
+        .where(ClassEnrollment.__table__.c.id == closed_id)
+        .values(valid_to=TODAY - timedelta(days=20)),
+    )
+    assert "class_enrollment_history_immutable" in db_error_text(valid_to_update)
+    enrollment_delete = await expect_dbapi_error(
+        ctx,
+        delete(ClassEnrollment.__table__).where(ClassEnrollment.__table__.c.id == closed_id),
+    )
+    assert "class_enrollment_delete_forbidden" in db_error_text(enrollment_delete)
+
+    # Organization audit is append-only as well.
+    operation_id = await scalar(ctx, select(OrganizationOperation.id).limit(1))
+    assert operation_id is not None
+    operation_update = await expect_dbapi_error(
+        ctx,
+        update(OrganizationOperation.__table__)
+        .where(OrganizationOperation.__table__.c.id == operation_id)
+        .values(result={"tampered": True}),
+    )
+    assert "organization_record_immutable" in db_error_text(operation_update)
+    operation_delete = await expect_dbapi_error(
+        ctx,
+        delete(OrganizationOperation.__table__).where(
+            OrganizationOperation.__table__.c.id == operation_id
+        ),
+    )
+    assert "organization_record_immutable" in db_error_text(operation_delete)
+    assert await count_rows(ctx, OrganizationOperation) >= 2
+
+
+@pytest.mark.anyio
+async def test_concurrent_confirm_same_batch_has_one_winner(org_api):
+    ctx = org_api
+    calendar = await seed_import_calendar(ctx)
+    preview = await preview_import(
+        ctx,
+        mode="student_only",
+        academic_year_id=calendar["year_id"],
+        content=student_csv(("S001", "张三")),
+    )
+    batch_id = UUID(preview["batch_id"])
+    barrier = asyncio.Barrier(2)
+
+    async def confirm_once():
+        async with ctx.factory() as session:
+            await barrier.wait()
+            return await import_service.confirm_student_import(
+                session,
+                ctx.principal("importer"),
+                uuid4(),
+                batch_id=batch_id,
+                expected_input_sha256=None,
+            )
+
+    results = await asyncio.gather(confirm_once(), confirm_once(), return_exceptions=True)
+    wins = [result for result in results if isinstance(result, dict)]
+    failures = [result for result in results if isinstance(result, BaseException)]
+    assert len(wins) == 1, results
+    assert len(failures) == 1, results
+    failure = failures[0]
+    assert isinstance(failure, AccessError), failure
+    assert failure.status_code == 409
+    assert failure.code == "student_import_already_confirmed"
+
+    assert (
+        await scalar(
+            ctx,
+            select(func.count()).select_from(Student).where(Student.school_student_code == "S001"),
+        )
+        == 1
+    )
+    assert await count_rows(ctx, ClassEnrollment) == 0
+    assert (
+        await scalar(
+            ctx,
+            select(StudentImportBatch.status).where(StudentImportBatch.id == batch_id),
+        )
+        == "confirmed"
+    )
+    assert (
+        await scalar(
+            ctx,
+            select(func.count())
+            .select_from(OrganizationOperation)
+            .where(OrganizationOperation.action == "student_import.confirmed"),
+        )
+        == 1
+    )
+
+
+@pytest.mark.anyio
+async def test_concurrent_confirm_two_batches_same_student_has_one_winner(org_api):
+    ctx = org_api
+    calendar = await seed_import_calendar(ctx)
+    content = student_csv(("S001", "张三"))
+    first_batch = UUID(
+        (
+            await preview_import(
+                ctx,
+                mode="student_only",
+                academic_year_id=calendar["year_id"],
+                content=content,
+            )
+        )["batch_id"]
+    )
+    second_batch = UUID(
+        (
+            await preview_import(
+                ctx,
+                mode="student_only",
+                academic_year_id=calendar["year_id"],
+                content=content,
+            )
+        )["batch_id"]
+    )
+    barrier = asyncio.Barrier(2)
+
+    async def confirm(batch_id: UUID):
+        async with ctx.factory() as session:
+            await barrier.wait()
+            return await import_service.confirm_student_import(
+                session,
+                ctx.principal("importer"),
+                uuid4(),
+                batch_id=batch_id,
+                expected_input_sha256=None,
+            )
+
+    results = await asyncio.gather(
+        confirm(first_batch), confirm(second_batch), return_exceptions=True
+    )
+    wins = [result for result in results if isinstance(result, dict)]
+    failures = [result for result in results if isinstance(result, BaseException)]
+    assert len(wins) == 1, results
+    assert len(failures) == 1, results
+    failure = failures[0]
+    assert isinstance(failure, AccessError), failure
+    assert failure.status_code == 409
+    assert failure.code in {
+        "student_import_preview_stale",
+        "student_import_conflict",
+        "student_import_already_confirmed",
+    }
+    assert (
+        await scalar(
+            ctx,
+            select(func.count()).select_from(Student).where(Student.school_student_code == "S001"),
+        )
+        == 1
+    )
+    assert await count_rows(ctx, ClassEnrollment) == 0
+    confirmed_batches = await scalars(
+        ctx,
+        select(StudentImportBatch.id).where(StudentImportBatch.status == "confirmed"),
+    )
+    assert len(confirmed_batches) == 1
+    assert (
+        await scalar(
+            ctx,
+            select(func.count())
+            .select_from(OrganizationOperation)
+            .where(OrganizationOperation.action == "student_import.confirmed"),
+        )
+        == 1
+    )
+
+
+@pytest.mark.anyio
+async def test_organization_audit_results_contain_no_student_payload(org_api):
+    ctx = org_api
+    calendar = await seed_import_calendar(ctx)
+    preview = await preview_import(
+        ctx,
+        mode="student_with_enrollment",
+        academic_year_id=calendar["year_id"],
+        content=full_csv(("S001", "张三", "G101", IMPORT_YEAR_START.isoformat())),
+    )
+    assert preview["can_confirm"] is True
+    confirm = await confirm_import(ctx, preview["batch_id"])
+    assert confirm["created_students"] == 1
+    assert confirm["created_enrollments"] == 1
+    student_id = await scalar(ctx, select(Student.id).where(Student.school_student_code == "S001"))
+    transfer = await call(
+        ctx,
+        org_service.transfer_student,
+        StudentTransferRequest(
+            request_id=uuid4(),
+            student_id=student_id,
+            to_administrative_class_id=calendar["classes"]["G102"],
+            effective_from=TODAY - timedelta(days=5),
+        ),
+    )
+    assert transfer["student_id"] == str(student_id)
+
+    operations = await scalars(
+        ctx,
+        select(OrganizationOperation).order_by(OrganizationOperation.created_at),
+    )
+    assert {operation.action for operation in operations} == {
+        "student_import.previewed",
+        "student_import.confirmed",
+        "student.transferred",
+    }
+    forbidden = ("张三", "S001", "student_code,name", IMPORT_YEAR_START.isoformat())
+    for operation in operations:
+        result_text = json.dumps(operation.result, ensure_ascii=False)
+        for token in forbidden:
+            assert token not in result_text, (operation.action, token, result_text)
+        assert token not in operation.payload_sha256
+    # The payload really was processed (privacy assertion is not vacuous).
+    assert (
+        await scalar(
+            ctx,
+            select(func.count()).select_from(Student).where(Student.name == "张三"),
+        )
+        == 1
+    )
+
+
+@pytest.mark.anyio
+async def test_readonly_organization_endpoints_and_student_filters(org_api):
+    ctx = org_api
+    async with ctx.factory() as session, session.begin():
+        year = AcademicYear(
+            code="AY-READ",
+            display_name="合成只读学年",
+            start_date=TODAY - timedelta(days=90),
+            end_date=TODAY + timedelta(days=270),
+            status="active",
+        )
+        cohort = GradeCohort(
+            code="GC-READ", display_name="合成只读届别", intake_year=TODAY.year - 1
+        )
+        subject = Subject(code="MATH", display_name="数学")
+        session.add_all([year, cohort, subject])
+        await session.flush()
+        term = AcademicTerm(
+            academic_year_id=year.id,
+            term_no=1,
+            code="T1",
+            start_date=TODAY - timedelta(days=90),
+            end_date=TODAY - timedelta(days=1),
+        )
+        class_a = AdministrativeClass(
+            grade_cohort_id=cohort.id, code="G101", display_name="合成班G101"
+        )
+        class_b = AdministrativeClass(
+            grade_cohort_id=cohort.id, code="G102", display_name="合成班G102"
+        )
+        session.add_all([term, class_a, class_b])
+        await session.flush()
+        s001 = Student(school_student_code="S001", name="张三", is_active=True)
+        s002 = Student(school_student_code="S002", name="李四", is_active=True)
+        s003 = Student(school_student_code="S003", name="王五", is_active=False)
+        session.add_all([s001, s002, s003])
+        await session.flush()
+        session.add_all(
+            [
+                ClassEnrollment(
+                    student_id=s001.id,
+                    administrative_class_id=class_a.id,
+                    valid_from=TODAY - timedelta(days=30),
+                    source="manual",
+                ),
+                ClassEnrollment(
+                    student_id=s002.id,
+                    administrative_class_id=class_b.id,
+                    valid_from=TODAY - timedelta(days=30),
+                    source="manual",
+                ),
+            ]
+        )
+        ids = {
+            "year": year.id,
+            "term": term.id,
+            "cohort": cohort.id,
+            "subject": subject.id,
+            "class_a": class_a.id,
+            "class_b": class_b.id,
+        }
+
+    for path, params, expected_ids in [
+        ("/api/v1/organization/academic-years", None, [ids["year"]]),
+        (
+            "/api/v1/organization/academic-terms",
+            {"academic_year_id": str(ids["year"])},
+            [ids["term"]],
+        ),
+        ("/api/v1/organization/grade-cohorts", None, [ids["cohort"]]),
+        ("/api/v1/organization/subjects", None, [ids["subject"]]),
+        ("/api/v1/organization/classes", None, [ids["class_a"], ids["class_b"]]),
+    ]:
+        response = await ctx.client.get(path, headers=ctx.headers("manager"), params=params)
+        assert response.status_code == 200, (path, response.text)
+        assert "no-store" in response.headers["cache-control"]
+        page = response.json()
+        assert_page_envelope(page)
+        record_ids = {str(record.get("id", record.get("batch_id"))) for record in page["records"]}
+        assert {str(expected_id) for expected_id in expected_ids} <= record_ids, (
+            path,
+            record_ids,
+        )
+
+    # students: class filter uses the in-force homeroom relation.
+    by_class = await ctx.client.get(
+        ORG_STUDENTS,
+        headers=ctx.headers("manager"),
+        params={"class_id": str(ids["class_a"])},
+    )
+    assert by_class.status_code == 200
+    assert [row["school_student_code"] for row in by_class.json()["records"]] == ["S001"]
+
+    # students: query filter runs before pagination and supports names/codes.
+    first_query_page = await ctx.client.get(
+        ORG_STUDENTS,
+        headers=ctx.headers("manager"),
+        params={"query": "S00", "limit": 1, "offset": 0},
+    )
+    assert first_query_page.status_code == 200
+    page = first_query_page.json()
+    assert_page_envelope(page)
+    assert [row["school_student_code"] for row in page["records"]] == ["S001"]
+    assert page["has_next"] is True and page["next_offset"] == 1
+    second_query_page = await ctx.client.get(
+        ORG_STUDENTS,
+        headers=ctx.headers("manager"),
+        params={"query": "S00", "limit": 1, "offset": 1},
+    )
+    assert [row["school_student_code"] for row in second_query_page.json()["records"]] == ["S002"]
+    assert second_query_page.json()["has_next"] is False
+    assert second_query_page.json()["next_offset"] is None
+    by_name = await ctx.client.get(
+        ORG_STUDENTS, headers=ctx.headers("manager"), params={"query": "李"}
+    )
+    assert [row["school_student_code"] for row in by_name.json()["records"]] == ["S002"]
+
+    # students: active_only defaults to true and can be disabled explicitly.
+    default_active = await ctx.client.get(
+        ORG_STUDENTS, headers=ctx.headers("manager"), params={"query": "S003"}
+    )
+    assert default_active.json()["records"] == []
+    include_inactive = await ctx.client.get(
+        ORG_STUDENTS,
+        headers=ctx.headers("manager"),
+        params={"query": "S003", "active_only": "false"},
+    )
+    assert [row["school_student_code"] for row in include_inactive.json()["records"]] == ["S003"]

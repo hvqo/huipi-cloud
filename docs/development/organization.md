@@ -1,6 +1,6 @@
 # 单校组织、学生身份与两阶段名册导入（B-1.1b）
 
-本文说明 B-1.1b「可信组织、学年学期与学生导入」切片的真实实现范围、数据库约束、HTTP/CLI 合同、安装级权限边界与后续缺口。证据来自当前分支 `feat/b11b-school-organization` 的源码、迁移 [b11b0a7c4e21](../../migrations/versions/b11b0a7c4e21_organization_students.py)、由 `app.openapi()` 生成的合同与本切片测试定义；**没有连接或升级开发数据库，没有运行 pytest 集成测试，没有调用模型**。
+本文说明 B-1.1b「可信组织、学年学期与学生导入」切片的真实实现范围、数据库约束、HTTP/CLI 合同、安装级权限边界与后续缺口。证据来自当前分支 `feat/b11b-school-organization` 的源码、迁移 [b11b0a7c4e21](../../migrations/versions/b11b0a7c4e21_organization_students.py)、由 `app.openapi()` 生成的合同、真实 PostgreSQL 集成测试与本切片统一质量门禁；**没有升级用户开发数据库（`DATABASE_URL` 指向的库），没有调用模型**。测试执行结果见[第 9 节](#9-验证证据与测试状态)。
 
 ## 0. 状态标签与证据边界
 
@@ -36,8 +36,8 @@
 | 旧 `is_admin`/成员关系/客户端角色（明确无组织授权，无旁路） | **[已实现]**（= 拒绝语义已实现并验证） | `ORGANIZATION_POLICIES` 与 `resource_security.require_permission`；无 legacy 过滤图入口 |
 | 组织维护受控 CLI | **[已实现]** | `python -m huipi_cloud.modules.organization` |
 | OpenAPI/TypeScript 合同同步（11 个新操作，无既有操作漂移） | **[已测试]** | `scripts/export_frontend_openapi.py`、`npm run api:generate`、`npm run typecheck`、`npm run lint`（本轮执行通过） |
-| 导入子系统测试（单元 + 真实 PostgreSQL 集成） | **[已测试]**（单元 63 passed、真实 PG 集成 19 passed，专用测试库；最终以统一验收为准） | `tests/unit/test_organization_csv.py`、`tests/integration/test_student_import.py` |
-| 组织/权限/迁移真实 PostgreSQL 测试 | **[已测试]**（领域单测 23 passed；真实 PG 组织/授权 16 passed；独立迁移往返 1 passed；全量后端 961 passed/16 skipped） | `tests/integration/test_organization*.py`、`tests/unit/test_organization_domain.py` |
+| 导入子系统测试（单元 + 真实 PostgreSQL 集成） | **[已测试]**（单元 63 passed、真实 PG 集成 23 passed，专用测试库；含于最终全量门禁） | `tests/unit/test_organization_csv.py`、`tests/integration/test_student_import.py` |
+| 组织/权限/迁移真实 PostgreSQL 测试 | **[已测试]**（领域单测 23 passed；真实 PG 组织/授权 22 passed；独立迁移往返 1 passed；全量后端 972 passed/16 skipped） | `tests/integration/test_organization*.py`、`tests/unit/test_organization_domain.py` |
 | 教学班、任教关系、按年级/班级的组织 Scope | **[暂未实现]** | 见 [4.6](#46-普通任课教师查看本班名单暂未实现) 与 [8](#8-明确不包含范围) |
 | 考试场次、试卷版本、参试名单、扫描与阅卷 | **[暂未实现]** | 见 [7](#7-与后续切片的关系b-12-前置缺口) |
 | 组织/名册前端页面 | **[暂未实现]** | 本切片不改 Vue 页面 |
@@ -141,7 +141,7 @@
 
 | 模式 | 必需且仅允许的列 | 语义 |
 |---|---|---|
-| `student_only` | `student_code`、`name` | 只建立/更新学生稳定身份，不写班级归属。 |
+| `student_only` | `student_code`、`name` | 建立/匹配学生稳定身份，不写班级归属；已有学生姓名规范化不一致时整行报错，**不自动改名/合并**。 |
 | `enrollment_only` | `student_code`、`class_code`、`valid_from` | 为已存在学生建立行政班归属；学生必须已存在且启用。 |
 | `student_with_enrollment` | `student_code`、`name`、`class_code`、`valid_from` | 建立/匹配学生并同时建立归属。 |
 
@@ -165,9 +165,10 @@
 - `errors` / `warnings` 中每个条目结构固定为 `{row_number: int, field: str|null, code: str, message: str}`；`message` 是通用中文说明，**不包含学号/姓名原值**。
 - 行 `outcome`（确认后语义）稳定枚举：`create_student`、`create_student_and_enrollment`、`create_enrollment`、`enrollment_only_create`、`unchanged`；`error` 行的 `outcome` 在预检阶段置 `null`。
 - 解析层错误码（行级）：`student_code_required`、`student_code_invalid`（不满足 `^[0-9A-Za-z][0-9A-Za-z._-]{0,63}$`）、`name_required`、`name_invalid`（超长或含控制字符）、`class_code_required`、`class_code_invalid`、`valid_from_required`、`valid_from_invalid`（必须是严格 ISO `YYYY-MM-DD`）、`row_field_count_invalid`、`duplicate_student_code_in_batch`、`student_code_case_ambiguous`。
-- 进数据库校验后可能出现的行级错误码：`class_code_not_found`、`administrative_class_inactive`、`valid_from_outside_academic_year`、`student_name_mismatch`、`student_code_not_found`、`student_inactive`、`enrollment_overlap`、`enrollment_conflict_requires_transfer`。
+- 进数据库校验后可能出现的行级错误码：`class_code_not_found`、`administrative_class_inactive`、`valid_from_outside_academic_year`、`student_name_mismatch`、`student_code_not_found`、`student_code_case_ambiguous_existing`、`student_inactive`、`enrollment_overlap`、`enrollment_conflict_requires_transfer`。
 - 唯一的 warning 码：`duplicate_name_existing`（存在同名不同学号的学生：允许共存，不阻断，不自动合并）。
 - 同批次内学号完全相同 → 这些行 `duplicate_student_code_in_batch`；`casefold` 后相同的多个学号写法 → `student_code_case_ambiguous`。两类检测独立，同一行可能同时得到两类错误；任何不确定都不猜测身份。
+- **跨批学号仅大小写不同（数据库校验层）**：预检/确认评估时，若某行规范化学号在库中**没有精确匹配**、但 `casefold` 匹配存在（即与已有学生仅大小写不同），三种模式一律记为行级 error `student_code_case_ambiguous_existing`（field=`student_code`，message「学号与已有学生仅大小写不同，需人工确认」）：不自动合并、不沿用旧学生、不创建第二个身份；该行 `outcome=null`、`can_confirm=false`，确认时因冻结行已含 error 返回 409 `student_import_has_blocking_errors`，不写入学生/归属。精确大小写匹配仍按原逻辑（姓名规范化不一致 → `student_name_mismatch`，一致 → `unchanged` 等）；同批内仅大小写不同仍由解析层 `student_code_case_ambiguous` 负责，两个码不混用。实现为一次批量 `func.lower(Student.school_student_code) IN (...)` 查询（非逐行），不猜测身份。
 
 ### 3.5 预览响应与截断
 
@@ -215,6 +216,7 @@ Content-Type: application/json
 - 目标行政班仍存在且为 `active`；学生是否出现、姓名规范化后是否变化、学生是否被停用。
 - 归属冲突按**区间重叠**而非「当前生效」判定：导入归属视为半开区间 `[row.valid_from, +∞)`，与既有归属 `[e.valid_from, e.valid_to)` 相交即冲突（`e.valid_to IS NULL` 或 `e.valid_to > row.valid_from`）。因此**未来生效**的既有归属也算冲突：同班重叠 → `enrollment_overlap`，其它班（含未来区间）→ `enrollment_conflict_requires_transfer`；同一未来生效归属重复导入时，第二次预检结果为 `unchanged`，而不是确认阶段的数据库 409。
 - 该判定**不复用** `service.current_enrollment()`（后者只服务列表/转班的「当前」语义）；预检与确认共用导入专用的评估逻辑，PostgreSQL 排他约束只是并发写入的最后防线。
+- 冻结行中的跨批学号大小写歧义（`student_code_case_ambiguous_existing`，见 [3.4](#34-行状态错误结构与-outcome)）属于阻塞 error：确认在任何重算前返回 409 `student_import_has_blocking_errors`，不写入学生/归属；需人工按学校规则修正后重新预览。
 
 固定错误码：
 
@@ -248,7 +250,7 @@ Content-Type: application/json
 ### 3.10 当前实现与测试状态
 
 - 预览/确认/状态/历史四个 HTTP 操作与冻结错误码表已在 `src/huipi_cloud/modules/organization/import_service.py` 与 `csv_import.py` 落地；纯解析函数与 `MAX_FILE_BYTES/MAX_ROWS/MAX_PREVIEW_ENTRIES` 常量是共享合同。
-- 测试定义与执行：`tests/unit/test_organization_csv.py`（纯解析：模式/列/编码/上限/行级错误/outcome，单元 63 passed）与 `tests/integration/test_student_import.py`（真实 PostgreSQL：预览不污染正式表、确认幂等/409/预览后变化、审计失败回滚、COMMIT 未知恢复、真实 JWT 授权/撤权、未来归属重复导入，19 passed，专用测试库）。最终以本切片统一验收为准。
+- 测试定义与执行：`tests/unit/test_organization_csv.py`（纯解析：模式/列/编码/上限/行级错误/outcome，单元 63 passed）与 `tests/integration/test_student_import.py`（真实 PostgreSQL：预览不污染正式表、确认幂等/409/预览后变化、审计失败回滚、COMMIT 未知恢复、真实 JWT 授权/撤权、未来归属重复导入、跨批学号大小写歧义，23 passed，专用测试库；含于最终全量门禁）。
 
 ---
 
@@ -279,11 +281,13 @@ Content-Type: application/json
 
 | 角色版本 | UUID | 权限 |
 |---|---|---|
-| `organization_operator` | `11111111-b11b-4000-8000-000000000001` | `security.grants.manage` + 四个组织动作；部署 bootstrap 授予的根角色。 |
+| `organization_operator` | `11111111-b11b-4000-8000-000000000001` | `security.grants.manage`、`security.protected.create`、`security.classification.inspect` + 四个组织动作（共 7 项）；部署 bootstrap 授予的根角色。 |
 | `organization_manager` | `11111111-b11b-4000-8000-000000000002` | `organization.read` + `organization.manage`。 |
 | `student_importer` | `11111111-b11b-4000-8000-000000000003` | `organization.read` + `student.import.preview` + `student.import.confirm`。 |
 
-- B-1.1b 起 `deployment_bootstrap` 授予 `organization_operator`（而非 B-1.1a 的 `security_operator`），使「单 Grant 同时覆盖 manage 与拟委派动作/完整 Scope」的委派规则可用。已初始化过的旧部署必须由受控运维显式补授，不得恢复旧管理员捷径。
+- B-1.1b 起 `deployment_bootstrap` 授予 `organization_operator`（而非 B-1.1a 的 `security_operator`），使「单 Grant 同时覆盖 manage 与拟委派动作/完整 Scope」的委派规则可用。
+- **警告**：`organization_operator` 是部署根角色，不是名册管理员角色。授予该角色会同时带来 B-1.1a 的受保护载体创建与分类检查能力；日常组织维护应只授予 `organization_manager` / `student_importer` 等窄角色，不能把根角色当"组织只读/名册管理员"使用。
+- **已初始化旧部署的升级路径（P2-3）**：`deployment_bootstrap` 只允许一次，且 B-1.1a 的 `security_operator` 无法通过单 Grant 委派规则授予组织角色。若确实存在已 bootstrap 的 B-1.1a 部署（本仓库当前没有生产部署），由受控数据库运维在审批后直接插入 `security_grants` 行（该能力与 B-1.1a 文档声明的"数据库所有者直接 INSERT 是可信运维能力"一致），并同时写部署变更记录；**不得**删除/改写既有 bootstrap 审计或恢复旧管理员全局访问。受审计的一次性升级命令属于后续切片，当前不存在。
 - 角色版本封存后不可改权限；扩展必须新版本。授权固定绑定真实 User + RoleVersion + Scope；不能从 JWT role/is_admin 或旧成员关系自动映射。
 - 委派：同一个有效 Grant 必须同时覆盖 `security.grants.manage`、全部拟委派动作及完整目标 Scope；禁止自授；同一 User/RoleVersion/Scope 的活动 Grant 唯一，重复授予 409 `security_grant_already_active`；撤权为单 Grant 语义，撤权提交后新操作立即拒绝（不承诺取消在途文件流/事务）。
 - 每次请求与写事务都会重新读取当前启用用户与有效 Grant（SHARE 锁与撤权 UPDATE 排队），不使用跨请求授权缓存。
@@ -475,7 +479,7 @@ B-1.2 的准入条件、验收与回滚见[分切片路线](business-reconstruct
 | `npm run lint --prefix frontend` | 通过（`eslint .`）。 |
 | 文档相对链接检查 | 见 [9.3](#93-文档链接自检)。 |
 | `uv run ruff check .` | 通过。 |
-| `uv run pytest -q`（独立 `TEST_DATABASE_URL` 测试库） | **961 passed / 16 skipped**（含 B-1.1a/B-1.1b 全部回归；无失败）。 |
+| `uv run pytest -q`（独立 `TEST_DATABASE_URL` 测试库） | **972 passed / 16 skipped**（含 B-1.1a/B-1.1b 全部回归，无失败）。 |
 | 独立空库 `alembic upgrade head` + `alembic check` + `downgrade` + 再 `upgrade` | 通过；`alembic check` 无差异。 |
 | `uv run python scripts/check_identity_migration.py` | 通过（独立库 upgrade/downgrade/再 upgrade，历史行保留）。 |
 | `docker compose config --quiet`、`git diff --check` | 通过。 |
@@ -487,11 +491,11 @@ B-1.2 的准入条件、验收与回滚见[分切片路线](business-reconstruct
 |---|---|---|
 | `tests/unit/test_organization_domain.py` | 年级派生边界；`*Create` 严格 schema（禁止额外字段、日期正序、term_no/intake_year 边界）；四个组织动作仅安装级；旧 admin/新路由无法获得组织动作。 | **23 passed**（单元） |
 | `tests/unit/test_organization_csv.py` | 纯解析：三种模式列合同、UTF-8/BOM/非法编码、2 MiB/5000 行上限、行号/字段/错误码、outcome 与 warning。 | **63 passed**（单元） |
-| `tests/integration/test_organization.py` | 真实 PostgreSQL：GiST 排他约束、转班历史、同名不合并、学号唯一、分页/合同、JWT 授权/撤权/停用、旧 admin 无新权限、重复 Grant 409、COMMIT 未知。 | **16 passed**（真实 PG） |
+| `tests/integration/test_organization.py` | 真实 PostgreSQL：GiST 排他约束、转班链 tail 语义与未来排定锁定、历史保留、同名不合并、学号唯一、触发器负向直写、并发转班/并发确认、分页/合同、JWT 授权/撤权/停用、旧 admin 无新权限、重复 Grant 409、COMMIT 未知、审计无学生载荷。 | **22 passed**（真实 PG） |
 | `tests/integration/test_organization_migration.py` | 独立库 upgrade/check/downgrade/再 upgrade、破坏性降级拒绝、旧数据回归。 | **1 passed**（独立临时库） |
-| `tests/integration/test_student_import.py` | 预览不写正式表、确认幂等/409/预览后数据变化、审计同事务回滚、COMMIT 未知恢复、真实 JWT 授权/撤权、未来归属重复导入。 | **19 passed**（真实 PG 专用测试库） |
+| `tests/integration/test_student_import.py` | 预览不写正式表、确认幂等/409/预览后数据变化、审计同事务回滚、COMMIT 未知恢复、真实 JWT 授权/撤权、未来归属重复导入、跨批学号大小写歧义阻断（`student_code_case_ambiguous_existing`）。 | **23 passed**（真实 PG 专用测试库，P2-2 增量） |
 
-**状态说明**：以上结果来自本切片统一质量门禁：后端全量 `uv run pytest -q` 在独立真实 PostgreSQL 测试库 **961 passed / 16 skipped**，包含本表全部用例与 B-1.1a 安全回归；未用 Mock/SQLite 替代真实数据库结论。前端 typecheck/lint/Vitest/build 与 OpenAPI/TypeScript 合同漂移检查同样通过。
+**状态说明**：以上结果为最终统一质量门禁：后端全量 `uv run pytest -q` 在独立真实 PostgreSQL 测试库 **972 passed / 16 skipped**（无失败，含本表全部用例、P2-2 增量、并发确认、触发器直写防护、未来转班链与 B-1.1a 安全回归）。未用 Mock/SQLite 替代真实数据库结论。前端 `typecheck`/`lint`/Vitest 41 passed/`build` 通过；OpenAPI 重新导出与 `generated.ts` 再生成后文件哈希不变（无合同漂移）；独立空库 `alembic upgrade/downgrade/re-upgrade/check` 与 `check_identity_migration.py` 通过。
 
 ### 9.3 文档链接自检
 
@@ -504,6 +508,15 @@ B-1.2 的准入条件、验收与回滚见[分切片路线](business-reconstruct
 - 组织迁移的 `btree_gist` 扩展需要数据库所有者权限；部署前须确认目标库允许。
 
 ---
+
+### 9.5 已知限制与边界（不阻塞本切片交付）
+
+- **学号大小写策略**：学号按规范化后的大小写精确比较；同一批次内仅大小写不同会报 `student_code_case_ambiguous`，与已有学生仅大小写不同会报 `student_code_case_ambiguous_existing` 并整行拒绝（不自动合并、不新建第二身份）。系统不替学校决定大小写不敏感规则；建议学校统一下发学号大小写格式。
+- **未来排定转班不可改期**：`transfer_student` 操作未结束的归属链尾部；若已存在未来生效的转班，再提交不晚于其生效日的转班返回 409 `enrollment_future_transfer_locked`（不会覆盖或改写已排定事实）；晚于其生效日的历史转班可继续追加。撤销/改期未来转班未实现。
+- **上传前置限流**：名册上传路径同时受 ASGI 中间件请求体上限（`MAX_FILE_BYTES + 64KiB` multipart 开销）与解析服务 2 MiB/5000 行限制约束；超过请求体上限在 multipart 解析前拒绝。
+- **数据库触发器的职责范围**：批次确认、`valid_to` 只写一次等业务序列由应用服务保证；触发器负责防止 confirmed 后篡改、预检行不可变、归属历史身份列不可变。`academic_years` 日期目前没有应用更新路径，学年日期直接 DML 改写不在本切片约束范围内（学期写入时校验落在学年内）。
+- **迁移扩展残留**：`btree_gist` 由升级按需创建；降级不会删除该扩展（可能被其他对象使用），属预期行为。
+- **名册读取范围**：当前只有安装级 `organization.read`，没有按导入人或班级隔离；能读导入历史的主体是安装级组织管理员。
 
 ## 10. 需学校确认事项
 

@@ -34,6 +34,9 @@ from huipi_cloud.modules.canonical_documents.errors import (
     CanonicalPageNotFoundError,
 )
 from huipi_cloud.modules.identity.protocol import AccessError
+from huipi_cloud.modules.organization.import_service import (
+    MAX_FILE_BYTES as STUDENT_IMPORT_MAX_BYTES,
+)
 from huipi_cloud.modules.parsing.errors import ParsingResultNotReadyError
 from huipi_cloud.modules.submissions.errors import (
     InvalidUploadError,
@@ -57,6 +60,7 @@ app.add_middleware(
     UploadRequestLimitMiddleware,
     max_upload_size_bytes=settings.max_upload_size_bytes,
     api_v1_prefix=settings.api_v1_prefix,
+    student_import_max_bytes=STUDENT_IMPORT_MAX_BYTES,
 )
 logger = logging.getLogger(__name__)
 
