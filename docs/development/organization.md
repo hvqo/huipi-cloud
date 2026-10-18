@@ -37,7 +37,7 @@
 | 组织维护受控 CLI | **[已实现]** | `python -m huipi_cloud.modules.organization` |
 | OpenAPI/TypeScript 合同同步（11 个新操作，无既有操作漂移） | **[已测试]** | `scripts/export_frontend_openapi.py`、`npm run api:generate`、`npm run typecheck`、`npm run lint`（本轮执行通过） |
 | 导入子系统测试（单元 + 真实 PostgreSQL 集成） | **[已测试]**（单元 63 passed、真实 PG 集成 19 passed，专用测试库；最终以统一验收为准） | `tests/unit/test_organization_csv.py`、`tests/integration/test_student_import.py` |
-| 组织/权限/迁移真实 PostgreSQL 测试 | **[已实现]**（测试定义已编写，见 [9.2](#92-测试定义与执行状态)；执行结果待统一验收） | `tests/integration/test_organization*.py`、`tests/unit/test_organization_domain.py` |
+| 组织/权限/迁移真实 PostgreSQL 测试 | **[已测试]**（领域单测 23 passed；真实 PG 组织/授权 16 passed；独立迁移往返 1 passed；全量后端 961 passed/16 skipped） | `tests/integration/test_organization*.py`、`tests/unit/test_organization_domain.py` |
 | 教学班、任教关系、按年级/班级的组织 Scope | **[暂未实现]** | 见 [4.6](#46-普通任课教师查看本班名单暂未实现) 与 [8](#8-明确不包含范围) |
 | 考试场次、试卷版本、参试名单、扫描与阅卷 | **[暂未实现]** | 见 [7](#7-与后续切片的关系b-12-前置缺口) |
 | 组织/名册前端页面 | **[暂未实现]** | 本切片不改 Vue 页面 |
@@ -464,7 +464,7 @@ B-1.2 的准入条件、验收与回滚见[分切片路线](business-reconstruct
 
 ## 9. 验证证据与测试状态
 
-### 9.1 本轮实际执行的只读/生成检查（不升级数据库、不运行 pytest）
+### 9.1 本轮实际执行的生成与后端质量门禁（开发库未升级）
 
 | 检查 | 结果 |
 |---|---|
@@ -474,18 +474,24 @@ B-1.2 的准入条件、验收与回滚见[分切片路线](business-reconstruct
 | `npm run typecheck --prefix frontend` | 通过（`vue-tsc --noEmit`）。 |
 | `npm run lint --prefix frontend` | 通过（`eslint .`）。 |
 | 文档相对链接检查 | 见 [9.3](#93-文档链接自检)。 |
+| `uv run ruff check .` | 通过。 |
+| `uv run pytest -q`（独立 `TEST_DATABASE_URL` 测试库） | **961 passed / 16 skipped**（含 B-1.1a/B-1.1b 全部回归；无失败）。 |
+| 独立空库 `alembic upgrade head` + `alembic check` + `downgrade` + 再 `upgrade` | 通过；`alembic check` 无差异。 |
+| `uv run python scripts/check_identity_migration.py` | 通过（独立库 upgrade/downgrade/再 upgrade，历史行保留）。 |
+| `docker compose config --quiet`、`git diff --check` | 通过。 |
+| `npm run typecheck` / `npm run lint` / `npm run test` / `npm run build` | 全部通过（Vitest 41 passed）。 |
 
 ### 9.2 测试定义与执行状态
 
 | 文件 | 覆盖重点 | 本轮执行结果 |
 |---|---|---|
-| `tests/unit/test_organization_domain.py` | 年级派生边界；`*Create` 严格 schema（禁止额外字段、日期正序、term_no/intake_year 边界）；四个组织动作仅安装级；旧 admin/新路由无法获得组织动作。 | 待统一执行验收 |
+| `tests/unit/test_organization_domain.py` | 年级派生边界；`*Create` 严格 schema（禁止额外字段、日期正序、term_no/intake_year 边界）；四个组织动作仅安装级；旧 admin/新路由无法获得组织动作。 | **23 passed**（单元） |
 | `tests/unit/test_organization_csv.py` | 纯解析：三种模式列合同、UTF-8/BOM/非法编码、2 MiB/5000 行上限、行号/字段/错误码、outcome 与 warning。 | **63 passed**（单元） |
-| `tests/integration/test_organization.py` | 真实 PostgreSQL：GiST 排他约束、转班历史、同名不合并、学号唯一、分页/合同、JWT 授权/撤权/停用、旧 admin 无新权限、重复 Grant 409、COMMIT 未知。 | 待统一执行验收 |
-| `tests/integration/test_organization_migration.py` | 独立库 upgrade/check/downgrade/再 upgrade、破坏性降级拒绝、旧数据回归。 | 待统一执行验收 |
+| `tests/integration/test_organization.py` | 真实 PostgreSQL：GiST 排他约束、转班历史、同名不合并、学号唯一、分页/合同、JWT 授权/撤权/停用、旧 admin 无新权限、重复 Grant 409、COMMIT 未知。 | **16 passed**（真实 PG） |
+| `tests/integration/test_organization_migration.py` | 独立库 upgrade/check/downgrade/再 upgrade、破坏性降级拒绝、旧数据回归。 | **1 passed**（独立临时库） |
 | `tests/integration/test_student_import.py` | 预览不写正式表、确认幂等/409/预览后数据变化、审计同事务回滚、COMMIT 未知恢复、真实 JWT 授权/撤权、未来归属重复导入。 | **19 passed**（真实 PG 专用测试库） |
 
-**状态说明**：本文未运行 `uv run pytest`。导入子系统测试已由测试执行者在专用真实 PostgreSQL 测试库执行通过（单元 63 passed、集成 19 passed）；组织/权限/迁移测试与所有测试的最终结论以本切片统一验收为准。失败用例不得用 Mock/SQLite 替代结论。
+**状态说明**：以上结果来自本切片统一质量门禁：后端全量 `uv run pytest -q` 在独立真实 PostgreSQL 测试库 **961 passed / 16 skipped**，包含本表全部用例与 B-1.1a 安全回归；未用 Mock/SQLite 替代真实数据库结论。前端 typecheck/lint/Vitest/build 与 OpenAPI/TypeScript 合同漂移检查同样通过。
 
 ### 9.3 文档链接自检
 
@@ -493,7 +499,7 @@ B-1.2 的准入条件、验收与回滚见[分切片路线](business-reconstruct
 
 ### 9.4 未做/不可宣称
 
-- 未连接开发数据库、未执行 `alembic upgrade/current`，部署库版本与约束存在性未验证。
+- 未升级开发数据库（`DATABASE_URL` 指向的 `huipi_cloud` 保持旧版本）；部署库的升级与容量验证仍需独立运维审批。
 - 未做真实学校名册试用、真实 IdP 验收、前端页面/浏览器验收、模型调用或考试业务端到端。
 - 组织迁移的 `btree_gist` 扩展需要数据库所有者权限；部署前须确认目标库允许。
 

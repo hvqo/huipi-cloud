@@ -413,7 +413,12 @@ def upgrade():
         (
             ORGANIZATION_OPERATOR_ROLE,
             "organization_operator",
-            ["security.grants.manage", *permissions],
+            [
+                "security.grants.manage",
+                "security.protected.create",
+                "security.classification.inspect",
+                *permissions,
+            ],
         ),
         (
             ORGANIZATION_MANAGER_ROLE,

@@ -112,7 +112,7 @@ B-1.1b 在迁移 `b11b0a7c4e21` 中新增组织、学生与名册导入表（见
 
 - 这四个动作的 Scope 都只有安装级（单校部署技术根），**不是按年级/班级/考试的学校 RBAC**。组织实体 Scope 只有在真实 FK、归属校验与执行策略落地后才能逐项启用，不能提交自由 UUID/JSON 授权。
 - 旧 `User.is_admin`、旧 `AssignmentMembership`、JWT 自声明 role 均不产生组织权限；组织数据不属于 legacy 资源图，也没有旧业务旁路入口。
-- 新增角色版本：`organization_operator`（`11111111-b11b-4000-8000-000000000001`，含 `security.grants.manage` 与四个组织动作，是部署 bootstrap 可委派组织的根角色）、`organization_manager`（`...0002`）、`student_importer`（`...0003`）。B-1.1b 起 `deployment_bootstrap` 授予 `organization_operator`；已初始化的旧部署必须由受控运维显式补授，不得恢复旧管理员捷径。
+- 新增角色版本：`organization_operator`（`11111111-b11b-4000-8000-000000000001`，包含 B-1.1a 三个安全动作与四个组织动作，是部署 bootstrap 可委派组织的根角色）、`organization_manager`（`...0002`）、`student_importer`（`...0003`）。B-1.1b 起 `deployment_bootstrap` 授予 `organization_operator`；已初始化的旧部署必须由受控运维显式补授，不得恢复旧管理员捷径。
 - 普通任课教师查看自己的教学班名单**尚未实现**：缺少可信任教关系、班级 Scope 与名单范围授权，不能以全校学生接口替代。
 - 所有组织写操作使用 `organization_operations` 追加审计与 `request_id` 幂等（相同正文重放、不同正文 409、COMMIT 未知返回 503 后同请求恢复）；变更与审计同事务。
 - 组织 API 的机器清单在 [http-permissions.json](http-permissions.json) 与 [resource-security-paths.json](resource-security-paths.json) 中逐项登记；未登记方法/路径默认拒绝。

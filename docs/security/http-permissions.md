@@ -87,6 +87,8 @@ Vue 客户端没有可信授权能力；只允许标准 PKCE 登录并向固定�
 - `GET /api/v1/organization/student-imports`、`GET /api/v1/organization/student-imports/{batch_id}`：`organization.read`；批次摘要与结构化行错误（行号/字段/错误码），不泄露其他班学生。
 - `POST /api/v1/organization/student-imports/{batch_id}/confirm`：`student.import.confirm`；确认时重读当前权限、当前学生/班级状态与预检 SHA，变更与审计同事务；相同 request_id 幂等、不同正文 409、COMMIT 未知 503 后可恢复。
 
+未在固定策略登记的方法由路由层直接拒绝（405），未登记路径返回 404，两者都不会执行处理函数；已注册路由但缺少固定策略名时 `authorize_request` 返回 403 `route_not_authorized`。
+
 组织写操作（创建学年/学期/届别/学科/行政班、显式转班）当前只经受控 CLI `python -m huipi_cloud.modules.organization`，要求 `organization.manage`；没有对应 HTTP 写接口。学生登录、考试场次/试卷/参试名单/扫描/阅卷/成绩页面仍未开放。
 
 ## 考试扩展安全边界

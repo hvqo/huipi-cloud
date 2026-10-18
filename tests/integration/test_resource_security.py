@@ -840,10 +840,26 @@ async def test_independent_migration_roundtrip_preserves_legacy_graph_and_refuse
         expected_revision=0,
         payload=_review_payload(),
     )
+    # Tables added after the baseline revision do not exist at c72d9e14a510 and are not
+    # part of the legacy graph this round-trip preserves.
+    post_baseline_tables = {
+        "academic_years",
+        "academic_terms",
+        "grade_cohorts",
+        "subjects",
+        "administrative_classes",
+        "students",
+        "class_enrollments",
+        "student_import_batches",
+        "student_import_rows",
+        "organization_operations",
+    }
     source = {}
     async with factory() as s:
         for table in Base.metadata.sorted_tables:
             if table.name.startswith(("security_", "permission_")):
+                continue
+            if table.name in post_baseline_tables:
                 continue
             rows = (await s.execute(select(table))).mappings().all()
             source[table.name] = [
@@ -934,12 +950,19 @@ async def test_independent_migration_roundtrip_preserves_legacy_graph_and_refuse
                     security_classification="exam_protected",
                 )
             )
+        async with target.connect() as c:
+            version_before_rejection = await c.scalar(
+                text("SELECT version_num FROM alembic_version")
+            )
         rejected = await alembic("downgrade", "c72d9e14a510", success=False)
         assert (
             rejected.returncode != 0 and "downgrade_requires_archived_new_data" in rejected.stderr
         )
         async with target.connect() as c:
-            assert await c.scalar(text("SELECT version_num FROM alembic_version")) == "e21a9b4c110a"
+            # The rejected downgrade is transactional: the schema stays at the current head.
+            assert await c.scalar(text("SELECT version_num FROM alembic_version")) == (
+                version_before_rejection
+            )
     finally:
         await target.dispose()
         async with admin.connect() as c:
