@@ -9,7 +9,7 @@ teaching relation and a class scope first.
 import unicodedata
 from uuid import UUID
 
-from sqlalchemy import exists, func, or_, select
+from sqlalchemy import and_, exists, func, or_, select
 from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -51,10 +51,16 @@ def grade_label(intake_year: int, academic_year_start_year: int) -> tuple[int, s
 
 
 def current_enrollment():
-    """Enrollment in force now; ``valid_to`` is an exclusive end date."""
-    return or_(
-        ClassEnrollment.valid_to.is_(None),
-        ClassEnrollment.valid_to > func.current_date(),
+    """Enrollment in force now; the range is half-open ``[valid_from, valid_to)``.
+
+    A future-dated enrollment is history, not the current class, so both bounds matter.
+    """
+    return and_(
+        ClassEnrollment.valid_from <= func.current_date(),
+        or_(
+            ClassEnrollment.valid_to.is_(None),
+            ClassEnrollment.valid_to > func.current_date(),
+        ),
     )
 
 
@@ -495,6 +501,13 @@ async def transfer_student(
             if payload.effective_from <= current.valid_from:
                 raise AccessError("transfer_effective_from_invalid", 409)
             current.valid_to = payload.effective_from
+            try:
+                await session.flush()
+            except IntegrityError as error:
+                raise _conflict(
+                    error,
+                    {"class_enrollment_history_immutable": "enrollment_overlap"},
+                ) from None
             from_class_id = current.administrative_class_id
         overlap = await session.scalar(
             select(ClassEnrollment.id).where(
