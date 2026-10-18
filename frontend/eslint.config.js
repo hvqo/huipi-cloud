@@ -21,6 +21,10 @@ export default ts.config(
       '@typescript-eslint/no-explicit-any': 'error',
       'no-undef': 'off',
       'vue/multi-word-component-names': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
     },
   },
 )

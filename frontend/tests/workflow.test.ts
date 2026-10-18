@@ -13,7 +13,7 @@ vi.mock('../src/api/client', async () => ({
   api: mocks,
 }))
 import { ApiError } from '../src/api/client'
-import ReviewPage from '../src/views/Review.vue'
+import ReviewPage from '../src/views/teacher/AnswerReview.vue'
 import FilePreview from '../src/components/FilePreview.vue'
 const source = {
   canonical_document_id: 'doc',
