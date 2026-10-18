@@ -73,6 +73,10 @@ PermissionDefinition 由版本控制的服务端目录提供。自定义岗位�
 
 角色修改不静默扩大既有授权：创建 RoleRevision，现有 RoleGrant 固定旧版；经审批迁移到新版并原子换 current grants。收紧/紧急停用可撤销整个旧版本，后续请求立即拒绝；不得在长期 JWT 内缓存权限列表。
 
+### Scope 分阶段启用的实施约束
+
+B-1.1a 仅启用能够通过真实 Assignment FK 验证的资源范围及最小安全动作。学校/组织/场次/试卷/阅卷轮次 Scope 在对应实体、归属与执行策略落地前不可授予可执行权限。目录可标记 future，但检查器必须拒绝执行，不能使用自由 UUID、任意 JSON 或字符串伪造资源。后续每种 Scope 经独立迁移/合同/负向测试后逐项启用。
+
 ## 5. 自定义岗位、授权、撤权和防提权
 
 1. role.define 只创建待审核岗位版本，不能据此给自己发 grant。新权限委派人的首次建立走受控部署初始化：由学校批准的既有 User UUID/issuer 映射清单显式登记最小 grant、双人复核并审计；不自动把全部 legacy is_admin 升为全校业务管理员，也不提供公共 bootstrap HTTP。

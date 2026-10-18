@@ -182,6 +182,7 @@ ExamSubmissionLink(id, script_version_id UNIQUE, submission_id UNIQUE, participa
 - 每版独立文件、解析任务和产物；不 UPDATE 旧 SubmissionFile 或抢占原 ParsedArtifact。
 - 生成的单卷 PDF 有页 manifest：合成页序 → ScanPage/file/source_page_index/变换/摘要，涵盖附加页。超出现有解析单卷上限须显示 resource_limit 阻断或下一切片显式支持分页解析，不能静默截断/假成功。
 - 适配器是可信应用服务：S3 上传完成后新短事务同时写 Submission/File/Task/Link/操作结果；不能嵌套调用旧自提交 Service。
+- 考试专用 Assignment 必须由可信创建服务在**同一数据库事务**中创建并登记 exam_protected；不得先以普通 Assignment COMMIT 再补分类。未来 PaperVersion 与内容载体关联也必须在该可信事务中完成。未知、缺失或非法分类不得回退 legacy admin/Membership。
 - 新桥接 Submission 先于 COMMIT 就进入考试访问分类；任何列表/旧路径不得有“关联稍后补齐”的窗口。内部未分类处理记录不给 HTTP 可见权限。
 - 保持旧 SourceRegion/Canonical/GradeInput 1.0，不把 OMR 伪装成文本；新域证据旁表增加 physical page lineage。
 

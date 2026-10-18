@@ -22,18 +22,27 @@
 - 验收：原文完整+SHA、34 HTTP/20 表清单、T01–T30 全覆盖、文档链接、独立 Draft PR。
 - 回滚：仅文档 revert；现有分支/数据不动。等待独立审查后才进入 B。
 
-### B-1.1 权限隔离与组织最小基础
+### B-1.1a 考试资源安全分类与最小权限基础
 
-- 前置：A 决策批准；学校确认可信名单责任人（可先合成数据）。
-- 后端/迁移：固定 action 目录、最小 RoleRevision/Grant/Scope、考试资源分类 resolver、必要 Audit；Term/Subject/AdministrativeClass/Student 可信导入。复用 User/OIDC，不改旧 Principal 历史。
-- 前端/API：I/O 中 `/me/contexts`、名单预检及只读组织；CLI 最先可用，暂不大改菜单。
-- 权限：新 exam-protected 不继承 is_admin/AssignmentMembership；未知路由/资源拒绝。任意组合 scope 受服务端验证。
-- 测试/验收：真实 PG 下旧作业授权不退化；同名学生不合并；scope 拼接/自行提权/撤权/DB 失败全拒绝；旧敏感路径对构造的保护对象无泄漏；迁移保全旧 User/Assignment。
-- 回滚：禁新入口，撤新 grant，不回填旧班级；旧 admin 兼容仅对 legacy 生效。权限不完整不能开放后续桥接资源。
+- 前置：A 决策有条件通过；不需要预建考试或组织实体。
+- 后端/迁移：可信 Assignment 安全分类、固定 PermissionDefinition、最小角色版本/用户授权、具有真实 Assignment FK 的 Scope、授权变更审计；集中拒绝旧 API/服务对 exam_protected 的访问。历史作业保持 legacy 合同。
+- 范围门禁：不存在 ExamSession/PaperVersion/MarkingTask 时，其动作仅预留且不可执行，不用自由 UUID/JSON 假装已有资源授权。未知分类/Scope/Permission fail closed。
+- 前端/API：不改 Vue；现有 HTTP 合同保持兼容，不开放考试管理后台。
+- 测试/验收：真实独立 PG 下旧管理员/成员兼容；受保护资源列表、分页、文件、Canonical、审核、Agent/Knowledge 全拒绝旁路；撤权、并发、幂等、审计失败与 DB 故障；迁移往返保历史。
+- 回滚：停止新保护资源创建；保留已有分类/授权/审计，不能通过删除分类让数据退回旧 admin 路径。
+
+### B-1.1b 可信组织、学年学期与学生导入
+
+- 前置：B-1.1a 安全门禁验收；学校确认可信名单责任人（可先合成数据）。
+- 后端/迁移：Term/Subject/行政班/教学班/Student、可信导入和组织授权；各组织 Scope 只在真实 FK、归属校验与权限实现后启用。
+- 前端/API：组织维护、预检冲突与确认；另开独立合同和小型 PR。
+- 权限：不把班级任教关系自动提升成考试阅卷权限，不信任客户端班级或角色。
+- 测试/验收：同名不合并、历史班级快照、导入幂等、撤权/跨组织负向与迁移保历史。
+- 回滚：停导入和新组织写入，保留原始导入审计；不猜测回填旧 grade_level/student_ref。
 
 ### B-1.2 考试场次、共享试卷与名单冻结
 
-- 前置：B-1.1；组织导入与最小命题/考务授权。
+- 前置：B-1.1a、B-1.1b；组织导入与最小命题/考务授权。
 - 后端/迁移：Event/Session/SessionPaper、PaperVersion/QuestionMapping/SourceFile、RosterRevision/Snapshot/Participation；PaperVersion 防原位变更；复合 FK/UNIQUE，保持所有旧表/UUID。
 - 前端/API：P/X 中建考试、建场次、导入不含学生作答的原始题本/空白答题卡并人工核对、选已发布内容、锁卷、名单导入预检/确认、班级筛选；先有可执行 CLI/合同测试。
 - 权限：paper.read/edit/lock 与 roster.read/lock 独立；命题人不自动获得考生资料。
@@ -51,7 +60,7 @@
 
 ### B-1.4 人工分卷、身份确认与旧 Submission 原子桥接
 
-- 前置：B-1.1 至 B-1.3、私有存储和解析基础；所有旧路径对新资源隔离已验证。
+- 前置：B-1.1a、B-1.1b 至 B-1.3、私有存储和解析基础；所有旧路径对新资源隔离已验证。
 - 后端/迁移：SplitPlanRevision、AnswerScript/Version、PageRef/CurrentAllocation、IdentityDecision/CurrentParticipationScript、ExamSubmissionLink、物化 job；完整 manifest 和稳定幂等。
 - 前端/API：S 中 split-plan/confirm/identity/remediation/operations，人工缩略图分组、姓名/考号候选对照、未认领与错误展示。第一版没有自动建议也可完成。
 - 权限：split.edit/confirm 和 identity.verify 分开；对 Batch 所属场次/卷别二次核验，不能把候选自动视为身份。
@@ -150,7 +159,7 @@
 
 ## 3. 第一条开发闭环的精确边界
 
-B-1.1～B-1.5 是先后可合并的小切片，合起来交付**一科场次、多班、一个共享卷版、无二维码批次 PDF、纯人工分卷与身份核实、独立 Submission 处理链**。推荐首先开 B-1.1 的后端 PR，不再争论核心对象；其验收不是“扫描业务已完成”。
+B-1.1a、B-1.1b～B-1.5 是先后可合并的小切片，合起来交付**一科场次、多班、一个共享卷版、无二维码批次 PDF、纯人工分卷与身份核实、独立 Submission 处理链**。推荐首先开 B-1.1a 的后端 PR，不再争论核心对象；其验收不是“扫描业务已完成”。
 
 输入：学校授权的合成名单（2 班、同名学生）、一个 published Assignment/锁卷快照、一个混排 PDF；操作员有指定场次扫描和核验权限。输出：已核实答卷版本、原批次页 manifest、每卷唯一旧提交/File/Task/Link、可查询原请求进度、不能越权的私有源读取。解析可继续既有 Worker；真实教学手写质量不是该合同验收结论。
 
