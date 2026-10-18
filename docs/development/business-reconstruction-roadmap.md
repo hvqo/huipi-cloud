@@ -31,14 +31,18 @@
 - 测试/验收：真实独立 PG 下旧管理员/成员兼容；受保护资源列表、分页、文件、Canonical、审核、Agent/Knowledge 全拒绝旁路；撤权、并发、幂等、审计失败与 DB 故障；迁移往返保历史。
 - 回滚：停止新保护资源创建；保留已有分类/授权/审计，不能通过删除分类让数据退回旧 admin 路径。
 
-### B-1.1b 可信组织、学年学期与学生导入
+### B-1.1b 可信组织、学年学期与学生导入（后端基础已实现）
 
-- 前置：B-1.1a 安全门禁验收；学校确认可信名单责任人（可先合成数据）。
-- 后端/迁移：Term/Subject/行政班/教学班/Student、可信导入和组织授权；各组织 Scope 只在真实 FK、归属校验与权限实现后启用。
-- 前端/API：组织维护、预检冲突与确认；另开独立合同和小型 PR。
-- 权限：不把班级任教关系自动提升成考试阅卷权限，不信任客户端班级或角色。
-- 测试/验收：同名不合并、历史班级快照、导入幂等、撤权/跨组织负向与迁移保历史。
-- 回滚：停导入和新组织写入，保留原始导入审计；不猜测回填旧 grade_level/student_ref。
+- 状态：2026-10-18 在 `feat/b11b-school-organization` 实现后端基础，迁移 `b11b0a7c4e21`。本文首段「未执行 B–E」写于阶段 A；B-1.1a 已随 #33 合入 main，本切片同时交付导入服务、真实 PostgreSQL 集成/迁移测试与合同同步；B-1.2 起仍未执行。真实 PostgreSQL/S3 浏览器验收与真实学校数据试用不在本轮范围。
+- 已实现（组织模型）：`AcademicYear`/`AcademicTerm`（学期必须落在学年内、同学年时间不重叠）、`GradeCohort`（年级按学年派生，不是学生永久属性）、`Subject`、`AdministrativeClass`（行政班，≠教学班/考场）、`Student`（`school_student_code` 唯一，姓名非键、不自动合并）。
+- 已实现（归属历史）：`ClassEnrollment` 半开区间 `[valid_from, valid_to)`；GiST 排他约束保证同一学生同一时刻唯一行政班；转班关闭旧行 + 插入新行，历史触发器禁止删除/改写身份列与已设置 `valid_to`。
+- 已实现（两阶段导入）：`StudentImportBatch`/`StudentImportRow` 冻结预检；三种模式（`student_only`/`enrollment_only`/`student_with_enrollment`）、UTF-8（含 BOM）、2 MiB/5000 行限制、行级 `row_number/field/code/message` 错误、预览不写正式名册；确认在单一事务内重验当前学生/班级/学年状态，支持同 request_id 幂等、409 冲突与 COMMIT 未知恢复；原始 CSV 字节不落库。
+- 已实现（权限与合同）：固定动作 `organization.read/manage`、`student.import.preview/confirm`，**仅安装级 Scope**（不是按年级/班级的学校 RBAC）；旧 `User.is_admin`/AssignmentMembership/JWT role 不授权；迁移新增 `organization_operator`/`organization_manager`/`student_importer` 角色版本，bootstrap 改授 `organization_operator`，并补 `security_grants` 活动授权部分唯一索引（重复授予 409）；11 个组织 HTTP 操作进入固定策略表与 OpenAPI，组织基础字典写操作只经受控 CLI；生成的 TypeScript 合同只有新增、无既有操作漂移。
+- 已实现（迁移安全）：`btree_gist`、学期/归属 GiST 排他约束、学期学年内触发器、预检批次/行与归属历史保护触发器、组织操作追加审计；存在新数据时拒绝破坏性降级。
+- 测试验收：真实 PostgreSQL 集成/迁移测试与纯解析/领域单测定义见[组织与学生名册](organization.md#9-验证证据与测试状态)（`tests/integration/test_organization*.py`、`tests/integration/test_student_import.py`、`tests/unit/test_organization_*.py`）；组织/权限/迁移领域单测 23、真实 PG 组织/授权 22、独立迁移往返 1、导入子系统单元 63 与真实 PG 集成 26 均通过；统一门禁后端全量 977 passed/16 skipped、独立空库 upgrade/check/downgrade/再 upgrade 通过；不以 Mock/SQLite 替代真实数据库结论。
+- 仍暂未实现：教学班/教学选课/任教关系及按年级/班级的组织 Scope；普通教师查看本班名单；组织/名册前端页面；学生登录。B-1.2 所需的 `ExamEvent`/`ExamSession`/`SessionPaper`/`PaperVersion`/`PaperQuestionMapping`/`PaperSourceFile`/`RosterRevision`/`RosterEntrySnapshot`/`ExamParticipation`/`ExamRoom`/`SeatingAssignment`，以及 `ScanBatch`/`ScanBatchFile`/`ScanPage`/分卷与身份/旧 Submission 桥接均未实现；阅卷、有效题分与成绩发布仍未实现。
+- 学校待确认：可信名册来源/责任人、真实数据导入授权、字段最小集与学号规则、CSV 编码、转班生效与更正政策、组织操作员人选与离任撤权（见[组织与学生名册](organization.md#10-需学校确认事项)）。
+- 回滚：停导入和新组织写入，保留原始导入审计与冻结批次；破坏性降级会被迁移拒绝，不猜测回填旧 `grade_level`/`student_ref`。
 
 ### B-1.2 考试场次、共享试卷与名单冻结
 

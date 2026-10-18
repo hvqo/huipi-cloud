@@ -76,6 +76,21 @@ Vue 客户端没有可信授权能力；只允许标准 PKCE 登录并向固定�
 
 [产品能力矩阵与前端合同](../product/teacher-admin-contract.md)逐项区分教师、只读成员及全局管理员。管理员仍能读取全部 legacy 作业及其敏感文件，未变成仅系统管理角色；后续拆分计划在该文档说明。普通教师无提权、账号停用或管理审计读取/改写接口。管理写入的 request_id 重放仍复核当前管理员；账号停用或降权后拒绝。部署 CLI 与数据库所有者不属于教师 HTTP 权限体系。
 
+## 组织与学生名册（安装级受控权限，B-1.1b）
+
+以下 11 个操作不使用 legacy 作业/成员/管理员授权，也不读取考试作答；固定安装级动作见[资源安全基础](exam-resource-security.md)：
+
+- `GET /api/v1/organization/academic-years`、`/academic-terms`、`/grade-cohorts`、`/subjects`、`/classes`：`organization.read`；分页 limit 1–100、offset 有界。
+- `GET /api/v1/organization/students`：`organization.read`；最小身份字段，可按当前行政班/关键词过滤，普通教师仅凭 AssignmentMembership 不可读。
+- `GET /api/v1/organization/students/{student_id}/enrollments`：`organization.read`；返回保留历史的行政班归属，不返回无关敏感字段。
+- `POST /api/v1/organization/student-imports`：`student.import.preview`；multipart CSV（UTF-8/UTF-8 BOM，≤2MiB，≤5000 行），只创建冻结预检批次，**不修改**正式学生/班级归属。
+- `GET /api/v1/organization/student-imports`、`GET /api/v1/organization/student-imports/{batch_id}`：`organization.read`；批次摘要与结构化行错误（行号/字段/错误码），不泄露其他班学生。
+- `POST /api/v1/organization/student-imports/{batch_id}/confirm`：`student.import.confirm`；确认时重读当前权限、当前学生/班级状态与预检 SHA，变更与审计同事务；相同 request_id 幂等、不同正文 409、COMMIT 未知 503 后可恢复。
+
+未在固定策略登记的方法由路由层直接拒绝（405），未登记路径返回 404，两者都不会执行处理函数；已注册路由但缺少固定策略名时 `authorize_request` 返回 403 `route_not_authorized`。
+
+组织写操作（创建学年/学期/届别/学科/行政班、显式转班）当前只经受控 CLI `python -m huipi_cloud.modules.organization`，要求 `organization.manage`；没有对应 HTTP 写接口。学生登录、考试场次/试卷/参试名单/扫描/阅卷/成绩页面仍未开放。
+
 ## 考试扩展安全边界
 
 上述矩阵继续描述 legacy 作业合同。[资源安全基础](exam-resource-security.md)已加入可信分类、旧入口隔离和最小受控授权。考试资料读取、组织岗位、扫描和匿名阅卷仍未开放；[新岗位/资源范围方案](../product/role-permission-matrix.md)中的未来动作不能靠预留名称或自由 UUID 执行。不得据当前矩阵给扫描员或按题阅卷员整份作业权限。

@@ -1,5 +1,5 @@
 {
-  "version": "1.1",
+  "version": "1.2",
   "operations": [
     {
       "method": "POST",
@@ -252,6 +252,72 @@
       "path": "/api/v1/admin/audit-events",
       "policy": "list_admin_audit_events",
       "permission": "database_admin"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/organization/academic-years",
+      "policy": "list_academic_years",
+      "permission": "organization.read"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/organization/academic-terms",
+      "policy": "list_academic_terms",
+      "permission": "organization.read"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/organization/grade-cohorts",
+      "policy": "list_grade_cohorts",
+      "permission": "organization.read"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/organization/subjects",
+      "policy": "list_subjects",
+      "permission": "organization.read"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/organization/classes",
+      "policy": "list_administrative_classes",
+      "permission": "organization.read"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/organization/students",
+      "policy": "list_students",
+      "permission": "organization.read"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/organization/students/{student_id}/enrollments",
+      "policy": "list_student_enrollments",
+      "permission": "organization.read"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/organization/student-imports",
+      "policy": "preview_student_import",
+      "permission": "student.import.preview"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/organization/student-imports",
+      "policy": "list_student_imports",
+      "permission": "organization.read"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/organization/student-imports/{batch_id}",
+      "policy": "get_student_import",
+      "permission": "organization.read"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/organization/student-imports/{batch_id}/confirm",
+      "policy": "confirm_student_import",
+      "permission": "student.import.confirm"
     }
   ]
 }

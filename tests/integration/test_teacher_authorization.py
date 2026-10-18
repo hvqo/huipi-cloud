@@ -298,7 +298,8 @@ async def test_all_old_http_routes_require_token_including_every_private_downloa
             assert response.headers["www-authenticate"] == "Bearer"
             assert "security" in operations[method]
             count += 1
-    assert count == 33
+    # 33 legacy protected operations + 11 B-1.1b organization operations.
+    assert count == 44
     assert (await ctx.client.get("/api/v1/health")).json() == {"status": "ok"}
 
 

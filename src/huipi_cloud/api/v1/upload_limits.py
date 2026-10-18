@@ -18,13 +18,22 @@ class UploadRequestLimitMiddleware:
         max_upload_size_bytes: int,
         api_v1_prefix: str,
         multipart_overhead_bytes: int = MULTIPART_OVERHEAD_LIMIT,
+        student_import_max_bytes: int | None = None,
     ) -> None:
         self.app = app
+        self.multipart_overhead_bytes = multipart_overhead_bytes
         self.max_request_size_bytes = max_upload_size_bytes + multipart_overhead_bytes
         self.upload_path_prefix = f"{api_v1_prefix.rstrip('/')}/assignments/"
+        self.api_v1_prefix = api_v1_prefix.rstrip("/")
+        self.student_import_request_limit = (
+            None
+            if student_import_max_bytes is None
+            else student_import_max_bytes + multipart_overhead_bytes
+        )
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if not self._is_submission_upload(scope):
+        limit = self._request_limit(scope)
+        if limit is None:
             await self.app(scope, receive, send)
             return
 
@@ -39,6 +48,7 @@ class UploadRequestLimitMiddleware:
                 response = JSONResponse(
                     status_code=400,
                     content={"detail": "请求内容长度无效"},
+                    headers={"Cache-Control": "no-store"},
                 )
                 await response(scope, receive, send)
                 return
@@ -46,13 +56,15 @@ class UploadRequestLimitMiddleware:
                 response = JSONResponse(
                     status_code=400,
                     content={"detail": "请求内容长度无效"},
+                    headers={"Cache-Control": "no-store"},
                 )
                 await response(scope, receive, send)
                 return
-            if content_length > self.max_request_size_bytes:
+            if content_length > limit:
                 response = JSONResponse(
                     status_code=413,
                     content={"detail": "文件超过大小限制"},
+                    headers={"Cache-Control": "no-store"},
                 )
                 await response(scope, receive, send)
                 return
@@ -64,17 +76,22 @@ class UploadRequestLimitMiddleware:
             message = await receive()
             if message["type"] == "http.request":
                 request_bytes += len(message.get("body", b""))
-                if request_bytes > self.max_request_size_bytes:
+                if request_bytes > limit:
                     raise UploadTooLargeError("文件超过大小限制")
             return message
 
         await self.app(scope, receive_with_limit, send)
 
-    def _is_submission_upload(self, scope: Scope) -> bool:
+    def _request_limit(self, scope: Scope) -> int | None:
+        """Return the request-body cap for known upload endpoints, else ``None``."""
         path = scope.get("path", "")
-        return (
-            scope.get("type") == "http"
-            and scope.get("method") == "POST"
-            and path.startswith(self.upload_path_prefix)
-            and path.endswith("/submissions")
-        )
+        if scope.get("type") != "http" or scope.get("method") != "POST":
+            return None
+        if path.startswith(self.upload_path_prefix) and path.endswith("/submissions"):
+            return self.max_request_size_bytes
+        if (
+            self.student_import_request_limit is not None
+            and path == f"{self.api_v1_prefix}/organization/student-imports"
+        ):
+            return self.student_import_request_limit
+        return None
