@@ -93,6 +93,12 @@ Scope 只有两种：FK 指向唯一 `SecurityInstallation(id=1)` 的安装范�
 - 数据库异常返回安全 503；COMMIT 确认丢失报告 `security_commit_outcome_unknown`，同 request_id 可按当前权限重放恢复，不伪称失败已撤销。
 - scope/role 输入无效为稳定 422，未知/未实现权限拒绝；业务资源缺失/旧路径越权统一 404。故障不会恢复旧 admin 后门。
 
+### B-1.1a 合入时的已知限制
+
+- **单 Grant 撤权语义**：`security_grants` 没有“同一 User/RoleVersion/Scope 仅一条有效”的部分唯一索引。授权方若用**不同的 `request_id`** 重复授予同一组合，会留下多条有效 Grant；`revoke --grant-id` 只撤销指定一条，其余仍可能授权成功。因此撤权是单 Grant 语义：操作方必须复用原 `request_id`、按用户/范围核对有效 Grant，不能假设一次 revoke 覆盖全部重复授权。后续切片的迁移应补 `WHERE revoked_at IS NULL` 的部分唯一索引，并把重复授予稳定映射为 409。
+- **审计 append-only 的应用边界**：`security_audit_events` 的触发器只覆盖 `UPDATE/DELETE`，不覆盖 `TRUNCATE`；它是应用业务角色边界，不是对持有数据库凭据的受控运维的防篡改审计。
+- **ORM 可见性覆盖范围**：全局 legacy 过滤只保证经 `Session.execute`/加载器改写的语句；未来若引入单语句 `joinedload`、`from_statement` 或 `session.connection()` 原生读取，必须单独审计并补回归测试。
+
 ## 数据库与冻结准备
 
 迁移 `e21a9b4c110a` 只新增分类和上述安全表/约束/触发器，不改历史迁移或业务 UUID。独立测试库从旧 head 注入真实合成提交、来源和审核图，核对逐表行数/摘要；upgrade/check/downgrade/再 upgrade 后保持一致。有保护资源、审计、Grant 或新 Scope/角色时拒绝破坏性降级。空新切片可降级是开发验证，不是已有新业务数据的生产回滚方案。
