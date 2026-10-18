@@ -168,6 +168,7 @@ async def upload_too_large_handler(_: Request, error: UploadTooLargeError) -> JS
     return JSONResponse(
         status_code=status.HTTP_413_CONTENT_TOO_LARGE,
         content={"detail": str(error)},
+        headers={"Cache-Control": "no-store"},
     )
 
 

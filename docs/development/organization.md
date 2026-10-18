@@ -114,16 +114,17 @@
 
 - 学生以 `school_student_code` 唯一标识；**姓名不是键**，姓名候选不会自动合并或纠正身份。
 - 年级不存放在 `students` 上；`service.grade_label(intake_year, academic_year_start_year)` 按「学年起始年 - 入学年 + 1」派生，只有 1/2/3 返回 `(1,"高一")`、`(2,"高二")`、`(3,"高三")`，其余返回 `None`（已毕业或尚未入学）。当前没有升年级/毕业批处理任务。
-- `current_enrollment()` 判定当前归属时同时检查两个边界：`valid_from <= current_date` 且（`valid_to IS NULL` 或 `valid_to > current_date`）。未来生效的归属属于历史/计划，不会提前被当作当前班。该函数只用于列表查询与转班的「当前」语义；学生导入的归属冲突判定按区间重叠计算，见 [3.6](#36-确认请求当前状态重验与冲突)。
+- `current_enrollment()` 判定当前归属时同时检查两个边界：`valid_from <= current_date` 且（`valid_to IS NULL` 或 `valid_to > current_date`）。未来生效的归属属于历史/计划，不会提前被当作当前班。该函数只用于列表查询的「当前归属」语义；转班按未结束归属链尾部计算、学生导入的归属冲突按区间重叠计算（见 [3.6](#36-确认请求当前状态重验与冲突)）。
 - 学号大小写：`students.school_student_code` 有精确唯一约束，另有函数唯一索引 `uq_students_school_code_casefold`（`UNIQUE (lower(school_student_code))`），因此**并发导入也不会**产生仅大小写不同的第二个身份；与已有学生仅大小写不同的行级错误为 `student_code_case_ambiguous_existing`（见 [3.4](#34-行状态错误结构与-outcome)）。升级时若历史数据已存在仅大小写重复的学号，迁移拒绝并要求先人工清理。
 - 转班 `transfer_student`：锁定学生行 `FOR UPDATE`，再锁定**归属链尾部**（`valid_to IS NULL` 的未结束行）；要求学生启用、目标班存在且为 `active`；不允许转入链尾所在班（409 `student_already_in_class`）。若 `effective_from <= tail.valid_from`：链尾已生效则 409 `transfer_effective_from_invalid`，链尾是**未来排定**转班则 409 `enrollment_future_transfer_locked`（不覆盖、不改写已排定事实，也不允许改期）；晚于链尾生效日时可继续追加：把链尾 `valid_to` 设为 `effective_from`（半开区间，生效当天起旧班失效），再插入同日起生效的新行。排他约束冲突映射为 409 `enrollment_overlap`，历史不可变触发器冲突同样稳定映射。整个转班与审计同事务。
 
 ### 2.6 迁移升级前置与破坏性降级拒绝
 
 - 升级前检查 `security_grants`：同一 `(user_id, role_version_id, scope_id)` 存在多条未撤销 Grant 时，迁移**拒绝执行**（`security_grant_duplicates_require_cleanup`），须先按审计人工清理。
-- 升级前检查 `students`：存在仅大小写不同的重复学号时，迁移**拒绝执行**（`student_code_case_duplicates_require_cleanup`），须先人工确认身份并清理。
+- 升级前检查 `students`：存在仅大小写不同的重复学号时，迁移**拒绝执行**（`student_code_case_duplicates_require_cleanup`）。`students` 由本迁移新建，标准全新升级不会命中该守卫；它用于防御同一 revision 草稿/异常状态（见下条部署注意）。
 - 迁移新增部分唯一索引 `uq_security_grants_active`（`UNIQUE (user_id, role_version_id, scope_id) WHERE revoked_at IS NULL`），修复 [B-1.1a 已知限制](../security/exam-resource-security.md)：重复授予被稳定映射为 409 `security_grant_already_active`，一次 revoke 不再可能遗漏同组合的重复 Grant。
 - 迁移写入 B-1.1b 权限目录与三个封存角色版本（见 [4.3](#43-角色版本与-bootstrap)）；因 B-1.1a 触发器禁止修改已封存角色，迁移先在未封存状态插入权限再封存，并在 downgrade 中于同一事务内临时关闭相关用户触发器完成受控清理。
+- **同 revision 迁移内容变更的部署注意**：本切片开发期间 `b11b0a7c4e21` 曾随评审补充索引（如 `uq_students_school_code_casefold`）。若某数据库已 stamp 到该 revision，升级代码不会自动补建新索引；必须 `alembic check` 确认无差异（检出缺失索引时执行 downgrade 到 `e21a9b4c110a` 再 upgrade，或按新迁移重建）。本仓库测试库均已重建，无生产影响。
 - **破坏性降级拒绝**：只要存在任一学年/学期/届别/学科/行政班/学生/归属/导入批次/组织操作，或仍有 Grant 引用三个 B-1.1b 角色版本，`downgrade` 即抛 `organization_downgrade_requires_archived_new_data`。生产回滚应保留新数据并向前修复/恢复备份，不能靠 downgrade 删除学生与归属历史。
 
 ---
@@ -217,7 +218,7 @@ Content-Type: application/json
 - 学年仍存在且未 `closed`；`valid_from` 仍落在学年区间内。确认时学年缺失或被置为 `closed` → 409 `student_import_preview_stale`；`academic_year_closed` 只在预览阶段返回。
 - 目标行政班仍存在且为 `active`；学生是否出现、姓名规范化后是否变化、学生是否被停用。
 - 归属冲突按**区间重叠**而非「当前生效」判定：导入归属视为半开区间 `[row.valid_from, +∞)`，与既有归属 `[e.valid_from, e.valid_to)` 相交即冲突（`e.valid_to IS NULL` 或 `e.valid_to > row.valid_from`）。因此**未来生效**的既有归属也算冲突：同班重叠 → `enrollment_overlap`，其它班（含未来区间）→ `enrollment_conflict_requires_transfer`；同一未来生效归属重复导入时，第二次预检结果为 `unchanged`，而不是确认阶段的数据库 409。
-- 该判定**不复用** `service.current_enrollment()`（后者只服务列表/转班的「当前」语义）；预检与确认共用导入专用的评估逻辑，PostgreSQL 排他约束只是并发写入的最后防线。
+- 该判定**不复用** `service.current_enrollment()`（后者只服务列表查询的「当前归属」；转班按未结束链尾运算）；预检与确认共用导入专用的评估逻辑，PostgreSQL 排他约束只是并发写入的最后防线。
 - 冻结行中的跨批学号大小写歧义（`student_code_case_ambiguous_existing`，见 [3.4](#34-行状态错误结构与-outcome)）属于阻塞 error：确认在任何重算前返回 409 `student_import_has_blocking_errors`，不写入学生/归属；需人工按学校规则修正后重新预览。
 
 固定错误码：
