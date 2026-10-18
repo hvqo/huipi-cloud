@@ -190,6 +190,13 @@ class Student(Base):
     __tablename__ = "students"
     __table_args__ = (
         UniqueConstraint("school_student_code", name="uq_students_school_code"),
+        # Case-only variants are the same school identity; enforce at the database level so
+        # concurrent imports cannot create two students that differ only by letter case.
+        Index(
+            "uq_students_school_code_casefold",
+            text("lower(school_student_code)"),
+            unique=True,
+        ),
         CheckConstraint(
             "length(trim(school_student_code)) > 0", name="ck_students_code_not_blank"
         ),

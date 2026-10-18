@@ -1812,7 +1812,8 @@ async def test_organization_audit_results_contain_no_student_payload(org_api):
         result_text = json.dumps(operation.result, ensure_ascii=False)
         for token in forbidden:
             assert token not in result_text, (operation.action, token, result_text)
-        assert token not in operation.payload_sha256
+        assert len(operation.payload_sha256) == 64
+        assert set(operation.payload_sha256) <= set("0123456789abcdef")
     # The payload really was processed (privacy assertion is not vacuous).
     assert (
         await scalar(

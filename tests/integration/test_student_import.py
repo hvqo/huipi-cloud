@@ -6,13 +6,14 @@ bootstrap/grant/revoke services and the real audit/idempotency layer. All studen
 data is synthetic.
 """
 
+import asyncio
 import hashlib
 from datetime import UTC, date, datetime, timedelta
 from uuid import UUID, uuid4
 
 import pytest
 from sqlalchemy import delete, event, func, select, text, update
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import IntegrityError, OperationalError
 from test_teacher_authorization import auth_api as auth_api
 
 from huipi_cloud.modules.identity.protocol import AccessError, Principal
@@ -268,6 +269,31 @@ async def table_counts(ctx) -> dict[str, int]:
                 select(func.count()).select_from(OrganizationOperation)
             ),
         }
+
+
+async def race_confirm(
+    ctx, attempts: list[tuple[object, str]]
+) -> list[dict | AccessError]:
+    """Confirm several frozen batches concurrently from the same starting barrier."""
+    barrier = asyncio.Barrier(len(attempts))
+
+    async def attempt(batch_id, expected_input_sha256) -> dict | AccessError:
+        await barrier.wait()
+        async with ctx.factory() as session:
+            try:
+                return await import_service.confirm_student_import(
+                    session,
+                    principal_for(ctx),
+                    uuid4(),
+                    batch_id=UUID(str(batch_id)),
+                    expected_input_sha256=expected_input_sha256,
+                )
+            except AccessError as error:
+                return error
+
+    return await asyncio.gather(
+        *(attempt(batch_id, expected) for batch_id, expected in attempts)
+    )
 
 
 async def get_batch(ctx, batch_id) -> dict:
@@ -1113,6 +1139,166 @@ async def test_duplicate_names_warn_without_blocking_confirm(org):
         "duplicate_name_existing"
     ]
     assert existing_name["can_confirm"] is True
+
+
+@pytest.mark.anyio
+async def test_students_casefold_unique_index_blocks_second_identity(org):
+    """The foundation migration installs a functional unique index on lower(code)."""
+    ctx = org
+    async with ctx.factory() as session:
+        indexdef = await session.scalar(
+            text(
+                "SELECT indexdef FROM pg_indexes "
+                "WHERE schemaname = 'public' AND tablename = 'students' "
+                "AND indexname = 'uq_students_school_code_casefold'"
+            )
+        )
+    assert indexdef is not None
+    lowered = indexdef.lower()
+    assert "unique" in lowered and "lower" in lowered
+
+    async with ctx.factory() as session, session.begin():
+        session.add(Student(school_student_code="CASE-DUP01", name="合成甲"))
+    async with ctx.factory() as session:
+        session.add(Student(school_student_code="case-dup01", name="合成乙"))
+        with pytest.raises(IntegrityError) as error:
+            await session.flush()
+        await session.rollback()
+    assert "uq_students_school_code_casefold" in str(error.value.orig)
+    assert (await table_counts(ctx))["students"] == 1
+
+
+@pytest.mark.anyio
+async def test_concurrent_confirm_of_case_only_batches_creates_one_identity(org):
+    """Two frozen student_only batches differing only by code case race; one wins."""
+    ctx = org
+    year_id = await seed_academic_year(ctx.factory)
+    upper_content = student_csv(("RACE01", "张三"))
+    lower_content = student_csv(("race01", "张三"))
+    upper = await preview(
+        ctx, mode="student_only", academic_year_id=year_id, content=upper_content
+    )
+    lower = await preview(
+        ctx, mode="student_only", academic_year_id=year_id, content=lower_content
+    )
+    # Both previews legitimately saw an empty students table and planned a creation.
+    assert [row.outcome for row in await load_rows(ctx, upper["batch_id"])] == [
+        "create_student"
+    ]
+    assert [row.outcome for row in await load_rows(ctx, lower["batch_id"])] == [
+        "create_student"
+    ]
+    assert (await table_counts(ctx))["students"] == 0
+
+    results = await race_confirm(
+        ctx,
+        [
+            (upper["batch_id"], digest(upper_content)),
+            (lower["batch_id"], digest(lower_content)),
+        ],
+    )
+    successes = [result for result in results if isinstance(result, dict)]
+    failures = [result for result in results if isinstance(result, AccessError)]
+    assert len(successes) == 1, results
+    assert len(failures) == 1, results
+    assert failures[0].status_code == 409
+    assert failures[0].code == "student_import_preview_stale"
+
+    async with ctx.factory() as session:
+        # Exactly one identity exists; the loser's INSERT hit the functional unique index
+        # and its whole audited transaction rolled back.
+        total_students = await session.scalar(select(func.count()).select_from(Student))
+        assert total_students == 1
+        matching = list(
+            await session.scalars(
+                select(Student.school_student_code).where(
+                    func.lower(Student.school_student_code) == "race01"
+                )
+            )
+        )
+        assert len(matching) == 1
+        confirmed = await session.scalar(
+            select(func.count())
+            .select_from(StudentImportBatch)
+            .where(
+                StudentImportBatch.id.in_(
+                    [UUID(upper["batch_id"]), UUID(lower["batch_id"])]
+                ),
+                StudentImportBatch.status == "confirmed",
+            )
+        )
+        assert confirmed == 1
+
+
+@pytest.mark.anyio
+async def test_concurrent_confirm_with_enrollment_keeps_one_identity_and_enrollment(org):
+    """The same race cannot leave two identities or two current homeroom enrollments."""
+    ctx = org
+    year_id = await seed_academic_year(ctx.factory)
+    class_a = await seed_administrative_class(ctx.factory, "RACE-A")
+    class_b = await seed_administrative_class(ctx.factory, "RACE-B")
+    upper_content = full_csv(("RACE02", "张三", "RACE-A", "2025-09-01"))
+    lower_content = full_csv(("race02", "张三", "RACE-B", "2025-09-01"))
+    upper = await preview(
+        ctx,
+        mode="student_with_enrollment",
+        academic_year_id=year_id,
+        content=upper_content,
+    )
+    lower = await preview(
+        ctx,
+        mode="student_with_enrollment",
+        academic_year_id=year_id,
+        content=lower_content,
+    )
+    assert [row.outcome for row in await load_rows(ctx, upper["batch_id"])] == [
+        "create_student_and_enrollment"
+    ]
+    assert [row.outcome for row in await load_rows(ctx, lower["batch_id"])] == [
+        "create_student_and_enrollment"
+    ]
+
+    results = await race_confirm(
+        ctx,
+        [
+            (upper["batch_id"], digest(upper_content)),
+            (lower["batch_id"], digest(lower_content)),
+        ],
+    )
+    successes = [result for result in results if isinstance(result, dict)]
+    failures = [result for result in results if isinstance(result, AccessError)]
+    assert len(successes) == 1, results
+    assert len(failures) == 1, results
+    assert failures[0].status_code == 409
+    assert failures[0].code == "student_import_preview_stale"
+
+    counts = await table_counts(ctx)
+    assert counts["students"] == 1
+    assert counts["enrollments"] == 1
+    async with ctx.factory() as session:
+        student = await session.scalar(select(Student))
+        assert student.school_student_code.casefold() == "race02"
+        current = list(
+            await session.scalars(
+                select(ClassEnrollment).where(
+                    ClassEnrollment.student_id == student.id,
+                    ClassEnrollment.valid_to.is_(None),
+                )
+            )
+        )
+        assert len(current) == 1
+        assert current[0].administrative_class_id in {class_a, class_b}
+        confirmed = await session.scalar(
+            select(func.count())
+            .select_from(StudentImportBatch)
+            .where(
+                StudentImportBatch.id.in_(
+                    [UUID(upper["batch_id"]), UUID(lower["batch_id"])]
+                ),
+                StudentImportBatch.status == "confirmed",
+            )
+        )
+        assert confirmed == 1
 
 
 @pytest.mark.anyio

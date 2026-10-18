@@ -161,6 +161,23 @@ def upgrade():
         sa.CheckConstraint("length(trim(name)) > 0", name="ck_students_name_not_blank"),
     )
     op.create_index("ix_students_name", "students", ["name"])
+    # Case-only variants are one identity: concurrent imports and direct writers must not
+    # create two students differing only by letter case. Refuse upgrade if legacy rows
+    # already violate this before adding the functional unique index.
+    casefold_duplicates = op.get_bind().scalar(
+        sa.text(
+            "SELECT count(*) FROM (SELECT lower(school_student_code) FROM students "
+            "GROUP BY lower(school_student_code) HAVING count(*) > 1) AS duplicated"
+        )
+    )
+    if casefold_duplicates:
+        raise RuntimeError("student_code_case_duplicates_require_cleanup")
+    op.create_index(
+        "uq_students_school_code_casefold",
+        "students",
+        [sa.text("lower(school_student_code)")],
+        unique=True,
+    )
     op.create_table(
         "student_import_batches",
         uid("id", primary_key=True),
@@ -522,6 +539,7 @@ def downgrade():
     op.drop_table("student_import_rows")
     op.drop_index("ix_student_import_batches_requester", table_name="student_import_batches")
     op.drop_table("student_import_batches")
+    op.drop_index("uq_students_school_code_casefold", table_name="students")
     op.drop_index("ix_students_name", table_name="students")
     op.drop_table("students")
     op.drop_index("ix_administrative_classes_cohort", table_name="administrative_classes")

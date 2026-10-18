@@ -48,6 +48,7 @@ class UploadRequestLimitMiddleware:
                 response = JSONResponse(
                     status_code=400,
                     content={"detail": "请求内容长度无效"},
+                    headers={"Cache-Control": "no-store"},
                 )
                 await response(scope, receive, send)
                 return
@@ -55,6 +56,7 @@ class UploadRequestLimitMiddleware:
                 response = JSONResponse(
                     status_code=400,
                     content={"detail": "请求内容长度无效"},
+                    headers={"Cache-Control": "no-store"},
                 )
                 await response(scope, receive, send)
                 return
@@ -62,6 +64,7 @@ class UploadRequestLimitMiddleware:
                 response = JSONResponse(
                     status_code=413,
                     content={"detail": "文件超过大小限制"},
+                    headers={"Cache-Control": "no-store"},
                 )
                 await response(scope, receive, send)
                 return

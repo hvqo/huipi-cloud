@@ -7,7 +7,6 @@ teaching relation and a class scope first.
 """
 
 import unicodedata
-from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import and_, exists, func, or_, select
@@ -455,9 +454,11 @@ async def create_administrative_class(
 async def transfer_student(
     session: AsyncSession, principal: Principal, payload: StudentTransferRequest
 ) -> dict:
-    """Close the current homeroom enrollment and open a new one, keeping full history.
+    """Close the open tail of the homeroom chain and append a new enrollment.
 
-    The ``students`` row is locked FOR UPDATE so concurrent transfers of one student
+    A future-dated transfer already scheduled is not re-dated (identity columns and
+    ``valid_to`` are append-once); a later transfer can be appended after it. The
+    ``students`` row is locked FOR UPDATE so concurrent transfers of one student
     serialize. The PostgreSQL exclusion constraint on ``class_enrollments`` remains
     the final defense and maps to 409 rather than a raw database error.
     """
@@ -504,7 +505,8 @@ async def transfer_student(
             if tail.administrative_class_id == payload.to_administrative_class_id:
                 raise AccessError("student_already_in_class", 409)
             if payload.effective_from <= tail.valid_from:
-                if tail.valid_from <= datetime.now(UTC).date():
+                today = await session.scalar(select(func.current_date()))
+                if tail.valid_from <= today:
                     raise AccessError("transfer_effective_from_invalid", 409)
                 raise AccessError("enrollment_future_transfer_locked", 409)
             tail.valid_to = payload.effective_from
