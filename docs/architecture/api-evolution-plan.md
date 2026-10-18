@@ -39,7 +39,7 @@ I=身份授权，O=组织，H=作业，P=试卷，X=考试，S=扫描，M=阅卷
 | O / 后续 | `/teaching-classes`、`/teaching-assignments`、`/class-enrollments` | 学期有效期关系，组织动作，不自动授阅卷权 |
 | H / 后续 | POST/GET `/homework-offerings`；GET `/{id}/participants` | homework.assign/read，多个班引用同一内容 |
 | H / 后续 | POST `/homework-participations/{id}/attempts`；POST `/{id}/effective-attempt` | 重交/补交/有效版本，旧单份接口独立保留 |
-| P / B | POST/GET `/paper-versions`；GET `/{id}`；POST `/{id}/lock` | paper.edit/read/lock，绑定一个 Assignment，锁摘要 |
+| P / B | POST/GET `/paper-versions`；GET `/{id}`；POST `/{id}/lock` | paper.edit/read/lock，从来源作业建立一次专用冻结内容载体，锁摘要 |
 | P / B | POST/GET `/paper-versions/{id}/source-files`；GET `/paper-source-files/{id}/file` | paper.edit/read，不含学生作答的题本/空白答题卡；私有接收、签名/SHA/大小检查，锁后不可改 |
 | P / B | PUT `/paper-versions/{id}/question-mappings` | 草稿整体替换、显式 A/B logical mapping，无题号猜测 |
 | P / C | POST `/paper-versions/{id}/layouts`；POST `/paper-layouts/{id}/lock` | 模板/区域/坐标，需审核，正文与答题卡分离 |
@@ -81,13 +81,13 @@ I=身份授权，O=组织，H=作业，P=试卷，X=考试，S=扫描，M=阅卷
 ```json
 {
   "request_id": "10000000-0000-4000-8000-000000000001",
-  "canonical_assignment_id": "20000000-0000-4000-8000-000000000001",
+  "source_assignment_id": "20000000-0000-4000-8000-000000000001",
   "title": "合成数学卷 A",
   "paper_family_id": "30000000-0000-4000-8000-000000000001"
 }
 ```
 
-锁卷请求 `expected_revision, expected_question_digest, expected_rubric_digest`；服务端重新计算，不信任客户端 SHA 自声明。响应 `paper_version_id, revision, locked_at, content_digest, layout_state`。无模板为 `unavailable` 而不是已配准。
+创建返回服务端专用 `canonical_assignment_id` 及来源题映射，不能把已有 legacy 成员/提交原地改为考试权限；内容快照每卷版一次、多班多场次复用。锁卷请求 `expected_revision, expected_question_digest, expected_rubric_digest`；服务端重新计算，不信任客户端 SHA 自声明。响应 `paper_version_id, revision, locked_at, content_digest, layout_state`。无模板为 `unavailable` 而不是已配准。
 
 `POST /exam-events/{id}/sessions` 请求 `request_id,subject_id,start_at,end_at,allowed_paper_version_ids`。响应 SessionSummary；多个班通过名单引用同一 Session，不在请求中 `clone_per_class`。
 

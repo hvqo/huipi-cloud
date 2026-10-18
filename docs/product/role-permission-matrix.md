@@ -75,7 +75,7 @@ PermissionDefinition 由版本控制的服务端目录提供。自定义岗位�
 
 ## 5. 自定义岗位、授权、撤权和防提权
 
-1. role.define 只创建待审核岗位版本，不能据此给自己发 grant。
+1. role.define 只创建待审核岗位版本，不能据此给自己发 grant。新权限委派人的首次建立走受控部署初始化：由学校批准的既有 User UUID/issuer 映射清单显式登记最小 grant、双人复核并审计；不自动把全部 legacy is_admin 升为全校业务管理员，也不提供公共 bootstrap HTTP。
 2. role.grant 只能授予自己**可委派权限目录和范围**的子集；运维配置权限不自动具有教学委派权限。服务端验证 grantor authority，不相信客户端 can_delegate。
 3. 高敏：全校原卷/身份揭示、全校数据导出、业务管理员、权限目录升级、成绩审批发布、紧急破窗建议双人确认；请求者≠审批者；操作令牌一次性、限定资源/理由/有效期。学校需确认具体清单；未确认时禁用这些高敏新增动作。
 4. 写事务重新检查 User、RoleGrant/RoleRevision、resource/current task；与撤销使用兼容行锁次序，明确以 COMMIT 序列化。撤销在其 COMMIT 后的新操作立即生效；已先取得授权读锁并提交的操作可先于撤销完成，不能承诺撤权倒流取消已提交事实。

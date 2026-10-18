@@ -130,7 +130,7 @@ HomeworkAttempt(participation_id, attempt_no, submission_id, submitted_at, reaso
 
 ### 4.1 试卷不可变性
 
-PaperVersion(id, paper_family_id, revision, canonical_assignment_id UNIQUE, content_sha256, question_digest, rubric_digest, locked_at, status)。同一内容版可多 Session 共享；不对同一内容载体登记多个具有不同评分语义的“冻结版本”。
+PaperVersion(id, paper_family_id, revision, canonical_assignment_id UNIQUE, content_sha256, question_digest, rubric_digest, locked_at, status)。同一内容版可多 Session 共享；不对同一内容载体登记多个具有不同评分语义的“冻结版本”。从已有 legacy 作业导入时，首闭环按 ADR 创建一次专用内容快照并保存 source_assignment_id/原题UUID映射/摘要，不把已有成员或提交原位转成考试资源；旧历史可访问性保持。
 
 PaperQuestionMapping(id=稳定 question_key, paper_version_id, legacy_question_id FK, printed_label, order_index, equivalence_group_id 可空)。唯一 `(paper_version_id, legacy_question_id)`、`(paper_version_id, order_index)`；`printed_label` 不作跨卷身份。A/B 若题序不同，显式映射各卷 Question 到已核实逻辑题，等价关系仍是需审核事实。
 

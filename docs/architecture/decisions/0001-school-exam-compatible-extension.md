@@ -22,7 +22,7 @@
 采用 A。不是用 Assignment 冒充考试：ExamSession 仍是独立实体；**一个 PaperVersion 唯一绑定一个冻结 Assignment 内容载体**，多个 Session、多班共享它，不按班/学生/场次克隆。更换内容或 Rubric 才创建新的 PaperVersion 和必要的新内容载体；旧版本保持不变。
 
 - 新 `PaperQuestionMapping` 用版本内稳定 UUID 对应现有 Question.id。A/B 卷另有明确版次与题序映射，同题关系必须人工确认，不能靠相同题号或题干相似度。
-- 现有已 published Assignment 若有真实历史提交，可被审核导入为 PaperVersion 的内容快照，但不得把它的旧提交自动解释成考试答卷。只能显式创建桥接记录；无法安全隔离已有成员访问时必须创建经审核的专用内容载体（按内容版本一次，不按班复制）。
+- 现有已 published Assignment 可作为经过人工确认的导入来源，但不得把它的旧提交自动解释成考试答卷。**首个 B 闭环禁止把含 legacy 提交或现存 legacy 成员的 Assignment 直接改成考试受保护载体**；导入时创建一次专用内容快照载体，保存 source_assignment_id/原题映射/摘要谱系，原 UUID、成员和提交不变。该快照按内容版本一次，不按班/场次复制；没有旧访问者的专用考试载体才可直接绑定。
 - 每个已确认 AnswerScriptVersion 对应**新** Submission。`student_ref` 是服务端保留前缀 + 版本 UUID 的不透明处理标识，不是考生 ID，更不是授权依据。现有唯一键无需拆除；实际参试关系只存扫描/考试域。
 - 该内部提交注册需要新的短事务适配方法；不能调用会自行 COMMIT 的现有 `create_submission` 后再补写关联，以免半成品。
 - 同事务写桥接、文件、任务；未经桥接/隐私隔离不能把新考试资源交给旧 HTTP。旧敏感 API、列表、Copilot/检索必须识别考试载体并默认拒绝，而非继承 admin 全局权限。
