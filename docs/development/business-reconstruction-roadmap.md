@@ -40,7 +40,7 @@
 - 已实现（权限与合同）：固定动作 `organization.read/manage`、`student.import.preview/confirm`，**仅安装级 Scope**（不是按年级/班级的学校 RBAC）；旧 `User.is_admin`/AssignmentMembership/JWT role 不授权；迁移新增 `organization_operator`/`organization_manager`/`student_importer` 角色版本，bootstrap 改授 `organization_operator`，并补 `security_grants` 活动授权部分唯一索引（重复授予 409）；11 个组织 HTTP 操作进入固定策略表与 OpenAPI，组织基础字典写操作只经受控 CLI；生成的 TypeScript 合同只有新增、无既有操作漂移。
 - 已实现（迁移安全）：`btree_gist`、学期/归属 GiST 排他约束、学期学年内触发器、预检批次/行与归属历史保护触发器、组织操作追加审计；存在新数据时拒绝破坏性降级。
 - 测试验收：真实 PostgreSQL 集成/迁移测试与纯解析/领域单测定义见[组织与学生名册](organization.md#9-验证证据与测试状态)（`tests/integration/test_organization*.py`、`tests/integration/test_student_import.py`、`tests/unit/test_organization_*.py`）；组织/权限/迁移领域单测 23、真实 PG 组织/授权 22、独立迁移往返 1、导入子系统单元 63 与真实 PG 集成 26 均通过；统一门禁后端全量 977 passed/16 skipped、独立空库 upgrade/check/downgrade/再 upgrade 通过；不以 Mock/SQLite 替代真实数据库结论。
-- 仍暂未实现：教学班/教学选课/任教关系及按年级/班级的组织 Scope；普通教师查看本班名单；组织/名册前端页面；学生登录。B-1.2 所需的 `ExamEvent`/`ExamSession`/`SessionPaper`/`PaperVersion`/`PaperQuestionMapping`/`PaperSourceFile`/`RosterRevision`/`RosterEntrySnapshot`/`ExamParticipation`/`ExamRoom`/`SeatingAssignment`，以及 `ScanBatch`/`ScanBatchFile`/`ScanPage`/分卷与身份/旧 Submission 桥接均未实现；阅卷、有效题分与成绩发布仍未实现。
+- 仍暂未实现：教学班/教学选课/任教关系及按年级/班级的组织 Scope；普通教师查看本班名单；组织/名册前端页面；学生登录。B-1.2c及后续仍需的 `PaperSourceFile`/`RosterRevision`/`RosterEntrySnapshot`/`ExamParticipation`/`ExamRoom`/`SeatingAssignment`，以及 `ScanBatch`/`ScanBatchFile`/`ScanPage`/分卷与身份/旧 Submission 桥接均未实现；阅卷、有效题分与成绩发布仍未实现。
 - 学校待确认：可信名册来源/责任人、真实数据导入授权、字段最小集与学号规则、CSV 编码、转班生效与更正政策、组织操作员人选与离任撤权（见[组织与学生名册](organization.md#10-需学校确认事项)）。
 - 回滚：停导入和新组织写入，保留原始导入审计与冻结批次；破坏性降级会被迁移拒绝，不猜测回填旧 `grade_level`/`student_ref`。
 
@@ -51,14 +51,16 @@
 - 详见[试卷版本指南](paper-versions.md)。不以 published 作业当数据库冻结，不把 locked 试卷当成绩发布。
 - 试卷题本 PDF、空白答题卡和版式文件拆为后续独立「试卷原件与版式」切片；当前没有 PaperSourceFile 或 PDF 导入，不能据此提前运行扫描。
 
-### B-1.2b 考试场次与名单冻结（待开发）
+### B-1.2b 考试计划、科目场次与共享用卷
 
-- 前置：B-1.1a、B-1.1b；组织导入与最小命题/考务授权。
-- 后端/迁移：Event/Session/SessionPaper、PaperVersion/QuestionMapping/SourceFile、RosterRevision/Snapshot/Participation；PaperVersion 防原位变更；复合 FK/UNIQUE，保持所有旧表/UUID。
-- 前端/API：P/X 中建考试、建场次、导入不含学生作答的原始题本/空白答题卡并人工核对、选已发布内容、锁卷、名单导入预检/确认、班级筛选；先有可执行 CLI/合同测试。
-- 权限：paper.read/edit/lock 与 roster.read/lock 独立；命题人不自动获得考生资料。
-- 测试/验收：2 班共用 1 Assignment/1 PaperVersion、另一 Session 复用同卷；同名/同考号冲突；同卷 A/B 映射不能错接；锁卷绕过旧 PUT 更新受拒；旧提交不自动成为考试参试记录。
-- 回滚：关闭新 Session 创建，保留新表/已锁快照；历史 Assignment 无猜测回填。单切片迁移往返在独立库验证。
+- 已实施后端Service/JWT CLI：ExamEvent、ExamSession、SessionPaper、ExamOperation；真实Term/Subject FK与Event/Session Scope；显式A/B、跨场次同卷复用、退役禁止新绑定且保留历史。
+- 准备完成只代表用卷配置，不代表名单/扫描/阅卷完成。不新增Vue/HTTP，不复制题目，不改变评分协议。
+- 详见[考试场次指南](exam-sessions.md)，交付后等待独立审查，不自动进入下一切片。
+
+### B-1.2c 参试名单与冻结（待开发）
+
+- RosterRevision/RosterEntrySnapshot、ExamParticipation、真实学生/班级快照、考号、卷别分配和更正；禁止自由UUID范围与直接覆盖历史用卷。
+- PaperSourceFile/PDF/空白卡与版式仍是独立待开发切片；无上传功能不得宣称已支持。
 
 ### B-1.3 独立大文件接收与人工页面处理
 

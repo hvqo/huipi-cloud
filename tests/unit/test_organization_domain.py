@@ -223,6 +223,13 @@ def test_grants_manage_catalog_entry_was_not_extended_by_organization_actions():
         "paper.read",
         "paper.edit",
         "paper.lock",
+        "paper.use",
+        "exam.event.create",
+        "exam.event.read",
+        "exam.event.manage",
+        "exam.session.read",
+        "exam.session.manage",
+        "exam.session.paper.bind",
     }
 
 

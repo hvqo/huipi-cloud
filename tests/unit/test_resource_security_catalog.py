@@ -19,8 +19,15 @@ def test_classification_rules_cover_every_mapped_resource_parent():
         and not mapper.local_table.name.startswith("security_")
     }
     assert resources <= covered
-    assert "exam.session.read" not in CATALOG
-    assert set().union(*CATALOG.values()) == {"installation", "assignment", "paper_version"}
+    assert "exam.session.read" in CATALOG
+    assert "exam.participation.read" not in CATALOG
+    assert set().union(*CATALOG.values()) == {
+        "installation",
+        "assignment",
+        "paper_version",
+        "exam_event",
+        "exam_session",
+    }
 
 
 def test_resource_security_call_inventory_matches_all_registered_methods_and_paths():
@@ -33,11 +40,7 @@ def test_resource_security_call_inventory_matches_all_registered_methods_and_pat
         for path, operations in app.openapi()["paths"].items()
         for method in operations
         if method in {"get", "head", "post", "put", "patch", "delete", "options"}
-    } | {
-        (method, route.path)
-        for route in app.routes
-        for method in getattr(route, "methods", ())
-    }
+    } | {(method, route.path) for route in app.routes for method in getattr(route, "methods", ())}
     actual = {(item["method"], item["path"]) for item in entries}
     assert len(entries) == len(actual)
     assert actual == expected

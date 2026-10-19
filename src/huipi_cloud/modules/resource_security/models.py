@@ -39,14 +39,25 @@ class SecurityScope(Base):
     __tablename__ = "security_scopes"
     __table_args__ = (
         CheckConstraint(
-            "(kind = 'installation' AND installation_id = 1 AND assignment_id IS "
-            "NULL AND paper_version_id IS NULL) OR "
-            "(kind = 'assignment' AND installation_id IS NULL AND assignment_id IS "
-            "NOT NULL AND paper_version_id IS NULL) OR (kind = 'paper_version' AND "
-            "installation_id IS NULL AND assignment_id IS NULL AND paper_version_id"
-            " IS NOT NULL)",
+            "(kind='installation' AND installation_id=1 AND assignment_id IS NULL "
+            "AND paper_version_id IS NULL AND exam_event_id IS NULL AND exam_s"
+            "ession_id IS NULL) OR "
+            "(kind='assignment' AND installation_id IS NULL AND assignment_id IS NOT NULL "
+            "AND paper_version_id IS NULL AND exam_event_id IS NULL AND exam_s"
+            "ession_id IS NULL) OR "
+            "(kind='paper_version' AND installation_id IS NULL AND assignment_id IS NULL "
+            "AND paper_version_id IS NOT NULL AND exam_event_id IS NULL AND ex"
+            "am_session_id IS NULL) OR "
+            "(kind='exam_event' AND installation_id IS NULL AND assignment_id IS NULL "
+            "AND paper_version_id IS NULL AND exam_event_id IS NOT NULL AND ex"
+            "am_session_id IS NULL) OR "
+            "(kind='exam_session' AND installation_id IS NULL AND assignment_id IS NULL "
+            "AND paper_version_id IS NULL AND exam_event_id IS NULL AND exam_s"
+            "ession_id IS NOT NULL)",
             name="ck_security_scope_shape",
         ),
+        UniqueConstraint("exam_event_id", name="uq_security_scope_event"),
+        UniqueConstraint("exam_session_id", name="uq_security_scope_session"),
         UniqueConstraint("assignment_id", name="uq_security_scope_assignment"),
         UniqueConstraint("paper_version_id", name="uq_security_scope_paper"),
         UniqueConstraint("installation_id", name="uq_security_scope_installation"),
@@ -57,6 +68,13 @@ class SecurityScope(Base):
     assignment_id: Mapped[UUID | None] = mapped_column(ForeignKey("assignments.id"))
     paper_version_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("paper_versions.id", name="fk_security_scope_paper")
+    )
+
+    exam_event_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("exam_events.id", name="fk_security_scope_event")
+    )
+    exam_session_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("exam_sessions.id", name="fk_security_scope_session")
     )
 
 

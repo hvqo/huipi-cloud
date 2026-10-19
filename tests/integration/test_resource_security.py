@@ -505,7 +505,7 @@ async def test_grant_revoke_disable_and_scope_identity_checks(sec):
 
 @pytest.mark.anyio
 @pytest.mark.parametrize(
-    "action", ["exam.session.read", "unknown.permission", "SELECT * FROM users"]
+    "action", ["exam.participation.read", "unknown.permission", "SELECT * FROM users"]
 )
 async def test_future_unknown_permissions_and_scopes_are_not_executable(sec, action):
     ctx = sec
@@ -603,25 +603,25 @@ async def test_role_seal_cannot_be_mutated_or_receive_new_permissions(sec):
             with pytest.raises(DBAPIError):
                 await s.execute(statement)
             await s.rollback()
-    # Even if a database operator enables the reserved future row, code still rejects it.
+    # Even a persisted enabled row cannot activate a future action absent from code.
     async with ctx.factory() as s, s.begin():
         await s.execute(
-            update(PermissionDefinition)
-            .where(PermissionDefinition.code == "exam.session.read")
-            .values(enabled=True)
+            insert(PermissionDefinition).values(
+                code="exam.participation.read", enabled=True, scope_kinds=["installation"]
+            )
         )
     try:
         async with ctx.factory() as s:
             with pytest.raises(AccessError):
                 await service.require_permission(
-                    s, principal(ctx), "exam.session.read", service.INSTALLATION_SCOPE
+                    s, principal(ctx), "exam.participation.read", service.INSTALLATION_SCOPE
                 )
     finally:
         async with ctx.factory() as s, s.begin():
             await s.execute(
-                update(PermissionDefinition)
-                .where(PermissionDefinition.code == "exam.session.read")
-                .values(enabled=False)
+                delete(PermissionDefinition).where(
+                    PermissionDefinition.code == "exam.participation.read"
+                )
             )
 
 
@@ -853,7 +853,14 @@ async def test_independent_migration_roundtrip_preserves_legacy_graph_and_refuse
         "student_import_batches",
         "student_import_rows",
         "organization_operations",
-        "paper_families", "paper_versions", "paper_question_mappings", "paper_operations",
+        "paper_families",
+        "paper_versions",
+        "paper_question_mappings",
+        "paper_operations",
+        "exam_events",
+        "exam_sessions",
+        "session_papers",
+        "exam_operations",
     }
     source = {}
     async with factory() as s:

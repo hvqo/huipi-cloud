@@ -94,7 +94,7 @@ uv run python -m huipi_cloud.modules.papers retire --token-stdin --payload reque
 
 [测试](../../tests/integration/test_paper_versions.py)使用独立真实 PostgreSQL，验证真实数据库错误原因、SQL/ORM 绕过、来源/锁卷/撤权并发、幂等与未知 COMMIT、原始文件与评分审核历史摘要，以及独立库 upgrade/check/downgrade/再 upgrade。存在新家族、版本、操作、Scope 或新角色 Grant 时拒绝破坏性降级；生产回滚保留这些数据并向前修复。
 
-B-1.2b 才增加 ExamEvent/ExamSession/SessionPaper、名单与参试关系及真实场次 Scope；必须显式要求引用锁定且可用的卷版，不从旧 Assignment 状态猜测。后续独立「试卷原件与版式」切片才实现 PaperSourceFile（题本 PDF/空白卡）与上传、私有 S3/SHA/MIME/大小校验及锁后不可变清单；已锁版本新增或更换原件必须建立新版本。本切片没有 PDF 上传/解析、版式模板或文件预览。
+B-1.2b 增加 ExamEvent/ExamSession/SessionPaper 与真实场次 Scope；名单和参试关系留在 B-1.2c；必须显式要求引用锁定且可用的卷版，不从旧 Assignment 状态猜测。后续独立「试卷原件与版式」切片才实现 PaperSourceFile（题本 PDF/空白卡）与上传、私有 S3/SHA/MIME/大小校验及锁后不可变清单；已锁版本新增或更换原件必须建立新版本。本切片没有 PDF 上传/解析、版式模板或文件预览。
 
 ## 后续考试引用与退役边界
 
