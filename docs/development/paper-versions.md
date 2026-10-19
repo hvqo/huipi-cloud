@@ -9,6 +9,8 @@
 - `PaperQuestionMapping`：版本内 `question_key`、真实 Question、显示题号和顺序，保留来源 Question FK、源 Rubric 摘要及前版 Mapping FK。两个复合外键同时证明 Question 与 PaperVersion 绑定的是**同一内容载体**。
 - `PaperOperation`：actor/request_id 唯一的 append-only 操作与摘要结果。审计不保存标准答案全文、JWT、学生正文或 S3 Key；创建人和权限关联的 User 由服务端查询。
 
+当前家族创建标识固定为来源 Assignment 与标题，同源同标题不能自然创建两个独立家族；需要独立命题家族时应由后续显式身份合同处理，不能偷偷改标题绕过审计。本切片尚无此业务阻塞，不更改既有标识算法。
+
 一个版本只有一份专用内容；多班/多场次以后引用这份版本，不按班复制。题号仅用于显示，不证明逻辑同题。初次导入生成 question_key；明确 fork 保留题目键与映射谱系，不用题干相似度猜测。跨家族的逻辑等价关系尚未开放。
 
 ## 快照事务
@@ -93,3 +95,7 @@ uv run python -m huipi_cloud.modules.papers retire --token-stdin --payload reque
 [测试](../../tests/integration/test_paper_versions.py)使用独立真实 PostgreSQL，验证真实数据库错误原因、SQL/ORM 绕过、来源/锁卷/撤权并发、幂等与未知 COMMIT、原始文件与评分审核历史摘要，以及独立库 upgrade/check/downgrade/再 upgrade。存在新家族、版本、操作、Scope 或新角色 Grant 时拒绝破坏性降级；生产回滚保留这些数据并向前修复。
 
 B-1.2b 才增加 ExamEvent/ExamSession/SessionPaper、名单与参试关系及真实场次 Scope；必须显式要求引用锁定且可用的卷版，不从旧 Assignment 状态猜测。后续独立「试卷原件与版式」切片才实现 PaperSourceFile（题本 PDF/空白卡）与上传、私有 S3/SHA/MIME/大小校验及锁后不可变清单；已锁版本新增或更换原件必须建立新版本。本切片没有 PDF 上传/解析、版式模板或文件预览。
+
+## 后续考试引用与退役边界
+
+retired 禁止建立新的场次关联；已存在的关联必须保留卷版 ID、摘要和关联历史，不能级联删除、替换或悄悄改指向。退役不等于取消历史考试；使用中的卷版退役后，后续准备动作应显式阻止并要求有权限的人员取消场次或在草稿中追加更正关联。已准备/关闭场次不得直接覆盖用卷。撤卷属于单独的显式审计业务，不恢复旧管理员全局访问。B-1.2b 通过行锁协调绑定与退役，保留历史事实。
