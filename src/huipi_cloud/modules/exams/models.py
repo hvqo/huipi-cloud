@@ -95,6 +95,7 @@ class SessionPaper(Base):
         ),
         Index("ix_session_papers_version", "paper_version_id"),
         CheckConstraint("variant_code IN ('A','B')", name="ck_session_paper_code"),
+        UniqueConstraint("id", "exam_session_id", name="uq_session_paper_identity"),
         CheckConstraint(
             "(status='active' AND revoked_at IS NULL) OR "
             "(status='revoked' AND revoked_at IS NOT NULL)",

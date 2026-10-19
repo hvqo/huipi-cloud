@@ -776,7 +776,8 @@ async def test_migration_roundtrip_old_graph_paper_history_and_destructive_guard
         for table in Base.metadata.sorted_tables:
             if (
                 table.name.startswith(("paper_", "exam_", "security_", "permission_"))
-                or table.name == "session_papers"
+                or table.name in {"session_papers", "exam_participations"}
+                or table.name.startswith("roster_")
             ):
                 continue
             source[table.name] = [dict(r) for r in (await db.execute(select(table))).mappings()]
@@ -897,7 +898,7 @@ async def test_migration_roundtrip_old_graph_paper_history_and_destructive_guard
         assert r.returncode != 0 and "exam_downgrade_requires_archived_new_data" in r.stderr
         async with target.connect() as db:
             assert (
-                await db.scalar(text("SELECT version_num FROM alembic_version")) == "b12bf031a920"
+                await db.scalar(text("SELECT version_num FROM alembic_version")) == "b12c9d20e411"
             )
     finally:
         await target.dispose()

@@ -224,3 +224,6 @@ B-1.2b 仍缺考试场次、共享卷关联、参试名单/快照和场次授权
 ## 考试场次与共享用卷基础
 
 已实现受控Service/JWT CLI下的考试计划、科目场次、显式A/B用卷和跨场次复用；未实现参试名单、班级快照、考号、扫描、阅卷与成绩。新资源授权、状态与退役历史见[考试指南](development/exam-sessions.md)。B-1.2c名单能力需独立审查后开发。
+
+
+B-1.2c后端参试名单、学生/班级快照、考号、卷别待核验、冻结与版本化更正已实现，待独立审查；名单导入界面、扫描、考场/到考与成绩仍未实现。详见[业务路线](development/business-reconstruction-roadmap.md)及[名单指南](development/exam-rosters.md)。

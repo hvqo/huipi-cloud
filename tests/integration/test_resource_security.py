@@ -861,6 +861,10 @@ async def test_independent_migration_roundtrip_preserves_legacy_graph_and_refuse
         "exam_sessions",
         "session_papers",
         "exam_operations",
+        "exam_participations",
+        "roster_revisions",
+        "roster_entry_snapshots",
+        "roster_operations",
     }
     source = {}
     async with factory() as s:
