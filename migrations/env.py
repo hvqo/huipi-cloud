@@ -21,6 +21,7 @@ from huipi_cloud.modules.grading import models as grading_models  # noqa: F401
 from huipi_cloud.modules.identity import models as identity_models  # noqa: F401
 from huipi_cloud.modules.knowledge import models as knowledge_models  # noqa: F401
 from huipi_cloud.modules.organization import models as organization_models  # noqa: F401
+from huipi_cloud.modules.papers import models as paper_models  # noqa: F401
 from huipi_cloud.modules.parsing import models as parsing_models  # noqa: F401
 from huipi_cloud.modules.resource_security import models as security_models  # noqa: F401
 from huipi_cloud.modules.submissions import models as submission_models  # noqa: F401

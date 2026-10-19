@@ -39,17 +39,25 @@ class SecurityScope(Base):
     __tablename__ = "security_scopes"
     __table_args__ = (
         CheckConstraint(
-            "(kind = 'installation' AND installation_id = 1 AND assignment_id IS NULL) OR "
-            "(kind = 'assignment' AND installation_id IS NULL AND assignment_id IS NOT NULL)",
+            "(kind = 'installation' AND installation_id = 1 AND assignment_id IS "
+            "NULL AND paper_version_id IS NULL) OR "
+            "(kind = 'assignment' AND installation_id IS NULL AND assignment_id IS "
+            "NOT NULL AND paper_version_id IS NULL) OR (kind = 'paper_version' AND "
+            "installation_id IS NULL AND assignment_id IS NULL AND paper_version_id"
+            " IS NOT NULL)",
             name="ck_security_scope_shape",
         ),
         UniqueConstraint("assignment_id", name="uq_security_scope_assignment"),
+        UniqueConstraint("paper_version_id", name="uq_security_scope_paper"),
         UniqueConstraint("installation_id", name="uq_security_scope_installation"),
     )
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
     kind: Mapped[str] = mapped_column(String(24), nullable=False)
     installation_id: Mapped[int | None] = mapped_column(ForeignKey("security_installations.id"))
     assignment_id: Mapped[UUID | None] = mapped_column(ForeignKey("assignments.id"))
+    paper_version_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("paper_versions.id", name="fk_security_scope_paper")
+    )
 
 
 class SecurityRoleVersion(Base):

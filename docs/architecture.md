@@ -367,3 +367,10 @@ Assignment 增加不可降级的可信分类，历史普通作业保留 `legacy_
 固定权限目录、封存角色版本、真实安装/Assignment Scope、用户 Grant 与 append-only 审计构成最小新权限基础。受控 CLI 可初始化、委派、撤销及原子创建受保护载体，**不能读取考试学生作答**。未来实体动作禁用，不接受自由 UUID/JSON 伪造考试范围。授权和审计同事务，当前数据库状态和 SHARE 锁约束撤权顺序；无跨请求权限缓存。
 
 详见[可验证调用清单与安全边界](security/exam-resource-security.md)及[部署指南](development/resource-security.md)。B-1.1b 才建立可信组织与学生导入；B-1.2 才建立场次、PaperVersion 及冻结内容的数据库/服务双重写保护。
+
+
+## 共享试卷版本与锁卷
+
+PaperVersion 唯一绑定专用 exam_protected Assignment，PaperQuestionMapping 的复合外键确保真实题目归属；来源作业只读快照，历史身份和审核不改写。PaperFamily 线性版次与写 revision 独立，锁后只允许退役及创建后继版本，不解锁原位改题/答案/Rubric。
+
+数据库触发器锁住同一 PaperVersion，覆盖内容增删改、关联与映射；服务同时比较 revision 和内容/映射摘要。固定 paper 动作只绑定真实安装或 PaperVersion Scope，旧 admin/成员不授权。当前为受控 CLI，没有考试/名单/扫描 HTTP；文件原件另立切片。见[完整合同与部署](development/paper-versions.md)。

@@ -30,7 +30,7 @@ from huipi_cloud.modules.submissions.models import ParsingTask, Submission
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BASE_REVISION = "e21a9b4c110a"
-HEAD_REVISION = "b11b0a7c4e21"
+HEAD_REVISION = "b12a7e90c210"
 OLD_TABLES = ("users", "assignments", "submissions", "parsing_tasks")
 INSTALLATION_SCOPE = UUID("11111111-b11a-4000-8000-000000000001")
 ORGANIZATION_MANAGER_ROLE = UUID("11111111-b11b-4000-8000-000000000002")

@@ -81,6 +81,7 @@ class Assignment(Base):
 class Question(Base):
     __tablename__ = "questions"
     __table_args__ = (
+        UniqueConstraint("id", "assignment_id", name="uq_question_parent_pair"),
         UniqueConstraint(
             "assignment_id",
             "question_number",

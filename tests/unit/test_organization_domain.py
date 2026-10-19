@@ -219,6 +219,10 @@ def test_grants_manage_catalog_entry_was_not_extended_by_organization_actions():
         "security.protected.create",
         "security.classification.inspect",
         *NEW_ACTIONS,
+        "paper.create",
+        "paper.read",
+        "paper.edit",
+        "paper.lock",
     }
 
 
