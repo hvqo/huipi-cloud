@@ -861,7 +861,10 @@ async def test_paper_migration_roundtrip_preserves_actual_old_graph_and_guards_n
     source = {}
     async with ctx.factory() as s:
         for table in Base.metadata.sorted_tables:
-            if table.name.startswith(("paper_", "security_", "permission_")):
+            if (
+                table.name.startswith(("paper_", "security_", "permission_", "exam_"))
+                or table.name == "session_papers"
+            ):
                 continue
             source[table.name] = [dict(r) for r in (await s.execute(select(table))).mappings()]
 
@@ -943,7 +946,7 @@ async def test_paper_migration_roundtrip_preserves_actual_old_graph_and_guards_n
             and "paper_downgrade_requires_archived_new_data" in rejected.stderr
         )
         async with target.connect() as c:
-            assert await c.scalar(text("SELECT version_num FROM alembic_version")) == "b12a7e90c210"
+            assert await c.scalar(text("SELECT version_num FROM alembic_version")) == "b12bf031a920"
     finally:
         await target.dispose()
         async with admin.connect() as c:

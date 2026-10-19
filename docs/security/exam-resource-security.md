@@ -139,3 +139,7 @@ B-1.1b 的组织/学生/导入证据见 `tests/integration/test_organization.py`
 新增 paper.create（仅安装级）、paper.read/edit/lock（安装级或具有 PaperVersion FK 的 paper_version Scope），不扩大旧 Assignment Scope 或旧分类检查动作。新试卷仍被全局 legacy 查询隐藏，新服务仅在当前 Principal/Grant 校验后使用固定 Core 查询。没有通用 ORM 绕过开关或任意 SQL。
 
 版本建立、专用载体、映射、Scope 和审计同事务；数据库/服务的冻结路径、受控部署代操作和权限边界见[试卷指南](../development/paper-versions.md)。普通 paper_editor/locker/reader 应绑定具体卷版，不拥有学生资料或名册权限；paper_operator 是经审批部署安全根，不是普通命题角色。未来 ExamSession/MarkingTask 仍未建立，其保留动作不可执行。原件上传不在本切片，冻结只覆盖实际已纳入的题目内容与映射。
+
+## 考试计划与用卷授权
+
+B-1.2b新增真实ExamEvent/ExamSession FK Scope，事件范围只有在数据库证明父子关系时才能覆盖场次。绑定要求单个Grant覆盖场次manage+bind，并独立检查指定PaperVersion的paper.use；读取卷版不能代替使用授权，场次管理也不能读取标准答案。无新的考试HTTP或Agent工具；旧接口继续默认隐藏exam_protected。具体CLI、事务和历史保护见[考试指南](../development/exam-sessions.md)。

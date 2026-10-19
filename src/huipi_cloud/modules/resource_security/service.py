@@ -13,6 +13,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from huipi_cloud.modules.assignments.models import Assignment
 from huipi_cloud.modules.assignments.schemas import AssignmentCreate
+from huipi_cloud.modules.exams.permissions import EXAM_ACTIONS
 from huipi_cloud.modules.identity import service as identity
 from huipi_cloud.modules.identity.models import User
 from huipi_cloud.modules.identity.protocol import AccessError, Principal
@@ -41,6 +42,7 @@ STUDENT_IMPORTER_ROLE = UUID("11111111-b11b-4000-8000-000000000003")
 # by merely inserting a row/setting enabled in the database.
 CATALOG = {
     **PAPER_ACTIONS,
+    **EXAM_ACTIONS,
     "security.grants.manage": frozenset({"installation"}),
     "security.protected.create": frozenset({"installation"}),
     "security.classification.inspect": frozenset({"installation", "assignment"}),
@@ -74,9 +76,26 @@ async def installation_scope(session):
 
 async def scope(session, scope_id):
     row = await session.scalar(select(SecurityScope).where(SecurityScope.id == scope_id))
-    if row is None or row.kind not in {"installation", "assignment", "paper_version"}:
+    if row is None or row.kind not in {
+        "installation",
+        "assignment",
+        "paper_version",
+        "exam_event",
+        "exam_session",
+    }:
         raise AccessError("security_scope_invalid", 422)
-    if row.kind == "installation":
+    if row.kind not in {"exam_event", "exam_session"} and (
+        row.exam_event_id is not None or row.exam_session_id is not None
+    ):
+        raise AccessError("security_scope_invalid", 422)
+    if row.kind in {"exam_event", "exam_session"}:
+        from huipi_cloud.modules.exams.models import ExamEvent, ExamSession
+
+        model = ExamEvent if row.kind == "exam_event" else ExamSession
+        identifier = row.exam_event_id if row.kind == "exam_event" else row.exam_session_id
+        if await session.get(model, identifier) is None:
+            raise AccessError("security_scope_invalid", 422)
+    elif row.kind == "installation":
         if row.installation_id != 1 or row.assignment_id is not None:
             raise AccessError("security_scope_invalid", 422)
         if await session.get(SecurityInstallation, 1) is None:
@@ -165,7 +184,20 @@ async def _authority(session, principal, actions, target, *, delegation=False):
         granted_scope = await scope(session, grant.scope_id)
         codes = await role_codes(session, grant.role_version_id, granted_scope.kind)
         # A SINGLE grant must cover all required actions AND the whole target scope.
-        if actions <= codes and covers(granted_scope, target):
+        covered = covers(granted_scope, target)
+        if granted_scope.kind == "exam_event" and target.kind == "exam_session":
+            from huipi_cloud.modules.exams.models import ExamSession
+
+            covered = (
+                await session.scalar(
+                    select(ExamSession.id).where(
+                        ExamSession.id == target.exam_session_id,
+                        ExamSession.exam_event_id == granted_scope.exam_event_id,
+                    )
+                )
+                is not None
+            )
+        if actions <= codes and covered:
             return current
     raise AccessError(DENIED, 404)
 

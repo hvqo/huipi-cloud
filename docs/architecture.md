@@ -374,3 +374,7 @@ Assignment 增加不可降级的可信分类，历史普通作业保留 `legacy_
 PaperVersion 唯一绑定专用 exam_protected Assignment，PaperQuestionMapping 的复合外键确保真实题目归属；来源作业只读快照，历史身份和审核不改写。PaperFamily 线性版次与写 revision 独立，锁后只允许退役及创建后继版本，不解锁原位改题/答案/Rubric。
 
 数据库触发器锁住同一 PaperVersion，覆盖内容增删改、关联与映射；服务同时比较 revision 和内容/映射摘要。固定 paper 动作只绑定真实安装或 PaperVersion Scope，旧 admin/成员不授权。当前为受控 CLI，没有考试/名单/扫描 HTTP；文件原件另立切片。见[完整合同与部署](development/paper-versions.md)。
+
+### 考试计划与共享用卷
+
+ExamEvent通过真实学期组织多个ExamSession；每场次通过不可覆盖的SessionPaper引用锁定PaperVersion，支持显式A/B与跨场次复用。新Event/Session Scope不继承旧管理员权限；绑定要求同一Grant的场次manage+bind以及独立paper.use。无考试HTTP、名单、扫描或成绩能力。详见[考试开发指南](development/exam-sessions.md)。

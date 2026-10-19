@@ -37,3 +37,5 @@
 
 - [快速 CI 与本地验收](validation.md)
 - [共享试卷版本与锁卷](paper-versions.md)
+
+- [考试计划、科目场次与共享用卷](exam-sessions.md)：受控JWT CLI、真实资源授权、用卷历史与状态规则。
