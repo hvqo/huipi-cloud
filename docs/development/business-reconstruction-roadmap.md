@@ -57,9 +57,9 @@
 - 准备完成只代表用卷配置，不代表名单/扫描/阅卷完成。不新增Vue/HTTP，不复制题目，不改变评分协议。
 - 详见[考试场次指南](exam-sessions.md)，交付后等待独立审查，不自动进入下一切片。
 
-### B-1.2c 参试名单与冻结（待开发）
+### B-1.2c 参试名单与冻结（后端基础已实现）
 
-- RosterRevision/RosterEntrySnapshot、ExamParticipation、真实学生/班级快照、考号、卷别分配和更正；禁止自由UUID范围与直接覆盖历史用卷。
+- Service/JWT CLI已实现RosterRevision/RosterEntrySnapshot、ExamParticipation、考试日期学生/班级快照、考号、显式卷别与待核验、冻结及完整版本化更正；真实复合FK与数据库不可变保护，不覆盖历史用卷。详见[名单指南](exam-rosters.md)。无名单HTTP/导入前端、到考或扫描能力；新切片等待独立审查。
 - PaperSourceFile/PDF/空白卡与版式仍是独立待开发切片；无上传功能不得宣称已支持。
 
 ### B-1.3 独立大文件接收与人工页面处理

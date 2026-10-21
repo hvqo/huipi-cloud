@@ -80,7 +80,7 @@ uv run python -m huipi_cloud.modules.exams event-state --token-stdin --payload e
 5. session-state：`request_id/exam_session_id/expected_revision/lifecycle`；准备后不可改绑。event-state 类似，使用 exam_event_id 和 Event revision。
 6. edit-session 提交完整 title/starts_at/ends_at/paper_policy；edit-event 提交完整 title/category，不是增量补丁。
 
-完整严格合同见 [schemas.py](../../src/huipi_cloud/modules/exams/schemas.py)。查询计划返回计划和场次数；查询场次返回有界用卷历史，两个查询均不返回学生或试卷正文。当前没有批量查询/前端接口。
+完整严格合同见 [schemas.py](../../src/huipi_cloud/modules/exams/schemas.py)。查询计划返回计划和场次数；查询场次返回有界用卷历史，两个查询均不返回学生或试卷正文。当前没有批量查询/前端接口。B-1.2c起计划查询的roster_status为per_session；场次返回not_configured/draft/frozen元数据，不返回名单正文或推断到考。
 
 ## 事务、错误及验证
 
@@ -94,4 +94,4 @@ uv run python -m huipi_cloud.modules.exams event-state --token-stdin --payload e
 
 运行 [真实 PostgreSQL 测试](../../tests/integration/test_exam_sessions.py)及[试卷安全回归](../../tests/integration/test_paper_versions.py)。迁移在独立库执行 upgrade/check/downgrade/再次 upgrade，并检查旧记录和真实锁卷摘要；降级在检查前先锁表阻止新建竞态；存在考试记录/审计/Scope/新角色Grant时拒绝破坏性降级，生产回滚采用保留数据的向前修复。数据库特权所有者禁用触发器/TRUNCATE不在应用威胁边界内。
 
-B-1.2c仍需真实 ExamParticipation、RosterRevision/RosterEntrySnapshot、学生/班级历史快照、考号、卷别分配、名单锁定及更正。不得由本切片的 session_count 或 ready 推断参试人数、缺考、考试材料完整或成绩有效。
+B-1.2c的参试身份、名单快照、冻结和更正现由[名单服务](exam-rosters.md)提供，读取名单需独立的exam.roster.read权限。首次建名单后场次日期和用卷策略不可原位改写。不得由本切片的 session_count 或 ready 推断参试人数、缺考、考试材料完整或成绩有效。

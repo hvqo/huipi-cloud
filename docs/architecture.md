@@ -378,3 +378,8 @@ PaperVersion 唯一绑定专用 exam_protected Assignment，PaperQuestionMapping
 ### 考试计划与共享用卷
 
 ExamEvent通过真实学期组织多个ExamSession；每场次通过不可覆盖的SessionPaper引用锁定PaperVersion，支持显式A/B与跨场次复用。新Event/Session Scope不继承旧管理员权限；绑定要求同一Grant的场次manage+bind以及独立paper.use。无考试HTTP、名单、扫描或成绩能力。详见[考试开发指南](development/exam-sessions.md)。
+
+
+### 参试名单历史与冻结
+
+ExamParticipation固定Session/Student身份；RosterRevision保存版本链与当前冻结指针；RosterEntrySnapshot通过真实复合FK绑定同场次的身份和SessionPaper，保存考试日期的行政班与学生标签。更正建立后继完整快照，冻结内容不可覆写；当前集合不能由Participation行是否存在推断。Service和签名JWT CLI、权限与迁移边界见[名单指南](development/exam-rosters.md)。未增加扫描、到考或成绩状态。

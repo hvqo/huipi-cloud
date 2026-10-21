@@ -444,7 +444,7 @@ async def inspect_event(session, principal, identifier):
             result["session_count"] = await session.scalar(
                 select(func.count()).select_from(S).where(S.c.exam_event_id == identifier)
             )
-            result["roster_status"] = "not_configured"
+            result["roster_status"] = "per_session"
             return result
     except (SQLAlchemyError, OSError, TimeoutError):
         raise AccessError("exam_operation_unavailable", 503) from None
@@ -466,7 +466,19 @@ async def inspect_session(session, principal, identifier):
             ).mappings()
             result["papers"] = [public(r) for r in rows]
             result["default_variant"] = "A"
-            result["roster_status"] = "not_configured"
+            from huipi_cloud.modules.exam_rosters.models import RosterRevision
+
+            roster = RosterRevision.__table__
+            statuses = set(
+                await session.scalars(
+                    select(roster.c.status).where(roster.c.exam_session_id == identifier)
+                )
+            )
+            result["roster_status"] = (
+                "frozen"
+                if "frozen" in statuses
+                else ("draft" if "draft" in statuses else "not_configured")
+            )
             result["attendance_status"] = "not_available"
             return result
     except (SQLAlchemyError, OSError, TimeoutError):

@@ -143,3 +143,8 @@ B-1.1b 的组织/学生/导入证据见 `tests/integration/test_organization.py`
 ## 考试计划与用卷授权
 
 B-1.2b新增真实ExamEvent/ExamSession FK Scope，事件范围只有在数据库证明父子关系时才能覆盖场次。绑定要求单个Grant覆盖场次manage+bind，并独立检查指定PaperVersion的paper.use；读取卷版不能代替使用授权，场次管理也不能读取标准答案。无新的考试HTTP或Agent工具；旧接口继续默认隐藏exam_protected。具体CLI、事务和历史保护见[考试指南](../development/exam-sessions.md)。
+
+
+## 参试名单安全合同
+
+B-1.2c的exam.roster.read/manage/freeze/correct沿真实Event/Session Scope执行；旧admin不授权。更正要求同Grant完整覆盖manage+correct；名单读取单独授权。Participation身份、冻结Snapshot与追加审计由数据库保护；新版本原子切换current，不删除旧名单。没有新HTTP或Agent名单工具。详见[名单指南](../development/exam-rosters.md)。
