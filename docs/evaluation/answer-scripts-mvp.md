@@ -15,7 +15,7 @@
 - `uv sync --locked`、`uv run ruff check .`、`git diff --check`：通过。
 - `uv run pytest -q tests/unit`：**644 passed，0 skipped**。
 - 扫描、名单、考试、试卷安全、resource_security、教师授权、组织迁移、作答复核HTTP、评分审核HTTP及新分卷专项组合：**196 passed，0 skipped**，468.62秒。
-- 随后补全文件名投影，并对最终代码重新运行 `tests/integration/test_answer_scripts.py`：**25 passed，0 skipped**，65.92秒。这25项与上述组合重叠，不相加宣称更多独立用例。
+- 随后补全文件名投影、将Manifest摘要限定为有序来源身份及SHA，并对最终代码重新运行 `tests/integration/test_answer_scripts.py`：**25 passed，0 skipped**，65.87秒。这25项与上述组合重叠，不相加宣称更多独立用例。
 - `RUN_WORKBENCH_E2E=1 uv run pytest -q tests/integration/test_teacher_workbench_browser.py`：**1个pytest包装场景通过**，内部**3个Chromium场景通过**。包括原Unicode证据/幂等/冲突工作流、PNG/作业创建，以及完整扫描分卷流程。最终截图由该次运行产生。
 - `npm ci --prefix frontend`、typecheck、lint、build、format:check：通过；Vitest **47 passed**。
 - OpenAPI导出及TypeScript生成、固定路由权限目录单元检查通过。`docker compose config --quiet`通过，仅解析配置，不启动开发Compose。

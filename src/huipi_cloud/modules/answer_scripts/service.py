@@ -120,7 +120,17 @@ def public_page(row):
 
 
 def manifest_digest(rows):
-    return exams.digest([public_page(r) | {"allocated_script_id": None} for r in rows])
+    # Display labels and transient ownership are not source identity. Array order is identity.
+    return exams.digest(
+        [
+            {
+                key: value
+                for key, value in public_page(row).items()
+                if key not in {"original_filename", "allocated_script_id"}
+            }
+            for row in rows
+        ]
+    )
 
 
 async def verify_sources(storage, rows):

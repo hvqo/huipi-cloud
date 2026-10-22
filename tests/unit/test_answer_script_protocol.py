@@ -63,6 +63,9 @@ def test_order_and_page_digest_participate_in_manifest():
     two = one | dict(id=uuid4(), page_index=1)
     assert manifest_digest([one, two]) != manifest_digest([two, one])
     assert manifest_digest([one]) != manifest_digest([one | dict(sha256="c" * 64)])
+    assert manifest_digest([one]) == manifest_digest(
+        [one | dict(original_filename="  展示名称.pdf  ", allocated_script_id=uuid4())]
+    )
 
 
 @pytest.mark.anyio
