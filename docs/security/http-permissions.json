@@ -1,5 +1,5 @@
 {
-  "version": "scan-intake-mvp-1",
+  "version": "answer-scripts-1",
   "operations": [
     {
       "method": "POST",
@@ -378,6 +378,54 @@
       "path": "/api/v1/scan-pages/{page_id}/preview",
       "policy": "preview_scan_page",
       "permission": "scan.file.read"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/script-pages",
+      "policy": "list_script_pages",
+      "permission": "exam.script.read"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/identity-candidates",
+      "policy": "list_script_identities",
+      "permission": "exam.script.read"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/answer-scripts",
+      "policy": "create_answer_script",
+      "permission": "exam.script.edit"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/answer-scripts",
+      "policy": "list_answer_scripts",
+      "permission": "exam.script.read"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/answer-scripts/{script_id}",
+      "policy": "inspect_answer_script",
+      "permission": "exam.script.read"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/answer-scripts/{script_id}/versions",
+      "policy": "list_answer_script_versions",
+      "permission": "exam.script.read"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/answer-scripts/{script_id}/versions",
+      "policy": "change_answer_script",
+      "permission": "exam.script.edit"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/answer-scripts/{script_id}/manifest",
+      "policy": "get_answer_script_manifest",
+      "permission": "exam.identity.verify"
     }
   ]
 }

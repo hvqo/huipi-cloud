@@ -11,7 +11,7 @@ import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlencode
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import httpx
 import jwt
@@ -39,8 +39,12 @@ from huipi_cloud.core.config import Settings
 from huipi_cloud.infrastructure.auth.jwt import TokenVerifier
 from huipi_cloud.main import app
 from huipi_cloud.modules.answer_review.models import AnswerReviewDecision
+from huipi_cloud.modules.answer_scripts import service as scripts
+from huipi_cloud.modules.answer_scripts.permissions import SCRIPT_OPERATOR_ROLE
 from huipi_cloud.modules.identity import dependencies as security
 from huipi_cloud.modules.identity.models import AssignmentMembership, User
+from huipi_cloud.modules.resource_security import service as grants
+from huipi_cloud.modules.resource_security.models import SecurityScope
 from huipi_cloud.modules.scans.models import ScanFile, ScanPage
 
 
@@ -60,6 +64,29 @@ async def test_teacher_workbench_browser_end_to_end(
     monkeypatch,
 ):
     ctx = auth_api
+    async with ctx.factory() as db:
+        await scripts.enable_operator(
+            db,
+            ctx.users["admin"].id,
+            ctx.users["admin"].id,
+            uuid4(),
+            "synthetic browser grouping deployment",
+        )
+    async with ctx.factory() as db:
+        scope_id = await db.scalar(
+            select(SecurityScope.id).where(
+                SecurityScope.exam_session_id == UUID(scan_context.session["id"])
+            )
+        )
+    async with ctx.factory() as db:
+        await grants.grant_role(
+            db,
+            ctx.principals["admin"],
+            uuid4(),
+            user_id=ctx.users["a"].id,
+            role_version_id=SCRIPT_OPERATOR_ROLE,
+            scope_id=scope_id,
+        )
     previous_headers = ctx.client.headers.copy()
     ctx.client.headers.update(ctx.headers())
     tasks, servers, processes, sockets = [], [], [], []
@@ -369,6 +396,8 @@ async def test_teacher_workbench_browser_end_to_end(
         assert rows[0].response_regions[0]["text_start"] == text_value.index("学生作答")
         assert rows[0].response_regions[0]["text_end"] == len(text_value)
     finally:
+        async with ctx.factory() as db, db.begin():
+            await db.execute(text("TRUNCATE answer_script_operations,answer_scripts CASCADE"))
         import signal
 
         for process in processes:

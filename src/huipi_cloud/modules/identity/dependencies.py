@@ -44,6 +44,41 @@ ORGANIZATION_POLICIES = {
     "confirm_student_import": "student.import.confirm",
 }
 
+SCRIPT_POLICIES = {
+    "list_script_pages": (
+        "GET",
+        "/exam-sessions/{exam_session_id}/script-pages",
+        "exam.script.read",
+    ),
+    "list_script_identities": (
+        "GET",
+        "/exam-sessions/{exam_session_id}/identity-candidates",
+        "exam.script.read",
+    ),
+    "create_answer_script": (
+        "POST",
+        "/exam-sessions/{exam_session_id}/answer-scripts",
+        "exam.script.edit",
+    ),
+    "list_answer_scripts": (
+        "GET",
+        "/exam-sessions/{exam_session_id}/answer-scripts",
+        "exam.script.read",
+    ),
+    "inspect_answer_script": ("GET", "/answer-scripts/{script_id}", "exam.script.read"),
+    "list_answer_script_versions": (
+        "GET",
+        "/answer-scripts/{script_id}/versions",
+        "exam.script.read",
+    ),
+    "change_answer_script": ("POST", "/answer-scripts/{script_id}/versions", "exam.script.edit"),
+    "get_answer_script_manifest": (
+        "GET",
+        "/answer-scripts/{script_id}/manifest",
+        "exam.identity.verify",
+    ),
+}
+
 SCAN_POLICIES = {
     "list_scan_sessions": ("GET", "/scan-sessions", None),
     "create_scan_batch": (
@@ -66,6 +101,7 @@ SCAN_POLICIES = {
 }
 
 POLICIES = {
+    **{name: {policy[0]} for name, policy in SCRIPT_POLICIES.items()},
     **{name: {policy[0]} for name, policy in SCAN_POLICIES.items()},
     "get_current_user": {"GET"},
     "list_academic_years": {"GET"},
@@ -118,6 +154,7 @@ GRADE_REVIEW_PATH = (
 )
 
 POLICY_PATHS = {
+    **{name: policy[1] for name, policy in SCRIPT_POLICIES.items()},
     **{name: policy[1] for name, policy in SCAN_POLICIES.items()},
     "get_current_user": "/me",
     "list_academic_years": "/organization/academic-years",
@@ -242,6 +279,16 @@ async def authorize_request(
                 await authorize_proposal(
                     session, principal=current, write=request.method != "GET", **ids
                 )
+                return current
+            if name in SCRIPT_POLICIES:
+                from huipi_cloud.modules.answer_scripts import service as script_service
+
+                try:
+                    await script_service.http_authorize(
+                        session, current, request.path_params, SCRIPT_POLICIES[name][2]
+                    )
+                except ValueError:
+                    raise AccessError("invalid_resource_id", 422) from None
                 return current
             if name in SCAN_POLICIES:
                 from huipi_cloud.modules.scans import service as scan_service

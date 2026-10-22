@@ -819,6 +819,110 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/exam-sessions/{exam_session_id}/script-pages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Script Pages */
+        get: operations["list_script_pages_api_v1_exam_sessions__exam_session_id__script_pages_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-sessions/{exam_session_id}/identity-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Script Identities */
+        get: operations["list_script_identities_api_v1_exam_sessions__exam_session_id__identity_candidates_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-sessions/{exam_session_id}/answer-scripts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Answer Scripts */
+        get: operations["list_answer_scripts_api_v1_exam_sessions__exam_session_id__answer_scripts_get"];
+        put?: never;
+        /** Create Answer Script */
+        post: operations["create_answer_script_api_v1_exam_sessions__exam_session_id__answer_scripts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/answer-scripts/{script_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Inspect Answer Script */
+        get: operations["inspect_answer_script_api_v1_answer_scripts__script_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/answer-scripts/{script_id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Answer Script Versions */
+        get: operations["list_answer_script_versions_api_v1_answer_scripts__script_id__versions_get"];
+        put?: never;
+        /** Change Answer Script */
+        post: operations["change_answer_script_api_v1_answer_scripts__script_id__versions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/answer-scripts/{script_id}/manifest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Answer Script Manifest */
+        get: operations["get_answer_script_manifest_api_v1_answer_scripts__script_id__manifest_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1356,6 +1460,28 @@ export interface components {
             request_id: string;
             /** File */
             file: string;
+        };
+        /** CandidateList */
+        CandidateList: {
+            /**
+             * Exam Session Id
+             * Format: uuid
+             */
+            exam_session_id: string;
+            /** Roster Revision Id */
+            roster_revision_id: string | null;
+            /** Roster Version No */
+            roster_version_no: number | null;
+            /** Items */
+            items: components["schemas"]["IdentityCandidate"][];
+            /** Papers */
+            papers: components["schemas"]["PaperChoice"][];
+            /** Total */
+            total: number;
+            /** Offset */
+            offset: number;
+            /** Limit */
+            limit: number;
         };
         /**
          * CanonicalAssetReference
@@ -2059,6 +2185,29 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** IdentityCandidate */
+        IdentityCandidate: {
+            /**
+             * Roster Entry Id
+             * Format: uuid
+             */
+            roster_entry_id: string;
+            /**
+             * Participation Id
+             * Format: uuid
+             */
+            participation_id: string;
+            /** Student Name */
+            student_name: string;
+            /** Student Code */
+            student_code: string;
+            /** Class Name */
+            class_name: string;
+            /** Exam Number */
+            exam_number: string | null;
+            /** Session Paper Id */
+            session_paper_id: string | null;
+        };
         /** ImportErrorEntry */
         ImportErrorEntry: {
             /** Row Number */
@@ -2157,6 +2306,21 @@ export interface components {
             size_bytes: number;
             /** Sha256 */
             sha256: string;
+        };
+        /** PaperChoice */
+        PaperChoice: {
+            /**
+             * Session Paper Id
+             * Format: uuid
+             */
+            session_paper_id: string;
+            /**
+             * Paper Version Id
+             * Format: uuid
+             */
+            paper_version_id: string;
+            /** Variant Code */
+            variant_code: string;
         };
         /**
          * ParsedArtifactSummary
@@ -2694,6 +2858,170 @@ export interface components {
             /** Roster Frozen */
             roster_frozen: boolean;
         };
+        /** ScriptChange */
+        ScriptChange: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Page Ids */
+            page_ids: string[];
+            /**
+             * Completeness
+             * @default incomplete
+             * @enum {string}
+             */
+            completeness: "complete" | "incomplete";
+            /** Reason */
+            reason: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "save_draft" | "confirm" | "revoke";
+            /** Roster Revision Id */
+            roster_revision_id?: string | null;
+            /** Roster Entry Id */
+            roster_entry_id?: string | null;
+            /** Session Paper Id */
+            session_paper_id?: string | null;
+        };
+        /** ScriptCreate */
+        ScriptCreate: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Page Ids */
+            page_ids: string[];
+            /**
+             * Completeness
+             * @default incomplete
+             * @enum {string}
+             */
+            completeness: "complete" | "incomplete";
+            /** Reason */
+            reason: string;
+        };
+        /** ScriptList */
+        ScriptList: {
+            /** Items */
+            items: components["schemas"]["ScriptRead"][];
+            /** Total */
+            total: number;
+            /** Offset */
+            offset: number;
+            /** Limit */
+            limit: number;
+        };
+        /** ScriptManifest */
+        ScriptManifest: {
+            /**
+             * Manifest Version
+             * @default 1.0
+             * @constant
+             */
+            manifest_version: "1.0";
+            /**
+             * Script Id
+             * Format: uuid
+             */
+            script_id: string;
+            /**
+             * Answer Script Version Id
+             * Format: uuid
+             */
+            answer_script_version_id: string;
+            /**
+             * Exam Session Id
+             * Format: uuid
+             */
+            exam_session_id: string;
+            /**
+             * Roster Revision Id
+             * Format: uuid
+             */
+            roster_revision_id: string;
+            /**
+             * Roster Entry Id
+             * Format: uuid
+             */
+            roster_entry_id: string;
+            /**
+             * Participation Id
+             * Format: uuid
+             */
+            participation_id: string;
+            /**
+             * Session Paper Id
+             * Format: uuid
+             */
+            session_paper_id: string;
+            /**
+             * Paper Version Id
+             * Format: uuid
+             */
+            paper_version_id: string;
+            /** Manifest Sha256 */
+            manifest_sha256: string;
+            /** Pages */
+            pages: components["schemas"]["SourcePage"][];
+            /**
+             * Validated At
+             * Format: date-time
+             */
+            validated_at: string;
+            /**
+             * Bridge Implemented
+             * @default false
+             * @constant
+             */
+            bridge_implemented: false;
+        };
+        /** ScriptRead */
+        ScriptRead: {
+            /**
+             * Script Id
+             * Format: uuid
+             */
+            script_id: string;
+            /**
+             * Exam Session Id
+             * Format: uuid
+             */
+            exam_session_id: string;
+            /** Revision */
+            revision: number;
+            current: components["schemas"]["VersionRead"];
+            /** Readiness */
+            readiness: string;
+            /** Identity Visible */
+            identity_visible: boolean;
+        };
+        /** ScriptReceipt */
+        ScriptReceipt: {
+            /**
+             * Script Id
+             * Format: uuid
+             */
+            script_id: string;
+            /**
+             * Version Id
+             * Format: uuid
+             */
+            version_id: string;
+            /** Revision */
+            revision: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "confirmed" | "revoked";
+        };
         /** SessionPage */
         SessionPage: {
             /** Items */
@@ -2705,6 +3033,45 @@ export interface components {
             /** Truncated */
             truncated: boolean;
             limits: components["schemas"]["ScanLimits"];
+        };
+        /** SourcePage */
+        SourcePage: {
+            /**
+             * Scan Page Id
+             * Format: uuid
+             */
+            scan_page_id: string;
+            /**
+             * File Id
+             * Format: uuid
+             */
+            file_id: string;
+            /** Original Filename */
+            original_filename: string;
+            /**
+             * Batch Id
+             * Format: uuid
+             */
+            batch_id: string;
+            /** Source Page Index */
+            source_page_index: number;
+            /** Page Sha256 */
+            page_sha256: string;
+            /** File Sha256 */
+            file_sha256: string;
+            /** Allocated Script Id */
+            allocated_script_id?: string | null;
+        };
+        /** SourcePageList */
+        SourcePageList: {
+            /** Items */
+            items: components["schemas"]["SourcePage"][];
+            /** Total */
+            total: number;
+            /** Offset */
+            offset: number;
+            /** Limit */
+            limit: number;
         };
         /**
          * SourceRegion
@@ -3045,6 +3412,59 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** VersionList */
+        VersionList: {
+            /** Items */
+            items: components["schemas"]["VersionRead"][];
+            /** Total */
+            total: number;
+            /** Offset */
+            offset: number;
+            /** Limit */
+            limit: number;
+        };
+        /** VersionRead */
+        VersionRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Version No */
+            version_no: number;
+            /** Previous Version Id */
+            previous_version_id: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "confirmed" | "revoked";
+            /**
+             * Completeness
+             * @enum {string}
+             */
+            completeness: "complete" | "incomplete";
+            /** Reason */
+            reason: string;
+            /** Manifest Sha256 */
+            manifest_sha256: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Roster Revision Id */
+            roster_revision_id: string | null;
+            /** Roster Entry Id */
+            roster_entry_id: string | null;
+            /** Participation Id */
+            participation_id: string | null;
+            /** Session Paper Id */
+            session_paper_id: string | null;
+            identity: components["schemas"]["IdentityCandidate"] | null;
+            /** Pages */
+            pages: components["schemas"]["SourcePage"][];
         };
         /** WorkbenchQuestion */
         WorkbenchQuestion: {
@@ -7056,6 +7476,501 @@ export interface operations {
                 content?: never;
             };
             /** @description 服务不可用或提交结果未知 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_script_pages_api_v1_exam_sessions__exam_session_id__script_pages_get: {
+        parameters: {
+            query?: {
+                offset?: number;
+                limit?: number;
+                batch_id?: string | null;
+                unclaimed?: boolean;
+            };
+            header?: never;
+            path: {
+                exam_session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourcePageList"];
+                };
+            };
+            /** @description 缺少或无效教师Token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 无权执行操作 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 资源不存在或没有作业授权 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description 认证或授权服务不可用，拒绝访问 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_script_identities_api_v1_exam_sessions__exam_session_id__identity_candidates_get: {
+        parameters: {
+            query?: {
+                q?: string;
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                exam_session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidateList"];
+                };
+            };
+            /** @description 缺少或无效教师Token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 无权执行操作 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 资源不存在或没有作业授权 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description 认证或授权服务不可用，拒绝访问 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_answer_scripts_api_v1_exam_sessions__exam_session_id__answer_scripts_get: {
+        parameters: {
+            query?: {
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                exam_session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScriptList"];
+                };
+            };
+            /** @description 缺少或无效教师Token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 无权执行操作 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 资源不存在或没有作业授权 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description 认证或授权服务不可用，拒绝访问 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_answer_script_api_v1_exam_sessions__exam_session_id__answer_scripts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                exam_session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScriptCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScriptReceipt"];
+                };
+            };
+            /** @description 缺少或无效教师Token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 无权执行操作 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 资源不存在或没有作业授权 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description 认证或授权服务不可用，拒绝访问 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    inspect_answer_script_api_v1_answer_scripts__script_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                script_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScriptRead"];
+                };
+            };
+            /** @description 缺少或无效教师Token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 无权执行操作 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 资源不存在或没有作业授权 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description 认证或授权服务不可用，拒绝访问 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_answer_script_versions_api_v1_answer_scripts__script_id__versions_get: {
+        parameters: {
+            query?: {
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                script_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionList"];
+                };
+            };
+            /** @description 缺少或无效教师Token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 无权执行操作 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 资源不存在或没有作业授权 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description 认证或授权服务不可用，拒绝访问 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    change_answer_script_api_v1_answer_scripts__script_id__versions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                script_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScriptChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScriptReceipt"];
+                };
+            };
+            /** @description 缺少或无效教师Token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 无权执行操作 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 资源不存在或没有作业授权 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description 认证或授权服务不可用，拒绝访问 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_answer_script_manifest_api_v1_answer_scripts__script_id__manifest_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                script_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScriptManifest"];
+                };
+            };
+            /** @description 缺少或无效教师Token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 无权执行操作 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 资源不存在或没有作业授权 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description 认证或授权服务不可用，拒绝访问 */
             503: {
                 headers: {
                     [name: string]: unknown;

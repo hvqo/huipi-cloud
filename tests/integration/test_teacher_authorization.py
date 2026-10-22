@@ -300,6 +300,7 @@ async def test_all_old_http_routes_require_token_including_every_private_downloa
                 "batch_id",
                 "file_id",
                 "page_id",
+                "script_id",
             ):
                 url = url.replace("{" + name + "}", str(uuid4()))
             url = url.replace("{page_number}", "1")
@@ -308,8 +309,8 @@ async def test_all_old_http_routes_require_token_including_every_private_downloa
             assert response.headers["www-authenticate"] == "Bearer"
             assert "security" in operations[method]
             count += 1
-    # 33 legacy + 11 organization + 10 scan operations; none are anonymous.
-    assert count == 54
+    # 33 legacy + 11 organization + 10 scan + 8 script operations; none are anonymous.
+    assert count == 62
     assert (await ctx.client.get("/api/v1/health")).json() == {"status": "ok"}
 
 

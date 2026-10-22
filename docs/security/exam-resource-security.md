@@ -153,3 +153,7 @@ B-1.2c的exam.roster.read/manage/freeze/correct沿真实Event/Session Scope执�
 ## 扫描接收HTTP隔离
 
 `scan.batch.create/read`、`scan.file.upload/read`只作用于真实安装/Event/Session Scope。扫描表独立于legacy图，不继承旧is_admin或AssignmentMembership。文件、页、下载均上溯同一Batch→Session；场次选择列表按当前Grant过滤，没有授权返回空列表。上传预登记和最终stored提交分别重新校验账号和Grant；撤权后重放也不返回原结果。受控部署扫描委派根不等于公共提权API。固定路由及调用入口已登记在两份机器权限清单中；详见[扫描接收](../development/exam-scan-intake.md)。
+
+## 人工分卷与名单身份
+
+`exam.script.read/edit/confirm`与`exam.identity.verify`复用真实Event/Session Scope；扫描旧角色不自动增加学生名单权限。确认同一Grant必须覆盖edit+confirm+identity.verify，另独立核对同场次roster.read。无名单权限的Script历史投影不返回学生或名单/Participation标识。页面仍需scan.file.read；没有Assignment/管理员回退。路由调用清单和OpenAPI已登记人工分卷八个操作，写入在存储核验后重复当前授权；详见[合同](../development/exam-answer-scripts.md)。

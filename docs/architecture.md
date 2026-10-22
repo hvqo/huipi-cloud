@@ -388,3 +388,9 @@ ExamParticipation固定Session/Student身份；RosterRevision保存版本链与�
 ### 小批考试扫描接收
 
 ScanBatch真实关联ExamSession并固定exam_protected，可保存创建时冻结名单上下文；ScanFile与ScanPage独立于旧Submission/ParsingTask，上传不会进入旧Worker。接收分为PG预登记租约、受监督PDF渲染、私有S3写入、PG页索引与stored/audit原子提交。当前授权在最终提交时再次检查；未知COMMIT不删除对象，迟到尝试由token/租约隔离。页面只保留unconfirmed，不能用上传顺序推断Participation。Vue `/scans`使用既有OIDC与真实场次Scope；文件下载先验证长度和SHA，不暴露Key。资源、故障与后续受保护桥接边界见[扫描指南](development/exam-scan-intake.md)。
+
+### 人工答卷来源与确认
+
+`answer_scripts`独立于扫描原件与旧Submission：稳定AnswerScript的current指针、不可变AnswerScriptVersion和有序页清单、全局唯一CurrentPageAllocation，在一个PostgreSQL事务原子切换。草稿也占页，撤销仅释放当前占用，历史源不改。确认使用当前冻结RosterEntry和同场次可用SessionPaper，不接受自由学生身份，不继承legacy管理员权限；名单读取单独授权。
+
+确认/Manifest在短事务之间核验私有S3原件与预览的长度和SHA，结束时重新授权、核对来源epoch，避免存储I/O占用长数据库事务。确认不是已解析、已评分或成绩发布；名单/卷版变化在读取时阻断就绪，桥接尚未实现。详细合同和操作限制见[人工分卷](development/exam-answer-scripts.md)。
