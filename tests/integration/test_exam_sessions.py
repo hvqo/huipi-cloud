@@ -775,7 +775,7 @@ async def test_migration_roundtrip_old_graph_paper_history_and_destructive_guard
     async with c.factory() as db:
         for table in Base.metadata.sorted_tables:
             if (
-                table.name.startswith(("paper_", "exam_", "security_", "permission_"))
+                table.name.startswith(("paper_", "exam_", "security_", "permission_", "scan_"))
                 or table.name in {"session_papers", "exam_participations"}
                 or table.name.startswith("roster_")
             ):
@@ -898,7 +898,7 @@ async def test_migration_roundtrip_old_graph_paper_history_and_destructive_guard
         assert r.returncode != 0 and "exam_downgrade_requires_archived_new_data" in r.stderr
         async with target.connect() as db:
             assert (
-                await db.scalar(text("SELECT version_num FROM alembic_version")) == "b12c9d20e411"
+                await db.scalar(text("SELECT version_num FROM alembic_version")) == "b13a21f0c901"
             )
     finally:
         await target.dispose()

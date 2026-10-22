@@ -383,3 +383,8 @@ ExamEvent通过真实学期组织多个ExamSession；每场次通过不可覆盖
 ### 参试名单历史与冻结
 
 ExamParticipation固定Session/Student身份；RosterRevision保存版本链与当前冻结指针；RosterEntrySnapshot通过真实复合FK绑定同场次的身份和SessionPaper，保存考试日期的行政班与学生标签。更正建立后继完整快照，冻结内容不可覆写；当前集合不能由Participation行是否存在推断。Service和签名JWT CLI、权限与迁移边界见[名单指南](development/exam-rosters.md)。未增加扫描、到考或成绩状态。
+
+
+### 小批考试扫描接收
+
+ScanBatch真实关联ExamSession并固定exam_protected，可保存创建时冻结名单上下文；ScanFile与ScanPage独立于旧Submission/ParsingTask，上传不会进入旧Worker。接收分为PG预登记租约、受监督PDF渲染、私有S3写入、PG页索引与stored/audit原子提交。当前授权在最终提交时再次检查；未知COMMIT不删除对象，迟到尝试由token/租约隔离。页面只保留unconfirmed，不能用上传顺序推断Participation。Vue `/scans`使用既有OIDC与真实场次Scope；文件下载先验证长度和SHA，不暴露Key。资源、故障与后续受保护桥接边界见[扫描指南](development/exam-scan-intake.md)。

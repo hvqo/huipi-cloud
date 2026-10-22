@@ -26,7 +26,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select, text, update
 from test_answer_review import _prepare_review
-from test_teacher_authorization import auth_api  # noqa: F401
+from test_scan_intake import (  # noqa: F401
+    auth_api,
+    exam,
+    mixed_scan_pdf,
+    papers,
+    roster,
+    scan_context,
+)
 
 from huipi_cloud.core.config import Settings
 from huipi_cloud.infrastructure.auth.jwt import TokenVerifier
@@ -34,6 +41,7 @@ from huipi_cloud.main import app
 from huipi_cloud.modules.answer_review.models import AnswerReviewDecision
 from huipi_cloud.modules.identity import dependencies as security
 from huipi_cloud.modules.identity.models import AssignmentMembership, User
+from huipi_cloud.modules.scans.models import ScanFile, ScanPage
 
 
 def listener():
@@ -47,6 +55,7 @@ def listener():
 async def test_teacher_workbench_browser_end_to_end(
     auth_api,  # noqa: F811
     postgres_engine,
+    scan_context,  # noqa: F811
     tmp_path,
     monkeypatch,
 ):
@@ -307,6 +316,8 @@ async def test_teacher_workbench_browser_end_to_end(
                     await asyncio.sleep(
                         0.1
                     )  # Bounded service readiness only; not a concurrency race.
+        scan_pdf = tmp_path / "mixed-scan.pdf"
+        scan_pdf.write_bytes(mixed_scan_pdf())
         browser_env = dict(
             os.environ,
             WORKBENCH_URL=origin,
@@ -315,6 +326,8 @@ async def test_teacher_workbench_browser_end_to_end(
             WORKBENCH_SID=str(sid),
             WORKBENCH_QID=str(question.id),
             WORKBENCH_IMAGE_SID=image_sid,
+            WORKBENCH_SCAN_SESSION=scan_context.session["id"],
+            WORKBENCH_SCAN_PDF=str(scan_pdf),
         )
         browser = await asyncio.create_subprocess_exec(
             "npm",
@@ -341,6 +354,12 @@ async def test_teacher_workbench_browser_end_to_end(
                     )
                 ).all()
             )
+        async with ctx.factory() as db:
+            scan_files = list((await db.scalars(select(ScanFile))).all())
+            scan_pages = list((await db.scalars(select(ScanPage))).all())
+        assert len(scan_files) == 1 and scan_files[0].status == "stored"
+        assert scan_files[0].sha256 == hashlib.sha256(scan_pdf.read_bytes()).hexdigest()
+        assert len(scan_pages) == 4 and all(p.identity_status == "unconfirmed" for p in scan_pages)
         assert len(rows) == 3 and rows[0].decision == "response_present"
         assert all(row.reviewer_user_id is not None for row in rows)
         assert len({row.request_id for row in rows}) == len(rows)

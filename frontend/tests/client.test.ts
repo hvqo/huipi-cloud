@@ -72,3 +72,18 @@ it('does not claim rollback when a successful POST response cannot be consumed',
   )
   await expect(request('/api/v1/x', { body: '{}' })).rejects.toMatchObject({ uncertain: true })
 })
+
+it('scan multipart lets the browser set its boundary and sends no JSON header', async () => {
+  const fetch = vi.fn().mockResolvedValue(new Response('{}'))
+  vi.stubGlobal('fetch', fetch)
+  const { scans } = await import('../src/api/scans')
+  const file = new File(['%PDF-synthetic'], 'mixed.pdf', { type: 'application/pdf' })
+  await scans.upload('batch', 'request', file)
+  const options = fetch.mock.calls[0]![1]
+  expect(options.body).toBeInstanceOf(FormData)
+  expect(options.body.get('request_id')).toBe('request')
+  expect(options.body.get('file')).toBe(file)
+  expect(options.headers).not.toHaveProperty('Content-Type')
+  expect(options.credentials).toBe('omit')
+  expect(options.redirect).toBe('error')
+})

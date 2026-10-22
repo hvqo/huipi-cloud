@@ -1,5 +1,7 @@
 """Bound total multipart request bytes before Starlette spools uploaded files."""
 
+import asyncio
+
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
@@ -19,7 +21,11 @@ class UploadRequestLimitMiddleware:
         api_v1_prefix: str,
         multipart_overhead_bytes: int = MULTIPART_OVERHEAD_LIMIT,
         student_import_max_bytes: int | None = None,
+        scan_max_file_bytes: int = 32 * 1024 * 1024,
     ) -> None:
+        self.scan_request_limit = scan_max_file_bytes + multipart_overhead_bytes
+        self.active_scan_uploads = 0
+        self.active_scan_downloads = 0
         self.app = app
         self.multipart_overhead_bytes = multipart_overhead_bytes
         self.max_request_size_bytes = max_upload_size_bytes + multipart_overhead_bytes
@@ -32,6 +38,52 @@ class UploadRequestLimitMiddleware:
         )
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        path = scope.get("path", "")
+        scan_upload = (
+            scope.get("method") == "POST"
+            and path.startswith(f"{self.api_v1_prefix}/scan-batches/")
+            and path.endswith("/files")
+        )
+        scan_download = scope.get("method") == "GET" and (
+            (path.startswith(f"{self.api_v1_prefix}/scan-files/") and path.endswith("/original"))
+            or (path.startswith(f"{self.api_v1_prefix}/scan-pages/") and path.endswith("/preview"))
+        )
+        if scan_upload or scan_download:
+            attribute = "active_scan_uploads" if scan_upload else "active_scan_downloads"
+            maximum = 2 if scan_upload else 4
+            if getattr(self, attribute) >= maximum:
+                await JSONResponse(
+                    status_code=429,
+                    content={"detail": "scan_busy"},
+                    headers={"Cache-Control": "no-store"},
+                )(scope, receive, send)
+                return
+            setattr(self, attribute, getattr(self, attribute) + 1)
+            started = False
+
+            async def safe_send(message):
+                nonlocal started
+                if message["type"] == "http.response.start":
+                    started = True
+                await send(message)
+
+            try:
+                async with asyncio.timeout(150 if scan_upload else 60):
+                    await self._limited(scope, receive, safe_send)
+            except TimeoutError:
+                if started:
+                    raise
+                await JSONResponse(
+                    status_code=503,
+                    content={"detail": "scan_request_timeout"},
+                    headers={"Cache-Control": "no-store"},
+                )(scope, receive, send)
+            finally:
+                setattr(self, attribute, getattr(self, attribute) - 1)
+            return
+        await self._limited(scope, receive, send)
+
+    async def _limited(self, scope: Scope, receive: Receive, send: Send) -> None:
         limit = self._request_limit(scope)
         if limit is None:
             await self.app(scope, receive, send)
@@ -87,6 +139,8 @@ class UploadRequestLimitMiddleware:
         path = scope.get("path", "")
         if scope.get("type") != "http" or scope.get("method") != "POST":
             return None
+        if path.startswith(f"{self.api_v1_prefix}/scan-batches/") and path.endswith("/files"):
+            return self.scan_request_limit
         if path.startswith(self.upload_path_prefix) and path.endswith("/submissions"):
             return self.max_request_size_bytes
         if (

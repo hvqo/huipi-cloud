@@ -1,5 +1,12 @@
 # 单校业务重构：分阶段实施与验收路线
 
+## 当前纵向 MVP 优先级
+
+阶段推进调整为「扫描接收与逐页预览 → 人工分卷及身份确认 → 受保护桥接现有解析/评分 → 教师复核」。先交付可操作的小批闭环，暂不以1600页、断点续传或完整扫描管理能力作为首版准入；不因此降低资源授权、名单历史或成绩发布门禁。
+
+首片[扫描接收MVP](exam-scan-intake.md)提供真实Vue/HTTP、私有原件和页面索引，32MiB/50页，页面未确认，不创建Submission/ParsingTask。名单批量优化为独立工作，不依赖未经审查的Draft。后续分卷必须版本化引用稳定ScanPage和冻结名单，重用既有MinerU、GradeInput、Proposal与人工复核。尚未实现的扫描/OCR/阅卷阶段仍为规划，不以目录或演示代替业务验收。
+
+
 **阶段 A 设计基线；实施状态按下文各切片标注。** 前置：[阶段 A 评审索引](../product/stage-a-review.md)、[ADR](../architecture/decisions/0001-school-exam-compatible-extension.md)、[验收矩阵](../evaluation/business-acceptance-matrix.md)。阶段 A 只交付文档；后续按独立切片实施，不改正式评分协议、不升级开发数据库、不合并 #31。
 
 ## 1. 集成顺序和代码基线

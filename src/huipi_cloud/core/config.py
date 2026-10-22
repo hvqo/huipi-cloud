@@ -41,6 +41,10 @@ class Settings(BaseSettings):
     auth_clock_skew_seconds: int = Field(default=0, ge=0, le=30)
     database_url: str | None = None
     test_database_url: str | None = None
+    scan_max_file_bytes: int = Field(default=32 * 1024 * 1024, ge=1024, le=32 * 1024 * 1024)
+    scan_max_pages: int = Field(default=50, ge=1, le=50)
+    scan_render_timeout_seconds: float = Field(default=45, ge=1, le=60)
+    scan_upload_timeout_seconds: float = Field(default=120, ge=60, le=150)
     minio_endpoint_url: str | None = None
     minio_access_key: str | None = None
     minio_secret_key: str | None = None

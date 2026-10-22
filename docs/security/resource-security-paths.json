@@ -1,5 +1,5 @@
 {
-  "version": "B-1.1b",
+  "version": "scan-intake-mvp-1",
   "operations": [
     {
       "method": "POST",
@@ -424,6 +424,86 @@
       "permission": "student.import.confirm",
       "classification_boundary": "authorize_request -> student.import.confirm；当前权限、当前学生/班级状态、预检 SHA 与审计同事务重验",
       "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/scan-sessions",
+      "policy": "list_scan_sessions",
+      "permission": "scoped_scan_list",
+      "classification_boundary": "当前可信Principal及真实ExamSession Scope；exam_protected；不走旧admin/member路径",
+      "entrypoint": "huipi_cloud.modules.scans.service.sessions"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/scan-batches",
+      "policy": "create_scan_batch",
+      "permission": "scan.batch.create",
+      "classification_boundary": "当前可信Principal及真实ExamSession Scope；exam_protected；不走旧admin/member路径",
+      "entrypoint": "huipi_cloud.modules.scans.service.http_authorize"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/scan-batches",
+      "policy": "list_scan_batches",
+      "permission": "scan.batch.read",
+      "classification_boundary": "当前可信Principal及真实ExamSession Scope；exam_protected；不走旧admin/member路径",
+      "entrypoint": "huipi_cloud.modules.scans.service.http_authorize"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/scan-batches/{batch_id}",
+      "policy": "inspect_scan_batch",
+      "permission": "scan.batch.read",
+      "classification_boundary": "当前可信Principal及真实ExamSession Scope；exam_protected；不走旧admin/member路径",
+      "entrypoint": "huipi_cloud.modules.scans.service.http_authorize"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/scan-batches/{batch_id}/files",
+      "policy": "list_scan_files",
+      "permission": "scan.batch.read",
+      "classification_boundary": "当前可信Principal及真实ExamSession Scope；exam_protected；不走旧admin/member路径",
+      "entrypoint": "huipi_cloud.modules.scans.service.http_authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/scan-batches/{batch_id}/files",
+      "policy": "upload_scan_file",
+      "permission": "scan.file.upload",
+      "classification_boundary": "当前可信Principal及真实ExamSession Scope；exam_protected；不走旧admin/member路径",
+      "entrypoint": "huipi_cloud.modules.scans.service.http_authorize"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/scan-files/{file_id}",
+      "policy": "inspect_scan_file",
+      "permission": "scan.batch.read",
+      "classification_boundary": "当前可信Principal及真实ExamSession Scope；exam_protected；不走旧admin/member路径",
+      "entrypoint": "huipi_cloud.modules.scans.service.http_authorize"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/scan-files/{file_id}/pages",
+      "policy": "list_scan_pages",
+      "permission": "scan.file.read",
+      "classification_boundary": "当前可信Principal及真实ExamSession Scope；exam_protected；不走旧admin/member路径",
+      "entrypoint": "huipi_cloud.modules.scans.service.http_authorize"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/scan-files/{file_id}/original",
+      "policy": "download_scan_original",
+      "permission": "scan.file.read",
+      "classification_boundary": "当前可信Principal及真实ExamSession Scope；exam_protected；不走旧admin/member路径",
+      "entrypoint": "huipi_cloud.modules.scans.service.http_authorize"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/scan-pages/{page_id}/preview",
+      "policy": "preview_scan_page",
+      "permission": "scan.file.read",
+      "classification_boundary": "当前可信Principal及真实ExamSession Scope；exam_protected；不走旧admin/member路径",
+      "entrypoint": "huipi_cloud.modules.scans.service.http_authorize"
     }
   ]
 }

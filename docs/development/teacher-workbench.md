@@ -42,6 +42,7 @@ access/ID token 只存内存；sessionStorage 仅保存短期 PKCE 状态和不�
 
 ## 页面与 API 合同
 
+- `/scans`：按真实场次Scope接收扫描PDF、查看逐页预览与待核验状态；参见[扫描接收MVP](exam-scan-intake.md)。
 - `/assignments`：分页作业与新建草稿，只显示已授权资源。
 - `/assignments/:aid`：题目、Rubric 概要、提交列表。没有伪造的编辑/删除操作。
 - `/assignments/:aid/submissions/:sid`：文件元数据、解析与 Canonical 状态、逐题复核入口。
@@ -54,7 +55,7 @@ uv run python scripts/export_frontend_openapi.py
 npm run api:generate --prefix frontend
 ```
 
-生成的 `frontend/src/api/generated.ts` 纳入版本控制；CI 重生成后检查差异。客户端只请求固定同源 `/api/v1/`，设置 Authorization Header、AbortController、15 秒请求上限（文件 30 秒）、2MiB JSON / 21MiB 文件读取上限；离开页面取消读取。超限明确报错，不截断成假结果。401、403、404、409、422、503 区分处理，日志不打印服务内部错误正文或令牌。
+生成的 `frontend/src/api/generated.ts` 纳入版本控制；CI 重生成后检查差异。客户端只请求固定同源 `/api/v1/`，设置 Authorization Header、AbortController、15 秒请求上限（文件 30 秒）、2MiB JSON / 21MiB 旧作业文件读取上限；扫描独立允许32MiB级下载与180秒上传客户端上限；离开页面取消读取。超限明确报错，不截断成假结果。401、403、404、409、422、503 区分处理，日志不打印服务内部错误正文或令牌。
 
 两个最小读取补齐：
 

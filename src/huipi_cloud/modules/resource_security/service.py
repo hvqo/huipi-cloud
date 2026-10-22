@@ -28,6 +28,7 @@ from huipi_cloud.modules.resource_security.models import (
     SecurityRoleVersion,
     SecurityScope,
 )
+from huipi_cloud.modules.scans.permissions import SCAN_ACTIONS
 
 INSTALLATION_SCOPE = UUID("11111111-b11a-4000-8000-000000000001")
 OPERATOR_ROLE = UUID("11111111-b11a-4000-8000-000000000002")
@@ -45,6 +46,7 @@ CATALOG = {
     **PAPER_ACTIONS,
     **EXAM_ACTIONS,
     **ROSTER_ACTIONS,
+    **SCAN_ACTIONS,
     "security.grants.manage": frozenset({"installation"}),
     "security.protected.create": frozenset({"installation"}),
     "security.classification.inspect": frozenset({"installation", "assignment"}),
