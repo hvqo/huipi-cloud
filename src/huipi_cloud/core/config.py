@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     auth_clock_skew_seconds: int = Field(default=0, ge=0, le=30)
     database_url: str | None = None
     test_database_url: str | None = None
+    # Total roster transaction budget; PostgreSQL 16 has no transaction_timeout.
+    roster_operation_timeout_seconds: float = Field(default=60, ge=15, le=300)
+    roster_lock_timeout_seconds: float = Field(default=5, ge=0.1, le=8)
     minio_endpoint_url: str | None = None
     minio_access_key: str | None = None
     minio_secret_key: str | None = None
