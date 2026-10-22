@@ -26,10 +26,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select, text, update
 from test_answer_review import _prepare_review
+from test_answer_scripts import script_mixed_scan_pdf as mixed_scan_pdf
 from test_scan_intake import (  # noqa: F401
     auth_api,
     exam,
-    mixed_scan_pdf,
     papers,
     roster,
     scan_context,

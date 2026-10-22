@@ -925,3 +925,33 @@ async def test_script_reader_without_roster_permission_has_redacted_history(scri
             json=confirmation(c, dict(revision=2), choices=choices),
         )
     ).status_code == 404
+
+
+def script_mixed_scan_pdf():
+    """Four real raster pages: A2,B1,A1,B2; roster has two further unscanned students."""
+    from io import BytesIO
+
+    from PIL import Image, ImageDraw
+
+    images = []
+    for exam_number, class_no, sheet in [
+        ("N001", 1, 2),
+        ("N002", 2, 1),
+        ("N001", 1, 1),
+        ("N002", 2, 2),
+    ]:
+        image = Image.new("RGB", (612, 792), "white")
+        draw = ImageDraw.Draw(image)
+        draw.text((45, 55), "Synthetic exam - no QR code", fill="black")
+        draw.text((45, 95), f"Name: Same Name / Class: {class_no}", fill="black")
+        draw.text((45, 125), f"Exam number: {exam_number} / Sheet: {sheet} of 2", fill="black")
+        draw.text((45, 175), f"Question {sheet}: calculate {sheet}+2.", fill="black")
+        draw.text((45, 215), f"Student response: {sheet}+2={sheet + 2}.", fill="black")
+        images.append(image)
+    result = BytesIO()
+    try:
+        images[0].save(result, format="PDF", save_all=True, append_images=images[1:])
+        return result.getvalue()
+    finally:
+        for image in images:
+            image.close()

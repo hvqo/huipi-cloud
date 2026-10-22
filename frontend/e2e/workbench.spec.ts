@@ -267,7 +267,11 @@ test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原�
   const twins = options.filter((o) => o.label.includes('合成同名'))
   expect(twins.length).toBe(2)
   expect(twins[0]!.value).not.toBe(twins[1]!.value)
-  await identity.getByLabel('参试学生').selectOption(twins[0]!.value)
+  const firstTwin = twins.find((o) => o.label.includes('考号 N001'))!
+  const secondTwin = twins.find((o) => o.label.includes('考号 N002'))!
+  expect(firstTwin.label).toContain('合成1班')
+  expect(secondTwin.label).toContain('合成2班')
+  await identity.getByLabel('参试学生').selectOption(firstTwin.value)
   await expect(identity.getByLabel('实际卷别')).not.toHaveValue('')
   await page.screenshot({
     path: 'test-results/answer-script-identity-check.png',
@@ -285,23 +289,25 @@ test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原�
   await page.getByRole('button', { name: '新建答卷', exact: true }).click()
   await page.getByRole('button', { name: '加入扫描页 2', exact: true }).click()
   // One page stays unclaimed until the later correction adds it.
-  await page.getByLabel('已核对页数，答卷完整').check()
   await page.getByLabel('操作说明').fill('合成第二位同名学生，单页草稿')
   await page.getByRole('button', { name: '保存答卷草稿', exact: true }).click()
   await expect(page.getByText('草稿已保存，页面尚未确认学生身份。')).toBeVisible()
   await page.getByLabel('操作说明').fill('核对另一班同名学生')
   await page.getByRole('button', { name: '核对学生并确认', exact: true }).click()
-  await identity.getByLabel('参试学生').selectOption(twins[1]!.value)
+  await identity.getByLabel('参试学生').selectOption(secondTwin.value)
   await identity.getByRole('button', { name: '确认身份并保存新版本' }).click()
   await expect(page.getByText('身份确认已保存。尚未解析或评分。')).toBeVisible()
   await expect(page.getByRole('button', { name: '加入扫描页 4', exact: true })).toBeVisible()
   await expect(identity).not.toBeVisible()
+  await expect(page.locator('.script-identity')).toContainText('考号 N002')
+  await expect(page.locator('.script-status')).toContainText('答卷不完整')
   await page.screenshot({
     path: 'test-results/answer-scripts-two-students.png',
     fullPage: true,
     animations: 'disabled',
   })
   await page.getByRole('button', { name: '加入扫描页 4', exact: true }).click()
+  await page.getByLabel('已核对页数，答卷完整').check()
   await page.getByLabel('操作说明').fill('漏扫页补充，重新确认前保留新草稿')
   await page.getByRole('button', { name: '保存为新版本草稿', exact: true }).click()
   await expect(page.getByText('草稿已保存，页面尚未确认学生身份。')).toBeVisible()
