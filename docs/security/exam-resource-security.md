@@ -148,3 +148,8 @@ B-1.2b新增真实ExamEvent/ExamSession FK Scope，事件范围只有在数据�
 ## 参试名单安全合同
 
 B-1.2c的exam.roster.read/manage/freeze/correct沿真实Event/Session Scope执行；旧admin不授权。更正要求同Grant完整覆盖manage+correct；名单读取单独授权。Participation身份、冻结Snapshot与追加审计由数据库保护；新版本原子切换current，不删除旧名单。没有新HTTP或Agent名单工具。详见[名单指南](../development/exam-rosters.md)。
+
+
+## 扫描接收HTTP隔离
+
+`scan.batch.create/read`、`scan.file.upload/read`只作用于真实安装/Event/Session Scope。扫描表独立于legacy图，不继承旧is_admin或AssignmentMembership。文件、页、下载均上溯同一Batch→Session；场次选择列表按当前Grant过滤，没有授权返回空列表。上传预登记和最终stored提交分别重新校验账号和Grant；撤权后重放也不返回原结果。受控部署扫描委派根不等于公共提权API。固定路由及调用入口已登记在两份机器权限清单中；详见[扫描接收](../development/exam-scan-intake.md)。

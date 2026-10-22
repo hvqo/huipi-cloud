@@ -843,6 +843,10 @@ async def test_independent_migration_roundtrip_preserves_legacy_graph_and_refuse
     # Tables added after the baseline revision do not exist at c72d9e14a510 and are not
     # part of the legacy graph this round-trip preserves.
     post_baseline_tables = {
+        "scan_batches",
+        "scan_files",
+        "scan_pages",
+        "scan_operations",
         "academic_years",
         "academic_terms",
         "grade_cohorts",

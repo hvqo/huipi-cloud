@@ -1,5 +1,5 @@
 {
-  "version": "1.2",
+  "version": "scan-intake-mvp-1",
   "operations": [
     {
       "method": "POST",
@@ -318,6 +318,66 @@
       "path": "/api/v1/organization/student-imports/{batch_id}/confirm",
       "policy": "confirm_student_import",
       "permission": "student.import.confirm"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/scan-sessions",
+      "policy": "list_scan_sessions",
+      "permission": "scoped_scan_list"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/scan-batches",
+      "policy": "create_scan_batch",
+      "permission": "scan.batch.create"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/scan-batches",
+      "policy": "list_scan_batches",
+      "permission": "scan.batch.read"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/scan-batches/{batch_id}",
+      "policy": "inspect_scan_batch",
+      "permission": "scan.batch.read"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/scan-batches/{batch_id}/files",
+      "policy": "list_scan_files",
+      "permission": "scan.batch.read"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/scan-batches/{batch_id}/files",
+      "policy": "upload_scan_file",
+      "permission": "scan.file.upload"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/scan-files/{file_id}",
+      "policy": "inspect_scan_file",
+      "permission": "scan.batch.read"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/scan-files/{file_id}/pages",
+      "policy": "list_scan_pages",
+      "permission": "scan.file.read"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/scan-files/{file_id}/original",
+      "policy": "download_scan_original",
+      "permission": "scan.file.read"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/scan-pages/{page_id}/preview",
+      "policy": "preview_scan_page",
+      "permission": "scan.file.read"
     }
   ]
 }

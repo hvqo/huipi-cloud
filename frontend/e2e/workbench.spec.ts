@@ -192,3 +192,55 @@ test('真实PNG预览与新建作业表单', async ({ page, request }) => {
   await expect(page.getByRole('heading', { name: '合成新建作业验收' })).toBeVisible()
   await expect(page.locator('.page-heading')).toContainText('草稿')
 })
+
+test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原件校验', async ({ page, request }) => {
+  const { readFile } = await import('node:fs/promises')
+  const { createHash } = await import('node:crypto')
+  await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/a`, { ignoreHTTPSErrors: true })
+  const errors: string[] = []
+  page.on('pageerror', (error) => errors.push(error.message))
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await signIn(page, '/scans')
+  await expect(page.getByLabel('考试场次')).toHaveValue(process.env.WORKBENCH_SCAN_SESSION!)
+  await expect(page.getByText('已具备冻结名单；页面身份仍须后续人工确认。')).toBeVisible()
+  await page.getByLabel('批次名称').fill('浏览器合成混班扫描')
+  await page.getByRole('button', { name: '新建扫描批次' }).click()
+  await expect(page.getByRole('heading', { name: '浏览器合成混班扫描' })).toBeVisible()
+  await page.getByLabel('扫描 PDF', { exact: true }).setInputFiles(process.env.WORKBENCH_SCAN_PDF!)
+  const received = page.waitForResponse(
+    (r) =>
+      /\/scan-batches\/[^/]+\/files$/.test(new URL(r.url()).pathname) &&
+      r.request().method() === 'POST',
+  )
+  await page.getByRole('button', { name: '上传并生成预览' }).click()
+  const result = await received
+  expect(result.status()).toBe(201)
+  const metadata = await result.json()
+  expect(metadata.page_count).toBe(4)
+  expect(metadata.status).toBe('stored')
+  expect(metadata).not.toHaveProperty('object_key')
+  expect(metadata).not.toHaveProperty('bucket')
+  await expect(page.getByRole('button', { name: '第 4 页', exact: true })).toBeVisible()
+  const preview = page.waitForRequest((r) => r.url().endsWith('/preview'))
+  await page.getByRole('button', { name: '第 2 页', exact: true }).click()
+  expect((await preview).headers().authorization).toMatch(/^Bearer /)
+  await expect(page.getByAltText('第2页扫描预览')).toHaveAttribute('src', /^blob:/)
+  await expect(page.getByAltText('第2页扫描预览')).toBeVisible()
+  expect(
+    await page
+      .getByAltText('第2页扫描预览')
+      .evaluate((image) => (image as HTMLImageElement).naturalWidth),
+  ).toBeGreaterThan(0)
+  const downloaded = page.waitForEvent('download')
+  await page.getByRole('button', { name: '下载原始 PDF' }).click()
+  const file = await downloaded
+  const actual = await readFile((await file.path())!)
+  const expected = await readFile(process.env.WORKBENCH_SCAN_PDF!)
+  expect(createHash('sha256').update(actual).digest('hex')).toBe(metadata.sha256)
+  expect(actual.equals(expected)).toBe(true)
+  await expect(page.getByText(/第 2 页 · 待身份核验/)).toBeVisible()
+  await expect(page.getByRole('link', { name: '放大查看' })).toHaveAttribute('href', /^blob:/)
+  expect(errors).toEqual([])
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  await page.screenshot({ path: 'test-results/scan-intake.png', fullPage: true })
+})

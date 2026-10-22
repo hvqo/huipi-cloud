@@ -59,6 +59,7 @@ app.include_router(api_router, prefix=settings.api_v1_prefix)
 app.add_middleware(
     UploadRequestLimitMiddleware,
     max_upload_size_bytes=settings.max_upload_size_bytes,
+    scan_max_file_bytes=settings.scan_max_file_bytes,
     api_v1_prefix=settings.api_v1_prefix,
     student_import_max_bytes=STUDENT_IMPORT_MAX_BYTES,
 )

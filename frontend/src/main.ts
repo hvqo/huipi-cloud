@@ -9,6 +9,7 @@ import Assignments from './views/Assignments.vue'
 import Assignment from './views/Assignment.vue'
 import Submission from './views/Submission.vue'
 import Review from './views/Review.vue'
+import ScanIntake from './views/ScanIntake.vue'
 import { initializeAuth, identity, callback } from './auth'
 
 export const router = createRouter({
@@ -29,6 +30,7 @@ export const router = createRouter({
     },
     { path: '/', redirect: '/assignments' },
     { path: '/assignments', component: Assignments },
+    { path: '/scans', component: ScanIntake },
     { path: '/assignments/:aid', component: Assignment },
     { path: '/assignments/:aid/submissions/:sid', component: Submission },
     { path: '/assignments/:aid/submissions/:sid/questions/:qid/review', component: Review },

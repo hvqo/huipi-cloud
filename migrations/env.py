@@ -26,6 +26,7 @@ from huipi_cloud.modules.organization import models as organization_models  # no
 from huipi_cloud.modules.papers import models as paper_models  # noqa: F401
 from huipi_cloud.modules.parsing import models as parsing_models  # noqa: F401
 from huipi_cloud.modules.resource_security import models as security_models  # noqa: F401
+from huipi_cloud.modules.scans import models as scan_models  # noqa: F401
 from huipi_cloud.modules.submissions import models as submission_models  # noqa: F401
 from huipi_cloud.modules.visual_evidence import models as visual_evidence_models  # noqa: F401
 

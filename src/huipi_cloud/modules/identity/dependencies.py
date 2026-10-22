@@ -44,7 +44,29 @@ ORGANIZATION_POLICIES = {
     "confirm_student_import": "student.import.confirm",
 }
 
+SCAN_POLICIES = {
+    "list_scan_sessions": ("GET", "/scan-sessions", None),
+    "create_scan_batch": (
+        "POST",
+        "/exam-sessions/{exam_session_id}/scan-batches",
+        "scan.batch.create",
+    ),
+    "list_scan_batches": (
+        "GET",
+        "/exam-sessions/{exam_session_id}/scan-batches",
+        "scan.batch.read",
+    ),
+    "inspect_scan_batch": ("GET", "/scan-batches/{batch_id}", "scan.batch.read"),
+    "list_scan_files": ("GET", "/scan-batches/{batch_id}/files", "scan.batch.read"),
+    "upload_scan_file": ("POST", "/scan-batches/{batch_id}/files", "scan.file.upload"),
+    "inspect_scan_file": ("GET", "/scan-files/{file_id}", "scan.batch.read"),
+    "list_scan_pages": ("GET", "/scan-files/{file_id}/pages", "scan.file.read"),
+    "download_scan_original": ("GET", "/scan-files/{file_id}/original", "scan.file.read"),
+    "preview_scan_page": ("GET", "/scan-pages/{page_id}/preview", "scan.file.read"),
+}
+
 POLICIES = {
+    **{name: {policy[0]} for name, policy in SCAN_POLICIES.items()},
     "get_current_user": {"GET"},
     "list_academic_years": {"GET"},
     "list_academic_terms": {"GET"},
@@ -96,6 +118,7 @@ GRADE_REVIEW_PATH = (
 )
 
 POLICY_PATHS = {
+    **{name: policy[1] for name, policy in SCAN_POLICIES.items()},
     "get_current_user": "/me",
     "list_academic_years": "/organization/academic-years",
     "list_academic_terms": "/organization/academic-terms",
@@ -192,8 +215,11 @@ async def authorize_request(
         async with asyncio.timeout(5), session.begin():
             await session.execute(text("SET LOCAL statement_timeout = '3000ms'"))
             current = await service.refresh_principal(session, principal)
-            if name in {*ADMIN_POLICIES, "grant_assignment_membership",
-                        "revoke_assignment_membership"}:
+            if name in {
+                *ADMIN_POLICIES,
+                "grant_assignment_membership",
+                "revoke_assignment_membership",
+            }:
                 if not current.is_admin:
                     raise AccessError("administrator_required")
                 return current
@@ -217,12 +243,23 @@ async def authorize_request(
                     session, principal=current, write=request.method != "GET", **ids
                 )
                 return current
+            if name in SCAN_POLICIES:
+                from huipi_cloud.modules.scans import service as scan_service
+
+                action = SCAN_POLICIES[name][2]
+                if action is not None:
+                    try:
+                        await scan_service.http_authorize(
+                            session, current, request.path_params, action
+                        )
+                    except ValueError:
+                        raise AccessError("invalid_resource_id", 422) from None
+                # Session discovery is filtered by current scoped grants in the service SQL.
+                return current
             if name in ORGANIZATION_POLICIES:
                 from huipi_cloud.modules.organization import service as organization_service
 
-                await organization_service.authorize(
-                    session, current, ORGANIZATION_POLICIES[name]
-                )
+                await organization_service.authorize(session, current, ORGANIZATION_POLICIES[name])
                 return current
             scopes = []
             for kind in ("assignment_id", "question_id", "submission_id"):

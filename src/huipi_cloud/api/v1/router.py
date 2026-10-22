@@ -17,6 +17,7 @@ from huipi_cloud.modules.identity.dependencies import authorize_request
 from huipi_cloud.modules.identity.router import router as identity_router
 from huipi_cloud.modules.organization.router import router as organization_router
 from huipi_cloud.modules.parsing.router import router as parsing_router
+from huipi_cloud.modules.scans.router import router as scan_router
 from huipi_cloud.modules.submissions.router import (
     assignment_submission_router,
     submission_router,
@@ -45,4 +46,5 @@ protected_router.include_router(answer_review_router)
 protected_router.include_router(grade_review_router)
 protected_router.include_router(workbench_router)
 protected_router.include_router(organization_router)
+protected_router.include_router(scan_router)
 api_router.include_router(protected_router)

@@ -686,7 +686,9 @@ async def test_migration_roundtrip_old_exam_paper_graph_and_data_guard(exam, pos
     async with c.factory() as db:
         for table in Base.metadata.sorted_tables:
             if (
-                table.name.startswith(("security_", "permission_", "paper_", "exam_", "roster_"))
+                table.name.startswith(
+                    ("security_", "permission_", "paper_", "exam_", "roster_", "scan_")
+                )
                 or table.name == "session_papers"
             ):
                 continue
@@ -818,7 +820,7 @@ async def test_migration_roundtrip_old_exam_paper_graph_and_data_guard(exam, pos
         )
         async with target.connect() as db:
             assert (
-                await db.scalar(text("SELECT version_num FROM alembic_version")) == "b12c9d20e411"
+                await db.scalar(text("SELECT version_num FROM alembic_version")) == "b13a21f0c901"
             )
     finally:
         await target.dispose()

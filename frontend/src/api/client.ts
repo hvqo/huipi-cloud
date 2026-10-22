@@ -56,7 +56,13 @@ export async function readBounded(response: Response, maximum: number) {
 }
 export async function request<T>(
   path: string,
-  options: { body?: string; signal?: AbortSignal; blob?: boolean } = {},
+  options: {
+    body?: string | FormData
+    signal?: AbortSignal
+    blob?: boolean
+    timeoutMs?: number
+    maxBytes?: number
+  } = {},
 ): Promise<T> {
   if (!/^\/api\/v1\//.test(path) || path.includes('://') || path.includes('\\'))
     throw new ApiError(400, 'invalid_api_path')
@@ -66,7 +72,10 @@ export async function request<T>(
   const cancel = () => controller.abort()
   options.signal?.addEventListener('abort', cancel, { once: true })
   if (options.signal?.aborted) cancel()
-  const timer = setTimeout(cancel, options.blob ? 30000 : 15000)
+  const timer = setTimeout(
+    cancel,
+    Math.min(options.timeoutMs || (options.blob ? 30000 : 15000), 180000),
+  )
   let accepted = false
   try {
     const response = await fetch(path, {
@@ -74,7 +83,7 @@ export async function request<T>(
       signal: controller.signal,
       headers: {
         Authorization: `Bearer ${token}`,
-        ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+        ...(typeof options.body === 'string' ? { 'Content-Type': 'application/json' } : {}),
       },
       ...(options.body ? { body: options.body } : {}),
       credentials: 'omit',
@@ -88,7 +97,13 @@ export async function request<T>(
     }
     if (!response.ok)
       throw new ApiError(response.status, 'api_error', !!options.body && response.status >= 500)
-    const bytes = await readBounded(response, options.blob ? 21 * 1024 * 1024 : 2 * 1024 * 1024)
+    const bytes = await readBounded(
+      response,
+      Math.min(
+        options.maxBytes || (options.blob ? 21 * 1024 * 1024 : 2 * 1024 * 1024),
+        33 * 1024 * 1024,
+      ),
+    )
     return (
       options.blob
         ? new Blob([bytes.buffer as ArrayBuffer], {

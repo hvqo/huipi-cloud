@@ -33,3 +33,9 @@ it('uses an in-memory token store and recognizes expired tokens', async () => {
   expect(user.expired).toBe(true)
   vi.useRealTimers()
 })
+
+it('allows the scan login destination without allowing external return targets', () => {
+  expect(safeReturn('/scans')).toBe('/scans')
+  expect(safeReturn('//evil.invalid/scans')).toBe('/assignments')
+  expect(safeReturn('/scans\\evil.invalid')).toBe('/assignments')
+})
