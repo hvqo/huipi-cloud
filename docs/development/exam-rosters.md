@@ -50,6 +50,19 @@ uv run python -m huipi_cloud.modules.exam_rosters enable-operator \
 
 同request_id/正文返回首次回执，异正文409；503 `roster_commit_outcome_unknown`保留原请求再按当前权限重放，不声称已经回滚。其他数据库故障默认拒绝。唯一键、外键、来源及冻结触发器保护直接SQL写入；数据库所有者禁用触发器/TRUNCATE不在应用威胁边界内。
 
+### 大名单批量处理与操作预算
+
+创建、完整替换与更正共用一次来源准备：最多2000个Student及其业务日期内归属批量锁定，班级、SessionPaper与PaperVersion去重读取，Participation一次查找。所有来源使用当前数据库Core行，不依赖可能过期的ORM缓存；快照仅取可信标签。按Student、Enrollment、Class、SessionPaper、PaperVersion各表ID排序获取SHARE锁，保留至同事务审计及提交。同场次先锁Session，Participation的唯一身份不变。
+
+新Participation和快照以每批最多250条的multi-VALUES写入，不跳过逐行数据库触发器，不忽略唯一约束冲突；任一批失败时，先前插入及草稿删除一并回滚。未知卷别仍为NULL。不是跨请求缓存，不改变冻结、更正或历史读取协议。
+
+- `ROSTER_OPERATION_TIMEOUT_SECONDS`：默认60秒，可配置15–300秒；应用侧协作式整笔事务预算，包含授权、写入、审计和COMMIT。PostgreSQL 16没有原生transaction_timeout，不能用statement_timeout冒充整笔预算。
+- `ROSTER_LOCK_TIMEOUT_SECONDS`：默认5秒，可配置0.1–8秒；事务局部锁等待限制。单句statement_timeout仍为8秒。默认总预算结合旧2000人操作约13秒上界及批量重测保留余量，不以最快单次耗时设限。
+- 提交前整体预算超限返回503 `roster_operation_timeout`；锁/数据库故障为`roster_operation_unavailable`。COMMIT开始后的超时仍为`roster_commit_outcome_unknown`，不得自动判为未保存。
+- 回滚有独立5秒清理窗口；取消不是操作系统级硬中止，不承诺所有驱动或网络故障都能在严格墙钟上限内结束。客户端应保留request_id并按原幂等规则恢复，不能自行构造重复名单。
+
+实际执行次数、触发器开销、RSS与可复跑方法见[批量性能基准](../evaluation/roster-batch-performance.md)。该报告只使用合成数据，不将客户端SQL计数解释为触发器内部查询数或生产容量保证。
+
 ## CLI流程
 
 严格正文见[schemas.py](../../src/huipi_cloud/modules/exam_rosters/schemas.py)。不要将JWT放在argv、文件示例或日志。

@@ -18,6 +18,7 @@ from huipi_cloud.modules.resource_security.models import SecurityGrant
 from .models import ExamParticipation, RosterEntrySnapshot, RosterRevision
 from .operations import operation
 from .permissions import ROSTER_OPERATOR_ROLE
+from .schemas import MAX_ENTRIES
 
 R, E, P = (m.__table__ for m in (RosterRevision, RosterEntrySnapshot, ExamParticipation))
 S, EV, B, V = (m.__table__ for m in (ExamSession, ExamEvent, SessionPaper, PaperVersion))
@@ -51,74 +52,133 @@ async def locked_revision(db, principal, request, *actions):
     return session, value
 
 
-async def materialize(db, roster, entries):
-    """Capture trusted labels and date-qualified homeroom, never client names."""
-    for selection in sorted(entries, key=lambda e: e.student_id):
-        student = await db.scalar(
-            select(Student).where(Student.id == selection.student_id).with_for_update(read=True)
-        )
-        if student is None or not student.is_active:
-            raise AccessError("roster_student_unavailable", 409)
-        enrollment = await db.scalar(
-            select(ClassEnrollment)
-            .where(
-                ClassEnrollment.student_id == student.id,
-                ClassEnrollment.valid_from <= roster["business_date"],
-                (
-                    ClassEnrollment.valid_to.is_(None)
-                    | (ClassEnrollment.valid_to > roster["business_date"])
-                ),
-            )
+# 250 * 16 snapshot columns stays far below asyncpg's 32767 bind limit.
+WRITE_BATCH_SIZE = 250
+ST, CE, CL = (m.__table__ for m in (Student, ClassEnrollment, AdministrativeClass))
+
+
+async def locked_sources(db, table, identifiers, *conditions):
+    """Fresh Core rows; one bounded query, stable lock order within each table."""
+    if not identifiers:
+        return {}
+    rows = (
+        await db.execute(
+            select(table)
+            .where(table.c.id.in_(sorted(identifiers)), *conditions)
+            .order_by(table.c.id)
             .with_for_update(read=True)
         )
-        if enrollment is None:
-            raise AccessError("roster_enrollment_missing", 409)
-        classroom = await db.scalar(
-            select(AdministrativeClass)
-            .where(AdministrativeClass.id == enrollment.administrative_class_id)
-            .with_for_update(read=True)
-        )
-        if selection.session_paper_id is not None:
-            binding = await exams.row(db, B, selection.session_paper_id, share=True)
-            if (
-                binding["exam_session_id"] != roster["exam_session_id"]
-                or binding["status"] != "active"
-            ):
-                raise AccessError("roster_paper_invalid", 409)
-            paper = await exams.row(db, V, binding["paper_version_id"], share=True)
-            if paper["status"] != "locked":
-                raise AccessError("roster_paper_unavailable", 409)
-        participation = await db.scalar(
-            select(P.c.id).where(
-                P.c.exam_session_id == roster["exam_session_id"], P.c.student_id == student.id
-            )
-        )
-        if participation is None:
-            participation = uuid4()
-            await db.execute(
-                insert(P).values(
-                    id=participation,
+    ).mappings()
+    return {r["id"]: r for r in rows}
+
+
+async def insert_batches(db, table, values):
+    # Explicit multi-VALUES: not an executemany loop disguised as one client event.
+    # Database row triggers, constraints and transaction semantics all remain active.
+    for start in range(0, len(values), WRITE_BATCH_SIZE):
+        await db.execute(insert(table).values(values[start : start + WRITE_BATCH_SIZE]))
+
+
+def snapshot_rows(roster, selections, students, by_student, classrooms, participation_ids):
+    """Pure, bounded assembly after source locks; no database work or authority decisions."""
+    new_participations, snapshots = [], []
+    for selection in selections:
+        student = students[selection.student_id]
+        enrollment = by_student[student["id"]]
+        classroom = classrooms[enrollment["administrative_class_id"]]
+        if student["id"] not in participation_ids:
+            participation_ids[student["id"]] = uuid4()
+            new_participations.append(
+                dict(
+                    id=participation_ids[student["id"]],
                     exam_session_id=roster["exam_session_id"],
-                    student_id=student.id,
+                    student_id=student["id"],
                 )
             )
-        await db.execute(
-            insert(E).values(
+        snapshots.append(
+            dict(
                 id=uuid4(),
                 roster_revision_id=roster["id"],
                 exam_session_id=roster["exam_session_id"],
-                participation_id=participation,
-                student_id=student.id,
-                enrollment_id=enrollment.id,
-                administrative_class_id=classroom.id,
-                student_name=student.name,
-                student_code=student.school_student_code,
-                class_name=classroom.display_name,
-                class_code=classroom.code,
+                participation_id=participation_ids[student["id"]],
+                student_id=student["id"],
+                enrollment_id=enrollment["id"],
+                administrative_class_id=classroom["id"],
+                student_name=student["name"],
+                student_code=student["school_student_code"],
+                class_name=classroom["display_name"],
+                class_code=classroom["code"],
                 exam_number=selection.exam_number,
                 session_paper_id=selection.session_paper_id,
             )
         )
+    return new_participations, snapshots
+
+
+async def materialize(db, roster, entries):
+    """Lock trusted sources once, then capture the complete immutable snapshot.
+
+    The caller already holds Event SHARE and Session UPDATE (and existing Roster
+    UPDATE). Same-session writers serialize before participation lookup. All shared
+    source locks are retained through audit and COMMIT; no cache survives a call.
+    """
+    if len(entries) > MAX_ENTRIES:
+        raise AccessError("roster_entry_limit", 422)
+    if not entries:
+        return
+    selections = sorted(entries, key=lambda e: e.student_id)
+    student_ids = [e.student_id for e in selections]
+    students = await locked_sources(db, ST, student_ids)
+    if len(students) != len(student_ids) or any(not s["is_active"] for s in students.values()):
+        raise AccessError("roster_student_unavailable", 409)
+    # Match freeze's student -> enrollment lock order, with globally ordered enrollment IDs.
+    enrollments = (
+        (
+            await db.execute(
+                select(CE)
+                .where(
+                    CE.c.student_id.in_(student_ids),
+                    CE.c.valid_from <= roster["business_date"],
+                    CE.c.valid_to.is_(None) | (CE.c.valid_to > roster["business_date"]),
+                )
+                .order_by(CE.c.id)
+                .with_for_update(read=True)
+            )
+        )
+        .mappings()
+        .all()
+    )
+    by_student = {r["student_id"]: r for r in enrollments}
+    if len(enrollments) != len(student_ids) or len(by_student) != len(student_ids):
+        raise AccessError("roster_enrollment_missing", 409)
+    classrooms = await locked_sources(db, CL, {r["administrative_class_id"] for r in enrollments})
+    binding_ids = {e.session_paper_id for e in selections if e.session_paper_id is not None}
+    bindings = await locked_sources(db, B, binding_ids)
+    if len(bindings) != len(binding_ids):
+        raise AccessError(exams.DENIED, 404)
+    if any(
+        b["exam_session_id"] != roster["exam_session_id"] or b["status"] != "active"
+        for b in bindings.values()
+    ):
+        raise AccessError("roster_paper_invalid", 409)
+    paper_ids = {b["paper_version_id"] for b in bindings.values()}
+    papers = await locked_sources(db, V, paper_ids)
+    if len(papers) != len(paper_ids) or any(p["status"] != "locked" for p in papers.values()):
+        raise AccessError("roster_paper_unavailable", 409)
+    existing = (
+        await db.execute(
+            select(P.c.student_id, P.c.id).where(
+                P.c.exam_session_id == roster["exam_session_id"], P.c.student_id.in_(student_ids)
+            )
+        )
+    ).all()
+    new_participations, snapshots = snapshot_rows(
+        roster, selections, students, by_student, classrooms, dict(existing)
+    )
+    # No ON CONFLICT DO NOTHING: an unexpected identity conflict rolls back the whole
+    # request; immutable participation must never silently point at a different UUID.
+    await insert_batches(db, P, new_participations)
+    await insert_batches(db, E, snapshots)
 
 
 async def new_revision(db, principal, session, business_date, reason, entries, previous=None):
