@@ -194,6 +194,7 @@ test('真实PNG预览与新建作业表单', async ({ page, request }) => {
 })
 
 test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原件校验', async ({ page, request }) => {
+  test.setTimeout(120000)
   const { readFile } = await import('node:fs/promises')
   const { createHash } = await import('node:crypto')
   await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/a`, { ignoreHTTPSErrors: true })
@@ -286,6 +287,14 @@ test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原�
     fullPage: true,
     animations: 'disabled',
   })
+  // Real API intent -> dedicated worker -> private PG/S3 Canonical result. No timed fake success.
+  await page.getByRole('button', { name: '开始解析', exact: true }).click()
+  await expect(page.locator('.parse-state')).toHaveText('解析完成', { timeout: 90000 })
+  await page.getByRole('button', { name: '查看解析内容', exact: true }).click()
+  await expect(page.getByRole('region', { name: '解析页面内容' })).toBeVisible()
+  await expect(page.getByText('解析第 1 页 · 原扫描第 3 页', { exact: true })).toBeVisible()
+  await expect(page.locator('.parsed-content')).not.toBeEmpty()
+  await page.screenshot({ path: 'test-results/exam-protected-canonical.png', fullPage: true })
   await page.getByRole('button', { name: '新建答卷', exact: true }).click()
   await page.getByRole('button', { name: '加入扫描页 2', exact: true }).click()
   // One page stays unclaimed until the later correction adds it.

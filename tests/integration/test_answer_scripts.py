@@ -108,7 +108,7 @@ async def test_group_confirm_manifest_history_and_original_unchanged(script_cont
     assert [p["scan_page_id"] for p in view.json()["current"]["pages"]] == body["page_ids"]
     manifest = await c.client.get(f"/api/v1/answer-scripts/{aid}/manifest")
     assert manifest.status_code == 200, manifest.text
-    assert manifest.json()["bridge_implemented"] is False
+    assert manifest.json()["bridge_implemented"] is True
     assert not any(x in manifest.text for x in ("object_key", "bucket", "access_key"))
     history = await c.client.get(f"/api/v1/answer-scripts/{aid}/versions")
     assert [v["status"] for v in history.json()["items"]] == ["confirmed", "draft"]
@@ -665,7 +665,7 @@ async def test_downgrade_refuses_live_scripts_without_losing_history(script_cont
     output, _ = await asyncio.wait_for(proc.communicate(), 20)
     assert proc.returncode != 0 and b"script_downgrade_requires_archived_new_data" in output
     async with c.factory() as db:
-        assert await db.scalar(text("SELECT version_num FROM alembic_version")) == "b14a30f1d902"
+        assert await db.scalar(text("SELECT version_num FROM alembic_version")) == "b14b41a2e903"
         assert await db.scalar(
             select(service.A.c.current_version_id).where(service.A.c.id == UUID(d["script_id"]))
         ) == UUID(d["version_id"])

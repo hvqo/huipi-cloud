@@ -782,7 +782,7 @@ async def test_migration_roundtrip_old_graph_paper_history_and_destructive_guard
                         "security_",
                         "permission_",
                         "scan_",
-                        "answer_script",
+                        "exam_parsing_", "exam_submission_links", "answer_script",
                         "current_page_allocations",
                     )
                 )
@@ -908,7 +908,7 @@ async def test_migration_roundtrip_old_graph_paper_history_and_destructive_guard
         assert r.returncode != 0 and "exam_downgrade_requires_archived_new_data" in r.stderr
         async with target.connect() as db:
             assert (
-                await db.scalar(text("SELECT version_num FROM alembic_version")) == "b14a30f1d902"
+                await db.scalar(text("SELECT version_num FROM alembic_version")) == "b14b41a2e903"
             )
     finally:
         await target.dispose()

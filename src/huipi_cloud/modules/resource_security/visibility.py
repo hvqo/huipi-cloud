@@ -72,7 +72,10 @@ def rules():
         )
 
     result = [(Assignment, Assignment.security_classification == LEGACY)]
+    from huipi_cloud.modules.exam_parsing.models import ExamSubmissionLink
+
     models = (
+        ExamSubmissionLink,
         Question,
         AnswerKey,
         RubricCriterion,

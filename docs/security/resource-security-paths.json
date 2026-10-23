@@ -1,5 +1,5 @@
 {
-  "version": "answer-scripts-1",
+  "version": "exam-parsing-1",
   "operations": [
     {
       "method": "POST",
@@ -568,6 +568,38 @@
       "permission": "exam.identity.verify",
       "classification_boundary": "exam_protected；真实Session/Event Scope；Service重复当前Grant/名单/来源校验；不继承legacy管理员",
       "entrypoint": "huipi_cloud.modules.answer_scripts.service.http_authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/answer-scripts/{script_id}/parsing",
+      "policy": "start_exam_parsing",
+      "permission": "exam.parse.start",
+      "classification_boundary": "真实Job/Script/Session当前Grant，考试专用Core入口；不放开legacy",
+      "entrypoint": "huipi_cloud.modules.exam_parsing.service"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/answer-scripts/{script_id}/parsing",
+      "policy": "current_exam_parsing",
+      "permission": "exam.parse.read",
+      "classification_boundary": "真实Job/Script/Session当前Grant，考试专用Core入口；不放开legacy",
+      "entrypoint": "huipi_cloud.modules.exam_parsing.service"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-parsing-jobs/{job_id}",
+      "policy": "inspect_exam_parsing",
+      "permission": "exam.parse.read",
+      "classification_boundary": "真实Job/Script/Session当前Grant，考试专用Core入口；不放开legacy",
+      "entrypoint": "huipi_cloud.modules.exam_parsing.service"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-parsing-jobs/{job_id}/pages/{page_number}",
+      "policy": "read_exam_parsing_page",
+      "permission": "exam.parse.read",
+      "classification_boundary": "真实Job/Script/Session当前Grant，考试专用Core入口；不放开legacy",
+      "entrypoint": "huipi_cloud.modules.exam_parsing.service"
     }
   ]
 }

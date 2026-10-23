@@ -513,7 +513,15 @@ async def test_scan_migration_roundtrip_preserves_existing_business_graph(roster
         t
         for t in Base.metadata.sorted_tables
         if not t.name.startswith(
-            ("scan_", "security_", "permission_", "answer_script", "current_page_allocations")
+            (
+                "scan_",
+                "security_",
+                "permission_",
+                "exam_parsing_",
+                "exam_submission_links",
+                "answer_script",
+                "current_page_allocations",
+            )
         )
     ]
 
@@ -538,7 +546,7 @@ async def test_scan_migration_roundtrip_preserves_existing_business_graph(roster
     await alembic(url, "check")
     assert await snapshot() == before
     async with roster.factory() as db:
-        assert await db.scalar(text("SELECT version_num FROM alembic_version")) == "b14a30f1d902"
+        assert await db.scalar(text("SELECT version_num FROM alembic_version")) == "b14b41a2e903"
 
 
 @pytest.mark.anyio
@@ -550,7 +558,7 @@ async def test_scan_facts_refuse_destructive_downgrade(scan_context, postgres_en
     with pytest.raises(AssertionError):
         await alembic(postgres_engine.url, "downgrade", "b12c9d20e411")
     async with scan_context.factory() as db:
-        assert await db.scalar(text("SELECT version_num FROM alembic_version")) == "b14a30f1d902"
+        assert await db.scalar(text("SELECT version_num FROM alembic_version")) == "b14b41a2e903"
         assert await db.scalar(select(func.count()).select_from(ScanPage)) == 4
 
 

@@ -145,4 +145,4 @@ class ScriptManifest(Strict):
     pages: list[SourcePage]
     # Not a durable permission or a ParsingTask. A future bridge MUST revalidate at commit.
     validated_at: datetime
-    bridge_implemented: Literal[False] = False
+    bridge_implemented: Literal[True] = True

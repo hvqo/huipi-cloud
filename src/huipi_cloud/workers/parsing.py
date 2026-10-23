@@ -57,17 +57,19 @@ class ParsingWorker:
         config: Settings,
         *,
         abort_process: Callable[[UUID], None] = _abort_process_for_unresponsive_parser,
+        repository_backend=repository,
     ) -> None:
         self.session_factory = session_factory
         self.executor = executor
         self.config = config
         self.abort_process = abort_process
+        self.repository = repository_backend
 
     async def run(self, stop_event: asyncio.Event) -> None:
         """Poll until shutdown, and stop taking work before the current lease."""
         while not stop_event.is_set():
             try:
-                claimed = await repository.claim_next_task(
+                claimed = await self.repository.claim_next_task(
                     self.session_factory,
                     lease_seconds=self.config.parsing_lease_seconds,
                 )
@@ -137,10 +139,7 @@ class ParsingWorker:
 
     async def _execute_claim(self, claimed: repository.ClaimedTask) -> None:
         execution = asyncio.create_task(self.executor.execute(claimed.task))
-        deadline = (
-            asyncio.get_running_loop().time()
-            + self.config.parsing_execution_timeout_seconds
-        )
+        deadline = asyncio.get_running_loop().time() + self.config.parsing_execution_timeout_seconds
         try:
             while True:
                 loop = asyncio.get_running_loop()
@@ -184,7 +183,7 @@ class ParsingWorker:
                         )
                         return
                     try:
-                        completed = await repository.complete_task_with_artifact(
+                        completed = await self.repository.complete_task_with_artifact(
                             self.session_factory,
                             artifact=artifact,
                             lease_token=claimed.lease_token,
@@ -213,7 +212,7 @@ class ParsingWorker:
                     return
 
                 try:
-                    renewed_until = await repository.heartbeat(
+                    renewed_until = await self.repository.heartbeat(
                         self.session_factory,
                         task_id=claimed.task.task_id,
                         lease_token=claimed.lease_token,
@@ -276,7 +275,7 @@ class ParsingWorker:
             self.config.parsing_retry_base_seconds,
             self.config.parsing_retry_max_seconds,
         )
-        new_status = await repository.record_failure(
+        new_status = await self.repository.record_failure(
             self.session_factory,
             task_id=claimed.task.task_id,
             lease_token=claimed.lease_token,
