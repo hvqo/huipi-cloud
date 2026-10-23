@@ -1,6 +1,6 @@
 # 考试扫描接收 MVP
 
-本切片提供真实 HTTP 与 Vue 接收链路。场次、共享锁卷、冻结名单沿用现有业务；原件进入私有 S3，预览不调用 OCR、MinerU、LLM 或收费 API。页面始终待身份核验。此阶段不能进行分卷、身份确认、阅卷或成绩发布。
+本切片提供真实 HTTP 与 Vue 接收链路。场次、共享锁卷、冻结名单沿用现有业务；原件进入私有 S3，预览不调用 OCR、MinerU、LLM 或收费 API。页面始终待身份核验。扫描接收本身不进行身份推断；人工分卷与确认现由独立的[答卷工作区](exam-answer-scripts.md)提供，阅卷与成绩发布仍未开放。
 
 ## 数据与隔离
 
@@ -98,4 +98,4 @@ JWT从受控stdin读取，不放入argv、日志或文档。撤销继续使用�
 
 ## 下一切片合同
 
-人工分卷应引用稳定ScanPage/File和Session，对有序页集合建立不可变AnswerScriptVersion；身份确认应明确指向可信Participation、冻结RosterRevision/EntrySnapshot和同场次SessionPaper，检查名单更正、撤销、历史引用与重确认。不能回写本轮原始页身份、覆盖文件或直接建立旧Worker可领取任务；受保护桥接必须单独授权和审计。尚无相关写接口，不宣称已经实现。
+人工分卷应引用稳定ScanPage/File和Session，对有序页集合建立不可变AnswerScriptVersion；身份确认应明确指向可信Participation、冻结RosterRevision/EntrySnapshot和同场次SessionPaper，检查名单更正、撤销、历史引用与重确认。不能回写本轮原始页身份、覆盖文件或直接建立旧Worker可领取任务；受保护桥接必须单独授权和审计。人工分卷、身份确认与版本化更正现见[答卷工作区合同](exam-answer-scripts.md)；解析桥接仍未实现。

@@ -129,3 +129,7 @@
 ## B-1.2c专项实施证据入口
 
 参试名单的多班同场、同名Student、考号唯一、历史班级、同场次卷别、冻结/更正、当前指针、撤权重放、并发与迁移往返分别落实在[真实PG测试](../../tests/integration/test_exam_rosters.py)与[协议测试](../../tests/unit/test_exam_roster_protocol.py)。这只覆盖T02/T05/T06/T24/T28中的名单基础，不代表扫描身份确认、名单CSV、到考或全部T01–T30已完成。执行结果以本切片最终交付记录为准。
+
+## 人工分卷切片的实际覆盖
+
+B-1.4a的[真实PG/S3测试](../../tests/integration/test_answer_scripts.py)与[签名身份浏览器场景](../../frontend/e2e/workbench.spec.ts)覆盖T06同名名单选择、T07人工完整性与Manifest阻断、T08跨文件补页新版本、T26无身份留unclaimed，以及I01–I08中的身份/唯一占用/来源/幂等约束。T05仅覆盖显式同场次A/B身份选择和拒绝串卷，不代表已解析题目映射。未实现自动漏页识别、受保护解析桥接或成绩；T01/T03/T05/B-1.5完整闭环尚不能宣称全部通过。结果与限制见[本地验收](answer-scripts-mvp.md)。

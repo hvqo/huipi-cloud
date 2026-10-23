@@ -11,6 +11,7 @@ from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
+from huipi_cloud.modules.answer_scripts.permissions import SCRIPT_ACTIONS
 from huipi_cloud.modules.assignments.models import Assignment
 from huipi_cloud.modules.assignments.schemas import AssignmentCreate
 from huipi_cloud.modules.exam_rosters.permissions import ROSTER_ACTIONS
@@ -47,6 +48,7 @@ CATALOG = {
     **EXAM_ACTIONS,
     **ROSTER_ACTIONS,
     **SCAN_ACTIONS,
+    **SCRIPT_ACTIONS,
     "security.grants.manage": frozenset({"installation"}),
     "security.protected.create": frozenset({"installation"}),
     "security.classification.inspect": frozenset({"installation", "assignment"}),

@@ -243,4 +243,90 @@ test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原�
   expect(errors).toEqual([])
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   await page.screenshot({ path: 'test-results/scan-intake.png', fullPage: true })
+
+  await page.getByRole('link', { name: '人工分卷与身份确认 →' }).click()
+  await expect(page.getByRole('heading', { name: '人工分卷与身份确认' })).toBeVisible()
+  await page.getByRole('button', { name: '加入扫描页 1', exact: true }).click()
+  await page.getByRole('button', { name: '加入扫描页 3', exact: true }).click()
+  await page.getByRole('button', { name: '上移第2项' }).click()
+  await page.getByLabel('已核对页数，答卷完整').check()
+  await page.getByLabel('操作说明').fill('合成原卷，页序3、1，核对第一位同名学生')
+  await page.getByRole('button', { name: '保存答卷草稿', exact: true }).click()
+  await expect(page.getByText('草稿已保存，页面尚未确认学生身份。')).toBeVisible()
+  await page.getByLabel('操作说明').fill('合成确认第一位同名学生')
+  await page.getByRole('button', { name: '核对学生并确认', exact: true }).click()
+  const identity = page.getByRole('dialog', { name: '核对学生身份与实际卷别' })
+  await expect(identity).toBeVisible()
+  await expect(identity.getByLabel('参试学生').locator('option')).toHaveCount(5)
+  const options = await identity
+    .getByLabel('参试学生')
+    .locator('option')
+    .evaluateAll((opts) =>
+      opts.map((o) => ({ value: (o as HTMLOptionElement).value, label: o.textContent || '' })),
+    )
+  const twins = options.filter((o) => o.label.includes('合成同名'))
+  expect(twins.length).toBe(2)
+  expect(twins[0]!.value).not.toBe(twins[1]!.value)
+  const firstTwin = twins.find((o) => o.label.includes('考号 N001'))!
+  const secondTwin = twins.find((o) => o.label.includes('考号 N002'))!
+  expect(firstTwin.label).toContain('合成1班')
+  expect(secondTwin.label).toContain('合成2班')
+  await identity.getByLabel('参试学生').selectOption(firstTwin.value)
+  await expect(identity.getByLabel('实际卷别')).not.toHaveValue('')
+  await page.screenshot({
+    path: 'test-results/answer-script-identity-check.png',
+    fullPage: true,
+    animations: 'disabled',
+  })
+  await identity.getByRole('button', { name: '确认身份并保存新版本' }).click()
+  await expect(page.getByText('身份确认已保存。尚未解析或评分。')).toBeVisible()
+  await expect(identity).not.toBeVisible()
+  await page.screenshot({
+    path: 'test-results/answer-script-confirmed.png',
+    fullPage: true,
+    animations: 'disabled',
+  })
+  await page.getByRole('button', { name: '新建答卷', exact: true }).click()
+  await page.getByRole('button', { name: '加入扫描页 2', exact: true }).click()
+  // One page stays unclaimed until the later correction adds it.
+  await page.getByLabel('操作说明').fill('合成第二位同名学生，单页草稿')
+  await page.getByRole('button', { name: '保存答卷草稿', exact: true }).click()
+  await expect(page.getByText('草稿已保存，页面尚未确认学生身份。')).toBeVisible()
+  await page.getByLabel('操作说明').fill('核对另一班同名学生')
+  await page.getByRole('button', { name: '核对学生并确认', exact: true }).click()
+  await identity.getByLabel('参试学生').selectOption(secondTwin.value)
+  await identity.getByRole('button', { name: '确认身份并保存新版本' }).click()
+  await expect(page.getByText('身份确认已保存。尚未解析或评分。')).toBeVisible()
+  await expect(page.getByRole('button', { name: '加入扫描页 4', exact: true })).toBeVisible()
+  await expect(identity).not.toBeVisible()
+  await expect(page.locator('.script-identity')).toContainText('考号 N002')
+  await expect(page.locator('.script-status')).toContainText('答卷不完整')
+  await page.screenshot({
+    path: 'test-results/answer-scripts-two-students.png',
+    fullPage: true,
+    animations: 'disabled',
+  })
+  await page.getByRole('button', { name: '加入扫描页 4', exact: true }).click()
+  await page.getByLabel('已核对页数，答卷完整').check()
+  await page.getByLabel('操作说明').fill('漏扫页补充，重新确认前保留新草稿')
+  await page.getByRole('button', { name: '保存为新版本草稿', exact: true }).click()
+  await expect(page.getByText('草稿已保存，页面尚未确认学生身份。')).toBeVisible()
+  await page.getByRole('button', { name: '查看历史版本', exact: true }).click()
+  await expect(page.locator('.script-history')).toContainText('v3')
+  await expect(page.locator('.script-history')).toContainText('v2')
+  expect(errors).toEqual([])
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  await page.screenshot({ path: 'test-results/answer-script-correction.png', fullPage: true })
+  for (const [width, height] of [
+    [1366, 768],
+    [1920, 1080],
+  ]) {
+    await page.setViewportSize({ width: width!, height: height! })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await page.screenshot({
+      path: `test-results/answer-scripts-${width}.png`,
+      fullPage: true,
+      animations: 'disabled',
+    })
+  }
 })

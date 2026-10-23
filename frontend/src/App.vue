@@ -7,15 +7,17 @@ import { identity, logout } from './auth'
 const route = useRoute(),
   router = useRouter()
 const title = computed(() =>
-  route.path === '/scans'
-    ? '考试扫描'
-    : route.path.endsWith('/review')
-      ? '作答证据复核'
-      : route.params.sid
-        ? '学生提交'
-        : route.params.aid
-          ? '作业详情'
-          : '我的作业',
+  route.path.endsWith('/scripts') && route.path.startsWith('/scans/')
+    ? '人工分卷与身份确认'
+    : route.path === '/scans'
+      ? '考试扫描'
+      : route.path.endsWith('/review')
+        ? '作答证据复核'
+        : route.params.sid
+          ? '学生提交'
+          : route.params.aid
+            ? '作业详情'
+            : '我的作业',
 )
 watch(
   () => identity.authenticated,

@@ -687,7 +687,16 @@ async def test_migration_roundtrip_old_exam_paper_graph_and_data_guard(exam, pos
         for table in Base.metadata.sorted_tables:
             if (
                 table.name.startswith(
-                    ("security_", "permission_", "paper_", "exam_", "roster_", "scan_")
+                    (
+                        "security_",
+                        "permission_",
+                        "paper_",
+                        "exam_",
+                        "roster_",
+                        "scan_",
+                        "answer_script",
+                        "current_page_allocations",
+                    )
                 )
                 or table.name == "session_papers"
             ):
@@ -820,7 +829,7 @@ async def test_migration_roundtrip_old_exam_paper_graph_and_data_guard(exam, pos
         )
         async with target.connect() as db:
             assert (
-                await db.scalar(text("SELECT version_num FROM alembic_version")) == "b13a21f0c901"
+                await db.scalar(text("SELECT version_num FROM alembic_version")) == "b14a30f1d902"
             )
     finally:
         await target.dispose()

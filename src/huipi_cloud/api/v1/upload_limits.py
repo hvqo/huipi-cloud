@@ -24,6 +24,7 @@ class UploadRequestLimitMiddleware:
         scan_max_file_bytes: int = 32 * 1024 * 1024,
     ) -> None:
         self.scan_request_limit = scan_max_file_bytes + multipart_overhead_bytes
+        self.active_script_operations = 0
         self.active_scan_uploads = 0
         self.active_scan_downloads = 0
         self.app = app
@@ -48,9 +49,32 @@ class UploadRequestLimitMiddleware:
             (path.startswith(f"{self.api_v1_prefix}/scan-files/") and path.endswith("/original"))
             or (path.startswith(f"{self.api_v1_prefix}/scan-pages/") and path.endswith("/preview"))
         )
-        if scan_upload or scan_download:
-            attribute = "active_scan_uploads" if scan_upload else "active_scan_downloads"
-            maximum = 2 if scan_upload else 4
+        script_operation = (
+            scope.get("method") == "POST"
+            and (
+                (
+                    path.startswith(f"{self.api_v1_prefix}/exam-sessions/")
+                    and path.endswith("/answer-scripts")
+                )
+                or (
+                    path.startswith(f"{self.api_v1_prefix}/answer-scripts/")
+                    and path.endswith("/versions")
+                )
+            )
+        ) or (
+            scope.get("method") == "GET"
+            and path.startswith(f"{self.api_v1_prefix}/answer-scripts/")
+            and path.endswith("/manifest")
+        )
+        if scan_upload or scan_download or script_operation:
+            attribute = (
+                "active_script_operations"
+                if script_operation
+                else "active_scan_uploads"
+                if scan_upload
+                else "active_scan_downloads"
+            )
+            maximum = 2 if scan_upload or script_operation else 4
             if getattr(self, attribute) >= maximum:
                 await JSONResponse(
                     status_code=429,
@@ -68,7 +92,7 @@ class UploadRequestLimitMiddleware:
                 await send(message)
 
             try:
-                async with asyncio.timeout(150 if scan_upload else 60):
+                async with asyncio.timeout(100 if script_operation else 150 if scan_upload else 60):
                     await self._limited(scope, receive, safe_send)
             except TimeoutError:
                 if started:
@@ -139,6 +163,13 @@ class UploadRequestLimitMiddleware:
         path = scope.get("path", "")
         if scope.get("type") != "http" or scope.get("method") != "POST":
             return None
+        if (
+            path.startswith(f"{self.api_v1_prefix}/answer-scripts/") and path.endswith("/versions")
+        ) or (
+            path.startswith(f"{self.api_v1_prefix}/exam-sessions/")
+            and path.endswith("/answer-scripts")
+        ):
+            return 64 * 1024
         if path.startswith(f"{self.api_v1_prefix}/scan-batches/") and path.endswith("/files"):
             return self.scan_request_limit
         if path.startswith(self.upload_path_prefix) and path.endswith("/submissions"):

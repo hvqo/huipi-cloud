@@ -233,6 +233,9 @@ onUnmounted(() => {
     <div>
       <p class="eyebrow">考务工作空间</p>
       <h1>考试扫描</h1>
+      <RouterLink v-if="sessionId" :to="`/scans/sessions/${sessionId}/scripts`"
+        >人工分卷与身份确认 →</RouterLink
+      >
       <p class="muted">接收混班扫描 PDF，逐页核对原件。此步骤不确认学生身份，也不生成成绩。</p>
     </div>
   </div>

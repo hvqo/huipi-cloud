@@ -1,5 +1,5 @@
 {
-  "version": "scan-intake-mvp-1",
+  "version": "answer-scripts-1",
   "operations": [
     {
       "method": "POST",
@@ -504,6 +504,70 @@
       "permission": "scan.file.read",
       "classification_boundary": "当前可信Principal及真实ExamSession Scope；exam_protected；不走旧admin/member路径",
       "entrypoint": "huipi_cloud.modules.scans.service.http_authorize"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/script-pages",
+      "policy": "list_script_pages",
+      "permission": "exam.script.read",
+      "classification_boundary": "exam_protected；真实Session/Event Scope；Service重复当前Grant/名单/来源校验；不继承legacy管理员",
+      "entrypoint": "huipi_cloud.modules.answer_scripts.service.http_authorize"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/identity-candidates",
+      "policy": "list_script_identities",
+      "permission": "exam.script.read",
+      "classification_boundary": "exam_protected；真实Session/Event Scope；Service重复当前Grant/名单/来源校验；不继承legacy管理员",
+      "entrypoint": "huipi_cloud.modules.answer_scripts.service.http_authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/answer-scripts",
+      "policy": "create_answer_script",
+      "permission": "exam.script.edit",
+      "classification_boundary": "exam_protected；真实Session/Event Scope；Service重复当前Grant/名单/来源校验；不继承legacy管理员",
+      "entrypoint": "huipi_cloud.modules.answer_scripts.service.http_authorize"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/answer-scripts",
+      "policy": "list_answer_scripts",
+      "permission": "exam.script.read",
+      "classification_boundary": "exam_protected；真实Session/Event Scope；Service重复当前Grant/名单/来源校验；不继承legacy管理员",
+      "entrypoint": "huipi_cloud.modules.answer_scripts.service.http_authorize"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/answer-scripts/{script_id}",
+      "policy": "inspect_answer_script",
+      "permission": "exam.script.read",
+      "classification_boundary": "exam_protected；真实Session/Event Scope；Service重复当前Grant/名单/来源校验；不继承legacy管理员",
+      "entrypoint": "huipi_cloud.modules.answer_scripts.service.http_authorize"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/answer-scripts/{script_id}/versions",
+      "policy": "list_answer_script_versions",
+      "permission": "exam.script.read",
+      "classification_boundary": "exam_protected；真实Session/Event Scope；Service重复当前Grant/名单/来源校验；不继承legacy管理员",
+      "entrypoint": "huipi_cloud.modules.answer_scripts.service.http_authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/answer-scripts/{script_id}/versions",
+      "policy": "change_answer_script",
+      "permission": "exam.script.edit",
+      "classification_boundary": "exam_protected；真实Session/Event Scope；Service重复当前Grant/名单/来源校验；不继承legacy管理员",
+      "entrypoint": "huipi_cloud.modules.answer_scripts.service.http_authorize"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/answer-scripts/{script_id}/manifest",
+      "policy": "get_answer_script_manifest",
+      "permission": "exam.identity.verify",
+      "classification_boundary": "exam_protected；真实Session/Event Scope；Service重复当前Grant/名单/来源校验；不继承legacy管理员",
+      "entrypoint": "huipi_cloud.modules.answer_scripts.service.http_authorize"
     }
   ]
 }
