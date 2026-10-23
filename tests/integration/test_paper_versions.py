@@ -869,7 +869,7 @@ async def test_paper_migration_roundtrip_preserves_actual_old_graph_and_guards_n
                         "permission_",
                         "exam_",
                         "scan_",
-                        "answer_script",
+                        "exam_parsing_", "exam_submission_links", "answer_script",
                         "current_page_allocations",
                     )
                 )
@@ -957,7 +957,7 @@ async def test_paper_migration_roundtrip_preserves_actual_old_graph_and_guards_n
             and "paper_downgrade_requires_archived_new_data" in rejected.stderr
         )
         async with target.connect() as c:
-            assert await c.scalar(text("SELECT version_num FROM alembic_version")) == "b14a30f1d902"
+            assert await c.scalar(text("SELECT version_num FROM alembic_version")) == "b14b41a2e903"
     finally:
         await target.dispose()
         async with admin.connect() as c:

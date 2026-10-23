@@ -133,3 +133,8 @@
 ## 人工分卷切片的实际覆盖
 
 B-1.4a的[真实PG/S3测试](../../tests/integration/test_answer_scripts.py)与[签名身份浏览器场景](../../frontend/e2e/workbench.spec.ts)覆盖T06同名名单选择、T07人工完整性与Manifest阻断、T08跨文件补页新版本、T26无身份留unclaimed，以及I01–I08中的身份/唯一占用/来源/幂等约束。T05仅覆盖显式同场次A/B身份选择和拒绝串卷，不代表已解析题目映射。未实现自动漏页识别、受保护解析桥接或成绩；T01/T03/T05/B-1.5完整闭环尚不能宣称全部通过。结果与限制见[本地验收](answer-scripts-mvp.md)。
+
+
+## B-1.4b解析切片边界
+
+[受保护解析测试](../../tests/integration/test_exam_parsing.py)及真实浏览器新增对T06/T07/T08/T26的后续解析准入验证：不完整拒绝、名单变更拒绝、版本化补页不覆盖旧结果、同名身份沿稳定Participation保留。T05本切片只保留选定SessionPaper/PaperQuestionMapping的真实来源，不宣称完成题目对齐或评分。旧Worker不能领取、旧HTTP不能读、错误Manifest拒绝及租约/审计/COMMIT故障均独立测试。真实MinerU合成结果与执行环境见[验收](exam-protected-parsing.md)，不能推断真实学校手写识别准确率。

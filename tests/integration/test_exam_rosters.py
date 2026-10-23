@@ -694,7 +694,7 @@ async def test_migration_roundtrip_old_exam_paper_graph_and_data_guard(exam, pos
                         "exam_",
                         "roster_",
                         "scan_",
-                        "answer_script",
+                        "exam_parsing_", "exam_submission_links", "answer_script",
                         "current_page_allocations",
                     )
                 )
@@ -829,7 +829,7 @@ async def test_migration_roundtrip_old_exam_paper_graph_and_data_guard(exam, pos
         )
         async with target.connect() as db:
             assert (
-                await db.scalar(text("SELECT version_num FROM alembic_version")) == "b14a30f1d902"
+                await db.scalar(text("SELECT version_num FROM alembic_version")) == "b14b41a2e903"
             )
     finally:
         await target.dispose()

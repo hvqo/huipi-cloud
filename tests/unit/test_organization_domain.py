@@ -227,6 +227,8 @@ def test_grants_manage_catalog_entry_was_not_extended_by_organization_actions():
         "exam.script.edit",
         "exam.script.confirm",
         "exam.identity.verify",
+        "exam.parse.start",
+        "exam.parse.read",
         "paper.create",
         "paper.read",
         "paper.edit",

@@ -923,6 +923,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/answer-scripts/{script_id}/parsing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Current Exam Parsing */
+        get: operations["current_exam_parsing_api_v1_answer_scripts__script_id__parsing_get"];
+        put?: never;
+        /** Start Exam Parsing */
+        post: operations["start_exam_parsing_api_v1_answer_scripts__script_id__parsing_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-parsing-jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Inspect Exam Parsing */
+        get: operations["inspect_exam_parsing_api_v1_exam_parsing_jobs__job_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-parsing-jobs/{job_id}/pages/{page_number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Exam Parsing Page */
+        get: operations["read_exam_parsing_page_api_v1_exam_parsing_jobs__job_id__pages__page_number__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2322,6 +2374,80 @@ export interface components {
             /** Variant Code */
             variant_code: string;
         };
+        /** ParsePage */
+        ParsePage: {
+            /**
+             * Answer Script Version Id
+             * Format: uuid
+             */
+            answer_script_version_id: string;
+            /**
+             * Canonical Artifact Id
+             * Format: uuid
+             */
+            canonical_artifact_id: string;
+            page: components["schemas"]["CanonicalPage"];
+            source: components["schemas"]["SourcePage"];
+        };
+        /** ParseReceipt */
+        ParseReceipt: {
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+        };
+        /** ParseRequest */
+        ParseRequest: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+        };
+        /** ParseStatus */
+        ParseStatus: {
+            /** Job Id */
+            job_id: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "not_started" | "pending" | "running" | "retry_wait" | "failed" | "succeeded" | "invalidated";
+            /** Current */
+            current: boolean;
+            /** Answer Script Version Id */
+            answer_script_version_id?: string | null;
+            /** Failure Code */
+            failure_code?: string | null;
+            /** Page Count */
+            page_count?: number | null;
+            /** Block Count */
+            block_count?: number | null;
+            /** Canonical Artifact Id */
+            canonical_artifact_id?: string | null;
+            /** Parsed Artifact Id */
+            parsed_artifact_id?: string | null;
+            /** Manifest Sha256 */
+            manifest_sha256?: string | null;
+            /**
+             * Attempt Count
+             * @default 0
+             */
+            attempt_count: number;
+            /** Roster Revision Id */
+            roster_revision_id?: string | null;
+            /** Roster Entry Id */
+            roster_entry_id?: string | null;
+            /** Participation Id */
+            participation_id?: string | null;
+            /** Session Paper Id */
+            session_paper_id?: string | null;
+            /** Paper Version Id */
+            paper_version_id?: string | null;
+        };
         /**
          * ParsedArtifactSummary
          * @description Public parser provenance and checksums, without private object keys.
@@ -2977,10 +3103,10 @@ export interface components {
             validated_at: string;
             /**
              * Bridge Implemented
-             * @default false
+             * @default true
              * @constant
              */
-            bridge_implemented: false;
+            bridge_implemented: true;
         };
         /** ScriptRead */
         ScriptRead: {
@@ -7938,6 +8064,247 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ScriptManifest"];
+                };
+            };
+            /** @description 缺少或无效教师Token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 无权执行操作 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 资源不存在或没有作业授权 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description 认证或授权服务不可用，拒绝访问 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    current_exam_parsing_api_v1_answer_scripts__script_id__parsing_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                script_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParseStatus"];
+                };
+            };
+            /** @description 缺少或无效教师Token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 无权执行操作 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 资源不存在或没有作业授权 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description 认证或授权服务不可用，拒绝访问 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    start_exam_parsing_api_v1_answer_scripts__script_id__parsing_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                script_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ParseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParseReceipt"];
+                };
+            };
+            /** @description 缺少或无效教师Token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 无权执行操作 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 资源不存在或没有作业授权 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description 认证或授权服务不可用，拒绝访问 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    inspect_exam_parsing_api_v1_exam_parsing_jobs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParseStatus"];
+                };
+            };
+            /** @description 缺少或无效教师Token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 无权执行操作 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 资源不存在或没有作业授权 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description 认证或授权服务不可用，拒绝访问 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    read_exam_parsing_page_api_v1_exam_parsing_jobs__job_id__pages__page_number__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+                page_number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParsePage"];
                 };
             };
             /** @description 缺少或无效教师Token */

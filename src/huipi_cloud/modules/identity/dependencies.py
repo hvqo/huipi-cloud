@@ -44,6 +44,17 @@ ORGANIZATION_POLICIES = {
     "confirm_student_import": "student.import.confirm",
 }
 
+EXAM_PARSE_POLICIES = {
+    "start_exam_parsing": ("POST", "/answer-scripts/{script_id}/parsing", "exam.parse.start"),
+    "current_exam_parsing": ("GET", "/answer-scripts/{script_id}/parsing", "exam.parse.read"),
+    "inspect_exam_parsing": ("GET", "/exam-parsing-jobs/{job_id}", "exam.parse.read"),
+    "read_exam_parsing_page": (
+        "GET",
+        "/exam-parsing-jobs/{job_id}/pages/{page_number}",
+        "exam.parse.read",
+    ),
+}
+
 SCRIPT_POLICIES = {
     "list_script_pages": (
         "GET",
@@ -101,6 +112,7 @@ SCAN_POLICIES = {
 }
 
 POLICIES = {
+    **{name: {policy[0]} for name, policy in EXAM_PARSE_POLICIES.items()},
     **{name: {policy[0]} for name, policy in SCRIPT_POLICIES.items()},
     **{name: {policy[0]} for name, policy in SCAN_POLICIES.items()},
     "get_current_user": {"GET"},
@@ -154,6 +166,7 @@ GRADE_REVIEW_PATH = (
 )
 
 POLICY_PATHS = {
+    **{name: policy[1] for name, policy in EXAM_PARSE_POLICIES.items()},
     **{name: policy[1] for name, policy in SCRIPT_POLICIES.items()},
     **{name: policy[1] for name, policy in SCAN_POLICIES.items()},
     "get_current_user": "/me",
@@ -279,6 +292,16 @@ async def authorize_request(
                 await authorize_proposal(
                     session, principal=current, write=request.method != "GET", **ids
                 )
+                return current
+            if name in EXAM_PARSE_POLICIES:
+                from huipi_cloud.modules.exam_parsing import service as exam_parse_service
+
+                try:
+                    await exam_parse_service.http_authorize(
+                        session, current, request.path_params, EXAM_PARSE_POLICIES[name][2]
+                    )
+                except ValueError:
+                    raise AccessError("invalid_resource_id", 422) from None
                 return current
             if name in SCRIPT_POLICIES:
                 from huipi_cloud.modules.answer_scripts import service as script_service

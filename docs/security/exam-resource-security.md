@@ -157,3 +157,8 @@ B-1.2c的exam.roster.read/manage/freeze/correct沿真实Event/Session Scope执�
 ## 人工分卷与名单身份
 
 `exam.script.read/edit/confirm`与`exam.identity.verify`复用真实Event/Session Scope；扫描旧角色不自动增加学生名单权限。确认同一Grant必须覆盖edit+confirm+identity.verify，另独立核对同场次roster.read。无名单权限的Script历史投影不返回学生或名单/Participation标识。页面仍需scan.file.read；没有Assignment/管理员回退。路由调用清单和OpenAPI已登记人工分卷八个操作，写入在存储核验后重复当前授权；详见[合同](../development/exam-answer-scripts.md)。
+
+
+## B-1.4b考试专用任务
+
+`exam.parse.start/read`只作用于真实installation/Event/Session。固定Job后端使用受控Core查询复核精确来源和当前发起者授权，复用Worker生命周期及MinerU算法；旧队列后端默认不变。ExamSubmissionLink的ORM可见性仍沿真实Submission父级过滤，受保护ParsedArtifact/Canonical也继续对旧服务隐藏。公开API不提供通用特权Session、Worker控制或自由对象Key。消费前严格重算Manifest摘要；物化、执行和完成的授权/版本/租约门禁见[专用合同](../development/exam-protected-parsing.md)。

@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import ScanThumbnail from '../components/ScanThumbnail.vue'
 import { scripts } from '../api/answer-scripts'
+import { examParsing } from '../api/exam-parsing'
 import { scans } from '../api/scans'
 import { ApiError, type Schema } from '../api/client'
 
@@ -36,6 +37,76 @@ const showIdentity = ref(false),
 const historyOffset = ref(0),
   historyTotal = ref(0)
 const pending = ref<{ aid?: string; body: Schema['ScriptCreate'] | Schema['ScriptChange'] }>()
+const parseState = ref<Schema['ParseStatus']>()
+const parsedPage = ref<Schema['ParsePage']>()
+const parsedPageNumber = ref(0)
+const parseNotice = ref('')
+const parseRequestId = ref('')
+const parseAccess = ref(false)
+let pollTimer: ReturnType<typeof setTimeout> | undefined
+let disposed = false
+const parseLabels: Record<string, string> = {
+  not_started: '尚未解析',
+  pending: '等待解析',
+  running: '正在解析',
+  retry_wait: '稍后重试',
+  succeeded: '解析完成',
+  failed: '解析失败',
+  invalidated: '来源已变更，请重新核对答卷',
+}
+const parsedText = computed(() => {
+  function text(node: Schema['CanonicalContentNode']): string {
+    return node.value ?? (node.children || []).map(text).join('\n')
+  }
+  return (
+    parsedPage.value?.page.blocks.map((b) => text(b.content)).join('\n\n') || '本页暂无文本内容。'
+  )
+})
+async function fetchParsing() {
+  clearTimeout(pollTimer)
+  const aid = current.value?.script_id
+  const sourceVersion = current.value?.current.id
+  if (!aid || disposed) return
+  try {
+    const value = await examParsing.current(aid)
+    if (current.value?.script_id !== aid || current.value?.current.id !== sourceVersion || disposed)
+      return
+    parseAccess.value = true
+    parseState.value = value
+    parseNotice.value = ''
+    if (value.status === 'succeeded') notice.value = '解析已完成，尚未评分或发布成绩。'
+    if (['pending', 'running', 'retry_wait'].includes(value.status))
+      pollTimer = setTimeout(() => void fetchParsing(), 3000)
+  } catch (e) {
+    parseAccess.value = !(e instanceof ApiError && [403, 404].includes(e.status))
+    parseNotice.value = parseAccess.value
+      ? '暂时无法读取解析状态，请刷新。'
+      : '当前账号尚未获得解析访问权限。'
+  }
+}
+async function startParsing() {
+  await run(async () => {
+    if (!current.value) return
+    parseRequestId.value ||= crypto.randomUUID()
+    await examParsing.start(current.value.script_id, {
+      request_id: parseRequestId.value,
+      expected_revision: current.value.revision,
+    })
+    parseRequestId.value = ''
+    notice.value = '解析请求已提交，实际进度见下方。'
+    parsedPage.value = undefined
+    await fetchParsing()
+  })
+}
+async function viewParsedPage(delta = 0) {
+  await run(async () => {
+    const job = parseState.value?.job_id
+    if (!job) return
+    const number = parsedPageNumber.value + delta
+    parsedPage.value = await examParsing.page(job, number)
+    parsedPageNumber.value = number
+  })
+}
 const status: Record<string, string> = {
   unclaimed: '待身份确认',
   revoked: '已撤销',
@@ -70,7 +141,7 @@ async function run(work: () => Promise<void>) {
         : code === 404 || code === 403
           ? '没有此场次或名单的访问权限，请联系授权人员。'
           : code === 503
-            ? '暂时无法确认保存结果。请先刷新答卷，再重试原请求。'
+            ? '服务暂不可用。若正在保存，请先刷新状态，再重试原请求。'
             : code === 413
               ? '答卷超过处理上限：最多100页、8份文件、256 MiB核验数据。'
               : '操作未完成，请检查输入或稍后重试。'
@@ -119,6 +190,10 @@ function move(index: number, delta: number) {
 }
 function reset() {
   if (!canEdit.value) return
+  clearTimeout(pollTimer)
+  parseState.value = undefined
+  parsedPage.value = undefined
+  parseRequestId.value = ''
   current.value = undefined
   selected.value = []
   reason.value = ''
@@ -142,6 +217,10 @@ async function choose(item: Schema['ScriptRead']) {
     historyOffset.value = 0
     historyTotal.value = 0
     notice.value = ''
+    parseRequestId.value = ''
+    parsedPage.value = undefined
+    parsedPageNumber.value = 0
+    await fetchParsing()
   })
 }
 async function view(page: Schema['SourcePage']) {
@@ -193,6 +272,10 @@ async function sendPending() {
         : '草稿已保存，页面尚未确认学生身份。'
   reason.value = ''
   await refresh()
+  parsedPage.value = undefined
+  parseState.value = undefined
+  parseRequestId.value = ''
+  await fetchParsing()
 }
 async function save(action: 'save_draft' | 'confirm' | 'revoke') {
   if (!canEdit.value || !selected.value.length || !reason.value.trim()) return
@@ -240,7 +323,11 @@ onMounted(() =>
     await refresh()
   }),
 )
-onUnmounted(clearPreview)
+onUnmounted(() => {
+  disposed = true
+  clearTimeout(pollTimer)
+  clearPreview()
+})
 </script>
 
 <template>
@@ -409,6 +496,60 @@ onUnmounted(clearPreview)
         <p class="script-hint">
           已确认答卷的任何修改都保留历史；保存草稿会解除当前身份确认，必须重新核对。
         </p>
+        <section v-if="current" class="script-parse" aria-label="答卷解析">
+          <h2>答卷解析</h2>
+          <p role="status" class="parse-state">
+            {{ parseLabels[parseState?.status || 'not_started'] }}
+          </p>
+          <p v-if="parseNotice" class="script-hint">{{ parseNotice }}</p>
+          <p v-if="parseState?.failure_code" class="script-alert">
+            {{
+              parseState.status === 'invalidated'
+                ? '名单、答卷、卷版或授权已变化，旧结果不能继续使用。'
+                : '解析暂未完成。请核对来源，保存并确认新版本后重新发起，或联系维护人员。'
+            }}
+          </p>
+          <button
+            class="primary"
+            :disabled="
+              !canEdit ||
+              !parseAccess ||
+              current.readiness !== 'identity_confirmed' ||
+              ['pending', 'running', 'retry_wait', 'succeeded', 'failed', 'invalidated'].includes(
+                parseState?.status || '',
+              )
+            "
+            @click="startParsing"
+          >
+            {{ parseRequestId ? '重试原解析请求' : '开始解析' }}
+          </button>
+          <button :disabled="busy" @click="fetchParsing">刷新解析状态</button>
+          <p v-if="parseState?.answer_script_version_id" class="script-hint">
+            来源版本 {{ parseState.answer_script_version_id.slice(0, 8) }} ·
+            {{ parseState.page_count ?? '—' }} 页
+          </p>
+          <template v-if="parseState?.status === 'succeeded'">
+            <p>已生成标准化结果 · {{ parseState.block_count }} 个内容块。尚未评分或发布成绩。</p>
+            <button :disabled="busy" @click="viewParsedPage()">查看解析内容</button>
+            <section v-if="parsedPage" aria-label="解析页面内容">
+              <p>
+                解析第 {{ parsedPageNumber + 1 }} 页 · 原扫描第
+                {{ parsedPage.source.source_page_index + 1 }} 页
+              </p>
+              <pre class="parsed-content">{{ parsedText }}</pre>
+              <button :disabled="busy || parsedPageNumber === 0" @click="viewParsedPage(-1)">
+                上一解析页
+              </button>
+              <button
+                :disabled="busy || parsedPageNumber + 1 >= (parseState.page_count || 0)"
+                @click="viewParsedPage(1)"
+              >
+                下一解析页
+              </button>
+            </section>
+          </template>
+          <p class="script-hint">完整性和身份须人工确认；解析结果仍需教师核对。</p>
+        </section>
       </section>
       <aside class="script-saved">
         <h2>
@@ -534,6 +675,24 @@ onUnmounted(clearPreview)
 </template>
 
 <style scoped>
+.script-parse {
+  border-top: 1px solid #dce3ec;
+  margin-top: 24px;
+  padding-top: 20px;
+}
+.script-parse button {
+  margin: 0 8px 8px 0;
+}
+.parsed-content {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 360px;
+  overflow-y: auto;
+  background: #f4f7fa;
+  padding: 16px;
+  font: inherit;
+  line-height: 1.7;
+}
 .script-workspace {
   max-width: 1680px;
   margin: auto;

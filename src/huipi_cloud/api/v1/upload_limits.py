@@ -58,13 +58,18 @@ class UploadRequestLimitMiddleware:
                 )
                 or (
                     path.startswith(f"{self.api_v1_prefix}/answer-scripts/")
-                    and path.endswith("/versions")
+                    and (path.endswith("/versions") or path.endswith("/parsing"))
                 )
             )
         ) or (
             scope.get("method") == "GET"
             and path.startswith(f"{self.api_v1_prefix}/answer-scripts/")
             and path.endswith("/manifest")
+        )
+        script_operation = script_operation or (
+            scope.get("method") == "GET"
+            and path.startswith(f"{self.api_v1_prefix}/exam-parsing-jobs/")
+            and "/pages/" in path
         )
         if scan_upload or scan_download or script_operation:
             attribute = (
@@ -164,7 +169,8 @@ class UploadRequestLimitMiddleware:
         if scope.get("type") != "http" or scope.get("method") != "POST":
             return None
         if (
-            path.startswith(f"{self.api_v1_prefix}/answer-scripts/") and path.endswith("/versions")
+            path.startswith(f"{self.api_v1_prefix}/answer-scripts/")
+            and (path.endswith("/versions") or path.endswith("/parsing"))
         ) or (
             path.startswith(f"{self.api_v1_prefix}/exam-sessions/")
             and path.endswith("/answer-scripts")

@@ -41,11 +41,15 @@ from huipi_cloud.main import app
 from huipi_cloud.modules.answer_review.models import AnswerReviewDecision
 from huipi_cloud.modules.answer_scripts import service as scripts
 from huipi_cloud.modules.answer_scripts.permissions import SCRIPT_OPERATOR_ROLE
+from huipi_cloud.modules.exam_parsing import service as exam_parsing_service
+from huipi_cloud.modules.exam_parsing.permissions import PARSE_OPERATOR_ROLE
+from huipi_cloud.modules.exam_parsing.runtime import ExamBackend, ProtectedExecutor
 from huipi_cloud.modules.identity import dependencies as security
 from huipi_cloud.modules.identity.models import AssignmentMembership, User
 from huipi_cloud.modules.resource_security import service as grants
 from huipi_cloud.modules.resource_security.models import SecurityScope
 from huipi_cloud.modules.scans.models import ScanFile, ScanPage
+from huipi_cloud.workers.parsing import ParsingWorker
 
 
 def listener():
@@ -87,6 +91,26 @@ async def test_teacher_workbench_browser_end_to_end(
             role_version_id=SCRIPT_OPERATOR_ROLE,
             scope_id=scope_id,
         )
+    async with ctx.factory() as db:
+        await exam_parsing_service.enable_operator(
+            db,
+            ctx.users["admin"].id,
+            ctx.users["admin"].id,
+            uuid4(),
+            "synthetic browser protected parser deployment",
+        )
+    async with ctx.factory() as db:
+        await grants.grant_role(
+            db,
+            ctx.principals["admin"],
+            uuid4(),
+            user_id=ctx.users["a"].id,
+            role_version_id=PARSE_OPERATOR_ROLE,
+            scope_id=scope_id,
+        )
+    worker_stop = asyncio.Event()
+    worker_task = None
+    parse_executor = None
     previous_headers = ctx.client.headers.copy()
     ctx.client.headers.update(ctx.headers())
     tasks, servers, processes, sockets = [], [], [], []
@@ -356,6 +380,38 @@ async def test_teacher_workbench_browser_end_to_end(
             WORKBENCH_SCAN_SESSION=scan_context.session["id"],
             WORKBENCH_SCAN_PDF=str(scan_pdf),
         )
+        # Dedicated exam worker consumes real PG jobs and persists real private S3 objects.
+        config = Settings(
+            _env_file=None,
+            parsing_lease_seconds=180,
+            parsing_heartbeat_seconds=2,
+            parsing_poll_seconds=0.1,
+            parsing_execution_timeout_seconds=240,
+        )
+        backend = ExamBackend(ctx.storage, config)
+        if os.getenv("RUN_EXAM_MINERU_BROWSER") == "1":
+            from huipi_cloud.infrastructure.parsing.mineru import MinerUParserExecutor
+
+            parser = MinerUParserExecutor(
+                ctx.storage,
+                executable=os.environ["MINERU_EXECUTABLE"],
+                mineru_home=Path(os.environ["MINERU_HOME"]),
+                tier="basic",
+                max_input_bytes=32 * 1024**2,
+                max_pdf_pages=100,
+                max_output_bytes=256 * 1024**2,
+                max_text_bytes=64 * 1024**2,
+                max_archive_members=10000,
+                execution_timeout_seconds=240,
+                cancellation_grace_seconds=3,
+            )
+        else:
+            from test_exam_parsing import SyntheticExecutor
+
+            parser = SyntheticExecutor(ctx.storage)
+        parse_executor = ProtectedExecutor(parser, backend)
+        worker = ParsingWorker(ctx.factory, parse_executor, config, repository_backend=backend)
+        worker_task = asyncio.create_task(worker.run(worker_stop))
         browser = await asyncio.create_subprocess_exec(
             "npm",
             "run",
@@ -367,7 +423,7 @@ async def test_teacher_workbench_browser_end_to_end(
             start_new_session=True,
         )
         processes.append(browser)
-        output, _ = await asyncio.wait_for(browser.communicate(), timeout=180)
+        output, _ = await asyncio.wait_for(browser.communicate(), timeout=300)
         (frontend / "test-results" / "browser-summary.txt").write_text(output.decode())
         assert browser.returncode == 0, output.decode()[-12000:]
         assert selection["pkce_verified"] >= 3
@@ -396,7 +452,18 @@ async def test_teacher_workbench_browser_end_to_end(
         assert rows[0].response_regions[0]["text_start"] == text_value.index("学生作答")
         assert rows[0].response_regions[0]["text_end"] == len(text_value)
     finally:
+        worker_stop.set()
+        if worker_task is not None:
+            await asyncio.wait_for(worker_task, timeout=15)
+        if parse_executor is not None:
+            await parse_executor.aclose()
         async with ctx.factory() as db, db.begin():
+            await db.execute(
+                text(
+                    "TRUNCATE exam_parsing_operations,exam_submission_links,"
+                    "exam_parsing_jobs CASCADE"
+                )
+            )
             await db.execute(text("TRUNCATE answer_script_operations,answer_scripts CASCADE"))
         import signal
 

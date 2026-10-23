@@ -14,6 +14,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from huipi_cloud.modules.answer_scripts.permissions import SCRIPT_ACTIONS
 from huipi_cloud.modules.assignments.models import Assignment
 from huipi_cloud.modules.assignments.schemas import AssignmentCreate
+from huipi_cloud.modules.exam_parsing.permissions import PARSE_ACTIONS
 from huipi_cloud.modules.exam_rosters.permissions import ROSTER_ACTIONS
 from huipi_cloud.modules.exams.permissions import EXAM_ACTIONS
 from huipi_cloud.modules.identity import service as identity
@@ -49,6 +50,7 @@ CATALOG = {
     **ROSTER_ACTIONS,
     **SCAN_ACTIONS,
     **SCRIPT_ACTIONS,
+    **PARSE_ACTIONS,
     "security.grants.manage": frozenset({"installation"}),
     "security.protected.create": frozenset({"installation"}),
     "security.classification.inspect": frozenset({"installation", "assignment"}),

@@ -133,6 +133,11 @@ def manifest_digest(rows):
     )
 
 
+def verify_manifest(version, rows):
+    if manifest_digest(rows) != version["manifest_sha256"]:
+        raise AccessError("script_manifest_mismatch", 409)
+
+
 async def verify_sources(storage, rows):
     """Read-only bounded streaming. No object delete/upload or DB transaction during I/O."""
     try:
@@ -732,6 +737,7 @@ async def manifest(db, principal, storage, aid):
             ).all()
         )
         rows = await source_rows(db, root["exam_session_id"], ids)
+        verify_manifest(version, rows)
     await verify_sources(storage, rows)
     async with scans.transaction(db):
         # Reauthorize and establish a fresh epoch after storage I/O.
@@ -746,6 +752,7 @@ async def manifest(db, principal, storage, aid):
             or await readiness(db, latest, version) != "identity_confirmed"
         ):
             raise AccessError("script_source_changed", 409)
+        verify_manifest(version, await source_rows(db, root["exam_session_id"], ids))
         sp = await exams.row(db, SP, version["session_paper_id"], share=True)
         pv = await exams.row(db, PV, sp["paper_version_id"], share=True)
         if pv["status"] != "locked":

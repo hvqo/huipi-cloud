@@ -843,6 +843,9 @@ async def test_independent_migration_roundtrip_preserves_legacy_graph_and_refuse
     # Tables added after the baseline revision do not exist at c72d9e14a510 and are not
     # part of the legacy graph this round-trip preserves.
     post_baseline_tables = {
+        "exam_parsing_jobs",
+        "exam_submission_links",
+        "exam_parsing_operations",
         "answer_scripts",
         "answer_script_versions",
         "answer_script_pages",

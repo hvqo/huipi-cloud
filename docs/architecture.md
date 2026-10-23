@@ -394,3 +394,10 @@ ScanBatch真实关联ExamSession并固定exam_protected，可保存创建时冻�
 `answer_scripts`独立于扫描原件与旧Submission：稳定AnswerScript的current指针、不可变AnswerScriptVersion和有序页清单、全局唯一CurrentPageAllocation，在一个PostgreSQL事务原子切换。草稿也占页，撤销仅释放当前占用，历史源不改。确认使用当前冻结RosterEntry和同场次可用SessionPaper，不接受自由学生身份，不继承legacy管理员权限；名单读取单独授权。
 
 确认/Manifest在短事务之间核验私有S3原件与预览的长度和SHA，结束时重新授权、核对来源epoch，避免存储I/O占用长数据库事务。确认不是已解析、已评分或成绩发布；名单/卷版变化在读取时阻断就绪，桥接尚未实现。详细合同和操作限制见[人工分卷](development/exam-answer-scripts.md)。
+
+
+## 考试答卷解析通道
+
+人工确认的不可变AnswerScriptVersion经独立ExamParsingJob物化有序PDF，ExamSubmissionLink锁定Session、名单/学生身份、卷版、原页及摘要。受控Worker复用原MinerU执行器及Canonical规范化器，产物索引和成功状态在同一PG事务提交；HTTP仅提供有权来源的发起、状态和受限页面读取。旧Parsing Worker及旧Submission/Canonical/评分/工具接口继续默认拒绝考试来源，没有通用特权Session或include_protected开关。
+
+输入物化、S3上传不持长数据库事务；Job租约和来源版本在各阶段重核。不可变对象可能成为孤立对象，COMMIT未知时保留并等待对账，不通过删除猜测回滚。运行与后续评分接口边界见[受保护解析](development/exam-protected-parsing.md)。

@@ -1,6 +1,6 @@
 # 人工分卷与身份确认
 
-本功能提供实际受保护的 HTTP 和 Vue 工作区。整理扫描页面、确认学生身份和实际卷别，不执行 OCR、解析桥接、评分或成绩发布。
+本功能提供实际受保护的 HTTP 和 Vue 工作区。整理扫描页面、确认学生身份和实际卷别，分卷本身不执行 OCR、评分或成绩发布；已确认完整答卷的专用解析见[受保护解析指南](exam-protected-parsing.md)。
 
 ## 页面与使用流程
 
@@ -77,9 +77,9 @@ uv run python -m huipi_cloud.modules.answer_scripts enable-operator \
 
 ## 下一切片解析桥接
 
-只读Manifest 1.0提供：稳定Script ID、准确Version ID、Session、当前RosterRevision/Entry、Participation、SessionPaper/PaperVersion、按顺序的ScanPage/File ID、原零基page_index、文件和JPEG SHA、页组摘要、validated_at。原页无裁剪/旋转变换，不伪造题区坐标。页组摘要只覆盖有序的ScanPage/File/Batch身份、原页码、文件和JPEG SHA；展示文件名和临时占用投影不参与摘要。具体六个字段为`scan_page_id/file_id/batch_id/source_page_index/page_sha256/file_sha256`，使用现有`exams.digest`的排序键、紧凑JSON、UUID字符串和UTF-8 SHA-256；数组顺序不重排。
+只读Manifest 1.0提供：稳定Script ID、准确Version ID、Session、当前RosterRevision/Entry、Participation、SessionPaper/PaperVersion、按顺序的ScanPage/File ID、原零基page_index、文件和JPEG SHA、页组摘要、validated_at。原页无裁剪/旋转变换，不伪造题区坐标。页组摘要只覆盖有序的ScanPage/File/Batch身份、原页码、文件和JPEG SHA；展示文件名和临时占用投影不参与摘要。返回前和桥接消费前均重算并比较保存摘要，拒绝摘要不一致。具体六个字段为`scan_page_id/file_id/batch_id/source_page_index/page_sha256/file_sha256`，使用现有`exams.digest`的排序键、紧凑JSON、UUID字符串和UTF-8 SHA-256；数组顺序不重排。
 
-它不是长效许可，`bridge_implemented=false`。后续桥接必须在消费前和提交时重新验证权限、current version/名单、Paper状态及源文件SHA；只对完整identity_confirmed版本生成受保护来源，不降级legacy、不让旧Worker直接领取。扫描接收时的batch.roster_revision_id只作历史上下文，不能代替当前名单。
+它不是长效许可。`bridge_implemented=true`仅表示现已实现独立考试Job桥接，不表示本次读取建立任务或永久授权。桥接必须在消费前和提交时重新验证权限、current version/名单、Paper状态及源文件SHA；只对完整identity_confirmed版本生成受保护来源，不降级legacy、不让旧Worker直接领取。扫描接收时的batch.roster_revision_id只作历史上下文，不能代替当前名单。
 
 本轮没有创建Submission、ParsingTask、正式成绩或到考/缺考记录；未认领、未扫描、缺页、无身份、空答和零分互不替代。
 
