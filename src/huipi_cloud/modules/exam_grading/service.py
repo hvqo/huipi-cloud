@@ -835,6 +835,13 @@ async def record_score_review(db, p, storage, wid, request, config=settings):
         c = await workspace_context(db, p, wid, "exam.score.review")
         job = await row(db, S, UUID(value["scoring_job_id"]))
         await scoring_context(db, p, job, "exam.score.review", config)
+        await scoring_context(
+            db,
+            await parsing.actor(db, job["requested_by_user_id"]),
+            job,
+            "exam.score.request",
+            config,
+        )
         old = await replay(db, p, request.request_id, digest)
         if old:
             return old

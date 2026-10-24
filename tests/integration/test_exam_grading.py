@@ -856,3 +856,47 @@ async def test_storage_failure_never_leaves_success_index(marking, monkeypatch, 
         assert await db.scalar(select(func.count()).select_from(g.GR)) == 0
         assert await db.scalar(select(func.count()).select_from(g.GI)) == (stage == "proposal")
         assert await db.scalar(select(func.count()).select_from(g.S)) == (stage == "proposal")
+
+
+@pytest.mark.anyio
+async def test_other_reviewer_cannot_commit_after_scorer_authority_changes(marking, monkeypatch):
+    from sqlalchemy import func
+
+    c = marking
+    assert (await confirm(c)).status_code == 200
+    assert (
+        await c.client.post(
+            f"/api/v1/exam-grading-workspaces/{c.wid}/scoring",
+            json=dict(request_id=str(uuid4()), expected_answer_revision=1),
+        )
+    ).status_code == 202
+    assert await c.grade_worker.once()
+    original = g.details
+
+    async def revoked_after_read(*args, **kwargs):
+        result = await original(*args, **kwargs)
+        async with c.factory() as db:
+            await security.revoke_grant(
+                db, c.principals["admin"], uuid4(), grant_id=UUID(c.mark_grant["grant_id"])
+            )
+        return result
+
+    monkeypatch.setattr(g, "details", revoked_after_read)
+    c.client.headers.update(c.headers("admin"))
+    r = await c.client.post(
+        f"/api/v1/exam-grading-workspaces/{c.wid}/score-review",
+        json=dict(
+            request_id=str(uuid4()),
+            expected_revision=0,
+            payload=dict(
+                schema_name="huipi.grading.review",
+                schema_version="1.0",
+                review_status="accepted",
+                reviewer_ref="teacher_" + c.users["admin"].id.hex,
+            ),
+        ),
+    )
+    assert r.status_code == 404, r.text
+    async with c.factory() as db:
+        assert await db.scalar(select(func.count()).select_from(g.GR)) == 0
+        assert await db.scalar(select(func.count()).select_from(g.GP)) == 1

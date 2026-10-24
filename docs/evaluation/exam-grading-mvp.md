@@ -56,7 +56,7 @@ N002/合成2班先缺页，补原第 4 页产生新版本并重新核实身份�
 ## 自动化结果
 
 - 后端纯单元 **662 passed**；Ruff、静态结构、Compose、差异空白通过。25 个迁移、64 张映射表，唯一 Head `b14c52b3f014`。
-- 新评分真实 PG/S3 专项最终 **21 passed，1 deselected**（116.82 秒），另补存储故障 **2 passed**。共 23 个不同新增用例，真实模型 opt-in 独立排除。
+- 新评分真实 PG/S3 专项最终 **21 passed，1 deselected**（116.82 秒），另补存储故障 **2 passed**。加最终跨教师审核撤权竞态 1 项，共 24 个不同新增用例，真实模型 opt-in 独立排除。
 - 受影响旧 GradeInput、GradeProposal、GradeReview/HTTP、AnswerReview HTTP、SourceReadiness、考试解析、安全回归初跑 **135 passed，2 failed，2 deselected**。两项失败分别为新迁移 Head 断言和历史图的新表登记遗漏；更新测试清单，保留旧图行数与摘要断言后，两项独立复跑通过。该组最终 137 个不同回归用例通过，不将重复运行累加成新用例。
 - 上述两个迁移复跑加两个新增 S3 故障场景的最终命令 **4 passed**（41.42 秒），与前述统计重叠。
 - 前端锁定安装、TypeScript、ESLint、生产构建通过，Vitest **53 passed**；OpenAPI 重生成与 TypeScript 合同一致。Fast CI 只执行静态/纯单元和前端合同检查，不访问收费模型。
@@ -69,6 +69,7 @@ N002/合成2班先缺页，补原第 4 页产生新版本并重新核实身份�
 
 - 没有教师确认、uncertain、源变更不生成 ready 输入或零分。
 - 引用错误、正分无 Quote、总分错误、超分、超时安全失败；模型弃权无分数。
+- 跨教师审核在详情读取后、提交前撤销原评分申请人的 Grant，最终拒绝写审核；复现旧提交函数返回 200，新实现返回 404。该隔离回归及原正向审核均通过。
 - 同请求并发、不同正文冲突、审核 expected_revision、完整两 Criterion 多次快照与 supersedes 保留，直接 SQL 改历史失败。
 - 仅旧 admin 或无该场次 Grant 不能读取；跨 PaperQuestionMapping 直接 SQL 拼接与删除工作区失败；旧 GradeInput CLI 和对齐服务不能消费新考试来源。
 - 模型执行期间人工来源修订、名单更正、卷版退役、撤权和停用阻断候选登记。
