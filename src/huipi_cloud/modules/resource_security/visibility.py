@@ -7,7 +7,7 @@ This is an application boundary, not RLS against a database administrator.
 
 from functools import lru_cache
 
-from sqlalchemy import and_, event, exists, or_, select
+from sqlalchemy import and_, event, exists, false, or_, select
 from sqlalchemy.orm import Session, with_loader_criteria
 from sqlalchemy.sql import visitors
 
@@ -71,7 +71,18 @@ def rules():
             .correlate_except(q)
         )
 
-    result = [(Assignment, Assignment.security_classification == LEGACY)]
+    from huipi_cloud.modules.exam_grading.models import (
+        ExamGradingOperation,
+        ExamGradingWorkspace,
+        ExamScoringJob,
+    )
+
+    result = [
+        (Assignment, Assignment.security_classification == LEGACY),
+        (ExamGradingWorkspace, false()),
+        (ExamScoringJob, false()),
+        (ExamGradingOperation, false()),
+    ]
     from huipi_cloud.modules.exam_parsing.models import ExamSubmissionLink
 
     models = (

@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import ScanThumbnail from '../components/ScanThumbnail.vue'
+import ExamGrading from '../components/ExamGrading.vue'
 import { scripts } from '../api/answer-scripts'
 import { examParsing } from '../api/exam-parsing'
 import { scans } from '../api/scans'
@@ -592,6 +593,16 @@ onUnmounted(() => {
         </nav>
       </aside>
     </div>
+    <ExamGrading
+      v-if="parseState?.status === 'succeeded' && parseState.job_id"
+      :key="parseState.job_id"
+      :job-id="parseState.job_id"
+      :student-label="
+        current?.current.identity
+          ? `${current.current.identity.student_name} · ${current.current.identity.class_name} · 考号 ${current.current.identity.exam_number || '未登记'}`
+          : '当前答卷'
+      "
+    />
     <el-dialog v-model="showIdentity" title="核对学生身份与实际卷别" width="min(720px, 94vw)">
       <p>仅从本场次当前冻结名单中选择。请对照原卷核验姓名、学号、考号和班级。</p>
       <form class="script-search" @submit.prevent="findCandidates">

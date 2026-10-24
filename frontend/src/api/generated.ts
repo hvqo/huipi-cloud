@@ -975,6 +975,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/exam-parsing-jobs/{job_id}/grading-workspace": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Initialize Exam Grading */
+        post: operations["initialize_exam_grading_api_v1_exam_parsing_jobs__job_id__grading_workspace_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-parsing-jobs/{job_id}/grading-questions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Exam Grading Questions */
+        get: operations["list_exam_grading_questions_api_v1_exam_parsing_jobs__job_id__grading_questions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-grading-workspaces/{workspace_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Inspect Exam Grading */
+        get: operations["inspect_exam_grading_api_v1_exam_grading_workspaces__workspace_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-grading-workspaces/{workspace_id}/answer-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record Exam Answer Review */
+        post: operations["record_exam_answer_review_api_v1_exam_grading_workspaces__workspace_id__answer_review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-grading-workspaces/{workspace_id}/scoring": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Request Exam Scoring */
+        post: operations["request_exam_scoring_api_v1_exam_grading_workspaces__workspace_id__scoring_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-grading-workspaces/{workspace_id}/score-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record Exam Score Review */
+        post: operations["record_exam_score_review_api_v1_exam_grading_workspaces__workspace_id__score_review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1278,6 +1380,22 @@ export interface components {
              */
             not_observed_count: number;
         };
+        /** AnswerDecision */
+        AnswerDecision: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /**
+             * Manual Attribution
+             * @default false
+             */
+            manual_attribution: boolean;
+            /** Expected Revision */
+            expected_revision: number;
+            payload: components["schemas"]["AnswerReviewDecisionCreate"];
+        };
         /** AnswerKeyRead */
         AnswerKeyRead: {
             /**
@@ -1308,6 +1426,135 @@ export interface components {
         AnswerKeyReplace: {
             /** Answer Content */
             answer_content: string;
+        };
+        /** AnswerKeySnapshot */
+        AnswerKeySnapshot: {
+            /**
+             * Answer Key Id
+             * Format: uuid
+             */
+            answer_key_id: string;
+            /**
+             * Question Id
+             * Format: uuid
+             */
+            question_id: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "teacher" | "model_generated";
+            /** Answer Content */
+            answer_content: string;
+            /** Sha256 */
+            sha256: string;
+        };
+        /**
+         * AnswerReviewDecisionCreate
+         * @description One proposed decision. Identity and content hashes come from the server.
+         */
+        AnswerReviewDecisionCreate: {
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "response_present" | "response_absent" | "uncertain";
+            /** Response Regions */
+            response_regions?: components["schemas"]["ReviewRegionSelection"][];
+            /** Excluded Prompt Regions */
+            excluded_prompt_regions?: components["schemas"]["ReviewRegionSelection"][];
+            /** Uncertain Regions */
+            uncertain_regions?: components["schemas"]["ReviewRegionSelection"][];
+            /** Reason Codes */
+            reason_codes: ("student_work_visible" | "printed_prompt_only" | "blank_response_area" | "ambiguous_handwriting" | "ocr_incomplete" | "formula_only_response" | "table_entry_visible" | "diagram_marks_visible" | "shared_figure_attribution_unclear" | "response_not_linked_to_question" | "source_quality_insufficient" | "multiple_response_regions" | "cross_page_response")[];
+            /** Reviewer Ref */
+            reviewer_ref: string;
+        };
+        /**
+         * AnswerReviewDecisionRead
+         * @description Persisted immutable revision tied to one precise source version.
+         */
+        AnswerReviewDecisionRead: {
+            /**
+             * Decision Id
+             * Format: uuid
+             */
+            decision_id: string;
+            /**
+             * Submission Id
+             * Format: uuid
+             */
+            submission_id: string;
+            /**
+             * Assignment Id
+             * Format: uuid
+             */
+            assignment_id: string;
+            /**
+             * Question Id
+             * Format: uuid
+             */
+            question_id: string;
+            /** Question Number */
+            question_number: number;
+            /**
+             * Alignment Status
+             * @enum {string}
+             */
+            alignment_status: "aligned" | "review_required" | "not_observed";
+            /**
+             * Alignment Artifact Id
+             * Format: uuid
+             */
+            alignment_artifact_id: string;
+            /** Alignment Sha256 */
+            alignment_sha256: string;
+            /** Aligner Version */
+            aligner_version: string;
+            /** Assignment Questions Digest */
+            assignment_questions_digest: string;
+            /**
+             * Canonical Document Id
+             * Format: uuid
+             */
+            canonical_document_id: string;
+            /** Canonical Sha256 */
+            canonical_sha256: string;
+            /**
+             * Review Schema Version
+             * @default 1.0
+             * @constant
+             */
+            review_schema_version: "1.0";
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "response_present" | "response_absent" | "uncertain";
+            /** Response Regions */
+            response_regions: components["schemas"]["ReviewEvidenceRegion"][];
+            /** Excluded Prompt Regions */
+            excluded_prompt_regions: components["schemas"]["ReviewEvidenceRegion"][];
+            /** Uncertain Regions */
+            uncertain_regions: components["schemas"]["ReviewEvidenceRegion"][];
+            /** Reason Codes */
+            reason_codes: ("student_work_visible" | "printed_prompt_only" | "blank_response_area" | "ambiguous_handwriting" | "ocr_incomplete" | "formula_only_response" | "table_entry_visible" | "diagram_marks_visible" | "shared_figure_attribution_unclear" | "response_not_linked_to_question" | "source_quality_insufficient" | "multiple_response_regions" | "cross_page_response")[];
+            /** Reviewer Ref */
+            reviewer_ref: string;
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Revision */
+            revision: number;
+            /** Supersedes Decision Id */
+            supersedes_decision_id?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /**
          * AnswerSource
@@ -1815,6 +2062,25 @@ export interface components {
             /** Text End */
             text_end: number | null;
         };
+        /**
+         * CriterionScore
+         * @description Validated criterion score with its maximum copied from the trusted rubric.
+         */
+        CriterionScore: {
+            /**
+             * Criterion Id
+             * Format: uuid
+             */
+            criterion_id: string;
+            /** Awarded Points */
+            awarded_points: string;
+            /** Max Points */
+            max_points: string;
+            /** Rationale */
+            rationale: string;
+            /** Evidence References */
+            evidence_references: (components["schemas"]["QuoteEvidenceReference"] | components["schemas"]["NoEvidenceReference"])[];
+        };
         /** CurrentUser */
         CurrentUser: {
             /**
@@ -1856,6 +2122,40 @@ export interface components {
             asset_count: number;
             /** Canonical Page Path */
             canonical_page_path: string;
+        };
+        /** ExamMarkDetails */
+        ExamMarkDetails: {
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            question: components["schemas"]["MarkQuestion"];
+            /** Answer Key */
+            answer_key: string | null;
+            /** Rubric */
+            rubric: components["schemas"]["MarkRubric"][];
+            /** Nodes */
+            nodes: components["schemas"]["MarkNode"][];
+            /** Source Pages */
+            source_pages: components["schemas"]["SourcePage"][];
+            /** Alignment */
+            alignment: {
+                [key: string]: unknown;
+            };
+            answer_review: components["schemas"]["AnswerReviewDecisionRead"] | null;
+            /** Scoring Job Id */
+            scoring_job_id: string | null;
+            /** Scoring Status */
+            scoring_status: string;
+            /** Failure Code */
+            failure_code: string | null;
+            proposal: components["schemas"]["GradeProposalDocument"] | null;
+            grade_input: components["schemas"]["GradeInputDocument"] | null;
+            /** History */
+            history: components["schemas"]["GradeReviewRevisionDocument"][];
+            /** History Has More */
+            history_has_more: boolean;
         };
         /** FilePage */
         FilePage: {
@@ -1976,6 +2276,259 @@ export interface components {
             canonical_page_path: string;
         };
         /**
+         * GradeInputAssetReference
+         * @description Safe asset identity copied from review evidence; never a storage locator.
+         */
+        GradeInputAssetReference: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "stored" | "external" | "inline_redacted";
+            /** Asset Id */
+            asset_id?: string | null;
+            /** Sha256 */
+            sha256?: string | null;
+            /** Size Bytes */
+            size_bytes?: number | null;
+            /** Content Type */
+            content_type?: string | null;
+            /** Source Pointer */
+            source_pointer?: string | null;
+            /** Source Encoding */
+            source_encoding?: ("base64" | "data_uri" | "html_data_uri") | null;
+            /** Source Occurrence Index */
+            source_occurrence_index?: number | null;
+        };
+        /**
+         * GradeInputDocument
+         * @description Immutable stored package with a semantic digest and storage timestamp.
+         */
+        GradeInputDocument: {
+            /**
+             * Schema Name
+             * @default huipi.grading.input
+             * @constant
+             */
+            schema_name: "huipi.grading.input";
+            /**
+             * Schema Version
+             * @default 1.0
+             * @constant
+             */
+            schema_version: "1.0";
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /**
+             * Submission Id
+             * Format: uuid
+             */
+            submission_id: string;
+            /**
+             * Assignment Id
+             * Format: uuid
+             */
+            assignment_id: string;
+            question: components["schemas"]["GradeInputQuestionSnapshot"];
+            /**
+             * Canonical Artifact Id
+             * Format: uuid
+             */
+            canonical_artifact_id: string;
+            /** Canonical Sha256 */
+            canonical_sha256: string;
+            /** Canonical Schema Version */
+            canonical_schema_version: string;
+            /** Canonical Source Sha256 */
+            canonical_source_sha256: string;
+            /**
+             * Alignment Artifact Id
+             * Format: uuid
+             */
+            alignment_artifact_id: string;
+            /** Alignment Sha256 */
+            alignment_sha256: string;
+            /** Aligner Version */
+            aligner_version: string;
+            /** Assignment Questions Digest */
+            assignment_questions_digest: string;
+            /**
+             * Review Decision Id
+             * Format: uuid
+             */
+            review_decision_id: string;
+            /** Review Revision */
+            review_revision: number;
+            /** Review Request Sha256 */
+            review_request_sha256: string;
+            /** Review Schema Version */
+            review_schema_version: string;
+            /** Review Evidence Sha256 */
+            review_evidence_sha256: string;
+            /** Excluded Prompt Regions Sha256 */
+            excluded_prompt_regions_sha256: string;
+            /** Source File Sha256 */
+            source_file_sha256: string;
+            answer_key: components["schemas"]["AnswerKeySnapshot"];
+            /** Rubric Snapshot */
+            rubric_snapshot: components["schemas"]["RubricCriterionSnapshot"][];
+            /** Rubric Sha256 */
+            rubric_sha256: string;
+            /** Selected Answer Segments */
+            selected_answer_segments: components["schemas"]["SelectedAnswerSegment"][];
+            /** Evidence Manifest */
+            evidence_manifest: components["schemas"]["GradeInputEvidenceItem"][];
+            /**
+             * Artifact Id
+             * Format: uuid
+             */
+            artifact_id: string;
+            /** Input Sha256 */
+            input_sha256: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * GradeInputEvidenceItem
+         * @description Audit record for each source region in the current human decision.
+         */
+        GradeInputEvidenceItem: {
+            /** Content Pointer */
+            content_pointer: string;
+            /** Page Index */
+            page_index: number;
+            /** Page Number */
+            page_number: number;
+            /**
+             * Source Block Id
+             * Format: uuid
+             */
+            source_block_id: string;
+            /** Reading Order */
+            reading_order: number;
+            /** Normalized Type */
+            normalized_type: string;
+            /** Text Start */
+            text_start?: number | null;
+            /** Text End */
+            text_end?: number | null;
+            /**
+             * Representation
+             * @enum {string}
+             */
+            representation: "text" | "formula_text" | "unsupported";
+            /** Reason Code */
+            reason_code?: string | null;
+            /** Asset Refs */
+            asset_refs?: components["schemas"]["GradeInputAssetReference"][];
+        };
+        /** GradeInputQuestionSnapshot */
+        GradeInputQuestionSnapshot: {
+            /**
+             * Question Id
+             * Format: uuid
+             */
+            question_id: string;
+            /** Question Number */
+            question_number: number;
+            /** Question Type */
+            question_type: string;
+            /** Stem */
+            stem: string;
+            /** Max Score */
+            max_score: string;
+        };
+        /**
+         * GradeProposalDocument
+         * @description Private immutable LLM proposal. It is never a final teacher grade.
+         */
+        GradeProposalDocument: {
+            /**
+             * Schema Name
+             * @default huipi.grading.proposal
+             * @constant
+             */
+            schema_name: "huipi.grading.proposal";
+            /**
+             * Schema Version
+             * @default 1.0
+             * @constant
+             */
+            schema_version: "1.0";
+            /**
+             * Proposal Id
+             * Format: uuid
+             */
+            proposal_id: string;
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Request Fingerprint */
+            request_fingerprint: string;
+            /**
+             * Grade Input Artifact Id
+             * Format: uuid
+             */
+            grade_input_artifact_id: string;
+            /** Grade Input Sha256 */
+            grade_input_sha256: string;
+            /**
+             * Submission Id
+             * Format: uuid
+             */
+            submission_id: string;
+            /**
+             * Question Id
+             * Format: uuid
+             */
+            question_id: string;
+            /** Model Id */
+            model_id: string;
+            /**
+             * Provider
+             * @enum {string}
+             */
+            provider: "ollama_native" | "openai_compatible";
+            /** Prompt Version */
+            prompt_version: string;
+            /** Generation Config Digest */
+            generation_config_digest: string;
+            /** Criterion Scores */
+            criterion_scores?: components["schemas"]["CriterionScore"][];
+            /** Total Score */
+            total_score?: string | null;
+            /** Max Score */
+            max_score: string;
+            /**
+             * Grading Status
+             * @enum {string}
+             */
+            grading_status: "completed_candidate" | "grading_abstained";
+            /** Reason Codes */
+            reason_codes?: string[];
+            /** Abstention Reason */
+            abstention_reason?: string | null;
+            /** Prompt Tokens */
+            prompt_tokens?: number | null;
+            /** Completion Tokens */
+            completion_tokens?: number | null;
+            /** Model Elapsed Ms */
+            model_elapsed_ms: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
          * GradeReviewCriterionInput
          * @description One human-entered score for a Criterion in a revised decision.
          */
@@ -1992,6 +2545,29 @@ export interface components {
             /** Evidence References */
             evidence_references?: (components["schemas"]["QuoteEvidenceReference"] | components["schemas"]["NoEvidenceReference"])[] | null;
         };
+        /**
+         * GradeReviewCriterionReview
+         * @description Immutable comparison between the model proposal and reviewed score.
+         */
+        GradeReviewCriterionReview: {
+            /**
+             * Criterion Id
+             * Format: uuid
+             */
+            criterion_id: string;
+            /** Proposed Points */
+            proposed_points: string;
+            /** Reviewed Points */
+            reviewed_points: string;
+            /** Max Points */
+            max_points: string;
+            /** Rationale */
+            rationale: string;
+            /** Evidence References */
+            evidence_references: (components["schemas"]["QuoteEvidenceReference"] | components["schemas"]["NoEvidenceReference"])[];
+            /** Changed */
+            changed: boolean;
+        };
         /** GradeReviewCriterionSummary */
         GradeReviewCriterionSummary: {
             /**
@@ -2003,6 +2579,35 @@ export interface components {
             proposed_points: string;
             /** Max Points */
             max_points: string;
+        };
+        /**
+         * GradeReviewDecisionCreate
+         * @description Local JSON input. The service supplies all proposal and source identities.
+         */
+        GradeReviewDecisionCreate: {
+            /**
+             * Schema Name
+             * @constant
+             */
+            schema_name: "huipi.grading.review";
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "1.0";
+            /**
+             * Review Status
+             * @enum {string}
+             */
+            review_status: "accepted" | "revised" | "rejected" | "regrading_required";
+            /** Reviewer Ref */
+            reviewer_ref: string;
+            /** Review Reason Codes */
+            review_reason_codes?: ("rubric_interpretation_error" | "incorrect_partial_credit" | "unsupported_score" | "evidence_not_sufficient" | "candidate_not_reliable" | "source_quality_problem" | "additional_evidence_required" | "manual_follow_up_needed" | "other")[];
+            /** Review Comment */
+            review_comment?: string | null;
+            /** Criterion Reviews */
+            criterion_reviews?: components["schemas"]["GradeReviewCriterionInput"][];
         };
         /** GradeReviewHTTPHistory */
         GradeReviewHTTPHistory: {
@@ -2166,6 +2771,86 @@ export interface components {
             /** Criterion Reviews */
             criterion_reviews?: components["schemas"]["GradeReviewCriterionInput"][];
         };
+        /**
+         * GradeReviewRevisionDocument
+         * @description Persisted review revision bound to one immutable proposal and GradeInput.
+         */
+        GradeReviewRevisionDocument: {
+            /**
+             * Schema Name
+             * @default huipi.grading.review
+             * @constant
+             */
+            schema_name: "huipi.grading.review";
+            /**
+             * Schema Version
+             * @default 1.0
+             * @constant
+             */
+            schema_version: "1.0";
+            /**
+             * Review Id
+             * Format: uuid
+             */
+            review_id: string;
+            /**
+             * Proposal Id
+             * Format: uuid
+             */
+            proposal_id: string;
+            /**
+             * Grade Input Artifact Id
+             * Format: uuid
+             */
+            grade_input_artifact_id: string;
+            /** Proposal Sha256 */
+            proposal_sha256: string;
+            /** Grade Input Sha256 */
+            grade_input_sha256: string;
+            /**
+             * Submission Id
+             * Format: uuid
+             */
+            submission_id: string;
+            /**
+             * Question Id
+             * Format: uuid
+             */
+            question_id: string;
+            /** Review Revision */
+            review_revision: number;
+            /** Supersedes Review Id */
+            supersedes_review_id?: string | null;
+            /** Reviewer Ref */
+            reviewer_ref: string;
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Request Sha256 */
+            request_sha256: string;
+            /**
+             * Review Status
+             * @enum {string}
+             */
+            review_status: "accepted" | "revised" | "rejected" | "regrading_required";
+            /** Criterion Reviews */
+            criterion_reviews: components["schemas"]["GradeReviewCriterionReview"][];
+            /** Review Reason Codes */
+            review_reason_codes: ("rubric_interpretation_error" | "incorrect_partial_credit" | "unsupported_score" | "evidence_not_sufficient" | "candidate_not_reliable" | "source_quality_problem" | "additional_evidence_required" | "manual_follow_up_needed" | "other")[];
+            /** Review Comment */
+            review_comment?: string | null;
+            /** Proposed Total Score */
+            proposed_total_score?: string | null;
+            /** Reviewed Total Score */
+            reviewed_total_score?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** GradeRevisionSummary */
         GradeRevisionSummary: {
             /**
@@ -2271,7 +2956,57 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** Intent */
+        Intent: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+        };
         JsonValue: unknown;
+        /** MarkNode */
+        MarkNode: {
+            /** Content Pointer */
+            content_pointer: string;
+            /** Page Index */
+            page_index: number;
+            /**
+             * Source Block Id
+             * Format: uuid
+             */
+            source_block_id: string;
+            /** Text */
+            text: string;
+            /** Normalized Type */
+            normalized_type: string;
+        };
+        /** MarkQuestion */
+        MarkQuestion: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Number */
+            number: number;
+            /** Stem */
+            stem: string;
+            /** Max Score */
+            max_score: string;
+        };
+        /** MarkRubric */
+        MarkRubric: {
+            /**
+             * Criterion Id
+             * Format: uuid
+             */
+            criterion_id: string;
+            /** Description */
+            description: string;
+            /** Points */
+            points: string;
+        };
         /** MembershipGrant */
         MembershipGrant: {
             /**
@@ -2703,6 +3438,67 @@ export interface components {
             /** Quote */
             quote: string;
         };
+        /**
+         * ReviewAssetReference
+         * @description Safe logical asset metadata; private or external URIs are never returned.
+         */
+        ReviewAssetReference: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "stored" | "external" | "inline_redacted";
+            /** Asset Id */
+            asset_id?: string | null;
+            /** Sha256 */
+            sha256?: string | null;
+            /** Size Bytes */
+            size_bytes?: number | null;
+            /** Content Type */
+            content_type?: string | null;
+            /** Source Pointer */
+            source_pointer?: string | null;
+            /** Source Encoding */
+            source_encoding?: ("base64" | "data_uri" | "html_data_uri") | null;
+            /** Source Occurrence Index */
+            source_occurrence_index?: number | null;
+        };
+        /**
+         * ReviewEvidenceRegion
+         * @description Validated trace metadata copied from the immutable Canonical source.
+         */
+        ReviewEvidenceRegion: {
+            /** Content Pointer */
+            content_pointer: string;
+            /** Page Index */
+            page_index: number;
+            /** Page Number */
+            page_number: number;
+            /**
+             * Source Block Id
+             * Format: uuid
+             */
+            source_block_id: string;
+            /** Reading Order */
+            reading_order: number;
+            /** Bbox */
+            bbox?: [
+                number,
+                number,
+                number,
+                number
+            ] | null;
+            /** Source Type */
+            source_type: string;
+            /** Normalized Type */
+            normalized_type: string;
+            /** Text Start */
+            text_start?: number | null;
+            /** Text End */
+            text_end?: number | null;
+            /** Asset Refs */
+            asset_refs?: components["schemas"]["ReviewAssetReference"][];
+        };
         /** ReviewHistory */
         ReviewHistory: {
             /**
@@ -2934,6 +3730,25 @@ export interface components {
             /** Sort Order */
             sort_order: number;
         };
+        /** RubricCriterionSnapshot */
+        RubricCriterionSnapshot: {
+            /**
+             * Criterion Id
+             * Format: uuid
+             */
+            criterion_id: string;
+            /**
+             * Question Id
+             * Format: uuid
+             */
+            question_id: string;
+            /** Description */
+            description: string;
+            /** Points */
+            points: string;
+            /** Sort Order */
+            sort_order: number;
+        };
         /** RubricRead */
         RubricRead: {
             /** Criteria */
@@ -2983,6 +3798,27 @@ export interface components {
             lifecycle: string;
             /** Roster Frozen */
             roster_frozen: boolean;
+        };
+        /** ScoreRequest */
+        ScoreRequest: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Expected Answer Revision */
+            expected_answer_revision: number;
+        };
+        /** ScoreReview */
+        ScoreReview: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            payload: components["schemas"]["GradeReviewDecisionCreate"];
         };
         /** ScriptChange */
         ScriptChange: {
@@ -3147,6 +3983,40 @@ export interface components {
              * @enum {string}
              */
             status: "draft" | "confirmed" | "revoked";
+        };
+        /**
+         * SelectedAnswerSegment
+         * @description One exact reviewer-selected text slice with Unicode code-point offsets.
+         */
+        SelectedAnswerSegment: {
+            /** Segment Index */
+            segment_index: number;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "text" | "formula_text";
+            /** Content Pointer */
+            content_pointer: string;
+            /** Page Index */
+            page_index: number;
+            /** Page Number */
+            page_number: number;
+            /**
+             * Source Block Id
+             * Format: uuid
+             */
+            source_block_id: string;
+            /** Reading Order */
+            reading_order: number;
+            /** Text Start */
+            text_start: number;
+            /** Text End */
+            text_end: number;
+            /** Text */
+            text: string;
+            /** Text Sha256 */
+            text_sha256: string;
         };
         /** SessionPage */
         SessionPage: {
@@ -8343,6 +9213,218 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    initialize_exam_grading_api_v1_exam_parsing_jobs__job_id__grading_workspace_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Intent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_exam_grading_questions_api_v1_exam_parsing_jobs__job_id__grading_questions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    inspect_exam_grading_api_v1_exam_grading_workspaces__workspace_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExamMarkDetails"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_exam_answer_review_api_v1_exam_grading_workspaces__workspace_id__answer_review_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnswerDecision"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_exam_scoring_api_v1_exam_grading_workspaces__workspace_id__scoring_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScoreRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_exam_score_review_api_v1_exam_grading_workspaces__workspace_id__score_review_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScoreReview"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

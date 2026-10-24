@@ -162,3 +162,8 @@ B-1.2c的exam.roster.read/manage/freeze/correct沿真实Event/Session Scope执�
 ## B-1.4b考试专用任务
 
 `exam.parse.start/read`只作用于真实installation/Event/Session。固定Job后端使用受控Core查询复核精确来源和当前发起者授权，复用Worker生命周期及MinerU算法；旧队列后端默认不变。ExamSubmissionLink的ORM可见性仍沿真实Submission父级过滤，受保护ParsedArtifact/Canonical也继续对旧服务隐藏。公开API不提供通用特权Session、Worker控制或自由对象Key。消费前严格重算Manifest摘要；物化、执行和完成的授权/版本/租约门禁见[专用合同](../development/exam-protected-parsing.md)。
+
+
+## 考试评分任务绑定入口
+
+新增 exam.mark.read、exam.answer.review、exam.score.request、exam.score.review；具体动作与 mark.read/script.read/identity.verify 必须单 Grant 完整覆盖真实 Session，名单读取另验。所有考试评分新表对旧 ORM 默认隐藏，原评分表仍沿 protected Submission 隐藏。固定 Core 查询仅在精确 Job/工作区内使用，不提供自由 SQL、通用特权会话、客户端对象 Key 或权限回退。最终登记重查原申请人、当前人工复核与源版本，撤权后的幂等回放也不返回原结果。详见[安全及运行合同](../development/exam-grading.md)。

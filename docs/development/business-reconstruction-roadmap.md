@@ -205,3 +205,8 @@ B-1.1a、B-1.1b～B-1.5 是先后可合并的小切片，合起来交付**一科
 [考试专用Job、不可变来源Link和浏览器解析](exam-protected-parsing.md)复用现有MinerU与Canonical协议，按确认页序生成私有PDF，领取/续租/提交重新核对来源及当前Grant；旧业务接口和Worker仍拒绝exam_protected。此切片不启用评分、不发布成绩。
 
 下一轮必须为AnswerAlignment/GradeInput增加同样任务绑定的受保护入口，沿PaperQuestionMapping读取所选卷版真实题目快照，不能通过放开全局legacy过滤来复用旧服务。教师确认、解析成功和可评分是不同门槛。
+
+
+## 考试 AI 批改 MVP 切片
+
+[浏览器作答确认、异步候选与教师审核](exam-grading.md)沿受保护解析 Job 复用原评分协议；只覆盖可信文本来源，不启用实验 Quote Selection，不发布成绩。[验收](../evaluation/exam-grading-mvp.md)区分真实 MinerU、Synthetic 事务闭环与实际本地模型拒绝结果。真实模型输出通过及教学质量仍是后续门槛，不把工程可运行宣传为评分质量达标。
