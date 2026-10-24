@@ -1,5 +1,5 @@
 {
-  "version": "exam-parsing-1",
+  "version": "exam-grading-1",
   "operations": [
     {
       "method": "POST",
@@ -450,6 +450,42 @@
       "path": "/api/v1/exam-parsing-jobs/{job_id}/pages/{page_number}",
       "policy": "read_exam_parsing_page",
       "permission": "exam.parse.read"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-parsing-jobs/{job_id}/grading-workspace",
+      "policy": "initialize_exam_grading",
+      "permission": "exam.answer.review"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-parsing-jobs/{job_id}/grading-questions",
+      "policy": "list_exam_grading_questions",
+      "permission": "exam.mark.read"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-grading-workspaces/{workspace_id}",
+      "policy": "inspect_exam_grading",
+      "permission": "exam.mark.read"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-grading-workspaces/{workspace_id}/answer-review",
+      "policy": "record_exam_answer_review",
+      "permission": "exam.answer.review"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-grading-workspaces/{workspace_id}/scoring",
+      "policy": "request_exam_scoring",
+      "permission": "exam.score.request"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-grading-workspaces/{workspace_id}/score-review",
+      "policy": "record_exam_score_review",
+      "permission": "exam.score.review"
     }
   ]
 }

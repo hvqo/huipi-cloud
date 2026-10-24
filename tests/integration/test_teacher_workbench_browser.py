@@ -108,8 +108,30 @@ async def test_teacher_workbench_browser_end_to_end(
             role_version_id=PARSE_OPERATOR_ROLE,
             scope_id=scope_id,
         )
+    if os.getenv("RUN_EXAM_GRADING_BROWSER") == "1":
+        from huipi_cloud.modules.exam_grading import service as marking
+        from huipi_cloud.modules.exam_grading.permissions import MARK_OPERATOR_ROLE
+
+        async with ctx.factory() as db:
+            await marking.enable_operator(
+                db,
+                ctx.users["admin"].id,
+                ctx.users["admin"].id,
+                uuid4(),
+                "synthetic exam marking browser deployment",
+            )
+        async with ctx.factory() as db:
+            await grants.grant_role(
+                db,
+                ctx.principals["admin"],
+                uuid4(),
+                user_id=ctx.users["a"].id,
+                role_version_id=UUID(MARK_OPERATOR_ROLE),
+                scope_id=scope_id,
+            )
     worker_stop = asyncio.Event()
     worker_task = None
+    grading_task = None
     parse_executor = None
     previous_headers = ctx.client.headers.copy()
     ctx.client.headers.update(ctx.headers())
@@ -368,7 +390,12 @@ async def test_teacher_workbench_browser_end_to_end(
                         0.1
                     )  # Bounded service readiness only; not a concurrency race.
         scan_pdf = tmp_path / "mixed-scan.pdf"
-        scan_pdf.write_bytes(mixed_scan_pdf())
+        if os.getenv("RUN_EXAM_GRADING_BROWSER") == "1":
+            from test_exam_grading import grading_mixed_scan_pdf
+
+            scan_pdf.write_bytes(grading_mixed_scan_pdf())
+        else:
+            scan_pdf.write_bytes(mixed_scan_pdf())
         browser_env = dict(
             os.environ,
             WORKBENCH_URL=origin,
@@ -412,6 +439,17 @@ async def test_teacher_workbench_browser_end_to_end(
         parse_executor = ProtectedExecutor(parser, backend)
         worker = ParsingWorker(ctx.factory, parse_executor, config, repository_backend=backend)
         worker_task = asyncio.create_task(worker.run(worker_stop))
+        if os.getenv("RUN_EXAM_GRADING_BROWSER") == "1":
+            from test_exam_grading import SyntheticScoreProvider
+
+            from huipi_cloud.modules.exam_grading.runtime import ScoringWorker
+
+            grading_task = asyncio.create_task(
+                ScoringWorker(ctx.factory, ctx.storage, SyntheticScoreProvider(), config).run(
+                    worker_stop
+                )
+            )
+
         browser = await asyncio.create_subprocess_exec(
             "npm",
             "run",
@@ -453,6 +491,8 @@ async def test_teacher_workbench_browser_end_to_end(
         assert rows[0].response_regions[0]["text_end"] == len(text_value)
     finally:
         worker_stop.set()
+        if grading_task is not None:
+            await asyncio.wait_for(grading_task, timeout=15)
         if worker_task is not None:
             await asyncio.wait_for(worker_task, timeout=15)
         if parse_executor is not None:
@@ -460,7 +500,10 @@ async def test_teacher_workbench_browser_end_to_end(
         async with ctx.factory() as db, db.begin():
             await db.execute(
                 text(
-                    "TRUNCATE exam_parsing_operations,exam_submission_links,"
+                    "TRUNCATE exam_grading_operations,exam_scoring_jobs,exam_grading_workspaces,"
+                    "grade_review_revisions,grade_proposal_artifacts,grade_input_artifacts,"
+                    "answer_review_decisions,answer_alignment_artifacts,"
+                    "exam_parsing_operations,exam_submission_links,"
                     "exam_parsing_jobs CASCADE"
                 )
             )

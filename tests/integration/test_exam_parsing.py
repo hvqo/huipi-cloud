@@ -818,7 +818,7 @@ async def test_new_job_fact_refuses_destructive_downgrade(parse_context):
     output, _ = await asyncio.wait_for(process.communicate(), 20)
     assert process.returncode != 0 and b"exam_parse_downgrade_requires_archived_data" in output
     async with c.factory() as db:
-        assert await db.scalar(text("SELECT version_num FROM alembic_version")) == "b14b41a2e903"
+        assert await db.scalar(text("SELECT version_num FROM alembic_version")) == "b14c52b3f014"
         assert await db.scalar(select(service.J.c.id)) == UUID(r.json()["job_id"])
 
 

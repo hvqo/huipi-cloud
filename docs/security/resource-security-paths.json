@@ -1,5 +1,5 @@
 {
-  "version": "exam-parsing-1",
+  "version": "exam-grading-1",
   "operations": [
     {
       "method": "POST",
@@ -600,6 +600,54 @@
       "permission": "exam.parse.read",
       "classification_boundary": "真实Job/Script/Session当前Grant，考试专用Core入口；不放开legacy",
       "entrypoint": "huipi_cloud.modules.exam_parsing.service"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-parsing-jobs/{job_id}/grading-workspace",
+      "policy": "initialize_exam_grading",
+      "permission": "exam.answer.review",
+      "classification_boundary": "真实ExamParsingJob/Workspace绑定 + 当前User/单Grant/Session Scope + 来源版本；固定Core查询，不放开legacy ORM",
+      "entrypoint": "huipi_cloud.modules.exam_grading.service.http_authorize"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-parsing-jobs/{job_id}/grading-questions",
+      "policy": "list_exam_grading_questions",
+      "permission": "exam.mark.read",
+      "classification_boundary": "真实ExamParsingJob/Workspace绑定 + 当前User/单Grant/Session Scope + 来源版本；固定Core查询，不放开legacy ORM",
+      "entrypoint": "huipi_cloud.modules.exam_grading.service.http_authorize"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-grading-workspaces/{workspace_id}",
+      "policy": "inspect_exam_grading",
+      "permission": "exam.mark.read",
+      "classification_boundary": "真实ExamParsingJob/Workspace绑定 + 当前User/单Grant/Session Scope + 来源版本；固定Core查询，不放开legacy ORM",
+      "entrypoint": "huipi_cloud.modules.exam_grading.service.http_authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-grading-workspaces/{workspace_id}/answer-review",
+      "policy": "record_exam_answer_review",
+      "permission": "exam.answer.review",
+      "classification_boundary": "真实ExamParsingJob/Workspace绑定 + 当前User/单Grant/Session Scope + 来源版本；固定Core查询，不放开legacy ORM",
+      "entrypoint": "huipi_cloud.modules.exam_grading.service.http_authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-grading-workspaces/{workspace_id}/scoring",
+      "policy": "request_exam_scoring",
+      "permission": "exam.score.request",
+      "classification_boundary": "真实ExamParsingJob/Workspace绑定 + 当前User/单Grant/Session Scope + 来源版本；固定Core查询，不放开legacy ORM",
+      "entrypoint": "huipi_cloud.modules.exam_grading.service.http_authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-grading-workspaces/{workspace_id}/score-review",
+      "policy": "record_exam_score_review",
+      "permission": "exam.score.review",
+      "classification_boundary": "真实ExamParsingJob/Workspace绑定 + 当前User/单Grant/Session Scope + 来源版本；固定Core查询，不放开legacy ORM",
+      "entrypoint": "huipi_cloud.modules.exam_grading.service.http_authorize"
     }
   ]
 }

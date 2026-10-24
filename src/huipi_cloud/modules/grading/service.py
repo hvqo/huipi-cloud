@@ -391,6 +391,37 @@ async def _assess(
     except DBAPIError:
         return _blocked(submission_id, question_id, "source_unavailable", "database_unavailable")
 
+    return assess_verified_sources(
+        bundle=bundle,
+        question=question,
+        assignment=assignment,
+        answer_key=answer_key,
+        rubric_rows=rubric_rows,
+        source_file=source_file,
+        latest_review=latest_review,
+        request_id=request_id,
+        config=config,
+    )
+
+
+def assess_verified_sources(
+    *,
+    bundle,
+    question,
+    assignment,
+    answer_key,
+    rubric_rows,
+    source_file,
+    latest_review,
+    request_id,
+    config,
+) -> _Assessment:
+    """Pure existing readiness/packaging rules over already verified source records.
+
+    Persistence and authorization remain the responsibility of the caller. This
+    helper grants no visibility and never queries protected resources.
+    """
+    submission_id, question_id = bundle.context.submission_id, question.id
     reasons: list[str] = []
     if assignment is None or assignment.id != bundle.context.assignment_id:
         return _blocked(submission_id, question_id, "source_stale", "assignment_missing")
@@ -787,13 +818,10 @@ def _review_regions_digest(regions: list[ReviewEvidenceRegion]) -> str:
 
 
 def _readiness_status(reasons: list[str], evidence: list[GradeInputEvidenceItem]) -> str:
-    if any(
-        reason.startswith("database_") or reason == "storage_unavailable" for reason in reasons
-    ):
+    if any(reason.startswith("database_") or reason == "storage_unavailable" for reason in reasons):
         return "source_unavailable"
     if any(
-        "source" in reason or "canonical" in reason or "alignment" in reason
-        for reason in reasons
+        "source" in reason or "canonical" in reason or "alignment" in reason for reason in reasons
     ):
         return "source_stale"
     if any(reason.startswith("answer_key") or reason.startswith("rubric") for reason in reasons):

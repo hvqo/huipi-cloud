@@ -138,3 +138,8 @@ B-1.4a的[真实PG/S3测试](../../tests/integration/test_answer_scripts.py)与[
 ## B-1.4b解析切片边界
 
 [受保护解析测试](../../tests/integration/test_exam_parsing.py)及真实浏览器新增对T06/T07/T08/T26的后续解析准入验证：不完整拒绝、名单变更拒绝、版本化补页不覆盖旧结果、同名身份沿稳定Participation保留。T05本切片只保留选定SessionPaper/PaperQuestionMapping的真实来源，不宣称完成题目对齐或评分。旧Worker不能领取、旧HTTP不能读、错误Manifest拒绝及租约/审计/COMMIT故障均独立测试。真实MinerU合成结果与执行环境见[验收](exam-protected-parsing.md)，不能推断真实学校手写识别准确率。
+
+
+## 考试评分 MVP 增量验收
+
+[专门证据](exam-grading-mvp.md)覆盖两班同名学生的真实上传、分卷、MinerU、题目工作区、教师显式作答确认、严格评分输入、Synthetic 候选及完整审核修订；另记录真实 Ollama 输出的协议/证据失败。它不是自动发布成绩或中文手写质量验收。当前/历史分离、撤权失效、未知 COMMIT 重放、审计回滚和旧入口隔离分别由真实 PostgreSQL/S3 用例验证。

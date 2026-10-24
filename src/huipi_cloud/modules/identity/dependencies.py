@@ -44,6 +44,35 @@ ORGANIZATION_POLICIES = {
     "confirm_student_import": "student.import.confirm",
 }
 
+EXAM_MARK_POLICIES = {
+    "initialize_exam_grading": (
+        "POST",
+        "/exam-parsing-jobs/{job_id}/grading-workspace",
+        "exam.answer.review",
+    ),
+    "list_exam_grading_questions": (
+        "GET",
+        "/exam-parsing-jobs/{job_id}/grading-questions",
+        "exam.mark.read",
+    ),
+    "inspect_exam_grading": ("GET", "/exam-grading-workspaces/{workspace_id}", "exam.mark.read"),
+    "record_exam_answer_review": (
+        "POST",
+        "/exam-grading-workspaces/{workspace_id}/answer-review",
+        "exam.answer.review",
+    ),
+    "request_exam_scoring": (
+        "POST",
+        "/exam-grading-workspaces/{workspace_id}/scoring",
+        "exam.score.request",
+    ),
+    "record_exam_score_review": (
+        "POST",
+        "/exam-grading-workspaces/{workspace_id}/score-review",
+        "exam.score.review",
+    ),
+}
+
 EXAM_PARSE_POLICIES = {
     "start_exam_parsing": ("POST", "/answer-scripts/{script_id}/parsing", "exam.parse.start"),
     "current_exam_parsing": ("GET", "/answer-scripts/{script_id}/parsing", "exam.parse.read"),
@@ -112,6 +141,7 @@ SCAN_POLICIES = {
 }
 
 POLICIES = {
+    **{name: {policy[0]} for name, policy in EXAM_MARK_POLICIES.items()},
     **{name: {policy[0]} for name, policy in EXAM_PARSE_POLICIES.items()},
     **{name: {policy[0]} for name, policy in SCRIPT_POLICIES.items()},
     **{name: {policy[0]} for name, policy in SCAN_POLICIES.items()},
@@ -166,6 +196,7 @@ GRADE_REVIEW_PATH = (
 )
 
 POLICY_PATHS = {
+    **{name: policy[1] for name, policy in EXAM_MARK_POLICIES.items()},
     **{name: policy[1] for name, policy in EXAM_PARSE_POLICIES.items()},
     **{name: policy[1] for name, policy in SCRIPT_POLICIES.items()},
     **{name: policy[1] for name, policy in SCAN_POLICIES.items()},
@@ -292,6 +323,16 @@ async def authorize_request(
                 await authorize_proposal(
                     session, principal=current, write=request.method != "GET", **ids
                 )
+                return current
+            if name in EXAM_MARK_POLICIES:
+                from huipi_cloud.modules.exam_grading import service as exam_mark_service
+
+                try:
+                    await exam_mark_service.http_authorize(
+                        session, current, request.path_params, EXAM_MARK_POLICIES[name][2]
+                    )
+                except ValueError:
+                    raise AccessError("invalid_resource_id", 422) from None
                 return current
             if name in EXAM_PARSE_POLICIES:
                 from huipi_cloud.modules.exam_parsing import service as exam_parse_service

@@ -194,6 +194,7 @@ test('真实PNG预览与新建作业表单', async ({ page, request }) => {
 })
 
 test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原件校验', async ({ page, request }) => {
+  if (process.env.RUN_EXAM_GRADING_BROWSER === '1') test.setTimeout(180000)
   test.setTimeout(120000)
   const { readFile } = await import('node:fs/promises')
   const { createHash } = await import('node:crypto')
@@ -295,6 +296,8 @@ test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原�
   await expect(page.getByText('解析第 1 页 · 原扫描第 3 页', { exact: true })).toBeVisible()
   await expect(page.locator('.parsed-content')).not.toBeEmpty()
   await page.screenshot({ path: 'test-results/exam-protected-canonical.png', fullPage: true })
+  if (process.env.RUN_EXAM_GRADING_BROWSER === '1') await markExamAnswer(page, true)
+
   await page.getByRole('button', { name: '新建答卷', exact: true }).click()
   await page.getByRole('button', { name: '加入扫描页 2', exact: true }).click()
   // One page stays unclaimed until the later correction adds it.
@@ -326,6 +329,19 @@ test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原�
   expect(errors).toEqual([])
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   await page.screenshot({ path: 'test-results/answer-script-correction.png', fullPage: true })
+  if (process.env.RUN_EXAM_GRADING_BROWSER === '1') {
+    await page.getByLabel('操作说明').fill('补页后重新核对第二位同名学生')
+    await page.getByRole('button', { name: '核对学生并确认', exact: true }).click()
+    await identity.getByLabel('参试学生').selectOption(secondTwin.value)
+    await identity.getByRole('button', { name: '确认身份并保存新版本' }).click()
+    await expect(identity).not.toBeVisible()
+    await page.getByRole('button', { name: '开始解析', exact: true }).click()
+    await expect(page.locator('.parse-state')).toHaveText('解析完成', { timeout: 90000 })
+    await markExamAnswer(page, false)
+    await expect(page.locator('.script-identity')).toContainText('N002')
+    await page.screenshot({ path: 'test-results/exam-grading-second-student.png', fullPage: true })
+  }
+
   for (const [width, height] of [
     [1366, 768],
     [1920, 1080],
@@ -339,3 +355,38 @@ test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原�
     })
   }
 })
+
+async function markExamAnswer(page: Page, revise: boolean) {
+  const panel = page.getByRole('region', { name: 'AI 批改与复核', exact: true })
+  await expect(panel).toBeVisible()
+  await panel.getByRole('button', { name: '准备题目作答核对', exact: true }).click()
+  await expect(panel.getByRole('heading', { name: '第1题', exact: true })).toBeVisible()
+  const paragraph = panel
+    .locator('.mark-node')
+    .filter({ hasText: /Student response/i })
+    .first()
+  await expect(paragraph).toBeVisible()
+  await paragraph.getByRole('button', { name: '选择此段', exact: true }).click()
+  await panel.getByRole('checkbox', { name: '我已核对原页，人工指定所选内容属于本题' }).check()
+  await panel.getByRole('button', { name: '确认学生作答', exact: true }).click()
+  await expect(panel.getByText(/当前核对：已确认作答/)).toBeVisible()
+  await panel.getByRole('button', { name: '请求 AI 评分', exact: true }).click()
+  await expect(panel.getByRole('status').filter({ hasText: '建议已生成' })).toBeVisible({
+    timeout: 30000,
+  })
+  await expect(panel).toContainText('synthetic-test-only')
+  await panel.getByRole('button', { name: '接受模型建议', exact: true }).click()
+  await expect(panel.getByText(/修订1 · accepted/)).toBeVisible()
+  if (revise) {
+    await panel.getByRole('button', { name: '载入完整分数快照', exact: true }).click()
+    await panel
+      .getByLabel(/^教师分 /)
+      .first()
+      .fill('3.00')
+    await panel.getByLabel('审核说明').fill('合成验收：教师核对后修订过程分，保留完整评分快照')
+    await panel.getByRole('button', { name: '提交完整修订', exact: true }).click()
+    await expect(panel.getByText(/修订2 · revised/)).toBeVisible()
+    await expect(panel.getByText(/修订1 · accepted/)).toBeVisible()
+    await panel.screenshot({ path: 'test-results/exam-grading-teacher-revision.png' })
+  }
+}
