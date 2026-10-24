@@ -240,6 +240,8 @@ async def test_real_postgres_minio_candidate_proposal_round_trip_and_human_revie
         config=Settings(),
     )
     assert isinstance(proposal, GradeProposalDocument)
+    assert proposal.prompt_version == "rubric-candidate-v4"
+    assert "response_contract" in json.loads(provider.prompts[0])
     assert digest == result.proposal_sha256
     assert proposal.grade_input_sha256 == document.input_sha256
     assert proposal.criterion_scores[0].evidence_references[0].quote == (
