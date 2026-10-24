@@ -173,6 +173,9 @@ async def test_exam_mark_vertical_input_proposal_and_teacher_revision(marking):
     assert d["scoring_status"] == "succeeded", d
     assert d["proposal"]["model_id"] == "synthetic-test-only"
     assert d["proposal"]["grading_status"] == "completed_candidate"
+    assert "response_contract" in c.grade_worker.provider.last_prompt
+    async with c.factory() as db:
+        assert await db.scalar(select(g.GP.c.prompt_version)) == "rubric-candidate-v4"
     r = await c.client.post(
         f"/api/v1/exam-grading-workspaces/{c.wid}/score-review",
         json=dict(

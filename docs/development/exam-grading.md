@@ -8,6 +8,7 @@
 - 作答选择复用 AnswerReview 1.0、Canonical 节点解析、父子来源冲突检查和 Unicode 码点半开区间。自动 aligned 不是学生确实作答的证明。
 - GradeInput 1.0、文本模态门禁、教师答案及完整 Rubric 快照不变。将原 `_assess` 的纯准备部分提取为 `assess_verified_sources`；旧作业入口仍先执行原有查询和权限校验。
 - 复用 GradeProposal 1.0、原 Provider、版本化 Prompt、Decimal、逐项上限、总分与精确 Quote 校验；未启用实验 Quote Selection。
+- 正式候选生成与考试 ScoringWorker 使用 `rubric-candidate-v4`；版本写入不可变 Proposal 并参与请求指纹，旧 v3 Proposal 和历史评测不改写。v4 的字段合同与本轮真实合成结果见 [协议验收](../evaluation/deepseek-prompt-v4.md)，协议通过不代表教学语义正确。
 - 教师审核复用 GradeReview 1.0 和原完整评分比较函数，不改变 accepted/revised/rejected/regrading_required 的含义。
 - 新增考试任务绑定的 Service、HTTP、固定授权动作和最小评分队列。没有通用特权 Session、客户端来源覆盖或 legacy 降级。
 

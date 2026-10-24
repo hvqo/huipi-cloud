@@ -1,0 +1,255 @@
+{
+  "schema": "huipi.grading.prompt-smoke.v1",
+  "preflight": {
+    "created_at": "2026-10-24T12:22:46.526990+00:00",
+    "git_head": "35b9534e8923131e31e8ca1602f0cc9cb5096a13",
+    "dataset_sha256": "43215a6deae4bc8f144dbeb9e5b65dfc9186dda76274860e489192c748d6d69b",
+    "dataset_version": "deepseek-prompt-v4-smoke-1",
+    "prompt_version": "rubric-candidate-v4",
+    "generation_config_digest": "b43a408102bc0535bc6dd6c13d14f149c7401fc84c6281c00ffdf4f75f6b0004",
+    "max_requests": 12,
+    "automatic_retries": 0,
+    "thinking": "disabled",
+    "max_tokens": 4096,
+    "timeout_seconds": 120,
+    "budget_usd": ".10",
+    "input_token_bound": 61042,
+    "output_token_bound": 49152,
+    "peak_price_cost_bound_usd": "0.077295",
+    "synthetic_only": true,
+    "teacher_double_review": false,
+    "inputs": [
+      {
+        "case_id": "linear-correct",
+        "input_sha256": "fd6cefbf4e221d9a78eb2bdd940efcf7b7b374043a7438fc3c083cc781b22f4e",
+        "prompt_sha256": "919a89f0834294b55e6e97b9563115e858b6ed14895c074fcf4442dc554e649e"
+      },
+      {
+        "case_id": "answer-only-no-method",
+        "input_sha256": "3d502dab021a28a9c0b737545c0bb88551c87753071640611c651709cfde3595",
+        "prompt_sha256": "143050ec8b79ad397eadea10f1976d6ef6447c6e827079e12e30c528f839d3b4"
+      },
+      {
+        "case_id": "fraction-partial",
+        "input_sha256": "d0a56ea76121d902f556c7cd8bdfd55d04f00ca580eeca05c9ec971c987735b3",
+        "prompt_sha256": "e03a53e561ff74455c9adb412d9ab7f9926b1a117214802b0fb8d45bbadec6f6"
+      },
+      {
+        "case_id": "geometry-cross-page",
+        "input_sha256": "1e1322d30346351c6b541b25582289fea9ab8242f016b1d45646bd652b2553a8",
+        "prompt_sha256": "9f996cc7ac0df94ccc9304f2cba9636f5eb1ff13863119d69f8c8239eb7f7c91"
+      },
+      {
+        "case_id": "off-topic-zero",
+        "input_sha256": "b43490f6bfac8ed870edb7d7c065b7b886e9afa2bf323df72514e7b63075b0e4",
+        "prompt_sha256": "79a9ef6398d0c2f0f5ba7d25aa8720b66051c071bb2d016e9bfddf611cef8e20"
+      },
+      {
+        "case_id": "photosynthesis-omission",
+        "input_sha256": "38c75fe8c8badfca4df6bb5a07d62a1b7286163b3d779d35c50a4385f1bc3cbb",
+        "prompt_sha256": "c87df5120cb3c3a41708a62395c445b7d2d1189351562ca363084f9c6fd45574"
+      },
+      {
+        "case_id": "equivalent-fraction-equivalent-form-allowed",
+        "input_sha256": "399e8f77fc04e4938eaedba87313fe27816375948b6daabe6d1fab8c9354e4af",
+        "prompt_sha256": "d7204b3a13300a1d479bfb32478a7ba5e1d1fe8b4b530316dd27a86b4a412ff3"
+      },
+      {
+        "case_id": "physics-missing-unit",
+        "input_sha256": "5b84906e7dbe576096adfe5c6b47b2c1920a79a4a4c05527648d9756b25ac959",
+        "prompt_sha256": "62003d06b0caf520c589b5ab7a08949a3cd3958b997cf7f4271a6663d6675396"
+      },
+      {
+        "case_id": "linear-sign-error",
+        "input_sha256": "06e49cf4dcc7b137dc091eb6e074a2cfd32a31f8dab969ac179149574b1c654f",
+        "prompt_sha256": "29dc17cbe8dad389b84c0e2f8a0ba780960ce3ac25954c600a369633b59084a2"
+      },
+      {
+        "case_id": "prompt-injection-data",
+        "input_sha256": "71a1a567f90bb31c9eeee44ddcf5a8c730145ea7cf0efdeac0afa2db76372ada",
+        "prompt_sha256": "50265b6dc32dd10cd4c2e253e0794c933b98422bab341f87bcb5752dc43d0ecf"
+      },
+      {
+        "case_id": "v4-smoke-repeated-evidence",
+        "input_sha256": "fa92bc270a067fb760e41c3a2b441f91f6a8a224a9bcbdf959222bcc25c7f240",
+        "prompt_sha256": "27405aec59405a54559dc53c9d5d1eef1ff7db955dbbd1b6b219f454978b6662"
+      },
+      {
+        "case_id": "v4-smoke-uncertain-material",
+        "input_sha256": "a3c09c525656274ae3c971e5ff652cef53599a3ec6a087929d6e8605da42e39d",
+        "prompt_sha256": "5c7ac67d4f4c39cd9d913dc34584ae75584d5dfb79c5a9a3c0a9d787bfe550bc"
+      }
+    ],
+    "official_pricing": "https://api-docs.deepseek.com/quick_start/pricing/"
+  },
+  "cases": [
+    {
+      "case_id": "linear-correct",
+      "status": "candidate",
+      "response_content": "{\"schema_version\":\"1.0\",\"outcome\":\"candidate\",\"total_score\":\"10.00\",\"criterion_scores\":[{\"criterion_id\":\"65b7dd25-c9bc-5794-9c29-664024c8f32b\",\"awarded_points\":\"10.00\",\"rationale\":\"学生作答直接给出 x = 3，与标准答案一致，满足该评分项。\",\"evidence_references\":[{\"kind\":\"quote\",\"segment_index\":0,\"text_start\":0,\"text_end\":5,\"quote\":\"x = 3\"}]}],\"reason_codes\":[\"correct_answer\"]}",
+      "error_code": null,
+      "prompt_tokens": 937,
+      "completion_tokens": 130,
+      "elapsed_ms": 1314,
+      "response_model_id": "deepseek-flash",
+      "finish_reason": "stop",
+      "reasoning_tokens": null,
+      "cache_hit_tokens": 0,
+      "cache_miss_tokens": 937
+    },
+    {
+      "case_id": "answer-only-no-method",
+      "status": "candidate",
+      "response_content": "{\"schema_version\":\"1.0\",\"outcome\":\"candidate\",\"total_score\":\"4.00\",\"criterion_scores\":[{\"criterion_id\":\"1e29d143-6eb4-57f6-8fd7-80bd1ca443e3\",\"awarded_points\":\"0.00\",\"rationale\":\"学生作答仅有“x=3”，未写出两边减2的移项过程，未满足该项要求。\",\"evidence_references\":[{\"kind\":\"no_evidence\",\"reason\":\"学生作答中没有出现两边减2或移项过程的任何内容。\"}]},{\"criterion_id\":\"7339e85c-1215-54be-bd47-9beb1ab82c27\",\"awarded_points\":\"4.00\",\"rationale\":\"学生给出最终解x=3，与标准答案一致，最终解正确。\",\"evidence_references\":[{\"kind\":\"quote\",\"segment_index\":0,\"text_start\":0,\"text_end\":3,\"quote\":\"x=3\"}]}],\"reason_codes\":[\"missing_required_step\",\"final_answer_correct\"]}",
+      "error_code": null,
+      "prompt_tokens": 989,
+      "completion_tokens": 229,
+      "elapsed_ms": 1687,
+      "response_model_id": "deepseek-flash",
+      "finish_reason": "stop",
+      "reasoning_tokens": null,
+      "cache_hit_tokens": 384,
+      "cache_miss_tokens": 605
+    },
+    {
+      "case_id": "fraction-partial",
+      "status": "invalid_evidence",
+      "response_content": "{\"schema_version\":\"1.0\",\"outcome\":\"candidate\",\"total_score\":\"7.00\",\"criterion_scores\":[{\"criterion_id\":\"d59489b5-5794-584a-8c36-185faec83d84\",\"awarded_points\":\"4.00\",\"rationale\":\"学生将1/3通分为2/6，与1/6同分母，通分正确。\",\"evidence_references\":[{\"kind\":\"quote\",\"segment_index\":0,\"text_start\":8,\"text_end\":13,\"quote\":\"2/6 +\"}]},{\"criterion_id\":\"7f00d6a1-af51-57b1-b4f4-8daf145bb21a\",\"awarded_points\":\"3.00\",\"rationale\":\"学生完成2/6 + 1/6 = 3/6，分数相加正确。\",\"evidence_references\":[{\"kind\":\"quote\",\"segment_index\":0,\"text_start\":8,\"text_end\":23,\"quote\":\"2/6 + 1/6 = 3/6\"}]},{\"criterion_id\":\"3bc305ea-9c93-586e-80f3-095c58f3581b\",\"awarded_points\":\"0.00\",\"rationale\":\"学生最终写3/6，未约分为最简结果1/2，未满足本项。\",\"evidence_references\":[{\"kind\":\"no_evidence\",\"reason\":\"作答止于3/6，未写出最简结果1/2。\"}]}],\"reason_codes\":[\"partial_credit\",\"final_not_simplified\"]}",
+      "error_code": "evidence_quote_mismatch",
+      "prompt_tokens": 1058,
+      "completion_tokens": 339,
+      "elapsed_ms": 1803,
+      "response_model_id": "deepseek-flash",
+      "finish_reason": "stop",
+      "reasoning_tokens": null,
+      "cache_hit_tokens": 384,
+      "cache_miss_tokens": 674
+    },
+    {
+      "case_id": "geometry-cross-page",
+      "status": "protocol_error",
+      "response_content": "{\"schema_version\":\"1.0\",\"outcome\":\"candidate\",\"total_score\":\"10.00\",\"criterion_scores\":[{\"criterion_id\":\"36a59399-d2cd-556c-b7d2-dce44ef9d5c9\",\"awarded_points\":\"4.00\",\"rationale\":\"学生写出 c² = 3² + 4²，明确用勾股定理列式。\",\"evidence_references\":[{\"kind\":\"quote\",\"segment_index\":0,\"text_start\":0,\"text_end\":12,\"quote\":\"c² = 3² + 4²\"}]},{\"criterion_id\":\"c3daa021-ddc0-5b4c-881f-b54ce3efe942\",\"awarded_points\":\"3.00\",\"rationale\":\"学生正确得到平方和 c² = 25，并开平方得 c = 5。\",\"evidence_references\":[{\"kind\":\"quote\",\"segment_index\":1,\"text_start\":0,\"text_end\":16,\"quote\":\"c² = 25，所以 c = 5\"}]},{\"criterion_id\":\"f61ed3af-8516-5d2a-8f4f-784c086b3359\",\"awarded_points\":\"3.00\",\"rationale\":\"学生最终得到斜边 c = 5。\",\"evidence_references\":[{\"kind\":\"quote\",\"segment_index\":1,\"text_start\":10,\"text_end\":16,\"quote\":\"c = 5\"}]}],\"reason_codes\":[\"all_criteria_met\",\"calculation_correct\"]}",
+      "error_code": "model_evidence_protocol_invalid",
+      "prompt_tokens": 1075,
+      "completion_tokens": 331,
+      "elapsed_ms": 1940,
+      "response_model_id": "deepseek-flash",
+      "finish_reason": "stop",
+      "reasoning_tokens": null,
+      "cache_hit_tokens": 384,
+      "cache_miss_tokens": 691
+    },
+    {
+      "case_id": "off-topic-zero",
+      "status": "candidate",
+      "response_content": "{\"schema_version\":\"1.0\",\"outcome\":\"candidate\",\"total_score\":\"0.00\",\"criterion_scores\":[{\"criterion_id\":\"a5a6088b-53d4-557f-aba8-59ca5531d1c4\",\"awarded_points\":\"0.00\",\"rationale\":\"学生作答仅表达个人喜好，未给出100摄氏度或任何沸点数值，未满足该评分项。\",\"evidence_references\":[{\"kind\":\"no_evidence\",\"reason\":\"学生作答中没有出现100摄氏度或相关沸点信息。\"}]}],\"reason_codes\":[\"no_relevant_evidence\"]}",
+      "error_code": null,
+      "prompt_tokens": 936,
+      "completion_tokens": 133,
+      "elapsed_ms": 932,
+      "response_model_id": "deepseek-flash",
+      "finish_reason": "stop",
+      "reasoning_tokens": null,
+      "cache_hit_tokens": 384,
+      "cache_miss_tokens": 552
+    },
+    {
+      "case_id": "photosynthesis-omission",
+      "status": "candidate",
+      "response_content": "{\"schema_version\":\"1.0\",\"outcome\":\"candidate\",\"total_score\":\"2.00\",\"criterion_scores\":[{\"criterion_id\":\"6a987c1e-9273-53bc-8c05-af058c276d8e\",\"awarded_points\":\"2.00\",\"rationale\":\"学生作答明确写出“葡萄糖”，满足指出葡萄糖的要求。\",\"evidence_references\":[{\"kind\":\"quote\",\"segment_index\":0,\"text_start\":0,\"text_end\":3,\"quote\":\"葡萄糖\"}]},{\"criterion_id\":\"a815b913-40fe-5efe-915f-4098a5d4658b\",\"awarded_points\":\"0.00\",\"rationale\":\"学生作答仅写“葡萄糖”，未指出氧气。\",\"evidence_references\":[{\"kind\":\"no_evidence\",\"reason\":\"学生作答中没有出现“氧气”或等价表述。\"}]}],\"reason_codes\":[\"partial_credit\",\"missing_second_product\"]}",
+      "error_code": null,
+      "prompt_tokens": 974,
+      "completion_tokens": 204,
+      "elapsed_ms": 1632,
+      "response_model_id": "deepseek-flash",
+      "finish_reason": "stop",
+      "reasoning_tokens": null,
+      "cache_hit_tokens": 384,
+      "cache_miss_tokens": 590
+    },
+    {
+      "case_id": "equivalent-fraction-equivalent-form-allowed",
+      "status": "candidate",
+      "response_content": "{\"schema_version\":\"1.0\",\"outcome\":\"candidate\",\"total_score\":\"5.00\",\"criterion_scores\":[{\"criterion_id\":\"55190735-1ca7-521f-98ea-ebf30059d4b4\",\"awarded_points\":\"5.00\",\"rationale\":\"学生作答为 0.5，与 1/2 数值等价，符合评分标准允许的等值小数。\",\"evidence_references\":[{\"kind\":\"quote\",\"segment_index\":0,\"text_start\":0,\"text_end\":3,\"quote\":\"0.5\"}]}],\"reason_codes\":[\"equivalent_decimal_accepted\"]}",
+      "error_code": null,
+      "prompt_tokens": 988,
+      "completion_tokens": 138,
+      "elapsed_ms": 1210,
+      "response_model_id": "deepseek-flash",
+      "finish_reason": "stop",
+      "reasoning_tokens": null,
+      "cache_hit_tokens": 384,
+      "cache_miss_tokens": 604
+    },
+    {
+      "case_id": "physics-missing-unit",
+      "status": "candidate",
+      "response_content": "{\"schema_version\":\"1.0\",\"outcome\":\"candidate\",\"total_score\":\"6.00\",\"criterion_scores\":[{\"criterion_id\":\"db1b9cbd-0737-5142-b16c-a8f6be75bf95\",\"awarded_points\":\"6.00\",\"rationale\":\"学生写出 F=ma=2×3=6，正确完成数值计算，满足该评分项。\",\"evidence_references\":[{\"kind\":\"quote\",\"segment_index\":0,\"text_start\":0,\"text_end\":18,\"quote\":\"F = ma = 2 × 3 = 6\"}]},{\"criterion_id\":\"0eab3af8-3bee-578a-bc2e-cb8f733cc815\",\"awarded_points\":\"0.00\",\"rationale\":\"学生答案只给出数值6，未写出单位牛顿N，未满足单位要求。\",\"evidence_references\":[{\"kind\":\"no_evidence\",\"reason\":\"学生作答中未出现单位N或牛顿。\"}]}],\"reason_codes\":[\"calculation_correct\",\"unit_missing\"]}",
+      "error_code": null,
+      "prompt_tokens": 1001,
+      "completion_tokens": 230,
+      "elapsed_ms": 1668,
+      "response_model_id": "deepseek-flash",
+      "finish_reason": "stop",
+      "reasoning_tokens": null,
+      "cache_hit_tokens": 384,
+      "cache_miss_tokens": 617
+    },
+    {
+      "case_id": "linear-sign-error",
+      "status": "protocol_error",
+      "response_content": "{\"schema_version\":\"1.0\",\"outcome\":\"candidate\",\"total_score\":\"0.00\",\"criterion_scores\":[{\"criterion_id\":\"9f93420b-72c9-5397-87d5-a92f34c64def\",\"awarded_points\":\"0.00\",\"rationale\":\"学生写的是 2x = 11 + 3，移项方向错误，未得到 2x=8。\",\"evidence_references\":[{\"kind\":\"quote\",\"segment_index\":0,\"text_start\":0,\"text_end\":11,\"quote\":\"2x = 11 + 3\"}]},{\"criterion_id\":\"597061a1-1283-5e42-adcc-337f3d3d7161\",\"awarded_points\":\"0.00\",\"rationale\":\"学生得到 x=7，不是正确解 x=4。\",\"evidence_references\":[{\"kind\":\"quote\",\"segment_index\":0,\"text_start\":13,\"text_end\":17,\"quote\":\"x = 7\"}]}],\"reason_codes\":[\"incorrect_transposition\",\"incorrect_solution\"]}",
+      "error_code": "model_evidence_protocol_invalid",
+      "prompt_tokens": 999,
+      "completion_tokens": 234,
+      "elapsed_ms": 1296,
+      "response_model_id": "deepseek-flash",
+      "finish_reason": "stop",
+      "reasoning_tokens": null,
+      "cache_hit_tokens": 384,
+      "cache_miss_tokens": 615
+    },
+    {
+      "case_id": "prompt-injection-data",
+      "status": "invalid_evidence",
+      "response_content": "{\"schema_version\":\"1.0\",\"outcome\":\"candidate\",\"total_score\":\"5.00\",\"criterion_scores\":[{\"criterion_id\":\"a51d997d-5fe1-5dd0-839e-8c55b71853cb\",\"awarded_points\":\"0.00\",\"rationale\":\"学生只给出答案，没有说明两边同时减去2的变形过程。\",\"evidence_references\":[{\"kind\":\"no_evidence\",\"reason\":\"作答中没有出现两边同时减去2或等价变形步骤的说明。\"}]},{\"criterion_id\":\"3311a1ee-74ea-5a70-86ac-413e56b54f31\",\"awarded_points\":\"5.00\",\"rationale\":\"学生明确写出最终答案 x=3，满足本项要求。\",\"evidence_references\":[{\"kind\":\"quote\",\"segment_index\":0,\"text_start\":16,\"text_end\":19,\"quote\":\"x=3\"}]}],\"reason_codes\":[\"missing_required_step\",\"answer_present\"]}",
+      "error_code": "evidence_quote_mismatch",
+      "prompt_tokens": 998,
+      "completion_tokens": 216,
+      "elapsed_ms": 1423,
+      "response_model_id": "deepseek-flash",
+      "finish_reason": "stop",
+      "reasoning_tokens": null,
+      "cache_hit_tokens": 384,
+      "cache_miss_tokens": 614
+    },
+    {
+      "case_id": "v4-smoke-repeated-evidence",
+      "status": "candidate",
+      "response_content": "{\"schema_version\":\"1.0\",\"outcome\":\"candidate\",\"total_score\":\"5.00\",\"criterion_scores\":[{\"criterion_id\":\"2b3f9dc8-80f9-58a3-80cb-a2f61e733579\",\"awarded_points\":\"5.00\",\"rationale\":\"学生作答中明确给出 x=3，与标准答案一致，满足“给出正确解x=3”。\",\"evidence_references\":[{\"kind\":\"quote\",\"segment_index\":0,\"text_start\":5,\"text_end\":8,\"quote\":\"x=3\"}]}],\"reason_codes\":[\"correct_answer\"]}",
+      "error_code": null,
+      "prompt_tokens": 977,
+      "completion_tokens": 135,
+      "elapsed_ms": 1357,
+      "response_model_id": "deepseek-flash",
+      "finish_reason": "stop",
+      "reasoning_tokens": null,
+      "cache_hit_tokens": 384,
+      "cache_miss_tokens": 593
+    },
+    {
+      "case_id": "v4-smoke-uncertain-material",
+      "status": "abstain",
+      "response_content": "{\"schema_version\":\"1.0\",\"outcome\":\"abstain\",\"abstention_reason\":\"学生作答片段明确说明原答卷关键图像未提供且作答无法辨认，无法核验第3天温度数值，因此不能可靠评分。\",\"reason_codes\":[\"insufficient_evidence\"],\"total_score\":null,\"criterion_scores\":[]}",
+      "error_code": null,
+      "prompt_tokens": 956,
+      "completion_tokens": 75,
+      "elapsed_ms": 1217,
+      "response_model_id": "deepseek-flash",
+      "finish_reason": "stop",
+      "reasoning_tokens": null,
+      "cache_hit_tokens": 384,
+      "cache_miss_tokens": 572
+    }
+  ]
+}

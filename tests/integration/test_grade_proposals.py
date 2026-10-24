@@ -7,7 +7,9 @@ import hashlib
 import json
 import os
 import sys
+from datetime import UTC, datetime
 from decimal import Decimal
+from io import BytesIO
 from pathlib import Path
 from uuid import UUID, uuid4
 
@@ -34,8 +36,10 @@ from huipi_cloud.modules.grading.proposal_errors import (
     GradeProposalInvalidEvidenceError,
     GradeProposalRegistrationRolledBackError,
 )
-from huipi_cloud.modules.grading.proposal_protocol import GradeProposalDocument
+from huipi_cloud.modules.grading.proposal_protocol import GradeProposalDocument, proposal_json_bytes
 from huipi_cloud.modules.grading.proposal_service import (
+    _request_fingerprint,
+    _validate_candidate_scores,
     grade_input_artifact,
     read_grade_proposal_artifact,
 )
@@ -240,6 +244,8 @@ async def test_real_postgres_minio_candidate_proposal_round_trip_and_human_revie
         config=Settings(),
     )
     assert isinstance(proposal, GradeProposalDocument)
+    assert proposal.prompt_version == "rubric-candidate-v4"
+    assert "response_contract" in json.loads(provider.prompts[0])
     assert digest == result.proposal_sha256
     assert proposal.grade_input_sha256 == document.input_sha256
     assert proposal.criterion_scores[0].evidence_references[0].quote == (
@@ -277,6 +283,78 @@ async def test_real_postgres_minio_candidate_proposal_round_trip_and_human_revie
     assert hashlib.sha256(body).hexdigest() == row.object_sha256
     assert len(body) == row.object_size_bytes
     assert document.selected_answer_segments[0].text in body.decode("utf-8")
+
+
+@pytest.mark.anyio
+async def test_v3_history_reads_unchanged_and_same_request_cannot_be_overwritten_by_v4(
+    submission_client, recording_minio_storage, postgres_engine
+):
+    """Seed a v3 immutable fixture through the real source-checking repository."""
+    from huipi_cloud.modules.grading.proposal_protocol import GradeModelReply
+
+    factory, _, _, _, prepared, document, raw = await _ready_grade_input(
+        submission_client, recording_minio_storage, postgres_engine
+    )
+    provider = _CandidateProvider(postgres_engine, raw)
+    scores, total = _validate_candidate_scores(
+        GradeModelReply.model_validate(raw), document, Settings()
+    )
+    old = GradeProposalDocument(
+        proposal_id=uuid4(),
+        request_id=uuid4(),
+        request_fingerprint=_request_fingerprint(
+            document, provider, prompt_version="rubric-candidate-v3"
+        ),
+        grade_input_artifact_id=prepared.artifact_id,
+        grade_input_sha256=document.input_sha256,
+        submission_id=document.submission_id,
+        question_id=document.question.question_id,
+        model_id=provider.model_id,
+        provider=provider.provider_name,
+        prompt_version="rubric-candidate-v3",
+        generation_config_digest=provider.generation_config_digest,
+        criterion_scores=scores,
+        total_score=total,
+        max_score=document.question.max_score,
+        grading_status="completed_candidate",
+        model_elapsed_ms=1,
+        created_at=datetime.now(UTC),
+    )
+    payload = proposal_json_bytes(old)
+    digest = hashlib.sha256(payload).hexdigest()
+    key = f"{recording_minio_storage.object_key_prefix}/historical-v3/{old.proposal_id}.json"
+    await recording_minio_storage.upload_fileobj(BytesIO(payload), key, "application/json")
+    _, created = await proposal_repository.register_proposal(
+        factory,
+        input_document=document,
+        proposal=old,
+        bucket=recording_minio_storage.bucket,
+        object_key=key,
+        object_sha256=digest,
+        object_size_bytes=len(payload),
+    )
+    assert created
+    read, read_sha = await read_grade_proposal_artifact(
+        factory, recording_minio_storage, old.proposal_id, config=Settings()
+    )
+    assert read.prompt_version == "rubric-candidate-v3"
+    assert read_sha == digest
+    with pytest.raises(GradeProposalIdempotencyConflictError, match="request_id_payload_conflict"):
+        await grade_input_artifact(
+            factory,
+            recording_minio_storage,
+            grade_input_artifact_id=prepared.artifact_id,
+            request_id=old.request_id,
+            provider=provider,
+            config=Settings(),
+        )
+    assert provider.calls == 0
+    stored = b"".join(
+        [part async for part in (await recording_minio_storage.download(key)).chunks()]
+    )
+    assert stored == payload
+    record = await proposal_repository.get_by_request_id(factory, old.request_id)
+    assert record.id == old.proposal_id and record.object_sha256 == digest
 
 
 @pytest.mark.anyio

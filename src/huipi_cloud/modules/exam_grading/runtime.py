@@ -12,7 +12,7 @@ from huipi_cloud.infrastructure.storage.s3 import StorageUnavailableError
 from huipi_cloud.modules.canonical_documents.errors import CanonicalNormalizationError
 from huipi_cloud.modules.exam_parsing.runtime import worker_transaction
 from huipi_cloud.modules.grading import proposal_service as proposals
-from huipi_cloud.modules.grading.prompts import PROMPT_VERSION
+from huipi_cloud.modules.grading.prompts_v4 import PROMPT_VERSION
 from huipi_cloud.modules.grading.proposal_errors import GradeProposalError
 from huipi_cloud.modules.grading.proposal_protocol import GradeProposalDocument
 from huipi_cloud.modules.identity.protocol import AccessError

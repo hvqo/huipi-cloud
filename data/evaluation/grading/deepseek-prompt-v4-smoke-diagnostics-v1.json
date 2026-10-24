@@ -1,0 +1,239 @@
+[
+  {
+    "case_id": "linear-correct",
+    "reference_status": "included",
+    "status": "candidate",
+    "reason": null,
+    "human_review_status": "unreviewed",
+    "response_model_id": "deepseek-flash",
+    "elapsed_ms": 1314,
+    "reference_total_score": "10.00",
+    "input_sha256": "fd6cefbf4e221d9a78eb2bdd940efcf7b7b374043a7438fc3c083cc781b22f4e",
+    "json_valid": true,
+    "schema_valid": true,
+    "diagnostics": {
+      "other_protocol_error": 1
+    },
+    "raw_total_score": "10.00",
+    "total_delta": "0.00",
+    "criterion_deltas": {
+      "answer": "0.00"
+    }
+  },
+  {
+    "case_id": "answer-only-no-method",
+    "reference_status": "included",
+    "status": "candidate",
+    "reason": null,
+    "human_review_status": "unreviewed",
+    "response_model_id": "deepseek-flash",
+    "elapsed_ms": 1687,
+    "reference_total_score": "4.00",
+    "input_sha256": "3d502dab021a28a9c0b737545c0bb88551c87753071640611c651709cfde3595",
+    "json_valid": true,
+    "schema_valid": true,
+    "diagnostics": {
+      "other_protocol_error": 1
+    },
+    "raw_total_score": "4.00",
+    "total_delta": "0.00",
+    "criterion_deltas": {
+      "method": "0.00",
+      "final": "0.00"
+    }
+  },
+  {
+    "case_id": "fraction-partial",
+    "reference_status": "included",
+    "status": "invalid_evidence",
+    "reason": "evidence_quote_mismatch",
+    "human_review_status": "unreviewed",
+    "response_model_id": "deepseek-flash",
+    "elapsed_ms": 1803,
+    "reference_total_score": "7.00",
+    "input_sha256": "d0a56ea76121d902f556c7cd8bdfd55d04f00ca580eeca05c9ec971c987735b3",
+    "json_valid": true,
+    "schema_valid": true,
+    "diagnostics": {
+      "invalid_quote_offsets": 2
+    },
+    "raw_total_score": "7.00"
+  },
+  {
+    "case_id": "geometry-cross-page",
+    "reference_status": "included",
+    "status": "protocol_error",
+    "reason": "model_evidence_protocol_invalid",
+    "human_review_status": "unreviewed",
+    "response_model_id": "deepseek-flash",
+    "elapsed_ms": 1940,
+    "reference_total_score": "10.00",
+    "input_sha256": "1e1322d30346351c6b541b25582289fea9ab8242f016b1d45646bd652b2553a8",
+    "json_valid": true,
+    "schema_valid": false,
+    "diagnostics": {
+      "invalid_quote_length": 1
+    },
+    "raw_total_score": "10.00"
+  },
+  {
+    "case_id": "off-topic-zero",
+    "reference_status": "included",
+    "status": "candidate",
+    "reason": null,
+    "human_review_status": "unreviewed",
+    "response_model_id": "deepseek-flash",
+    "elapsed_ms": 932,
+    "reference_total_score": "0.00",
+    "input_sha256": "b43490f6bfac8ed870edb7d7c065b7b886e9afa2bf323df72514e7b63075b0e4",
+    "json_valid": true,
+    "schema_valid": true,
+    "diagnostics": {
+      "other_protocol_error": 1
+    },
+    "raw_total_score": "0.00",
+    "total_delta": "0.00",
+    "criterion_deltas": {
+      "boiling_point": "0.00"
+    }
+  },
+  {
+    "case_id": "photosynthesis-omission",
+    "reference_status": "included",
+    "status": "candidate",
+    "reason": null,
+    "human_review_status": "unreviewed",
+    "response_model_id": "deepseek-flash",
+    "elapsed_ms": 1632,
+    "reference_total_score": "2.00",
+    "input_sha256": "38c75fe8c8badfca4df6bb5a07d62a1b7286163b3d779d35c50a4385f1bc3cbb",
+    "json_valid": true,
+    "schema_valid": true,
+    "diagnostics": {
+      "other_protocol_error": 1
+    },
+    "raw_total_score": "2.00",
+    "total_delta": "0.00",
+    "criterion_deltas": {
+      "glucose": "0.00",
+      "oxygen": "0.00"
+    }
+  },
+  {
+    "case_id": "equivalent-fraction-equivalent-form-allowed",
+    "reference_status": "included",
+    "status": "candidate",
+    "reason": null,
+    "human_review_status": "unreviewed",
+    "response_model_id": "deepseek-flash",
+    "elapsed_ms": 1210,
+    "reference_total_score": "5.00",
+    "input_sha256": "399e8f77fc04e4938eaedba87313fe27816375948b6daabe6d1fab8c9354e4af",
+    "json_valid": true,
+    "schema_valid": true,
+    "diagnostics": {
+      "other_protocol_error": 1
+    },
+    "raw_total_score": "5.00",
+    "total_delta": "0.00",
+    "criterion_deltas": {
+      "equivalent_value": "0.00"
+    }
+  },
+  {
+    "case_id": "physics-missing-unit",
+    "reference_status": "included",
+    "status": "candidate",
+    "reason": null,
+    "human_review_status": "unreviewed",
+    "response_model_id": "deepseek-flash",
+    "elapsed_ms": 1668,
+    "reference_total_score": "6.00",
+    "input_sha256": "5b84906e7dbe576096adfe5c6b47b2c1920a79a4a4c05527648d9756b25ac959",
+    "json_valid": true,
+    "schema_valid": true,
+    "diagnostics": {
+      "other_protocol_error": 1
+    },
+    "raw_total_score": "6.00",
+    "total_delta": "0.00",
+    "criterion_deltas": {
+      "calculation": "0.00",
+      "unit": "0.00"
+    }
+  },
+  {
+    "case_id": "linear-sign-error",
+    "reference_status": "included",
+    "status": "protocol_error",
+    "reason": "model_evidence_protocol_invalid",
+    "human_review_status": "unreviewed",
+    "response_model_id": "deepseek-flash",
+    "elapsed_ms": 1296,
+    "reference_total_score": "0.00",
+    "input_sha256": "06e49cf4dcc7b137dc091eb6e074a2cfd32a31f8dab969ac179149574b1c654f",
+    "json_valid": true,
+    "schema_valid": false,
+    "diagnostics": {
+      "invalid_quote_length": 1
+    },
+    "raw_total_score": "0.00"
+  },
+  {
+    "case_id": "prompt-injection-data",
+    "reference_status": "included",
+    "status": "invalid_evidence",
+    "reason": "evidence_quote_mismatch",
+    "human_review_status": "unreviewed",
+    "response_model_id": "deepseek-flash",
+    "elapsed_ms": 1423,
+    "reference_total_score": "5.00",
+    "input_sha256": "71a1a567f90bb31c9eeee44ddcf5a8c730145ea7cf0efdeac0afa2db76372ada",
+    "json_valid": true,
+    "schema_valid": true,
+    "diagnostics": {
+      "invalid_quote_offsets": 1
+    },
+    "raw_total_score": "5.00"
+  },
+  {
+    "case_id": "v4-smoke-repeated-evidence",
+    "reference_status": "included",
+    "status": "candidate",
+    "reason": null,
+    "human_review_status": "unreviewed",
+    "response_model_id": "deepseek-flash",
+    "elapsed_ms": 1357,
+    "reference_total_score": "5.00",
+    "input_sha256": "fa92bc270a067fb760e41c3a2b441f91f6a8a224a9bcbdf959222bcc25c7f240",
+    "json_valid": true,
+    "schema_valid": true,
+    "diagnostics": {
+      "other_protocol_error": 1
+    },
+    "raw_total_score": "5.00",
+    "total_delta": "0.00",
+    "criterion_deltas": {
+      "solution": "0.00"
+    }
+  },
+  {
+    "case_id": "v4-smoke-uncertain-material",
+    "reference_status": "excluded_uncertain",
+    "status": "abstain",
+    "reason": null,
+    "human_review_status": "unreviewed",
+    "response_model_id": "deepseek-flash",
+    "elapsed_ms": 1217,
+    "reference_total_score": null,
+    "input_sha256": "a3c09c525656274ae3c971e5ff652cef53599a3ec6a087929d6e8605da42e39d",
+    "json_valid": true,
+    "schema_valid": true,
+    "diagnostics": {
+      "other_protocol_error": 1
+    },
+    "raw_total_score": null,
+    "expected_outcome": "abstain",
+    "probe_passed": true
+  }
+]
