@@ -63,6 +63,7 @@ class TextGradingProvider(Protocol):
 
 
 def build_text_grading_provider(config: Settings = settings) -> TextGradingProvider:
+    config = effective_grading_config(config)
     if not config.grading_enabled:
         raise GradeProposalProviderError("grading_provider_disabled")
     if not config.grading_model.strip():
@@ -70,6 +71,13 @@ def build_text_grading_provider(config: Settings = settings) -> TextGradingProvi
     if config.grading_provider == "ollama_native":
         return OllamaTextGradingProvider(config)
     return OpenAICompatibleTextGradingProvider(config)
+
+
+def effective_grading_config(config: Settings) -> Settings:
+    # Selection is one model call; ambiguity must never trigger a new sample.
+    if config.grading_strategy == "quote_selection":
+        return config.model_copy(update={"grading_invalid_response_retries": 0})
+    return config
 
 
 class _HttpTextGradingProvider:
@@ -123,6 +131,10 @@ class _HttpTextGradingProvider:
                     "max_input_tokens": config.grading_max_input_tokens,
                     "timeout_seconds": config.grading_timeout_seconds,
                     "invalid_response_retries": config.grading_invalid_response_retries,
+                    **(
+                        {"strategy": "quote_selection", "locator": "segment-unique-exact-v1"}
+                        if config.grading_strategy == "quote_selection" else {}
+                    ),
                 },
                 sort_keys=True,
                 separators=(",", ":"),

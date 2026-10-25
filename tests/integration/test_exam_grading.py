@@ -903,3 +903,207 @@ async def test_other_reviewer_cannot_commit_after_scorer_authority_changes(marki
     async with c.factory() as db:
         assert await db.scalar(select(func.count()).select_from(g.GR)) == 0
         assert await db.scalar(select(func.count()).select_from(g.GP)) == 1
+
+
+class SyntheticSelectionProvider(SyntheticScoreProvider):
+    """Same synthetic grading, with the new model-side protocol only."""
+
+    async def complete(self, **kwargs):
+        response = await super().complete(**kwargs)
+        raw = json.loads(response.content)
+        raw["schema_name"] = "huipi.grading.quote-selection"
+        for score in raw["criterion_scores"]:
+            for ref in score["evidence_references"]:
+                ref["kind"] = "quote_selection"
+                del ref["text_start"], ref["text_end"]
+        return TextGradingResponse(json.dumps(raw), self.model_id, 1, ProviderUsage(10, 10))
+
+
+@pytest.mark.anyio
+async def test_selection_exam_worker_persists_standard_proposal_and_teacher_review(marking):
+    from huipi_cloud.modules.grading.prompts_selection import PROMPT_VERSION
+
+    c = marking
+    config = c.config.model_copy(update={"grading_strategy": "quote_selection"})
+    c.grade_worker = ScoringWorker(c.factory, c.storage, SyntheticSelectionProvider(), config)
+    r = await confirm(c)
+    assert r.status_code == 200, r.text
+    r = await c.client.post(
+        f"/api/v1/exam-grading-workspaces/{c.wid}/scoring",
+        json=dict(request_id=str(uuid4()), expected_answer_revision=1),
+    )
+    assert r.status_code == 202, r.text
+    assert await c.grade_worker.once()
+    d = await detail(c)
+    assert d["scoring_status"] == "succeeded", d
+    async with c.factory() as db:
+        assert await db.scalar(select(g.GP.c.prompt_version)) == PROMPT_VERSION
+    assert all(
+        ref["kind"] == "quote" and ref["text_end"] > ref["text_start"]
+        for score in d["proposal"]["criterion_scores"] for ref in score["evidence_references"]
+    )
+    r = await c.client.post(
+        f"/api/v1/exam-grading-workspaces/{c.wid}/score-review",
+        json=dict(request_id=str(uuid4()), expected_revision=0, payload=dict(
+            schema_name="huipi.grading.review", schema_version="1.0",
+            review_status="accepted", reviewer_ref="teacher_" + c.users["a"].id.hex,
+        )),
+    )
+    assert r.status_code == 200, r.text
+    assert (await detail(c))["history"][0]["review_status"] == "accepted"
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    "kind", ["quote_not_found", "positive_score_without_quote", "audit_storage"]
+)
+async def test_selection_exam_failure_never_indexes_success(marking, kind, monkeypatch):
+    from huipi_cloud.infrastructure.storage.s3 import StorageUnavailableError
+
+    c = marking
+
+    class Invalid(SyntheticSelectionProvider):
+        async def complete(self, **kwargs):
+            response = await super().complete(**kwargs)
+            raw = json.loads(response.content)
+            if kind == "quote_not_found":
+                raw["criterion_scores"][0]["evidence_references"][0]["quote"] = "不存在的学生文字"
+            elif kind == "positive_score_without_quote":
+                raw["criterion_scores"][0]["evidence_references"] = [
+                    dict(kind="no_evidence", reason="缺失步骤")
+                ]
+            return TextGradingResponse(json.dumps(raw), self.model_id, 1, ProviderUsage(10, 10))
+
+    config = c.config.model_copy(update={"grading_strategy": "quote_selection"})
+    c.grade_worker = ScoringWorker(c.factory, c.storage, Invalid(), config)
+    assert (await confirm(c)).status_code == 200
+    r = await c.client.post(
+        f"/api/v1/exam-grading-workspaces/{c.wid}/scoring",
+        json=dict(request_id=str(uuid4()), expected_answer_revision=1),
+    )
+    assert r.status_code == 202, r.text
+    original = c.storage.upload_fileobj
+
+    async def fail_receipt(fileobj, key, content_type):
+        if "model-call-audits" in key:
+            raise StorageUnavailableError()
+        return await original(fileobj, key, content_type)
+
+    if kind == "audit_storage":
+        monkeypatch.setattr(c.storage, "upload_fileobj", fail_receipt)
+    assert await c.grade_worker.once()
+    d = await detail(c)
+    assert d["scoring_status"] == "failed" and d["proposal"] is None
+    if kind != "audit_storage":
+        assert d["failure_code"] == kind
+    async with c.factory() as db:
+        assert await db.scalar(select(g.func.count()).select_from(g.GP)) == 0
+
+
+@pytest.mark.anyio
+@pytest.mark.deepseek_e2e
+@pytest.mark.mineru_e2e
+@pytest.mark.skipif(
+    __import__("os").getenv("RUN_SELECTION_BUSINESS_E2E") != "1",
+    reason="explicit real DeepSeek plus cached MinerU and synthetic exam only",
+)
+async def test_real_mineru_deepseek_selection_and_teacher_review(marking):
+    import os
+    from dataclasses import asdict
+    from pathlib import Path
+
+    from huipi_cloud.infrastructure.grading.provider import build_text_grading_provider
+    from huipi_cloud.modules.grading.prompts_selection import PROMPT_VERSION, SYSTEM_PROMPT
+    from scripts.validate_production_quote_selection import live_config, reserve_call, save
+
+    c = marking
+    evidence = Path(os.environ["SELECTION_EVIDENCE_DIR"])
+    config = live_config()
+    provider = build_text_grading_provider(config)
+    d = await detail(c)
+    node = next(n for n in d["nodes"] if "2 + 2 = 4" in n["text"] or "2+2=4" in n["text"])
+    expression = "2 + 2 = 4" if "2 + 2 = 4" in node["text"] else "2+2=4"
+    offset = node["text"].index(expression)
+    r = await c.client.post(
+        f"/api/v1/exam-grading-workspaces/{c.wid}/answer-review",
+        json=dict(request_id=str(uuid4()), expected_revision=0, manual_attribution=True,
+                  payload=dict(decision="response_present", response_regions=[dict(
+                      content_pointer=node["content_pointer"], text_start=offset,
+                      text_end=offset + len(expression),
+                  )], reason_codes=["student_work_visible"],
+                               reviewer_ref="teacher_" + c.users["a"].id.hex)),
+    )
+    assert r.status_code == 200, r.text
+    original = provider.complete
+
+    async def record(**kwargs):
+        # Preflight reserved 20k input tokens for this one call, conservatively bytes.
+        assert len(SYSTEM_PROMPT.encode()) + len(kwargs["user_prompt"].encode()) + 1024 <= 20000
+        reserve_call(evidence)
+        response = await original(**kwargs)
+        save(evidence / "business-model-response.json", asdict(response))
+        return response
+
+    provider.complete = record
+    worker = ScoringWorker(c.factory, c.storage, provider, config)
+    r = await c.client.post(
+        f"/api/v1/exam-grading-workspaces/{c.wid}/scoring",
+        json=dict(request_id=str(uuid4()), expected_answer_revision=1),
+    )
+    assert r.status_code == 202, r.text
+    assert await worker.once()
+    d = await detail(c)
+    save(evidence / "business-result.json", dict(
+        parsing_job_id=str(c.jid), scoring_status=d["scoring_status"],
+        failure_code=d.get("failure_code"), proposal=d["proposal"],
+        input_source="real_cached_MinerU_synthetic_scanned_exam",
+    ))
+    assert d["scoring_status"] == "succeeded", d.get("failure_code")
+    assert d["proposal"]["model_id"] == "deepseek-flash"
+    assert d["proposal"]["grading_status"] == "completed_candidate"
+    async with c.factory() as db:
+        assert await db.scalar(select(g.GP.c.prompt_version)) == PROMPT_VERSION
+    r = await c.client.post(
+        f"/api/v1/exam-grading-workspaces/{c.wid}/score-review",
+        json=dict(request_id=str(uuid4()), expected_revision=0, payload=dict(
+            schema_name="huipi.grading.review", schema_version="1.0",
+            review_status="accepted", reviewer_ref="teacher_" + c.users["a"].id.hex,
+        )),
+    )
+    assert r.status_code == 200, r.text
+    final = await detail(c)
+    assert final["history"][0]["review_status"] == "accepted"
+    save(evidence / "business-teacher-review.json", dict(
+        review_status=final["history"][0]["review_status"],
+        original_total=final["proposal"]["total_score"],
+        review_actor="synthetic_signed_teacher",
+        automated_protocol_acceptance_only=True, qualified_teacher_double_review=False,
+        published_grade=False,
+    ))
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("change", ["answer", "roster", "retire", "revoke", "deactivate"])
+async def test_selection_preserves_source_and_authority_invalidation(marking, change):
+    c = marking
+    c.grade_worker = ScoringWorker(
+        c.factory, c.storage, SyntheticSelectionProvider(),
+        c.config.model_copy(update={"grading_strategy": "quote_selection"}),
+    )
+    await test_model_wait_source_changes_cannot_register_candidate(c, change)
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("scenario", ["lease", "commit", "audit"])
+async def test_selection_preserves_leases_atomicity_and_unknown_commit(marking, scenario):
+    c = marking
+    c.grade_worker = ScoringWorker(
+        c.factory, c.storage, SyntheticSelectionProvider(),
+        c.config.model_copy(update={"grading_strategy": "quote_selection"}),
+    )
+    run = {
+        "lease": test_competing_workers_and_expired_lease_cannot_register_candidate,
+        "commit": test_lost_candidate_commit_ack_recovers_actual_success_without_model_retry,
+        "audit": test_candidate_audit_failure_is_atomic,
+    }[scenario]
+    await run(c)
