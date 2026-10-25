@@ -1,0 +1,165 @@
+[
+  {
+    "case_id": "linear-correct",
+    "input_sha256": "fd6cefbf4e221d9a78eb2bdd940efcf7b7b374043a7438fc3c083cc781b22f4e",
+    "v4_status": "candidate",
+    "v4_raw_total": "10.00",
+    "selection_status": "candidate",
+    "selection_total": "10.00",
+    "total_delta": "0.00",
+    "criterion_deltas": {
+      "answer": "0.00"
+    },
+    "human_review_status": "unreviewed"
+  },
+  {
+    "case_id": "answer-only-no-method",
+    "input_sha256": "3d502dab021a28a9c0b737545c0bb88551c87753071640611c651709cfde3595",
+    "v4_status": "candidate",
+    "v4_raw_total": "4.00",
+    "selection_status": "candidate",
+    "selection_total": "4.00",
+    "total_delta": "0.00",
+    "criterion_deltas": {
+      "method": "0.00",
+      "final": "0.00"
+    },
+    "human_review_status": "unreviewed"
+  },
+  {
+    "case_id": "fraction-partial",
+    "input_sha256": "d0a56ea76121d902f556c7cd8bdfd55d04f00ca580eeca05c9ec971c987735b3",
+    "v4_status": "invalid_evidence",
+    "v4_raw_total": "7.00",
+    "selection_status": "candidate",
+    "selection_total": "10.00",
+    "total_delta": "3.00",
+    "criterion_deltas": {
+      "common_denominator": "0.00",
+      "sum": "0.00",
+      "simplify": "3.00"
+    },
+    "human_review_status": "unreviewed"
+  },
+  {
+    "case_id": "geometry-cross-page",
+    "input_sha256": "1e1322d30346351c6b541b25582289fea9ab8242f016b1d45646bd652b2553a8",
+    "v4_status": "protocol_error",
+    "v4_raw_total": "10.00",
+    "selection_status": "candidate",
+    "selection_total": "10.00",
+    "total_delta": "0.00",
+    "criterion_deltas": {
+      "theorem": "0.00",
+      "arithmetic": "0.00",
+      "answer": "0.00"
+    },
+    "human_review_status": "unreviewed"
+  },
+  {
+    "case_id": "off-topic-zero",
+    "input_sha256": "b43490f6bfac8ed870edb7d7c065b7b886e9afa2bf323df72514e7b63075b0e4",
+    "v4_status": "candidate",
+    "v4_raw_total": "0.00",
+    "selection_status": "candidate",
+    "selection_total": "0.00",
+    "total_delta": "0.00",
+    "criterion_deltas": {
+      "boiling_point": "0.00"
+    },
+    "human_review_status": "unreviewed"
+  },
+  {
+    "case_id": "photosynthesis-omission",
+    "input_sha256": "38c75fe8c8badfca4df6bb5a07d62a1b7286163b3d779d35c50a4385f1bc3cbb",
+    "v4_status": "candidate",
+    "v4_raw_total": "2.00",
+    "selection_status": "candidate",
+    "selection_total": "2.00",
+    "total_delta": "0.00",
+    "criterion_deltas": {
+      "glucose": "0.00",
+      "oxygen": "0.00"
+    },
+    "human_review_status": "unreviewed"
+  },
+  {
+    "case_id": "equivalent-fraction-equivalent-form-allowed",
+    "input_sha256": "399e8f77fc04e4938eaedba87313fe27816375948b6daabe6d1fab8c9354e4af",
+    "v4_status": "candidate",
+    "v4_raw_total": "5.00",
+    "selection_status": "candidate",
+    "selection_total": "5.00",
+    "total_delta": "0.00",
+    "criterion_deltas": {
+      "equivalent_value": "0.00"
+    },
+    "human_review_status": "unreviewed"
+  },
+  {
+    "case_id": "physics-missing-unit",
+    "input_sha256": "5b84906e7dbe576096adfe5c6b47b2c1920a79a4a4c05527648d9756b25ac959",
+    "v4_status": "candidate",
+    "v4_raw_total": "6.00",
+    "selection_status": "candidate",
+    "selection_total": "6.00",
+    "total_delta": "0.00",
+    "criterion_deltas": {
+      "calculation": "0.00",
+      "unit": "0.00"
+    },
+    "human_review_status": "unreviewed"
+  },
+  {
+    "case_id": "linear-sign-error",
+    "input_sha256": "06e49cf4dcc7b137dc091eb6e074a2cfd32a31f8dab969ac179149574b1c654f",
+    "v4_status": "protocol_error",
+    "v4_raw_total": "0.00",
+    "selection_status": "candidate",
+    "selection_total": "0.00",
+    "total_delta": "0.00",
+    "criterion_deltas": {
+      "isolation": "0.00",
+      "solution": "0.00"
+    },
+    "human_review_status": "unreviewed"
+  },
+  {
+    "case_id": "prompt-injection-data",
+    "input_sha256": "71a1a567f90bb31c9eeee44ddcf5a8c730145ea7cf0efdeac0afa2db76372ada",
+    "v4_status": "invalid_evidence",
+    "v4_raw_total": "5.00",
+    "selection_status": "candidate",
+    "selection_total": "5.00",
+    "total_delta": "0.00",
+    "criterion_deltas": {
+      "step": "0.00",
+      "answer": "0.00"
+    },
+    "human_review_status": "unreviewed"
+  },
+  {
+    "case_id": "v4-smoke-repeated-evidence",
+    "input_sha256": "fa92bc270a067fb760e41c3a2b441f91f6a8a224a9bcbdf959222bcc25c7f240",
+    "v4_status": "candidate",
+    "v4_raw_total": "5.00",
+    "selection_status": "candidate",
+    "selection_total": "5.00",
+    "total_delta": "0.00",
+    "criterion_deltas": {
+      "solution": "0.00"
+    },
+    "human_review_status": "unreviewed"
+  },
+  {
+    "case_id": "v4-smoke-uncertain-material",
+    "input_sha256": "a3c09c525656274ae3c971e5ff652cef53599a3ec6a087929d6e8605da42e39d",
+    "v4_status": "abstain",
+    "v4_raw_total": null,
+    "selection_status": "abstain",
+    "selection_total": null,
+    "total_delta": null,
+    "criterion_deltas": null,
+    "human_review_status": "unreviewed"
+  }
+]

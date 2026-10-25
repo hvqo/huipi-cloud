@@ -1,0 +1,69 @@
+{
+  "dataset_sha256": "43215a6deae4bc8f144dbeb9e5b65dfc9186dda76274860e489192c748d6d69b",
+  "baseline_sha256": "ad501b0a1f200fb765d1337bc7ff4757f113fc8f71aaf4e4b19f0751213cd182",
+  "prompt_version": "rubric-candidate-quote-selection-v1",
+  "model": "deepseek-flash",
+  "thinking": "disabled",
+  "max_tokens": 4096,
+  "timeout_seconds": 120,
+  "retries": 0,
+  "max_round_requests": 13,
+  "budget_usd": ".10",
+  "peak_cost_bound_usd": "0.0878322",
+  "generation_config_digest": "d40f2d6c6f903e0a0d8d62e592b964f123d0eb5f786b8e697810eb4a0aa23e38",
+  "frozen_head": "c3ec90788f7930d0ccb7bc5db0121d6eb4699831",
+  "synthetic_only": true,
+  "reference_kind": "synthetic_curated_reference",
+  "human_review_status": "unreviewed",
+  "created_at": "2026-10-25T07:18:55.095807+00:00",
+  "inputs": [
+    {
+      "case_id": "linear-correct",
+      "input_sha256": "fd6cefbf4e221d9a78eb2bdd940efcf7b7b374043a7438fc3c083cc781b22f4e"
+    },
+    {
+      "case_id": "answer-only-no-method",
+      "input_sha256": "3d502dab021a28a9c0b737545c0bb88551c87753071640611c651709cfde3595"
+    },
+    {
+      "case_id": "fraction-partial",
+      "input_sha256": "d0a56ea76121d902f556c7cd8bdfd55d04f00ca580eeca05c9ec971c987735b3"
+    },
+    {
+      "case_id": "geometry-cross-page",
+      "input_sha256": "1e1322d30346351c6b541b25582289fea9ab8242f016b1d45646bd652b2553a8"
+    },
+    {
+      "case_id": "off-topic-zero",
+      "input_sha256": "b43490f6bfac8ed870edb7d7c065b7b886e9afa2bf323df72514e7b63075b0e4"
+    },
+    {
+      "case_id": "photosynthesis-omission",
+      "input_sha256": "38c75fe8c8badfca4df6bb5a07d62a1b7286163b3d779d35c50a4385f1bc3cbb"
+    },
+    {
+      "case_id": "equivalent-fraction-equivalent-form-allowed",
+      "input_sha256": "399e8f77fc04e4938eaedba87313fe27816375948b6daabe6d1fab8c9354e4af"
+    },
+    {
+      "case_id": "physics-missing-unit",
+      "input_sha256": "5b84906e7dbe576096adfe5c6b47b2c1920a79a4a4c05527648d9756b25ac959"
+    },
+    {
+      "case_id": "linear-sign-error",
+      "input_sha256": "06e49cf4dcc7b137dc091eb6e074a2cfd32a31f8dab969ac179149574b1c654f"
+    },
+    {
+      "case_id": "prompt-injection-data",
+      "input_sha256": "71a1a567f90bb31c9eeee44ddcf5a8c730145ea7cf0efdeac0afa2db76372ada"
+    },
+    {
+      "case_id": "v4-smoke-repeated-evidence",
+      "input_sha256": "fa92bc270a067fb760e41c3a2b441f91f6a8a224a9bcbdf959222bcc25c7f240"
+    },
+    {
+      "case_id": "v4-smoke-uncertain-material",
+      "input_sha256": "a3c09c525656274ae3c971e5ff652cef53599a3ec6a087929d6e8605da42e39d"
+    }
+  ]
+}

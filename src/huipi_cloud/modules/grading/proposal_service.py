@@ -320,7 +320,8 @@ async def _call_and_validate(
     prompt_version: str | None = None,
     audit_response=None,
 ) -> tuple[GradeModelReply, str, tuple[int | None, int | None], int]:
-    prompt_version = prompt_version or production_prompt_version(config)
+    if prompt_version is None:
+        prompt_version = production_prompt_version(config)
     selection = prompt_version == prompts_selection.PROMPT_VERSION
     retries = 0 if selection else config.grading_invalid_response_retries
     system_prompt, prompt_builder = _prompt_contract(prompt_version)
@@ -500,10 +501,11 @@ def _prompt_contract(prompt_version: str):
 
 
 def production_prompt_version(config: Settings) -> str:
-    return (
-        prompts_selection.PROMPT_VERSION
-        if config.grading_strategy == "quote_selection" else PROMPT_VERSION
-    )
+    if config.grading_strategy == "quote_selection":
+        return prompts_selection.PROMPT_VERSION
+    if config.grading_strategy == "strict_offsets":
+        return PROMPT_VERSION
+    raise ValueError("grading_strategy_unknown")
 
 
 def _request_fingerprint(

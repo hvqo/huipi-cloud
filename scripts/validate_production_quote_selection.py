@@ -26,7 +26,11 @@ from huipi_cloud.modules.grading.prompts_selection import (
     build_user_prompt,
 )
 from huipi_cloud.modules.grading.proposal_errors import GradeProposalError
-from huipi_cloud.modules.grading.proposal_service import _call_and_validate
+from huipi_cloud.modules.grading.proposal_protocol import QuoteEvidenceReference
+from huipi_cloud.modules.grading.proposal_service import (
+    _call_and_validate,
+    _validate_quote_reference,
+)
 from huipi_cloud.modules.grading.quote_selection import GradeQuoteSelectionReply, locate_quote
 
 DATA = Path("data/evaluation/grading/deepseek-prompt-v4-smoke-v1.json")
@@ -98,6 +102,13 @@ def offline_feasibility(dataset, baseline):
                 if ref.get("kind") != "quote":
                     continue
                 try:
+                    _validate_quote_reference(
+                        QuoteEvidenceReference.model_validate(ref), doc, Settings()
+                    )
+                    original_error = None
+                except (GradeProposalError, ValidationError) as error:
+                    original_error = getattr(error, "reason_code", "quote_schema_invalid")
+                try:
                     found = locate_quote(doc, ref["segment_index"], ref["quote"], Settings())
                     status = "unique_exact"
                     bounds = [found.text_start, found.text_end]
@@ -109,6 +120,7 @@ def offline_feasibility(dataset, baseline):
                         status=status,
                         located_range=bounds,
                         claimed_range=[ref["text_start"], ref["text_end"]],
+                        original_quote_error=original_error,
                     )
                 )
     return {"diagnostic_only": True, "historical_statuses_unchanged": True, "references": refs}
@@ -131,6 +143,9 @@ async def main():
         raise RuntimeError("frozen_prediction_sha_mismatch")
     cfg = live_config()
     provider = build_text_grading_provider(cfg)
+    old_inputs = {row["case_id"]: row["input_sha256"] for row in baseline["preflight"]["inputs"]}
+    if old_inputs != {c.case_id: build_grade_input(c).input_sha256 for c in dataset.cases}:
+        raise RuntimeError("paired_inputs_changed")
     # Conservative UTF-8-byte token bound; reserve a separate bounded E2E prompt.
     inputs = sum(
         len(SYSTEM_PROMPT.encode()) + len(build_user_prompt(build_grade_input(c)).encode()) + 1024

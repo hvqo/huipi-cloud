@@ -1,0 +1,8 @@
+{
+  "review_status": "accepted",
+  "original_total": "10.00",
+  "review_actor": "synthetic_signed_teacher",
+  "automated_protocol_acceptance_only": true,
+  "qualified_teacher_double_review": false,
+  "published_grade": false
+}

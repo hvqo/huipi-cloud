@@ -1,0 +1,13 @@
+{
+  "content": "{\"schema_version\":\"1.0\",\"outcome\":\"candidate\",\"total_score\":\"10.00\",\"criterion_scores\":[{\"criterion_id\":\"9683ba15-0b9e-462b-9ac1-29b401b07fb9\",\"awarded_points\":\"5.00\",\"rationale\":\"学生写出了完整算式“2 + 2 = 4”，过程正确。\",\"evidence_references\":[{\"kind\":\"quote_selection\",\"segment_index\":0,\"quote\":\"2 + 2 = 4\"}]},{\"criterion_id\":\"310eb0dd-adb3-42c1-9edf-15dde8d9e0cd\",\"awarded_points\":\"5.00\",\"rationale\":\"学生给出的结果为4，与标准答案一致。\",\"evidence_references\":[{\"kind\":\"quote_selection\",\"segment_index\":0,\"quote\":\"2 + 2 = 4\"}]}],\"reason_codes\":[],\"schema_name\":\"huipi.grading.quote-selection\"}",
+  "model_id": "deepseek-flash",
+  "elapsed_ms": 1403,
+  "usage": {
+    "prompt_tokens": 954,
+    "completion_tokens": 213,
+    "reasoning_tokens": null,
+    "cache_hit_tokens": 256,
+    "cache_miss_tokens": 698
+  },
+  "finish_reason": "stop"
+}

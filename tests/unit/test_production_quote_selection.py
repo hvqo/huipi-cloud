@@ -155,3 +155,89 @@ async def test_abstention_is_scoreless_and_no_automatic_fallback():
     reply, _, _, _ = await _call_and_validate(provider, doc, config=config())
     assert reply.outcome == "abstain" and reply.total_score is None
     assert not reply.criterion_scores and len(provider.requests) == 1
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("failure", ["json", "timeout", "truncated"])
+async def test_provider_failures_do_not_change_strategy_or_retry(failure):
+    from huipi_cloud.infrastructure.grading.provider import (
+        GradeProviderEndedResponseError,
+        ProviderUsage,
+        TextGradingResponse,
+    )
+    from huipi_cloud.modules.grading.proposal_errors import GradeProposalProviderTimeoutError
+
+    doc = _grade_input_document()
+
+    class Broken(CaptureProvider):
+        async def complete(self, **kwargs):
+            self.requests.append(kwargs)
+            if failure == "timeout":
+                raise GradeProposalProviderTimeoutError()
+            response = TextGradingResponse("{", self.model_id, 5, ProviderUsage(10, 4), "length")
+            if failure == "truncated":
+                raise GradeProviderEndedResponseError("model_output_truncated", response)
+            return response
+
+    provider = Broken({})
+    audits = []
+
+    async def audit(response, **kwargs):
+        audits.append((response, kwargs))
+
+    with pytest.raises(GradeProposalError):
+        await _call_and_validate(provider, doc, config=config(), audit_response=audit)
+    assert len(provider.requests) == 1
+    assert len(audits) == (0 if failure == "timeout" else 1)
+    if audits:
+        assert audits[0][0].content == "{" and audits[0][1]["converted"] is None
+
+
+def test_round_counter_is_shared_and_enforces_thirteen_requests(tmp_path):
+    from scripts.validate_production_quote_selection import reserve_call
+
+    for _ in range(13):
+        reserve_call(tmp_path)
+    with pytest.raises(RuntimeError, match="round_request_limit"):
+        reserve_call(tmp_path)
+    assert json.loads((tmp_path / "call-counter.json").read_text())["attempted"] == 13
+
+
+@pytest.mark.anyio
+async def test_frozen_real_responses_replay_without_network_or_label_changes():
+    import hashlib
+    from pathlib import Path
+
+    from huipi_cloud.modules.grading.evaluation import build_grade_input, load_dataset
+
+    root = Path(__file__).parents[2] / "data/evaluation/grading"
+    folder = root / "production-quote-selection-20261025"
+    dataset, digest = load_dataset(root / "deepseek-prompt-v4-smoke-v1.json")
+    assert digest == "43215a6deae4bc8f144dbeb9e5b65dfc9186dda76274860e489192c748d6d69b"
+    for checksum in folder.glob("*.sha256"):
+        data = checksum.with_suffix("")
+        assert hashlib.sha256(data.read_bytes()).hexdigest() == checksum.read_text().split()[0]
+    predictions = json.loads((folder / "predictions.json").read_text())
+    assert len(predictions["cases"]) == 12
+    cases = {c.case_id: c for c in dataset.cases}
+    for record in predictions["cases"]:
+        provider = CaptureProvider(json.loads(record["response"]["content"]))
+        doc = build_grade_input(cases[record["case_id"]])
+        assert doc.input_sha256 == record["input_sha256"]
+        reply, _, _, _ = await _call_and_validate(provider, doc, config=config())
+        assert reply.model_dump(mode="json") == record["converted_reply"]
+        prompt = json.loads(provider.requests[0]["user_prompt"])
+        assert "reference_total_score" not in prompt and "reference_criterion_scores" not in prompt
+    old_path = root / "deepseek-prompt-v4-smoke-predictions-v1.json"
+    assert (
+        hashlib.sha256(old_path.read_bytes()).hexdigest()
+        == predictions["preflight"]["baseline_sha256"]
+    )
+    old = json.loads(old_path.read_text())
+    assert sum(r["status"] == "candidate" for r in old["cases"]) == 7
+    diagnostics = json.loads((folder / "offline-feasibility.json").read_text())
+    invalid = [r for r in diagnostics["references"] if r["original_quote_error"]]
+    assert len(invalid) == 5 and all(r["status"] == "unique_exact" for r in invalid)
+    assert diagnostics["historical_statuses_unchanged"] is True
+    fraction = cases["fraction-partial"]
+    assert str(fraction.reference_total_score) == "7.00"  # model gave 10; never relabel it

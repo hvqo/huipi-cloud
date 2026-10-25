@@ -169,3 +169,38 @@ uv run python scripts/evaluate_quote_selection.py \
 ```
 
 运行会检查 Provider、模型、Thinking、授权、A 组数据 SHA、请求集合和生成配置一致性。输出目录必须是全新目录；价格需先从[官方定价页](https://api-docs.deepseek.com/quick_start/pricing/)核对，预算硬限制在 `$0.50` 以下。成本按 UTF-8 输入字节与最大输出量预检；不是账号扣费保证。完整方法、实际 A/B 结果和限制见[P3-D1 对照报告](../evaluation/p3d1-deepseek-quote-selection-2026-10-14.md)。
+
+## 显式选择确定性引用模式
+
+默认 `GRADING_STRATEGY=strict_offsets`，继续使用 `rubric-candidate-v4`，由模型给出原文和偏移。
+仅在操作者显式配置 `GRADING_STRATEGY=quote_selection` 时，普通作业服务与考试评分 Worker
+使用独立生产 Prompt `rubric-candidate-quote-selection-v1`。无需修改数据库或历史对象。
+
+新模型回复为 `huipi.grading.quote-selection`：每条引用只能包含
+`kind=quote_selection`、`segment_index`、`quote`；`no_evidence` 仍仅含 `kind/reason`。
+Python复用 `locate_quote` 和 `convert_quote_selections`，只在指定片段内逐字且唯一匹配后
+生成标准 Unicode 码点半开偏移。缺失、重叠重复、跨片段、错误片段均拒绝；不 trim、不模糊匹配、
+不补写文本、不删掉错误引用。转换后再次执行原有逐项上限、Decimal、正分证据和总分校验。
+定位仅证明来源，不证明教学上应得分。
+
+新模式固定零自动重试；失败不会改用严格模式或其他模型再请求。Provider构建前将有效重试数归零，
+策略及定位器版本参与 generation digest，独立 Prompt 版本参与 request fingerprint。
+同一 request_id 切换策略会冲突，不能覆盖历史 Proposal；v3/v4历史读取仍依据原对象和SHA。
+最终产物保持 **GradeProposal 1.0**，标准Quote仍有确切偏移，不把实验协议存成正式Proposal。
+
+### 私有响应审计
+
+新模式在登记候选前，先将每次已收到的原始模型响应、实际模型ID、finish_reason、全部可用usage、
+耗时、输入SHA、提示词SHA、请求指纹、转换结果或失败码写入私有S3对象。
+对象路径位于配置前缀下的
+`grading/model-call-audits/{grade_input_artifact_id}/{request_id}/{attempt_uuid}.json`。
+每次调用独立不可覆盖；通过输入和请求ID关联，暂不新增数据库索引或公开下载接口。
+普通作业request_id是调用者的幂等ID，考试request_id是ScoringJob ID。
+响应正文可能含学生原文，仅供受控运维审计，不放到普通日志、教师HTTP响应或Git。
+
+审计内的转换通过仅代表模型协议校验，不代表来源仍有效、事务已提交或教师已认可。
+源时效、权限、租约和最终事务检查仍分别执行。审计对象上传失败拒绝登记候选；连接超时未收到正文
+时不伪造响应回执。协议失败、来源失效或提交结果未知时保留已经上传的回执，不盲删、不重发模型。
+孤立回执及候选对象待受控对账，本轮没有垃圾回收、WORM存储或特权审计查询HTTP。
+
+[固定样例对照与真实解析链路验收](../evaluation/production-quote-selection.md)。

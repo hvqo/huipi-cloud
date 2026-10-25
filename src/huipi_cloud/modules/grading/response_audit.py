@@ -3,10 +3,12 @@
 import hashlib
 import json
 from dataclasses import asdict
+from datetime import UTC, datetime
 from io import BytesIO
 from uuid import uuid4
 
 from huipi_cloud.infrastructure.grading.provider import MAX_PROVIDER_RESPONSE_BYTES
+from huipi_cloud.modules.grading.proposal_errors import GradeProposalInvalidModelResponseError
 from huipi_cloud.modules.grading.protocol import json_sha256
 
 
@@ -16,10 +18,11 @@ def response_auditor(storage, document, request_id, provider, prompt_version):
     async def save(response, *, converted, error_code, prompt_sha256):
         # Provider bounds the raw response; independently cap this trust boundary.
         if len(response.content.encode()) > MAX_PROVIDER_RESPONSE_BYTES:
-            raise ValueError("model_audit_response_size_limit")
+            raise GradeProposalInvalidModelResponseError("model_audit_response_size_limit")
         payload = {
             "schema_name": "huipi.grading.model-call-audit",
             "schema_version": "1.0",
+            "received_at": datetime.now(UTC).isoformat(),
             "request_id": str(request_id),
             "grade_input_artifact_id": str(document.artifact_id),
             "grade_input_sha256": document.input_sha256,
@@ -42,10 +45,11 @@ def response_auditor(storage, document, request_id, provider, prompt_version):
             "converted_reply": converted.model_dump(mode="json") if converted else None,
             "validation_error_code": error_code,
             "semantic_review_status": "unreviewed",
+            "receipt_scope": "model_protocol_only_not_source_or_commit_authorization",
         }
         encoded = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode()
         if len(encoded) > 1024 * 1024:
-            raise ValueError("model_audit_size_limit")
+            raise GradeProposalInvalidModelResponseError("model_audit_size_limit")
         prefix = storage.object_key_prefix.strip("/")
         key = f"grading/model-call-audits/{document.artifact_id}/{request_id}/{uuid4()}.json"
         await storage.upload_fileobj(
