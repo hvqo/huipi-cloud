@@ -78,13 +78,17 @@ uv run python -m huipi_cloud.workers.grade_submission grade \
 - 当前没有独立 tokenizer；UTF-8 字节数连同固定协议开销作为 token 预算的保守上界，因此它不是精确 token 计数。
 - 仅无效 JSON/协议最多重试一次。Provider 故障、分数错误、证据引用错误不会无限重试。
 
-不要对真实学生数据启用远程 Provider，除非已取得适用的数据传输授权。项目没有认证、RBAC 或教师归属检查；仅在受控本地环境运行。
+不要对真实学生数据启用远程 Provider，除非已取得适用的数据传输授权。此 legacy CLI 仅在可信操作员环境运行，不能代替 HTTP 的教师身份及归属校验；考试资源只能通过任务绑定的受保护考试通道处理，不能用该 CLI 绕过隔离。
 
 ## 结果含义与限制
 
 候选协议 `huipi.grading.proposal` 1.0 保存每项分数、理由、精确引用或 `no_evidence`。引用偏移是对应已选片段内的 Unicode 码点半开区间 `[start, end)`；服务确认区间与原文一致。每个正分 Criterion 至少需要一条经原文和范围校验的 quote；仅有 `no_evidence` 的正分会以 `positive_score_without_quote` 拒绝。零分可只引用 `no_evidence`，部分分可同时引用有效 quote 和 `no_evidence`。服务还检查每项分数不超过可信 Rubric 分值、Criterion 清单完整且唯一、逐项分数之和与模型总分相等。
 
-本规则改变新模型输出的接收门禁，不改变 `GradeProposalDocument` 1.0 字段，因此无需数据库迁移或协议版本升级。新提示词版本为 `rubric-candidate-v3`，它参与请求指纹；新旧提示词不会共用同一请求指纹。输入来源仍有效时，已保存的不可变历史 proposal 继续按它自身保存的 prompt 版本、数据库索引、SHA 和 1.0 协议读取；本次新门禁不会追溯改写历史对象，也不会把旧对象重新判定为新输出。
+正分证据门禁不改变 `GradeProposalDocument` 1.0 字段，因此无需数据库迁移或协议版本升级。正式评分当前使用独立模块 `prompts_v4.py` 的 `rubric-candidate-v4`，原 `prompts.py` 的 v3 保留用于历史评测。v4 去掉固定分数、占位 UUID 和非学生原文 Quote 示例，明确 `no_evidence` 仅含 `kind/reason`、quote 的五个字段、Unicode 片段本地偏移、Criterion 恰好一次及 Decimal 总分精确求和；严格校验器不变。
+
+Prompt 版本参与请求指纹；同一旧 request_id 不能被新版本覆盖，改用新提示词生成候选须使用新 request_id。输入来源仍有效时，已保存的不可变历史 proposal 继续按它自身的 prompt 版本、数据库索引、SHA 和 1.0 协议读取，不追溯改写。真实 PG/S3 回归覆盖 v3 对象回读字节不变、v4 对旧请求返回冲突且不调用模型。
+
+离线 `evaluate_grade_proposals.py` 和 Quote Selection 历史实验仍默认 v3。程序化验收可向 `evaluation.request_prediction` 与 `create_predictions_document` **同时**显式传入 `prompt_version="rubric-candidate-v4"`；不能只改输出元数据。固定合成样例、真实单轮对照与剩余偏移失败见 [v4 协议验收](../evaluation/deepseek-prompt-v4.md)。JSON 合法、严格候选有效、教学评分正确分别统计。
 
 模型输出仍可能错误、偏见或受提示注入影响。结构门禁只能证明正分项附带了可追溯的作答文字，不能证明该文字在教学语义上足以支持分数，也不能发现所有评分幻觉。系统分隔系统规则与学生数据并限制分值、证据和输出，但这不能消除模型风险。严格协议通过不代表评分正确。`grading_abstained` 是模型明确弃权，不是零分；无 `no_evidence` 也不能解释为学生未作答。没有教师复核与发布流程，不得将 proposal 当作正式成绩。
 

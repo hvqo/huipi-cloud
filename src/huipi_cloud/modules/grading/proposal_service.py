@@ -23,6 +23,7 @@ from huipi_cloud.infrastructure.storage.s3 import (
     S3ObjectStorage,
     StorageUnavailableError,
 )
+from huipi_cloud.modules.grading import prompts as legacy_prompts
 from huipi_cloud.modules.grading import proposal_repository
 from huipi_cloud.modules.grading.errors import (
     GradeInputArtifactCorruptError,
@@ -31,7 +32,7 @@ from huipi_cloud.modules.grading.errors import (
     GradeInputNotFoundError,
     GradeInputSourceChangedError,
 )
-from huipi_cloud.modules.grading.prompts import PROMPT_VERSION, SYSTEM_PROMPT, build_user_prompt
+from huipi_cloud.modules.grading.prompts_v4 import PROMPT_VERSION, SYSTEM_PROMPT, build_user_prompt
 from huipi_cloud.modules.grading.proposal_errors import (
     GradeProposalArtifactCorruptError,
     GradeProposalCommitOutcomeUnknownError,
@@ -301,7 +302,9 @@ async def _call_and_validate(
     document: GradeInputDocument,
     *,
     config: Settings,
+    prompt_version: str = PROMPT_VERSION,
 ) -> tuple[GradeModelReply, str, tuple[int | None, int | None], int]:
+    system_prompt, prompt_builder = _prompt_contract(prompt_version)
     retry_reason: str | None = None
     prompt_tokens = 0
     completion_tokens = 0
@@ -311,9 +314,9 @@ async def _call_and_validate(
     response_model = provider.model_id
 
     for attempt in range(config.grading_invalid_response_retries + 1):
-        user_prompt = build_user_prompt(document, retry_reason=retry_reason)
-        _check_prompt_budget(SYSTEM_PROMPT, user_prompt, config)
-        response = await provider.complete(system_prompt=SYSTEM_PROMPT, user_prompt=user_prompt)
+        user_prompt = prompt_builder(document, retry_reason=retry_reason)
+        _check_prompt_budget(system_prompt, user_prompt, config)
+        response = await provider.complete(system_prompt=system_prompt, user_prompt=user_prompt)
         elapsed_ms += response.elapsed_ms
         response_model = response.model_id
         if response.usage.prompt_tokens is None:
@@ -430,17 +433,29 @@ def _check_prompt_budget(system_prompt: str, user_prompt: str, config: Settings)
         raise GradeProposalInputTooLargeError("grading_prompt_token_budget_exceeded")
 
 
+def _prompt_contract(prompt_version: str):
+    """Explicit historical opt-in is internal; production always selects v4."""
+    if prompt_version == PROMPT_VERSION:
+        return SYSTEM_PROMPT, build_user_prompt
+    if prompt_version == legacy_prompts.PROMPT_VERSION:
+        return legacy_prompts.SYSTEM_PROMPT, legacy_prompts.build_user_prompt
+    raise ValueError("grading_prompt_version_unknown")
+
+
 def _request_fingerprint(
     document: GradeInputDocument,
     provider: TextGradingProvider,
+    *,
+    prompt_version: str = PROMPT_VERSION,
 ) -> str:
+    _prompt_contract(prompt_version)
     return json_sha256(
         {
             "grade_input_artifact_id": str(document.artifact_id),
             "grade_input_sha256": document.input_sha256,
             "provider": provider.provider_name,
             "model_id": provider.model_id,
-            "prompt_version": PROMPT_VERSION,
+            "prompt_version": prompt_version,
             "generation_config_digest": provider.generation_config_digest,
         }
     )

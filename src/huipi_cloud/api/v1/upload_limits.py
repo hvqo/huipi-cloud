@@ -71,6 +71,16 @@ class UploadRequestLimitMiddleware:
             and path.startswith(f"{self.api_v1_prefix}/exam-parsing-jobs/")
             and "/pages/" in path
         )
+        script_operation = script_operation or (
+            scope.get("method") in {"GET", "POST"}
+            and (
+                path.startswith(f"{self.api_v1_prefix}/exam-grading-workspaces/")
+                or (
+                    path.startswith(f"{self.api_v1_prefix}/exam-parsing-jobs/")
+                    and path.endswith("/grading-workspace")
+                )
+            )
+        )
         if scan_upload or scan_download or script_operation:
             attribute = (
                 "active_script_operations"

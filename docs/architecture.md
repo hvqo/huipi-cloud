@@ -401,3 +401,8 @@ ScanBatch真实关联ExamSession并固定exam_protected，可保存创建时冻�
 人工确认的不可变AnswerScriptVersion经独立ExamParsingJob物化有序PDF，ExamSubmissionLink锁定Session、名单/学生身份、卷版、原页及摘要。受控Worker复用原MinerU执行器及Canonical规范化器，产物索引和成功状态在同一PG事务提交；HTTP仅提供有权来源的发起、状态和受限页面读取。旧Parsing Worker及旧Submission/Canonical/评分/工具接口继续默认拒绝考试来源，没有通用特权Session或include_protected开关。
 
 输入物化、S3上传不持长数据库事务；Job租约和来源版本在各阶段重核。不可变对象可能成为孤立对象，COMMIT未知时保留并等待对账，不通过删除猜测回滚。运行与后续评分接口边界见[受保护解析](development/exam-protected-parsing.md)。
+
+
+## 考试候选评分工作区
+
+[考试评分合同](development/exam-grading.md)从精确 ExamParsingJob/PaperQuestionMapping 建立受保护对齐与人工来源确认，复用原 GradeInput、GradeProposal 和 GradeReview 协议。独立有租约队列在模型请求前后、登记事务内复核当前来源和权限；旧 ORM/HTTP/CLI 仍不读取考试载体。教师审核记录不等于有效题分或正式发布成绩。真实本地模型校验失败与 Synthetic 工程验收分开记录。
