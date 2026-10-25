@@ -322,6 +322,12 @@ onMounted(() =>
   run(async () => {
     batches.value = (await scans.batches(sid)).items
     await refresh()
+    const requested = String(route.query.script || '')
+    if (requested) {
+      const value = await scripts.inspect(requested)
+      if (value.exam_session_id !== sid) throw new Error('答卷不属于当前场次。')
+      await choose(value)
+    }
   }),
 )
 onUnmounted(() => {

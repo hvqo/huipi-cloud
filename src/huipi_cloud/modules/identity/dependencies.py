@@ -44,6 +44,12 @@ ORGANIZATION_POLICIES = {
     "confirm_student_import": "student.import.confirm",
 }
 
+RESULT_POLICIES = {
+    "list_exam_result_sessions": ("GET", "/exam-result-sessions", False),
+    "read_exam_results": ("GET", "/exam-sessions/{exam_session_id}/results-preview", False),
+    "export_exam_results": ("GET", "/exam-sessions/{exam_session_id}/results-preview.xlsx", True),
+}
+
 EXAM_MARK_POLICIES = {
     "initialize_exam_grading": (
         "POST",
@@ -141,6 +147,7 @@ SCAN_POLICIES = {
 }
 
 POLICIES = {
+    **{name: {policy[0]} for name, policy in RESULT_POLICIES.items()},
     **{name: {policy[0]} for name, policy in EXAM_MARK_POLICIES.items()},
     **{name: {policy[0]} for name, policy in EXAM_PARSE_POLICIES.items()},
     **{name: {policy[0]} for name, policy in SCRIPT_POLICIES.items()},
@@ -196,6 +203,7 @@ GRADE_REVIEW_PATH = (
 )
 
 POLICY_PATHS = {
+    **{name: policy[1] for name, policy in RESULT_POLICIES.items()},
     **{name: policy[1] for name, policy in EXAM_MARK_POLICIES.items()},
     **{name: policy[1] for name, policy in EXAM_PARSE_POLICIES.items()},
     **{name: policy[1] for name, policy in SCRIPT_POLICIES.items()},
@@ -323,6 +331,15 @@ async def authorize_request(
                 await authorize_proposal(
                     session, principal=current, write=request.method != "GET", **ids
                 )
+                return current
+            if name in RESULT_POLICIES:
+                from huipi_cloud.modules.exam_results.access import authorize
+
+                sid = request.path_params.get("exam_session_id")
+                if sid:
+                    await authorize(
+                        session, current, UUID(str(sid)), exporting=RESULT_POLICIES[name][2]
+                    )
                 return current
             if name in EXAM_MARK_POLICIES:
                 from huipi_cloud.modules.exam_grading import service as exam_mark_service

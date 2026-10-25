@@ -76,8 +76,10 @@ def rules():
         ExamGradingWorkspace,
         ExamScoringJob,
     )
+    from huipi_cloud.modules.exam_results.models import ExamResultClassAccess
 
     result = [
+        (ExamResultClassAccess, false()),
         (Assignment, Assignment.security_classification == LEGACY),
         (ExamGradingWorkspace, false()),
         (ExamScoringJob, false()),

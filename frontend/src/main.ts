@@ -11,6 +11,7 @@ import Submission from './views/Submission.vue'
 import Review from './views/Review.vue'
 import ScanIntake from './views/ScanIntake.vue'
 import AnswerScripts from './views/AnswerScripts.vue'
+import ExamResults from './views/ExamResults.vue'
 import { initializeAuth, identity, callback } from './auth'
 
 export const router = createRouter({
@@ -32,6 +33,8 @@ export const router = createRouter({
     { path: '/', redirect: '/assignments' },
     { path: '/assignments', component: Assignments },
     { path: '/scans', component: ScanIntake },
+    { path: '/exam-results', component: ExamResults },
+    { path: '/scans/sessions/:sid/results', component: ExamResults },
     { path: '/scans/sessions/:sid/scripts', component: AnswerScripts },
     { path: '/assignments/:aid', component: Assignment },
     { path: '/assignments/:aid/submissions/:sid', component: Submission },

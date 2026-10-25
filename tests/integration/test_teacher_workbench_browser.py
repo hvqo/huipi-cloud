@@ -121,7 +121,7 @@ async def test_teacher_workbench_browser_end_to_end(
                 "synthetic exam marking browser deployment",
             )
         async with ctx.factory() as db:
-            await grants.grant_role(
+            mark_grant = await grants.grant_role(
                 db,
                 ctx.principals["admin"],
                 uuid4(),
@@ -129,6 +129,20 @@ async def test_teacher_workbench_browser_end_to_end(
                 role_version_id=UUID(MARK_OPERATOR_ROLE),
                 scope_id=scope_id,
             )
+        if os.getenv("RUN_EXAM_RESULTS_BROWSER") == "1":
+            from huipi_cloud.modules.exam_results.access import grant_class
+
+            for cls in scan_context.classes:
+                async with ctx.factory() as db:
+                    await grant_class(
+                        db,
+                        ctx.principals["admin"],
+                        uuid4(),
+                        grant_id=UUID(mark_grant["grant_id"]),
+                        session_id=UUID(scan_context.session["id"]),
+                        class_id=cls.id,
+                        export_allowed=True,
+                    )
     worker_stop = asyncio.Event()
     worker_task = None
     grading_task = None
@@ -445,9 +459,11 @@ async def test_teacher_workbench_browser_end_to_end(
             from huipi_cloud.modules.exam_grading.runtime import ScoringWorker
 
             selection_mode = os.getenv("RUN_EXAM_SELECTION_BROWSER") == "1"
-            score_config = config.model_copy(update={
-                "grading_strategy": "quote_selection" if selection_mode else "strict_offsets"
-            })
+            score_config = config.model_copy(
+                update={
+                    "grading_strategy": "quote_selection" if selection_mode else "strict_offsets"
+                }
+            )
             score_provider = (
                 SyntheticSelectionProvider() if selection_mode else SyntheticScoreProvider()
             )
