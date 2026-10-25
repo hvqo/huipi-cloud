@@ -1,0 +1,112 @@
+{
+  "completed_at": "2026-10-24T12:23:04.036317+00:00",
+  "prompt_version": "rubric-candidate-v4",
+  "real_requests": 12,
+  "json_valid": 12,
+  "schema_valid": 10,
+  "strict_candidates": 7,
+  "abstentions": 1,
+  "statuses": {
+    "candidate": 7,
+    "invalid_evidence": 2,
+    "protocol_error": 2,
+    "abstain": 1
+  },
+  "quote_references": {
+    "total": 14,
+    "valid": 9,
+    "invalid": 5
+  },
+  "no_evidence_references": {
+    "total": 6,
+    "valid": 6
+  },
+  "scored_reference_count": 11,
+  "valid_scored_candidates": 7,
+  "total_exact": 7,
+  "total_mae": "0.00",
+  "criterion_count": 10,
+  "criterion_exact": 10,
+  "criterion_mae": "0.00",
+  "over_count": 0,
+  "under_count": 0,
+  "paired_first_six": [
+    {
+      "case_id": "linear-correct",
+      "input_sha256_identical": true,
+      "v3_status": "candidate",
+      "v3_reason": null,
+      "v4_status": "candidate",
+      "v4_reason": null
+    },
+    {
+      "case_id": "answer-only-no-method",
+      "input_sha256_identical": true,
+      "v3_status": "candidate",
+      "v3_reason": null,
+      "v4_status": "candidate",
+      "v4_reason": null
+    },
+    {
+      "case_id": "fraction-partial",
+      "input_sha256_identical": true,
+      "v3_status": "protocol_error",
+      "v3_reason": "model_evidence_protocol_invalid",
+      "v4_status": "invalid_evidence",
+      "v4_reason": "evidence_quote_mismatch"
+    },
+    {
+      "case_id": "geometry-cross-page",
+      "input_sha256_identical": true,
+      "v3_status": "protocol_error",
+      "v3_reason": "model_evidence_protocol_invalid",
+      "v4_status": "protocol_error",
+      "v4_reason": "model_evidence_protocol_invalid"
+    },
+    {
+      "case_id": "off-topic-zero",
+      "input_sha256_identical": true,
+      "v3_status": "protocol_error",
+      "v3_reason": "model_evidence_protocol_invalid",
+      "v4_status": "candidate",
+      "v4_reason": null
+    },
+    {
+      "case_id": "photosynthesis-omission",
+      "input_sha256_identical": true,
+      "v3_status": "protocol_error",
+      "v3_reason": "model_evidence_protocol_invalid",
+      "v4_status": "candidate",
+      "v4_reason": null
+    }
+  ],
+  "paired_v3_candidates": 2,
+  "paired_v4_candidates": 4,
+  "usage": {
+    "prompt_tokens": 11888,
+    "completion_tokens": 2394,
+    "cache_hit_tokens": 4224,
+    "cache_miss_tokens": 7664
+  },
+  "missing_usage_cases": [],
+  "reasoning_tokens": null,
+  "peak_price_estimate_usd": "0.005197344",
+  "off_peak_price_estimate_usd": "0.002598672",
+  "pricing_not_billing_invoice": true,
+  "mean_elapsed_ms": 1456.5833333333333,
+  "elapsed_ms_min": 932,
+  "elapsed_ms_max": 1940,
+  "all_human_review_status": "unreviewed",
+  "no_original_responses_modified": true,
+  "raw_candidate_arithmetic_diagnostics": {
+    "candidate_outcomes": 11,
+    "criterion_coverage_valid": 11,
+    "score_bounds_and_precision_valid": 11,
+    "total_sum_valid": 11,
+    "diagnostic_only_not_acceptance": true
+  },
+  "accepted_candidate_quote_references": {
+    "valid": 6,
+    "total": 6
+  }
+}

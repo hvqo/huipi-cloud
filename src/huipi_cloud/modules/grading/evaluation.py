@@ -1702,6 +1702,8 @@ async def request_prediction(
     case: RubricEvaluationCase,
     provider: TextGradingProvider,
     config: Settings,
+    *,
+    prompt_version: str = PROMPT_VERSION,
 ) -> EvaluationPredictionCase:
     """Call the existing P3-B provider/prompt/schema/score validators once per case."""
 
@@ -1732,6 +1734,7 @@ async def request_prediction(
             captured,
             build_grade_input(case),
             config=config,
+            prompt_version=prompt_version,
         )
         captured.prompt_tokens, captured.completion_tokens = usage
         captured.elapsed_ms = elapsed_ms
@@ -1758,13 +1761,15 @@ def create_predictions_document(
     provider: TextGradingProvider,
     config: Settings,
     cases: list[EvaluationPredictionCase],
+    *,
+    prompt_version: str = PROMPT_VERSION,
 ) -> RubricEvaluationPredictions:
     return RubricEvaluationPredictions(
         dataset_version=dataset.dataset_version,
         dataset_sha256=dataset_sha256,
         provider=provider.provider_name,
         model_id=provider.model_id,
-        prompt_version=PROMPT_VERSION,
+        prompt_version=prompt_version,
         generation_config_digest=provider.generation_config_digest,
         thinking_mode=(
             config.grading_deepseek_thinking
