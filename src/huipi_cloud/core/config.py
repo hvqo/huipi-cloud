@@ -111,6 +111,7 @@ class Settings(BaseSettings):
     rerank_min_score: float = Field(default=0.5, ge=0, le=1)
     rerank_allow_fallback: bool = False
     grading_enabled: bool = False
+    grading_strategy: Literal["strict_offsets", "quote_selection"] = "strict_offsets"
     copilot_enabled: bool = False
     copilot_api_key: SecretStr | None = None
     copilot_base_url: str = "https://api.deepseek.com"

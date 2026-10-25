@@ -376,7 +376,7 @@ async function markExamAnswer(page: Page, revise: boolean) {
   })
   await expect(panel).toContainText('synthetic-test-only')
   await panel.getByRole('button', { name: '接受模型建议', exact: true }).click()
-  await expect(panel.getByText(/修订1 · accepted/)).toBeVisible()
+  await expect(panel.getByText(/修订1 · 接受候选/)).toBeVisible()
   if (revise) {
     await panel.getByRole('button', { name: '载入完整分数快照', exact: true }).click()
     await panel
@@ -385,8 +385,8 @@ async function markExamAnswer(page: Page, revise: boolean) {
       .fill('3.00')
     await panel.getByLabel('审核说明').fill('合成验收：教师核对后修订过程分，保留完整评分快照')
     await panel.getByRole('button', { name: '提交完整修订', exact: true }).click()
-    await expect(panel.getByText(/修订2 · revised/)).toBeVisible()
-    await expect(panel.getByText(/修订1 · accepted/)).toBeVisible()
+    await expect(panel.getByText(/修订2 · 教师修订/)).toBeVisible()
+    await expect(panel.getByText(/修订1 · 接受候选/)).toBeVisible()
     await panel.screenshot({ path: 'test-results/exam-grading-teacher-revision.png' })
   }
 }

@@ -108,3 +108,8 @@ node_modules/
 playwright-report/
 frontend/test-results/
 frontend/.cache/
+
+# Audited synthetic production Quote Selection acceptance only
+!/data/evaluation/grading/production-quote-selection-20261025/
+!/data/evaluation/grading/production-quote-selection-20261025/*.json
+!/data/evaluation/grading/production-quote-selection-20261025/*.sha256

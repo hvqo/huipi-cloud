@@ -900,3 +900,53 @@ async def _download_proposal(storage, proposal_id: UUID, session_factory) -> str
     body = b"".join([chunk async for chunk in (await storage.download(record.object_key)).chunks()])
     assert len(body) == record.object_size_bytes
     return body.decode("utf-8")
+
+
+@pytest.mark.anyio
+async def test_selection_legacy_receipt_replay_and_history_isolation(
+    submission_client, recording_minio_storage, postgres_engine,
+):
+    from huipi_cloud.modules.grading.prompts_selection import PROMPT_VERSION
+
+    factory, _, _, _, prepared, document, raw = await _ready_grade_input(
+        submission_client, recording_minio_storage, postgres_engine,
+    )
+    raw["schema_name"] = "huipi.grading.quote-selection"
+    for score in raw["criterion_scores"]:
+        for ref in score["evidence_references"]:
+            ref["kind"] = "quote_selection"
+            del ref["text_start"], ref["text_end"]
+    config = Settings(grading_strategy="quote_selection")
+    provider = _CandidateProvider(postgres_engine, raw)
+    rid = uuid4()
+    result = await grade_input_artifact(
+        factory, recording_minio_storage, grade_input_artifact_id=prepared.artifact_id,
+        request_id=rid, config=config, provider=provider,
+    )
+    assert result.status == "completed_candidate"
+    receipt_keys = [k for k in recording_minio_storage.uploaded_keys if "model-call-audits" in k]
+    assert len(receipt_keys) == 1
+    downloaded = await recording_minio_storage.download(receipt_keys[0])
+    receipt_bytes = b"".join([b async for b in downloaded.chunks()])
+    receipt = json.loads(receipt_bytes)
+    assert receipt["response"]["content"] == json.dumps(raw, ensure_ascii=False)
+    assert receipt["prompt_version"] == PROMPT_VERSION
+    assert receipt["validation_error_code"] is None
+    converted_ref = receipt["converted_reply"]["criterion_scores"][0]["evidence_references"][0]
+    assert converted_ref["kind"] == "quote"
+    replay = await grade_input_artifact(
+        factory, recording_minio_storage, grade_input_artifact_id=prepared.artifact_id,
+        request_id=rid, config=config, provider=provider,
+    )
+    assert replay.proposal_id == result.proposal_id and not replay.created and provider.calls == 1
+    with pytest.raises(GradeProposalIdempotencyConflictError):
+        await grade_input_artifact(
+            factory, recording_minio_storage, grade_input_artifact_id=prepared.artifact_id,
+            request_id=rid, config=Settings(grading_strategy="strict_offsets"), provider=provider,
+        )
+    assert provider.calls == 1
+    proposal, _ = await read_grade_proposal_artifact(
+        factory, recording_minio_storage, result.proposal_id
+    )
+    assert proposal.prompt_version == PROMPT_VERSION
+    assert document.input_sha256 == proposal.grade_input_sha256

@@ -1,4 +1,4 @@
-"""Experimental exact quote selection; never registers a production proposal."""
+"""Shared exact locator/converter plus frozen experimental prompts; no persistence."""
 
 from __future__ import annotations
 

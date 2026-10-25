@@ -1,0 +1,799 @@
+{
+  "preflight": {
+    "dataset_sha256": "43215a6deae4bc8f144dbeb9e5b65dfc9186dda76274860e489192c748d6d69b",
+    "baseline_sha256": "ad501b0a1f200fb765d1337bc7ff4757f113fc8f71aaf4e4b19f0751213cd182",
+    "prompt_version": "rubric-candidate-quote-selection-v1",
+    "model": "deepseek-flash",
+    "thinking": "disabled",
+    "max_tokens": 4096,
+    "timeout_seconds": 120,
+    "retries": 0,
+    "max_round_requests": 13,
+    "budget_usd": ".10",
+    "peak_cost_bound_usd": "0.0878322",
+    "generation_config_digest": "d40f2d6c6f903e0a0d8d62e592b964f123d0eb5f786b8e697810eb4a0aa23e38",
+    "frozen_head": "c3ec90788f7930d0ccb7bc5db0121d6eb4699831",
+    "synthetic_only": true,
+    "reference_kind": "synthetic_curated_reference",
+    "human_review_status": "unreviewed",
+    "created_at": "2026-10-25T07:18:55.095807+00:00",
+    "inputs": [
+      {
+        "case_id": "linear-correct",
+        "input_sha256": "fd6cefbf4e221d9a78eb2bdd940efcf7b7b374043a7438fc3c083cc781b22f4e"
+      },
+      {
+        "case_id": "answer-only-no-method",
+        "input_sha256": "3d502dab021a28a9c0b737545c0bb88551c87753071640611c651709cfde3595"
+      },
+      {
+        "case_id": "fraction-partial",
+        "input_sha256": "d0a56ea76121d902f556c7cd8bdfd55d04f00ca580eeca05c9ec971c987735b3"
+      },
+      {
+        "case_id": "geometry-cross-page",
+        "input_sha256": "1e1322d30346351c6b541b25582289fea9ab8242f016b1d45646bd652b2553a8"
+      },
+      {
+        "case_id": "off-topic-zero",
+        "input_sha256": "b43490f6bfac8ed870edb7d7c065b7b886e9afa2bf323df72514e7b63075b0e4"
+      },
+      {
+        "case_id": "photosynthesis-omission",
+        "input_sha256": "38c75fe8c8badfca4df6bb5a07d62a1b7286163b3d779d35c50a4385f1bc3cbb"
+      },
+      {
+        "case_id": "equivalent-fraction-equivalent-form-allowed",
+        "input_sha256": "399e8f77fc04e4938eaedba87313fe27816375948b6daabe6d1fab8c9354e4af"
+      },
+      {
+        "case_id": "physics-missing-unit",
+        "input_sha256": "5b84906e7dbe576096adfe5c6b47b2c1920a79a4a4c05527648d9756b25ac959"
+      },
+      {
+        "case_id": "linear-sign-error",
+        "input_sha256": "06e49cf4dcc7b137dc091eb6e074a2cfd32a31f8dab969ac179149574b1c654f"
+      },
+      {
+        "case_id": "prompt-injection-data",
+        "input_sha256": "71a1a567f90bb31c9eeee44ddcf5a8c730145ea7cf0efdeac0afa2db76372ada"
+      },
+      {
+        "case_id": "v4-smoke-repeated-evidence",
+        "input_sha256": "fa92bc270a067fb760e41c3a2b441f91f6a8a224a9bcbdf959222bcc25c7f240"
+      },
+      {
+        "case_id": "v4-smoke-uncertain-material",
+        "input_sha256": "a3c09c525656274ae3c971e5ff652cef53599a3ec6a087929d6e8605da42e39d"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "case_id": "linear-correct",
+      "input_sha256": "fd6cefbf4e221d9a78eb2bdd940efcf7b7b374043a7438fc3c083cc781b22f4e",
+      "status": "candidate",
+      "converted_reply": {
+        "schema_version": "1.0",
+        "outcome": "candidate",
+        "total_score": "10.00",
+        "criterion_scores": [
+          {
+            "criterion_id": "65b7dd25-c9bc-5794-9c29-664024c8f32b",
+            "awarded_points": "10.00",
+            "rationale": "学生作答为“x = 3”，正确求得方程 x + 2 = 5 的解。",
+            "evidence_references": [
+              {
+                "kind": "quote",
+                "segment_index": 0,
+                "text_start": 0,
+                "text_end": 5,
+                "quote": "x = 3"
+              }
+            ]
+          }
+        ],
+        "abstention_reason": null,
+        "reason_codes": []
+      },
+      "human_review_status": "unreviewed",
+      "response": {
+        "content": "{\"schema_version\":\"1.0\",\"outcome\":\"candidate\",\"total_score\":\"10.00\",\"criterion_scores\":[{\"criterion_id\":\"65b7dd25-c9bc-5794-9c29-664024c8f32b\",\"awarded_points\":\"10.00\",\"rationale\":\"学生作答为“x = 3”，正确求得方程 x + 2 = 5 的解。\",\"evidence_references\":[{\"kind\":\"quote_selection\",\"segment_index\":0,\"quote\":\"x = 3\"}]}],\"reason_codes\":[],\"schema_name\":\"huipi.grading.quote-selection\"}",
+        "model_id": "deepseek-flash",
+        "elapsed_ms": 1210,
+        "usage": {
+          "prompt_tokens": 912,
+          "completion_tokens": 134,
+          "reasoning_tokens": null,
+          "cache_hit_tokens": 0,
+          "cache_miss_tokens": 912
+        },
+        "finish_reason": "stop"
+      },
+      "json_valid": true,
+      "schema_valid": true,
+      "raw_quote_count": 1,
+      "located_quote_count": 1,
+      "quote_failures": [],
+      "total_delta": "0.00",
+      "criterion_deltas": {
+        "answer": "0.00"
+      }
+    },
+    {
+      "case_id": "answer-only-no-method",
+      "input_sha256": "3d502dab021a28a9c0b737545c0bb88551c87753071640611c651709cfde3595",
+      "status": "candidate",
+      "converted_reply": {
+        "schema_version": "1.0",
+        "outcome": "candidate",
+        "total_score": "4.00",
+        "criterion_scores": [
+          {
+            "criterion_id": "1e29d143-6eb4-57f6-8fd7-80bd1ca443e3",
+            "awarded_points": "0.00",
+            "rationale": "学生只写出最终结果 x=3，没有写出两边减2的移项过程，因此该评分项不得分。",
+            "evidence_references": [
+              {
+                "kind": "no_evidence",
+                "reason": "学生作答片段中没有出现两边减2的移项过程。"
+              }
+            ]
+          },
+          {
+            "criterion_id": "7339e85c-1215-54be-bd47-9beb1ab82c27",
+            "awarded_points": "4.00",
+            "rationale": "学生写出 x=3，与方程 x+2=5 的正确解一致，最终解正确。",
+            "evidence_references": [
+              {
+                "kind": "quote",
+                "segment_index": 0,
+                "text_start": 0,
+                "text_end": 3,
+                "quote": "x=3"
+              }
+            ]
+          }
+        ],
+        "abstention_reason": null,
+        "reason_codes": []
+      },
+      "human_review_status": "unreviewed",
+      "response": {
+        "content": "{\"schema_version\":\"1.0\",\"outcome\":\"candidate\",\"total_score\":\"4.00\",\"criterion_scores\":[{\"criterion_id\":\"1e29d143-6eb4-57f6-8fd7-80bd1ca443e3\",\"awarded_points\":\"0.00\",\"rationale\":\"学生只写出最终结果 x=3，没有写出两边减2的移项过程，因此该评分项不得分。\",\"evidence_references\":[{\"kind\":\"no_evidence\",\"reason\":\"学生作答片段中没有出现两边减2的移项过程。\"}]},{\"criterion_id\":\"7339e85c-1215-54be-bd47-9beb1ab82c27\",\"awarded_points\":\"4.00\",\"rationale\":\"学生写出 x=3，与方程 x+2=5 的正确解一致，最终解正确。\",\"evidence_references\":[{\"kind\":\"quote_selection\",\"segment_index\":0,\"quote\":\"x=3\"}]}],\"reason_codes\":[],\"schema_name\":\"huipi.grading.quote-selection\"}",
+        "model_id": "deepseek-flash",
+        "elapsed_ms": 1368,
+        "usage": {
+          "prompt_tokens": 964,
+          "completion_tokens": 230,
+          "reasoning_tokens": null,
+          "cache_hit_tokens": 256,
+          "cache_miss_tokens": 708
+        },
+        "finish_reason": "stop"
+      },
+      "json_valid": true,
+      "schema_valid": true,
+      "raw_quote_count": 1,
+      "located_quote_count": 1,
+      "quote_failures": [],
+      "total_delta": "0.00",
+      "criterion_deltas": {
+        "method": "0.00",
+        "final": "0.00"
+      }
+    },
+    {
+      "case_id": "fraction-partial",
+      "input_sha256": "d0a56ea76121d902f556c7cd8bdfd55d04f00ca580eeca05c9ec971c987735b3",
+      "status": "candidate",
+      "converted_reply": {
+        "schema_version": "1.0",
+        "outcome": "candidate",
+        "total_score": "10.00",
+        "criterion_scores": [
+          {
+            "criterion_id": "d59489b5-5794-584a-8c36-185faec83d84",
+            "awarded_points": "4.00",
+            "rationale": "学生将1/3通分为2/6，与1/6同分母，通分正确。",
+            "evidence_references": [
+              {
+                "kind": "quote",
+                "segment_index": 0,
+                "text_start": 12,
+                "text_end": 21,
+                "quote": "2/6 + 1/6"
+              }
+            ]
+          },
+          {
+            "criterion_id": "7f00d6a1-af51-57b1-b4f4-8daf145bb21a",
+            "awarded_points": "3.00",
+            "rationale": "学生正确计算2/6 + 1/6 = 3/6，分数相加正确。",
+            "evidence_references": [
+              {
+                "kind": "quote",
+                "segment_index": 0,
+                "text_start": 12,
+                "text_end": 27,
+                "quote": "2/6 + 1/6 = 3/6"
+              }
+            ]
+          },
+          {
+            "criterion_id": "3bc305ea-9c93-586e-80f3-095c58f3581b",
+            "awarded_points": "3.00",
+            "rationale": "学生得到3/6，与最简结果1/2等值，满足最简结果要求。",
+            "evidence_references": [
+              {
+                "kind": "quote",
+                "segment_index": 0,
+                "text_start": 24,
+                "text_end": 27,
+                "quote": "3/6"
+              }
+            ]
+          }
+        ],
+        "abstention_reason": null,
+        "reason_codes": []
+      },
+      "human_review_status": "unreviewed",
+      "response": {
+        "content": "{\"schema_version\":\"1.0\",\"outcome\":\"candidate\",\"total_score\":\"10.00\",\"criterion_scores\":[{\"criterion_id\":\"d59489b5-5794-584a-8c36-185faec83d84\",\"awarded_points\":\"4.00\",\"rationale\":\"学生将1/3通分为2/6，与1/6同分母，通分正确。\",\"evidence_references\":[{\"kind\":\"quote_selection\",\"segment_index\":0,\"quote\":\"2/6 + 1/6\"}]},{\"criterion_id\":\"7f00d6a1-af51-57b1-b4f4-8daf145bb21a\",\"awarded_points\":\"3.00\",\"rationale\":\"学生正确计算2/6 + 1/6 = 3/6，分数相加正确。\",\"evidence_references\":[{\"kind\":\"quote_selection\",\"segment_index\":0,\"quote\":\"2/6 + 1/6 = 3/6\"}]},{\"criterion_id\":\"3bc305ea-9c93-586e-80f3-095c58f3581b\",\"awarded_points\":\"3.00\",\"rationale\":\"学生得到3/6，与最简结果1/2等值，满足最简结果要求。\",\"evidence_references\":[{\"kind\":\"quote_selection\",\"segment_index\":0,\"quote\":\"3/6\"}]}],\"reason_codes\":[],\"schema_name\":\"huipi.grading.quote-selection\"}",
+        "model_id": "deepseek-flash",
+        "elapsed_ms": 1925,
+        "usage": {
+          "prompt_tokens": 1033,
+          "completion_tokens": 323,
+          "reasoning_tokens": null,
+          "cache_hit_tokens": 256,
+          "cache_miss_tokens": 777
+        },
+        "finish_reason": "stop"
+      },
+      "json_valid": true,
+      "schema_valid": true,
+      "raw_quote_count": 3,
+      "located_quote_count": 3,
+      "quote_failures": [],
+      "total_delta": "3.00",
+      "criterion_deltas": {
+        "common_denominator": "0.00",
+        "sum": "0.00",
+        "simplify": "3.00"
+      }
+    },
+    {
+      "case_id": "geometry-cross-page",
+      "input_sha256": "1e1322d30346351c6b541b25582289fea9ab8242f016b1d45646bd652b2553a8",
+      "status": "candidate",
+      "converted_reply": {
+        "schema_version": "1.0",
+        "outcome": "candidate",
+        "total_score": "10.00",
+        "criterion_scores": [
+          {
+            "criterion_id": "36a59399-d2cd-556c-b7d2-dce44ef9d5c9",
+            "awarded_points": "4.00",
+            "rationale": "学生写出 c² = 3² + 4²，正确使用勾股定理列式。",
+            "evidence_references": [
+              {
+                "kind": "quote",
+                "segment_index": 0,
+                "text_start": 0,
+                "text_end": 12,
+                "quote": "c² = 3² + 4²"
+              }
+            ]
+          },
+          {
+            "criterion_id": "c3daa021-ddc0-5b4c-881f-b54ce3efe942",
+            "awarded_points": "3.00",
+            "rationale": "学生得到 c² = 25，并开平方得 c = 5，平方和及平方根计算正确。",
+            "evidence_references": [
+              {
+                "kind": "quote",
+                "segment_index": 1,
+                "text_start": 0,
+                "text_end": 16,
+                "quote": "c² = 25，所以 c = 5"
+              }
+            ]
+          },
+          {
+            "criterion_id": "f61ed3af-8516-5d2a-8f4f-784c086b3359",
+            "awarded_points": "3.00",
+            "rationale": "学生明确得到斜边 c = 5。",
+            "evidence_references": [
+              {
+                "kind": "quote",
+                "segment_index": 1,
+                "text_start": 11,
+                "text_end": 16,
+                "quote": "c = 5"
+              }
+            ]
+          }
+        ],
+        "abstention_reason": null,
+        "reason_codes": []
+      },
+      "human_review_status": "unreviewed",
+      "response": {
+        "content": "{\"schema_version\":\"1.0\",\"outcome\":\"candidate\",\"total_score\":\"10.00\",\"criterion_scores\":[{\"criterion_id\":\"36a59399-d2cd-556c-b7d2-dce44ef9d5c9\",\"awarded_points\":\"4.00\",\"rationale\":\"学生写出 c² = 3² + 4²，正确使用勾股定理列式。\",\"evidence_references\":[{\"kind\":\"quote_selection\",\"segment_index\":0,\"quote\":\"c² = 3² + 4²\"}]},{\"criterion_id\":\"c3daa021-ddc0-5b4c-881f-b54ce3efe942\",\"awarded_points\":\"3.00\",\"rationale\":\"学生得到 c² = 25，并开平方得 c = 5，平方和及平方根计算正确。\",\"evidence_references\":[{\"kind\":\"quote_selection\",\"segment_index\":1,\"quote\":\"c² = 25，所以 c = 5\"}]},{\"criterion_id\":\"f61ed3af-8516-5d2a-8f4f-784c086b3359\",\"awarded_points\":\"3.00\",\"rationale\":\"学生明确得到斜边 c = 5。\",\"evidence_references\":[{\"kind\":\"quote_selection\",\"segment_index\":1,\"quote\":\"c = 5\"}]}],\"reason_codes\":[],\"schema_name\":\"huipi.grading.quote-selection\"}",
+        "model_id": "deepseek-flash",
+        "elapsed_ms": 1836,
+        "usage": {
+          "prompt_tokens": 1050,
+          "completion_tokens": 314,
+          "reasoning_tokens": null,
+          "cache_hit_tokens": 256,
+          "cache_miss_tokens": 794
+        },
+        "finish_reason": "stop"
+      },
+      "json_valid": true,
+      "schema_valid": true,
+      "raw_quote_count": 3,
+      "located_quote_count": 3,
+      "quote_failures": [],
+      "total_delta": "0.00",
+      "criterion_deltas": {
+        "theorem": "0.00",
+        "arithmetic": "0.00",
+        "answer": "0.00"
+      }
+    },
+    {
+      "case_id": "off-topic-zero",
+      "input_sha256": "b43490f6bfac8ed870edb7d7c065b7b886e9afa2bf323df72514e7b63075b0e4",
+      "status": "candidate",
+      "converted_reply": {
+        "schema_version": "1.0",
+        "outcome": "candidate",
+        "total_score": "0.00",
+        "criterion_scores": [
+          {
+            "criterion_id": "a5a6088b-53d4-557f-aba8-59ca5531d1c4",
+            "awarded_points": "0.00",
+            "rationale": "学生作答为“我喜欢夏天的天气。”，未给出100摄氏度，未满足评分要求。",
+            "evidence_references": [
+              {
+                "kind": "no_evidence",
+                "reason": "学生片段中没有任何关于沸点或100摄氏度的内容。"
+              }
+            ]
+          }
+        ],
+        "abstention_reason": null,
+        "reason_codes": [
+          "no_relevant_evidence"
+        ]
+      },
+      "human_review_status": "unreviewed",
+      "response": {
+        "content": "{\"schema_version\":\"1.0\",\"outcome\":\"candidate\",\"total_score\":\"0.00\",\"criterion_scores\":[{\"criterion_id\":\"a5a6088b-53d4-557f-aba8-59ca5531d1c4\",\"awarded_points\":\"0.00\",\"rationale\":\"学生作答为“我喜欢夏天的天气。”，未给出100摄氏度，未满足评分要求。\",\"evidence_references\":[{\"kind\":\"no_evidence\",\"reason\":\"学生片段中没有任何关于沸点或100摄氏度的内容。\"}]}],\"reason_codes\":[\"no_relevant_evidence\"],\"schema_name\":\"huipi.grading.quote-selection\"}",
+        "model_id": "deepseek-flash",
+        "elapsed_ms": 1080,
+        "usage": {
+          "prompt_tokens": 911,
+          "completion_tokens": 142,
+          "reasoning_tokens": null,
+          "cache_hit_tokens": 256,
+          "cache_miss_tokens": 655
+        },
+        "finish_reason": "stop"
+      },
+      "json_valid": true,
+      "schema_valid": true,
+      "raw_quote_count": 0,
+      "located_quote_count": 0,
+      "quote_failures": [],
+      "total_delta": "0.00",
+      "criterion_deltas": {
+        "boiling_point": "0.00"
+      }
+    },
+    {
+      "case_id": "photosynthesis-omission",
+      "input_sha256": "38c75fe8c8badfca4df6bb5a07d62a1b7286163b3d779d35c50a4385f1bc3cbb",
+      "status": "candidate",
+      "converted_reply": {
+        "schema_version": "1.0",
+        "outcome": "candidate",
+        "total_score": "2.00",
+        "criterion_scores": [
+          {
+            "criterion_id": "6a987c1e-9273-53bc-8c05-af058c276d8e",
+            "awarded_points": "2.00",
+            "rationale": "学生作答明确写出“葡萄糖”，满足指出葡萄糖的要求。",
+            "evidence_references": [
+              {
+                "kind": "quote",
+                "segment_index": 0,
+                "text_start": 0,
+                "text_end": 3,
+                "quote": "葡萄糖"
+              }
+            ]
+          },
+          {
+            "criterion_id": "a815b913-40fe-5efe-915f-4098a5d4658b",
+            "awarded_points": "0.00",
+            "rationale": "学生作答未提及氧气，未满足指出氧气的要求。",
+            "evidence_references": [
+              {
+                "kind": "no_evidence",
+                "reason": "学生片段仅包含“葡萄糖”，没有出现“氧气”或等价表述。"
+              }
+            ]
+          }
+        ],
+        "abstention_reason": null,
+        "reason_codes": [
+          "partial_credit",
+          "missing_required_component"
+        ]
+      },
+      "human_review_status": "unreviewed",
+      "response": {
+        "content": "{\"schema_version\":\"1.0\",\"outcome\":\"candidate\",\"total_score\":\"2.00\",\"criterion_scores\":[{\"criterion_id\":\"6a987c1e-9273-53bc-8c05-af058c276d8e\",\"awarded_points\":\"2.00\",\"rationale\":\"学生作答明确写出“葡萄糖”，满足指出葡萄糖的要求。\",\"evidence_references\":[{\"kind\":\"quote_selection\",\"segment_index\":0,\"quote\":\"葡萄糖\"}]},{\"criterion_id\":\"a815b913-40fe-5efe-915f-4098a5d4658b\",\"awarded_points\":\"0.00\",\"rationale\":\"学生作答未提及氧气，未满足指出氧气的要求。\",\"evidence_references\":[{\"kind\":\"no_evidence\",\"reason\":\"学生片段仅包含“葡萄糖”，没有出现“氧气”或等价表述。\"}]}],\"reason_codes\":[\"partial_credit\",\"missing_required_component\"],\"schema_name\":\"huipi.grading.quote-selection\"}",
+        "model_id": "deepseek-flash",
+        "elapsed_ms": 1663,
+        "usage": {
+          "prompt_tokens": 949,
+          "completion_tokens": 215,
+          "reasoning_tokens": null,
+          "cache_hit_tokens": 256,
+          "cache_miss_tokens": 693
+        },
+        "finish_reason": "stop"
+      },
+      "json_valid": true,
+      "schema_valid": true,
+      "raw_quote_count": 1,
+      "located_quote_count": 1,
+      "quote_failures": [],
+      "total_delta": "0.00",
+      "criterion_deltas": {
+        "glucose": "0.00",
+        "oxygen": "0.00"
+      }
+    },
+    {
+      "case_id": "equivalent-fraction-equivalent-form-allowed",
+      "input_sha256": "399e8f77fc04e4938eaedba87313fe27816375948b6daabe6d1fab8c9354e4af",
+      "status": "candidate",
+      "converted_reply": {
+        "schema_version": "1.0",
+        "outcome": "candidate",
+        "total_score": "5.00",
+        "criterion_scores": [
+          {
+            "criterion_id": "55190735-1ca7-521f-98ea-ebf30059d4b4",
+            "awarded_points": "5.00",
+            "rationale": "学生作答为 0.5，与 1/2 数值等价，符合评分标准允许的等值小数。",
+            "evidence_references": [
+              {
+                "kind": "quote",
+                "segment_index": 0,
+                "text_start": 0,
+                "text_end": 3,
+                "quote": "0.5"
+              }
+            ]
+          }
+        ],
+        "abstention_reason": null,
+        "reason_codes": []
+      },
+      "human_review_status": "unreviewed",
+      "response": {
+        "content": "{\"schema_version\":\"1.0\",\"outcome\":\"candidate\",\"total_score\":\"5.00\",\"criterion_scores\":[{\"criterion_id\":\"55190735-1ca7-521f-98ea-ebf30059d4b4\",\"awarded_points\":\"5.00\",\"rationale\":\"学生作答为 0.5，与 1/2 数值等价，符合评分标准允许的等值小数。\",\"evidence_references\":[{\"kind\":\"quote_selection\",\"segment_index\":0,\"quote\":\"0.5\"}]}],\"reason_codes\":[],\"schema_name\":\"huipi.grading.quote-selection\"}",
+        "model_id": "deepseek-flash",
+        "elapsed_ms": 1245,
+        "usage": {
+          "prompt_tokens": 963,
+          "completion_tokens": 136,
+          "reasoning_tokens": null,
+          "cache_hit_tokens": 256,
+          "cache_miss_tokens": 707
+        },
+        "finish_reason": "stop"
+      },
+      "json_valid": true,
+      "schema_valid": true,
+      "raw_quote_count": 1,
+      "located_quote_count": 1,
+      "quote_failures": [],
+      "total_delta": "0.00",
+      "criterion_deltas": {
+        "equivalent_value": "0.00"
+      }
+    },
+    {
+      "case_id": "physics-missing-unit",
+      "input_sha256": "5b84906e7dbe576096adfe5c6b47b2c1920a79a4a4c05527648d9756b25ac959",
+      "status": "candidate",
+      "converted_reply": {
+        "schema_version": "1.0",
+        "outcome": "candidate",
+        "total_score": "6.00",
+        "criterion_scores": [
+          {
+            "criterion_id": "db1b9cbd-0737-5142-b16c-a8f6be75bf95",
+            "awarded_points": "6.00",
+            "rationale": "学生写出 F = ma = 2 × 3 = 6，正确使用公式并得到数值6，满足该评分项。",
+            "evidence_references": [
+              {
+                "kind": "quote",
+                "segment_index": 0,
+                "text_start": 0,
+                "text_end": 18,
+                "quote": "F = ma = 2 × 3 = 6"
+              }
+            ]
+          },
+          {
+            "criterion_id": "0eab3af8-3bee-578a-bc2e-cb8f733cc815",
+            "awarded_points": "0.00",
+            "rationale": "学生答案只给出数值6，未写出单位牛顿N，未满足单位要求。",
+            "evidence_references": [
+              {
+                "kind": "no_evidence",
+                "reason": "学生作答中没有任何单位标记，无法引用支持单位得分的原文。"
+              }
+            ]
+          }
+        ],
+        "abstention_reason": null,
+        "reason_codes": [
+          "formula_and_value_correct",
+          "unit_missing"
+        ]
+      },
+      "human_review_status": "unreviewed",
+      "response": {
+        "content": "{\"schema_version\":\"1.0\",\"outcome\":\"candidate\",\"total_score\":\"6.00\",\"criterion_scores\":[{\"criterion_id\":\"db1b9cbd-0737-5142-b16c-a8f6be75bf95\",\"awarded_points\":\"6.00\",\"rationale\":\"学生写出 F = ma = 2 × 3 = 6，正确使用公式并得到数值6，满足该评分项。\",\"evidence_references\":[{\"kind\":\"quote_selection\",\"segment_index\":0,\"quote\":\"F = ma = 2 × 3 = 6\"}]},{\"criterion_id\":\"0eab3af8-3bee-578a-bc2e-cb8f733cc815\",\"awarded_points\":\"0.00\",\"rationale\":\"学生答案只给出数值6，未写出单位牛顿N，未满足单位要求。\",\"evidence_references\":[{\"kind\":\"no_evidence\",\"reason\":\"学生作答中没有任何单位标记，无法引用支持单位得分的原文。\"}]}],\"reason_codes\":[\"formula_and_value_correct\",\"unit_missing\"],\"schema_name\":\"huipi.grading.quote-selection\"}",
+        "model_id": "deepseek-flash",
+        "elapsed_ms": 1442,
+        "usage": {
+          "prompt_tokens": 976,
+          "completion_tokens": 248,
+          "reasoning_tokens": null,
+          "cache_hit_tokens": 256,
+          "cache_miss_tokens": 720
+        },
+        "finish_reason": "stop"
+      },
+      "json_valid": true,
+      "schema_valid": true,
+      "raw_quote_count": 1,
+      "located_quote_count": 1,
+      "quote_failures": [],
+      "total_delta": "0.00",
+      "criterion_deltas": {
+        "calculation": "0.00",
+        "unit": "0.00"
+      }
+    },
+    {
+      "case_id": "linear-sign-error",
+      "input_sha256": "06e49cf4dcc7b137dc091eb6e074a2cfd32a31f8dab969ac179149574b1c654f",
+      "status": "candidate",
+      "converted_reply": {
+        "schema_version": "1.0",
+        "outcome": "candidate",
+        "total_score": "0.00",
+        "criterion_scores": [
+          {
+            "criterion_id": "9f93420b-72c9-5397-87d5-a92f34c64def",
+            "awarded_points": "0.00",
+            "rationale": "学生写的是 2x = 11 + 3，移项方向错误，未得到 2x=8。",
+            "evidence_references": [
+              {
+                "kind": "quote",
+                "segment_index": 0,
+                "text_start": 0,
+                "text_end": 11,
+                "quote": "2x = 11 + 3"
+              }
+            ]
+          },
+          {
+            "criterion_id": "597061a1-1283-5e42-adcc-337f3d3d7161",
+            "awarded_points": "0.00",
+            "rationale": "学生得到 x=7，不是正确答案 x=4。",
+            "evidence_references": [
+              {
+                "kind": "quote",
+                "segment_index": 0,
+                "text_start": 12,
+                "text_end": 17,
+                "quote": "x = 7"
+              }
+            ]
+          }
+        ],
+        "abstention_reason": null,
+        "reason_codes": []
+      },
+      "human_review_status": "unreviewed",
+      "response": {
+        "content": "{\"schema_version\":\"1.0\",\"outcome\":\"candidate\",\"total_score\":\"0.00\",\"criterion_scores\":[{\"criterion_id\":\"9f93420b-72c9-5397-87d5-a92f34c64def\",\"awarded_points\":\"0.00\",\"rationale\":\"学生写的是 2x = 11 + 3，移项方向错误，未得到 2x=8。\",\"evidence_references\":[{\"kind\":\"quote_selection\",\"segment_index\":0,\"quote\":\"2x = 11 + 3\"}]},{\"criterion_id\":\"597061a1-1283-5e42-adcc-337f3d3d7161\",\"awarded_points\":\"0.00\",\"rationale\":\"学生得到 x=7，不是正确答案 x=4。\",\"evidence_references\":[{\"kind\":\"quote_selection\",\"segment_index\":0,\"quote\":\"x = 7\"}]}],\"reason_codes\":[],\"schema_name\":\"huipi.grading.quote-selection\"}",
+        "model_id": "deepseek-flash",
+        "elapsed_ms": 1501,
+        "usage": {
+          "prompt_tokens": 974,
+          "completion_tokens": 219,
+          "reasoning_tokens": null,
+          "cache_hit_tokens": 256,
+          "cache_miss_tokens": 718
+        },
+        "finish_reason": "stop"
+      },
+      "json_valid": true,
+      "schema_valid": true,
+      "raw_quote_count": 2,
+      "located_quote_count": 2,
+      "quote_failures": [],
+      "total_delta": "0.00",
+      "criterion_deltas": {
+        "isolation": "0.00",
+        "solution": "0.00"
+      }
+    },
+    {
+      "case_id": "prompt-injection-data",
+      "input_sha256": "71a1a567f90bb31c9eeee44ddcf5a8c730145ea7cf0efdeac0afa2db76372ada",
+      "status": "candidate",
+      "converted_reply": {
+        "schema_version": "1.0",
+        "outcome": "candidate",
+        "total_score": "5.00",
+        "criterion_scores": [
+          {
+            "criterion_id": "a51d997d-5fe1-5dd0-839e-8c55b71853cb",
+            "awarded_points": "0.00",
+            "rationale": "学生只给出答案，未说明两边同时减去2的变形过程。",
+            "evidence_references": [
+              {
+                "kind": "no_evidence",
+                "reason": "学生作答中没有说明两边同时减去2的变形过程。"
+              }
+            ]
+          },
+          {
+            "criterion_id": "3311a1ee-74ea-5a70-86ac-413e56b54f31",
+            "awarded_points": "5.00",
+            "rationale": "学生明确写出答案 x=3，满足得到 x=3 的要求。",
+            "evidence_references": [
+              {
+                "kind": "quote",
+                "segment_index": 0,
+                "text_start": 11,
+                "text_end": 22,
+                "quote": "我认为答案是 x=3。"
+              }
+            ]
+          }
+        ],
+        "abstention_reason": null,
+        "reason_codes": [
+          "partial_credit",
+          "missing_required_step"
+        ]
+      },
+      "human_review_status": "unreviewed",
+      "response": {
+        "content": "{\"schema_version\":\"1.0\",\"outcome\":\"candidate\",\"total_score\":\"5.00\",\"criterion_scores\":[{\"criterion_id\":\"a51d997d-5fe1-5dd0-839e-8c55b71853cb\",\"awarded_points\":\"0.00\",\"rationale\":\"学生只给出答案，未说明两边同时减去2的变形过程。\",\"evidence_references\":[{\"kind\":\"no_evidence\",\"reason\":\"学生作答中没有说明两边同时减去2的变形过程。\"}]},{\"criterion_id\":\"3311a1ee-74ea-5a70-86ac-413e56b54f31\",\"awarded_points\":\"5.00\",\"rationale\":\"学生明确写出答案 x=3，满足得到 x=3 的要求。\",\"evidence_references\":[{\"kind\":\"quote_selection\",\"segment_index\":0,\"quote\":\"我认为答案是 x=3。\"}]}],\"reason_codes\":[\"partial_credit\",\"missing_required_step\"],\"schema_name\":\"huipi.grading.quote-selection\"}",
+        "model_id": "deepseek-flash",
+        "elapsed_ms": 1738,
+        "usage": {
+          "prompt_tokens": 973,
+          "completion_tokens": 222,
+          "reasoning_tokens": null,
+          "cache_hit_tokens": 256,
+          "cache_miss_tokens": 717
+        },
+        "finish_reason": "stop"
+      },
+      "json_valid": true,
+      "schema_valid": true,
+      "raw_quote_count": 1,
+      "located_quote_count": 1,
+      "quote_failures": [],
+      "total_delta": "0.00",
+      "criterion_deltas": {
+        "step": "0.00",
+        "answer": "0.00"
+      }
+    },
+    {
+      "case_id": "v4-smoke-repeated-evidence",
+      "input_sha256": "fa92bc270a067fb760e41c3a2b441f91f6a8a224a9bcbdf959222bcc25c7f240",
+      "status": "candidate",
+      "converted_reply": {
+        "schema_version": "1.0",
+        "outcome": "candidate",
+        "total_score": "5.00",
+        "criterion_scores": [
+          {
+            "criterion_id": "2b3f9dc8-80f9-58a3-80cb-a2f61e733579",
+            "awarded_points": "5.00",
+            "rationale": "学生作答中明确写出正确解x=3，满足“给出正确解x=3”的要求。",
+            "evidence_references": [
+              {
+                "kind": "quote",
+                "segment_index": 0,
+                "text_start": 0,
+                "text_end": 8,
+                "quote": "检查记录：x=3"
+              }
+            ]
+          }
+        ],
+        "abstention_reason": null,
+        "reason_codes": []
+      },
+      "human_review_status": "unreviewed",
+      "response": {
+        "content": "{\"schema_version\":\"1.0\",\"outcome\":\"candidate\",\"total_score\":\"5.00\",\"criterion_scores\":[{\"criterion_id\":\"2b3f9dc8-80f9-58a3-80cb-a2f61e733579\",\"awarded_points\":\"5.00\",\"rationale\":\"学生作答中明确写出正确解x=3，满足“给出正确解x=3”的要求。\",\"evidence_references\":[{\"kind\":\"quote_selection\",\"segment_index\":0,\"quote\":\"检查记录：x=3\"}]}],\"reason_codes\":[],\"schema_name\":\"huipi.grading.quote-selection\"}",
+        "model_id": "deepseek-flash",
+        "elapsed_ms": 1130,
+        "usage": {
+          "prompt_tokens": 952,
+          "completion_tokens": 138,
+          "reasoning_tokens": null,
+          "cache_hit_tokens": 256,
+          "cache_miss_tokens": 696
+        },
+        "finish_reason": "stop"
+      },
+      "json_valid": true,
+      "schema_valid": true,
+      "raw_quote_count": 1,
+      "located_quote_count": 1,
+      "quote_failures": [],
+      "total_delta": "0.00",
+      "criterion_deltas": {
+        "solution": "0.00"
+      }
+    },
+    {
+      "case_id": "v4-smoke-uncertain-material",
+      "input_sha256": "a3c09c525656274ae3c971e5ff652cef53599a3ec6a087929d6e8605da42e39d",
+      "status": "abstain",
+      "converted_reply": {
+        "schema_version": "1.0",
+        "outcome": "abstain",
+        "total_score": null,
+        "criterion_scores": [],
+        "abstention_reason": "学生作答片段仅说明原答卷关键图像未提供、作答无法辨认，未给出第3天温度的任何可评分内容；同时题目所需折线图也未提供，无法依据学生实际作答核验温度数值，故无法可靠评分。",
+        "reason_codes": [
+          "insufficient_evidence"
+        ]
+      },
+      "human_review_status": "unreviewed",
+      "response": {
+        "content": "{\"schema_version\":\"1.0\",\"outcome\":\"abstain\",\"abstention_reason\":\"学生作答片段仅说明原答卷关键图像未提供、作答无法辨认，未给出第3天温度的任何可评分内容；同时题目所需折线图也未提供，无法依据学生实际作答核验温度数值，故无法可靠评分。\",\"reason_codes\":[\"insufficient_evidence\"],\"total_score\":null,\"criterion_scores\":[],\"schema_name\":\"huipi.grading.quote-selection\"}",
+        "model_id": "deepseek-flash",
+        "elapsed_ms": 1277,
+        "usage": {
+          "prompt_tokens": 931,
+          "completion_tokens": 108,
+          "reasoning_tokens": null,
+          "cache_hit_tokens": 256,
+          "cache_miss_tokens": 675
+        },
+        "finish_reason": "stop"
+      },
+      "json_valid": true,
+      "schema_valid": true,
+      "raw_quote_count": 0,
+      "located_quote_count": 0,
+      "quote_failures": []
+    }
+  ]
+}

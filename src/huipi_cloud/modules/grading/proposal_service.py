@@ -16,15 +16,17 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from huipi_cloud.core.config import Settings, settings
 from huipi_cloud.infrastructure.database.base import utc_now
 from huipi_cloud.infrastructure.grading.provider import (
+    GradeProviderEndedResponseError,
     TextGradingProvider,
     build_text_grading_provider,
+    effective_grading_config,
 )
 from huipi_cloud.infrastructure.storage.s3 import (
     S3ObjectStorage,
     StorageUnavailableError,
 )
 from huipi_cloud.modules.grading import prompts as legacy_prompts
-from huipi_cloud.modules.grading import proposal_repository
+from huipi_cloud.modules.grading import prompts_selection, proposal_repository
 from huipi_cloud.modules.grading.errors import (
     GradeInputArtifactCorruptError,
     GradeInputCommitOutcomeUnknownError,
@@ -60,6 +62,7 @@ from huipi_cloud.modules.grading.protocol import (
     GradeInputDocument,
     json_sha256,
 )
+from huipi_cloud.modules.grading.response_audit import response_auditor
 from huipi_cloud.modules.grading.service import read_grade_input_artifact
 
 SessionFactory = async_sessionmaker[AsyncSession]
@@ -75,6 +78,9 @@ async def inspect_grade_proposal_input(
     config: Settings = settings,
     provider: TextGradingProvider | None = None,
 ) -> GradeProposalInspection:
+    config = effective_grading_config(config)
+    prompt_version = production_prompt_version(config)
+    system_prompt, prompt_builder = _prompt_contract(prompt_version)
     selected_provider = provider or build_text_grading_provider(config)
     document = await _read_current_input(
         session_factory,
@@ -82,8 +88,8 @@ async def inspect_grade_proposal_input(
         grade_input_artifact_id,
         config=config,
     )
-    user_prompt = build_user_prompt(document)
-    _check_prompt_budget(SYSTEM_PROMPT, user_prompt, config)
+    user_prompt = prompt_builder(document)
+    _check_prompt_budget(system_prompt, user_prompt, config)
     return GradeProposalInspection(
         status="ready",
         grade_input_artifact_id=document.artifact_id,
@@ -95,7 +101,7 @@ async def inspect_grade_proposal_input(
         rubric_total_points=document.question.max_score,
         provider=selected_provider.provider_name,
         model_id=selected_provider.model_id,
-        prompt_version=PROMPT_VERSION,
+        prompt_version=prompt_version,
         max_input_bytes=config.grading_max_input_bytes,
         max_input_tokens=config.grading_max_input_tokens,
         max_output_tokens=config.grading_max_output_tokens,
@@ -113,7 +119,9 @@ async def grade_input_artifact(
     provider: TextGradingProvider | None = None,
 ) -> GradeProposalRunResult:
     """Call one configured provider, validate its result, and persist a proposal."""
-
+    config = effective_grading_config(config)
+    prompt_version = production_prompt_version(config)
+    system_prompt, prompt_builder = _prompt_contract(prompt_version)
     selected_provider = provider or build_text_grading_provider(config)
     document = await _read_current_input(
         session_factory,
@@ -121,9 +129,11 @@ async def grade_input_artifact(
         grade_input_artifact_id,
         config=config,
     )
-    base_prompt = build_user_prompt(document)
-    _check_prompt_budget(SYSTEM_PROMPT, base_prompt, config)
-    request_fingerprint = _request_fingerprint(document, selected_provider)
+    base_prompt = prompt_builder(document)
+    _check_prompt_budget(system_prompt, base_prompt, config)
+    request_fingerprint = _request_fingerprint(
+        document, selected_provider, prompt_version=prompt_version
+    )
 
     existing = await proposal_repository.get_by_request_id(session_factory, request_id)
     if existing is not None:
@@ -145,6 +155,11 @@ async def grade_input_artifact(
         selected_provider,
         document,
         config=config,
+        prompt_version=prompt_version,
+        audit_response=(
+            response_auditor(storage, document, request_id, selected_provider, prompt_version)
+            if config.grading_strategy == "quote_selection" else None
+        ),
     )
 
     # Re-read after the model call. The repository repeats source validation while
@@ -177,7 +192,7 @@ async def grade_input_artifact(
         question_id=document.question.question_id,
         model_id=response_model,
         provider=selected_provider.provider_name,
-        prompt_version=PROMPT_VERSION,
+        prompt_version=prompt_version,
         generation_config_digest=selected_provider.generation_config_digest,
         criterion_scores=final_scores,
         total_score=total_score,
@@ -302,8 +317,13 @@ async def _call_and_validate(
     document: GradeInputDocument,
     *,
     config: Settings,
-    prompt_version: str = PROMPT_VERSION,
+    prompt_version: str | None = None,
+    audit_response=None,
 ) -> tuple[GradeModelReply, str, tuple[int | None, int | None], int]:
+    if prompt_version is None:
+        prompt_version = production_prompt_version(config)
+    selection = prompt_version == prompts_selection.PROMPT_VERSION
+    retries = 0 if selection else config.grading_invalid_response_retries
     system_prompt, prompt_builder = _prompt_contract(prompt_version)
     retry_reason: str | None = None
     prompt_tokens = 0
@@ -313,10 +333,19 @@ async def _call_and_validate(
     elapsed_ms = 0
     response_model = provider.model_id
 
-    for attempt in range(config.grading_invalid_response_retries + 1):
+    for attempt in range(retries + 1):
         user_prompt = prompt_builder(document, retry_reason=retry_reason)
         _check_prompt_budget(system_prompt, user_prompt, config)
-        response = await provider.complete(system_prompt=system_prompt, user_prompt=user_prompt)
+        prompt_sha = hashlib.sha256((system_prompt + "\0" + user_prompt).encode()).hexdigest()
+        try:
+            response = await provider.complete(system_prompt=system_prompt, user_prompt=user_prompt)
+        except GradeProviderEndedResponseError as error:
+            if audit_response:
+                await audit_response(
+                    error.response, converted=None, error_code=error.reason_code,
+                    prompt_sha256=prompt_sha,
+                )
+            raise
         elapsed_ms += response.elapsed_ms
         response_model = response.model_id
         if response.usage.prompt_tokens is None:
@@ -327,17 +356,44 @@ async def _call_and_validate(
             completion_tokens_complete = False
         else:
             completion_tokens += response.usage.completion_tokens
+        reply = None
         try:
-            reply = GradeModelReply.model_validate_json(response.content)
+            if selection:
+                # Lazy import preserves the frozen experimental module's validator reuse.
+                from huipi_cloud.modules.grading.quote_selection import (
+                    GradeQuoteSelectionReply,
+                    validate_quote_selection_candidate,
+                )
+                selected = GradeQuoteSelectionReply.model_validate_json(response.content)
+                reply = validate_quote_selection_candidate(selected, document, config)
+            else:
+                reply = GradeModelReply.model_validate_json(response.content)
         except ValidationError as error:
             classified = _classify_reply_validation_error(error)
+            if audit_response:
+                await audit_response(
+                    response, converted=None, error_code=classified.reason_code,
+                    prompt_sha256=prompt_sha,
+                )
             if (
                 isinstance(classified, GradeProposalInvalidModelResponseError)
-                and attempt < config.grading_invalid_response_retries
+                and attempt < retries
             ):
                 retry_reason = classified.reason_code
                 continue
             raise classified from error
+        except GradeProposalError as error:
+            if audit_response:
+                await audit_response(
+                    response, converted=None, error_code=error.reason_code,
+                    prompt_sha256=prompt_sha,
+                )
+            raise
+        if audit_response:
+            await audit_response(
+                response, converted=reply, error_code=None,
+                prompt_sha256=prompt_sha,
+            )
         return (
             reply,
             response_model,
@@ -434,12 +490,22 @@ def _check_prompt_budget(system_prompt: str, user_prompt: str, config: Settings)
 
 
 def _prompt_contract(prompt_version: str):
-    """Explicit historical opt-in is internal; production always selects v4."""
+    """Frozen contracts, selected explicitly without strategy fallback."""
+    if prompt_version == prompts_selection.PROMPT_VERSION:
+        return prompts_selection.SYSTEM_PROMPT, prompts_selection.build_user_prompt
     if prompt_version == PROMPT_VERSION:
         return SYSTEM_PROMPT, build_user_prompt
     if prompt_version == legacy_prompts.PROMPT_VERSION:
         return legacy_prompts.SYSTEM_PROMPT, legacy_prompts.build_user_prompt
     raise ValueError("grading_prompt_version_unknown")
+
+
+def production_prompt_version(config: Settings) -> str:
+    if config.grading_strategy == "quote_selection":
+        return prompts_selection.PROMPT_VERSION
+    if config.grading_strategy == "strict_offsets":
+        return PROMPT_VERSION
+    raise ValueError("grading_strategy_unknown")
 
 
 def _request_fingerprint(

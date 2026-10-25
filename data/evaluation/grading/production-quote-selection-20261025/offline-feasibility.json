@@ -1,0 +1,110 @@
+{
+  "diagnostic_only": true,
+  "historical_statuses_unchanged": true,
+  "references": [
+    {
+      "case_id": "fraction-partial",
+      "status": "unique_exact",
+      "located_range": [
+        12,
+        17
+      ],
+      "claimed_range": [
+        8,
+        13
+      ],
+      "original_quote_error": "evidence_quote_mismatch"
+    },
+    {
+      "case_id": "fraction-partial",
+      "status": "unique_exact",
+      "located_range": [
+        12,
+        27
+      ],
+      "claimed_range": [
+        8,
+        23
+      ],
+      "original_quote_error": "evidence_quote_mismatch"
+    },
+    {
+      "case_id": "geometry-cross-page",
+      "status": "unique_exact",
+      "located_range": [
+        0,
+        12
+      ],
+      "claimed_range": [
+        0,
+        12
+      ],
+      "original_quote_error": null
+    },
+    {
+      "case_id": "geometry-cross-page",
+      "status": "unique_exact",
+      "located_range": [
+        0,
+        16
+      ],
+      "claimed_range": [
+        0,
+        16
+      ],
+      "original_quote_error": null
+    },
+    {
+      "case_id": "geometry-cross-page",
+      "status": "unique_exact",
+      "located_range": [
+        11,
+        16
+      ],
+      "claimed_range": [
+        10,
+        16
+      ],
+      "original_quote_error": "quote_schema_invalid"
+    },
+    {
+      "case_id": "linear-sign-error",
+      "status": "unique_exact",
+      "located_range": [
+        0,
+        11
+      ],
+      "claimed_range": [
+        0,
+        11
+      ],
+      "original_quote_error": null
+    },
+    {
+      "case_id": "linear-sign-error",
+      "status": "unique_exact",
+      "located_range": [
+        12,
+        17
+      ],
+      "claimed_range": [
+        13,
+        17
+      ],
+      "original_quote_error": "quote_schema_invalid"
+    },
+    {
+      "case_id": "prompt-injection-data",
+      "status": "unique_exact",
+      "located_range": [
+        18,
+        21
+      ],
+      "claimed_range": [
+        16,
+        19
+      ],
+      "original_quote_error": "evidence_quote_mismatch"
+    }
+  ]
+}

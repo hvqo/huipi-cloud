@@ -15,13 +15,14 @@ from huipi_cloud.modules.exam_grading.runtime import ScoringWorker
 async def run():
     if session_factory is None:
         raise ValueError("DATABASE_URL is required")
-    provider = build_text_grading_provider(settings)
+    config = settings.model_copy(update={"grading_invalid_response_retries": 0})
+    provider = build_text_grading_provider(config)
     stop = asyncio.Event()
     loop = asyncio.get_running_loop()
     for sig in (signal.SIGINT, signal.SIGTERM):
         loop.add_signal_handler(sig, stop.set)
     try:
-        await ScoringWorker(session_factory, get_object_storage(), provider, settings).run(stop)
+        await ScoringWorker(session_factory, get_object_storage(), provider, config).run(stop)
     finally:
         await dispose_database_engine()
         for sig in (signal.SIGINT, signal.SIGTERM):

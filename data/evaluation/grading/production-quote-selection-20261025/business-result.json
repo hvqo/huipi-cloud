@@ -1,0 +1,62 @@
+{
+  "parsing_job_id": "d923a984-c445-44ae-8068-322235ac4adf",
+  "scoring_status": "succeeded",
+  "failure_code": null,
+  "proposal": {
+    "schema_name": "huipi.grading.proposal",
+    "schema_version": "1.0",
+    "proposal_id": "d1a542ff-b73d-4f3c-8389-9d5a89cc7d7d",
+    "request_id": "b5371928-681f-45ef-a810-c568fda2b78c",
+    "request_fingerprint": "15dc1b71e4e136b235c20b6e2615350f6ffe08931f88fe4e9405f3f673e76711",
+    "grade_input_artifact_id": "3d576f80-2030-4b4b-bc50-caf26cb0e3b0",
+    "grade_input_sha256": "3f8adfcabf2024cf00a9c7853d11baf3dd5da4322cfa470e1f8cc402244d52f0",
+    "submission_id": "9a76b830-2a70-4b88-990c-4b32370170a6",
+    "question_id": "ca870167-85d9-4290-a63d-ab917d914b03",
+    "model_id": "deepseek-flash",
+    "provider": "openai_compatible",
+    "prompt_version": "rubric-candidate-quote-selection-v1",
+    "generation_config_digest": "d40f2d6c6f903e0a0d8d62e592b964f123d0eb5f786b8e697810eb4a0aa23e38",
+    "criterion_scores": [
+      {
+        "criterion_id": "9683ba15-0b9e-462b-9ac1-29b401b07fb9",
+        "awarded_points": "5.00",
+        "max_points": "5.00",
+        "rationale": "学生写出了完整算式“2 + 2 = 4”，过程正确。",
+        "evidence_references": [
+          {
+            "kind": "quote",
+            "segment_index": 0,
+            "text_start": 0,
+            "text_end": 9,
+            "quote": "2 + 2 = 4"
+          }
+        ]
+      },
+      {
+        "criterion_id": "310eb0dd-adb3-42c1-9edf-15dde8d9e0cd",
+        "awarded_points": "5.00",
+        "max_points": "5.00",
+        "rationale": "学生给出的结果为4，与标准答案一致。",
+        "evidence_references": [
+          {
+            "kind": "quote",
+            "segment_index": 0,
+            "text_start": 0,
+            "text_end": 9,
+            "quote": "2 + 2 = 4"
+          }
+        ]
+      }
+    ],
+    "total_score": "10.00",
+    "max_score": "10.00",
+    "grading_status": "completed_candidate",
+    "reason_codes": [],
+    "abstention_reason": null,
+    "prompt_tokens": 954,
+    "completion_tokens": 213,
+    "model_elapsed_ms": 1403,
+    "created_at": "2026-10-25T07:22:30.069646Z"
+  },
+  "input_source": "real_cached_MinerU_synthetic_scanned_exam"
+}

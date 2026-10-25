@@ -12,9 +12,9 @@ from huipi_cloud.infrastructure.storage.s3 import StorageUnavailableError
 from huipi_cloud.modules.canonical_documents.errors import CanonicalNormalizationError
 from huipi_cloud.modules.exam_parsing.runtime import worker_transaction
 from huipi_cloud.modules.grading import proposal_service as proposals
-from huipi_cloud.modules.grading.prompts_v4 import PROMPT_VERSION
 from huipi_cloud.modules.grading.proposal_errors import GradeProposalError
 from huipi_cloud.modules.grading.proposal_protocol import GradeProposalDocument
+from huipi_cloud.modules.grading.response_audit import response_auditor
 from huipi_cloud.modules.identity.protocol import AccessError
 
 from . import service as s
@@ -147,8 +147,13 @@ class ScoringWorker:
             )
         await s.parsing.scripts.verify_sources(self.storage, c.source[2])
         document = await s.read_input(self.storage, indexed, self.config)
+        prompt_version = proposals.production_prompt_version(self.config)
         reply, model, usage, elapsed = await proposals._call_and_validate(
-            self.provider, document, config=self.config
+            self.provider, document, config=self.config, prompt_version=prompt_version,
+            audit_response=(
+                response_auditor(self.storage, document, job["id"], self.provider, prompt_version)
+                if self.config.grading_strategy == "quote_selection" else None
+            ),
         )
         if reply.outcome == "abstain":
             scores, total, state = [], None, "grading_abstained"
@@ -161,14 +166,16 @@ class ScoringWorker:
         proposal = GradeProposalDocument(
             proposal_id=uuid4(),
             request_id=job["id"],
-            request_fingerprint=proposals._request_fingerprint(document, self.provider),
+            request_fingerprint=proposals._request_fingerprint(
+                document, self.provider, prompt_version=prompt_version
+            ),
             grade_input_artifact_id=document.artifact_id,
             grade_input_sha256=document.input_sha256,
             submission_id=document.submission_id,
             question_id=document.question.question_id,
             model_id=model,
             provider=self.provider.provider_name,
-            prompt_version=PROMPT_VERSION,
+            prompt_version=prompt_version,
             generation_config_digest=self.provider.generation_config_digest,
             criterion_scores=scores,
             total_score=total,

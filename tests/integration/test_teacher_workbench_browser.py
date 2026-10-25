@@ -440,12 +440,19 @@ async def test_teacher_workbench_browser_end_to_end(
         worker = ParsingWorker(ctx.factory, parse_executor, config, repository_backend=backend)
         worker_task = asyncio.create_task(worker.run(worker_stop))
         if os.getenv("RUN_EXAM_GRADING_BROWSER") == "1":
-            from test_exam_grading import SyntheticScoreProvider
+            from test_exam_grading import SyntheticScoreProvider, SyntheticSelectionProvider
 
             from huipi_cloud.modules.exam_grading.runtime import ScoringWorker
 
+            selection_mode = os.getenv("RUN_EXAM_SELECTION_BROWSER") == "1"
+            score_config = config.model_copy(update={
+                "grading_strategy": "quote_selection" if selection_mode else "strict_offsets"
+            })
+            score_provider = (
+                SyntheticSelectionProvider() if selection_mode else SyntheticScoreProvider()
+            )
             grading_task = asyncio.create_task(
-                ScoringWorker(ctx.factory, ctx.storage, SyntheticScoreProvider(), config).run(
+                ScoringWorker(ctx.factory, ctx.storage, score_provider, score_config).run(
                     worker_stop
                 )
             )

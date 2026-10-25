@@ -1,0 +1,75 @@
+{
+  "statuses": {
+    "candidate": 11,
+    "abstain": 1
+  },
+  "json_valid": 12,
+  "schema_valid": 12,
+  "raw_quotes": 15,
+  "located_quotes": 15,
+  "total_exact": 10,
+  "all_semantic_reviews": "unreviewed",
+  "historical_statuses_unchanged": true,
+  "provider_success": 12,
+  "json_denominator": 12,
+  "scored_case_count": 11,
+  "candidate_coverage": "11/11",
+  "abstention_rate": "1/12",
+  "strict_usable": "12/12",
+  "total_mae": "0.2727272727272727272727272727",
+  "criterion_count": 20,
+  "criterion_exact": 19,
+  "criterion_mae": "0.15",
+  "over_count": 1,
+  "under_count": 0,
+  "usage": {
+    "prompt_tokens": 11588,
+    "completion_tokens": 2429,
+    "cache_hit_tokens": 2816,
+    "cache_miss_tokens": 8772
+  },
+  "all_13_usage": {
+    "prompt_tokens": 12542,
+    "completion_tokens": 2642,
+    "cache_hit_tokens": 3072,
+    "cache_miss_tokens": 9470
+  },
+  "mean_elapsed_ms": 1451.25,
+  "min_elapsed_ms": 1080,
+  "max_elapsed_ms": 1925,
+  "response_model_ids": [
+    "deepseek-flash"
+  ],
+  "finish_reasons": {
+    "stop": 12
+  },
+  "missing_usage_cases": [],
+  "reasoning_token_usage_available": false,
+  "round_calls": 13,
+  "synthetic_only": true,
+  "not_concurrent_ab": true,
+  "model_sampling_variation_possible": true,
+  "formal_grade_published": false,
+  "main_default_changed": false,
+  "baseline_dataset_sha256": "43215a6deae4bc8f144dbeb9e5b65dfc9186dda76274860e489192c748d6d69b",
+  "fixed_12_cost": {
+    "peak_estimate_usd": "0.005563296",
+    "actual_off_peak_estimate_usd": "0.002781648",
+    "invoice_verified": false
+  },
+  "all_13_cost": {
+    "peak_estimate_usd": "0.006029832",
+    "actual_off_peak_estimate_usd": "0.003014916",
+    "invoice_verified": false
+  },
+  "semantic_risks": [
+    {
+      "case_id": "fraction-partial",
+      "criterion": "simplify",
+      "reference_points": "0.00",
+      "model_points": "3.00",
+      "risk": "equivalent_fraction_mistaken_for_required_simplest_form",
+      "human_review_status": "unreviewed"
+    }
+  ]
+}
