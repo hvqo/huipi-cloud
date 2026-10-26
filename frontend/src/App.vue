@@ -8,25 +8,27 @@ import { identity, logout } from './auth'
 const route = useRoute(),
   router = useRouter()
 const title = computed(() =>
-  route.path.startsWith('/school')
-    ? '学校基础数据'
-    : route.path.startsWith('/papers')
-      ? '试卷管理'
-      : route.path.startsWith('/exams')
-        ? '考试配置工作台'
-        : route.path.endsWith('/results') || route.path === '/exam-results'
-          ? '整卷成绩预览'
-          : route.path.endsWith('/scripts') && route.path.startsWith('/scans/')
-            ? '人工分卷与身份确认'
-            : route.path === '/scans'
-              ? '考试扫描'
-              : route.path.endsWith('/review')
-                ? '作答证据复核'
-                : route.params.sid
-                  ? '学生提交'
-                  : route.params.aid
-                    ? '作业详情'
-                    : '我的作业',
+  route.path.startsWith('/marking')
+    ? '协同阅卷工作台'
+    : route.path.startsWith('/school')
+      ? '学校基础数据'
+      : route.path.startsWith('/papers')
+        ? '试卷管理'
+        : route.path.startsWith('/exams')
+          ? '考试配置工作台'
+          : route.path.endsWith('/results') || route.path === '/exam-results'
+            ? '整卷成绩预览'
+            : route.path.endsWith('/scripts') && route.path.startsWith('/scans/')
+              ? '人工分卷与身份确认'
+              : route.path === '/scans'
+                ? '考试扫描'
+                : route.path.endsWith('/review')
+                  ? '作答证据复核'
+                  : route.params.sid
+                    ? '学生提交'
+                    : route.params.aid
+                      ? '作业详情'
+                      : '我的作业',
 )
 watch(
   () => identity.actor,
@@ -89,6 +91,15 @@ async function signOut() {
           aria-label="学校管理"
           class="nav-link"
           >▦ <span>学校基础数据</span></RouterLink
+        >
+        <RouterLink to="/marking/manage" class="nav-link" aria-label="阅卷管理"
+          >▤ <span>阅卷管理</span></RouterLink
+        >
+        <RouterLink to="/marking/my" class="nav-link" aria-label="我的阅卷任务"
+          >▤ <span>我的阅卷任务</span></RouterLink
+        >
+        <RouterLink to="/marking/progress" class="nav-link" aria-label="阅卷进度"
+          >▤ <span>阅卷进度</span></RouterLink
         >
         <div class="nav-note">考试批改与复核<small>从考试答卷工作区进入</small></div>
         <div class="sidebar-foot">

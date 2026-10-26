@@ -20,6 +20,7 @@ from huipi_cloud.modules.grading.grade_review_router import router as grade_revi
 from huipi_cloud.modules.identity.admin_router import router as admin_router
 from huipi_cloud.modules.identity.dependencies import authorize_request
 from huipi_cloud.modules.identity.router import router as identity_router
+from huipi_cloud.modules.marking_tasks.router import router as marking_tasks_router
 from huipi_cloud.modules.organization.router import router as organization_router
 from huipi_cloud.modules.papers.web_router import router as paper_web_router
 from huipi_cloud.modules.parsing.router import router as parsing_router
@@ -68,3 +69,6 @@ api_router.include_router(exam_results_router)
 api_router.include_router(exam_configuration_router)
 
 api_router.include_router(paper_web_router)
+
+
+api_router.include_router(marking_tasks_router)

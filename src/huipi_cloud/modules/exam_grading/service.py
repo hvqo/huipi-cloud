@@ -80,25 +80,31 @@ async def row(db, table, identifier):
     return value
 
 
-async def context(db, principal, jid, action="exam.mark.read"):
+async def context(db, principal, jid, action="exam.mark.read", *, workspace_id=None):
     job = await row(db, parsing.J, jid)
     root = await row(db, parsing.scripts.A, job["answer_script_id"])
-    await parsing.scripts.authorize(
-        db,
-        principal,
-        root["exam_session_id"],
-        "exam.mark.read",
-        action,
-        "exam.script.read",
-        "exam.identity.verify",
+    from huipi_cloud.modules.marking_tasks.access import assigned_source
+
+    delegated = workspace_id is not None and await assigned_source(
+        db, principal, workspace_id, root["exam_session_id"]
     )
-    await parsing.context(
-        db,
-        principal,
-        root["id"],
-        version_id=job["answer_script_version_id"],
-        action="exam.mark.read",
-    )
+    if not delegated:
+        await parsing.scripts.authorize(
+            db,
+            principal,
+            root["exam_session_id"],
+            "exam.mark.read",
+            action,
+            "exam.script.read",
+            "exam.identity.verify",
+        )
+        await parsing.context(
+            db,
+            principal,
+            root["id"],
+            version_id=job["answer_script_version_id"],
+            action="exam.mark.read",
+        )
     # The original parsing intent remains current; a newer viewer cannot revive it.
     source = await parsing.context(
         db,
@@ -152,7 +158,7 @@ async def context(db, principal, jid, action="exam.mark.read"):
 
 async def workspace_context(db, principal, wid, action="exam.mark.read"):
     w = await row(db, W, wid)
-    c = await context(db, principal, w["parsing_job_id"], action)
+    c = await context(db, principal, w["parsing_job_id"], action, workspace_id=wid)
     mapping = next((m for m in c.mappings if m["id"] == w["paper_question_mapping_id"]), None)
     if mapping is None or mapping["legacy_question_id"] != w["question_id"]:
         raise AccessError("exam_mark_source_changed", 409)
@@ -449,6 +455,9 @@ async def confirm_answer(db, p, storage, wid, request, config=settings):
     )
     async with scans.transaction(db):
         await workspace_context(db, p, wid, "exam.answer.review")
+        from huipi_cloud.modules.marking_tasks.access import require_working
+
+        await require_working(db, p, wid)
         old = await replay(db, p, request.request_id, digest)
         if old:
             return old
@@ -529,6 +538,9 @@ async def enqueue(db, p, storage, wid, request, config=settings):
     )
     async with scans.transaction(db):
         await workspace_context(db, p, wid, "exam.score.request")
+        from huipi_cloud.modules.marking_tasks.access import require_working
+
+        await require_working(db, p, wid)
         old = await replay(db, p, request.request_id, digest)
         if old:
             return old
@@ -562,6 +574,9 @@ async def enqueue(db, p, storage, wid, request, config=settings):
     )
     async with scans.transaction(db):
         await workspace_context(db, p, wid, "exam.score.request")
+        from huipi_cloud.modules.marking_tasks.access import require_working
+
+        await require_working(db, p, wid)
         old = await replay(db, p, request.request_id, digest)
         if old:
             return old
@@ -833,6 +848,9 @@ async def record_score_review(db, p, storage, wid, request, config=settings):
     )
     async with scans.transaction(db):
         c = await workspace_context(db, p, wid, "exam.score.review")
+        from huipi_cloud.modules.marking_tasks.access import require_working
+
+        await require_working(db, p, wid)
         job = await row(db, S, UUID(value["scoring_job_id"]))
         await scoring_context(db, p, job, "exam.score.review", config)
         await scoring_context(
@@ -897,7 +915,13 @@ async def http_authorize(db, p, params, action):
         jid = w["parsing_job_id"]
     else:
         jid = UUID(str(params["job_id"]))
-    await context(db, p, jid, action)
+    await context(
+        db,
+        p,
+        jid,
+        action,
+        workspace_id=UUID(str(params["workspace_id"])) if params.get("workspace_id") else None,
+    )
 
 
 async def enable_operator(db, actor_id, target_id, request_id, approval_ref):

@@ -15,6 +15,8 @@ import ExamResults from './views/ExamResults.vue'
 import ExamConfiguration from './views/ExamConfiguration.vue'
 import Papers from './views/Papers.vue'
 import School from './views/School.vue'
+import MarkingManagement from './views/MarkingManagement.vue'
+import MyMarkingTasks from './views/MyMarkingTasks.vue'
 import { initializeAuth, identity, callback } from './auth'
 
 export const router = createRouter({
@@ -39,6 +41,10 @@ export const router = createRouter({
     { path: '/exam-results', component: ExamResults },
     { path: '/exams', component: ExamConfiguration },
     { path: '/school', component: School },
+    { path: '/marking/manage', component: MarkingManagement },
+    { path: '/marking/progress', component: MarkingManagement, props: { progressOnly: true } },
+    { path: '/marking/my', component: MyMarkingTasks },
+    { path: '/marking/my/:tid', component: MyMarkingTasks },
     { path: '/papers', component: Papers },
     { path: '/papers/:pid', component: Papers },
     { path: '/exams/sessions/:sid', component: ExamConfiguration },

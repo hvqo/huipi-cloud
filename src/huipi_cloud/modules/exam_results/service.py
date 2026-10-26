@@ -266,6 +266,14 @@ async def question_result(db, p, storage, c, workspace, mapping, rules, config):
             g.reviews._validate_score_evidence(
                 item.reviewed_points, item.evidence_references, doc, config
             )
+        from huipi_cloud.modules.marking_tasks.access import result_valid
+
+        if not await result_valid(db, workspace["id"], value.review_id):
+            result.status, result.reason = (
+                "awaiting_review",
+                "marking_task_not_submitted_or_changed",
+            )
+            return result
         result.points = str(value.reviewed_total_score)
         result.status = "reviewed"
         return result

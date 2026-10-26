@@ -19,7 +19,7 @@ async function thumbnailSlot(work: () => Promise<void>) {
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
 import { scans } from '../api/scans'
-const props = defineProps<{ pageId: string }>()
+const props = defineProps<{ pageId: string; loadPreview?: (id: string) => Promise<Blob> }>()
 const root = ref<HTMLElement>(),
   url = ref(''),
   failed = ref(false)
@@ -41,7 +41,7 @@ async function load() {
   try {
     await thumbnailSlot(async () => {
       if (!alive) return
-      const blob = await scans.preview(props.pageId)
+      const blob = await (props.loadPreview || scans.preview)(props.pageId)
       if (alive) url.value = URL.createObjectURL(blob)
     })
   } catch {

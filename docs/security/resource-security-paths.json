@@ -1,5 +1,5 @@
 {
-  "version": "school-workbench-1",
+  "version": "collaborative-marking-1",
   "operations": [
     {
       "method": "POST",
@@ -976,6 +976,102 @@
       "permission": "organization.read",
       "classification_boundary": "固定ORGANIZATION_POLICIES动作 + 当前安装级Grant；原organization Service授权/事务；无旧admin或Membership旁路",
       "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marking-sessions",
+      "policy": "list_marking_sessions",
+      "permission": "filtered_marking_list",
+      "classification_boundary": "真实Event/Session Grant；具体当前分配任务；考试来源保持exam_protected；无旧admin或成员旁路",
+      "entrypoint": "huipi_cloud.modules.marking_tasks.service"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/my-marking-tasks",
+      "policy": "list_my_marking_tasks",
+      "permission": "filtered_marking_list",
+      "classification_boundary": "真实Event/Session Grant；具体当前分配任务；考试来源保持exam_protected；无旧admin或成员旁路",
+      "entrypoint": "huipi_cloud.modules.marking_tasks.service"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{session_id}/marking-pool",
+      "policy": "list_marking_pool",
+      "permission": "exam.task.manage",
+      "classification_boundary": "真实Event/Session Grant；具体当前分配任务；考试来源保持exam_protected；无旧admin或成员旁路",
+      "entrypoint": "huipi_cloud.modules.marking_tasks.service"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{session_id}/marking-teachers",
+      "policy": "list_marking_teachers",
+      "permission": "exam.task.manage",
+      "classification_boundary": "真实Event/Session Grant；具体当前分配任务；考试来源保持exam_protected；无旧admin或成员旁路",
+      "entrypoint": "huipi_cloud.modules.marking_tasks.service"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{session_id}/marking-progress",
+      "policy": "inspect_marking_progress",
+      "permission": "exam.task.manage",
+      "classification_boundary": "真实Event/Session Grant；具体当前分配任务；考试来源保持exam_protected；无旧admin或成员旁路",
+      "entrypoint": "huipi_cloud.modules.marking_tasks.service"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-sessions/{session_id}/marking-jobs/{job_id}/prepare",
+      "policy": "prepare_marking_questions",
+      "permission": "exam.task.manage",
+      "classification_boundary": "真实Event/Session Grant；具体当前分配任务；考试来源保持exam_protected；无旧admin或成员旁路",
+      "entrypoint": "huipi_cloud.modules.marking_tasks.service"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-sessions/{session_id}/marking-assignments",
+      "policy": "assign_marking_tasks",
+      "permission": "exam.task.manage",
+      "classification_boundary": "真实Event/Session Grant；具体当前分配任务；考试来源保持exam_protected；无旧admin或成员旁路",
+      "entrypoint": "huipi_cloud.modules.marking_tasks.service"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marking-tasks/{task_id}",
+      "policy": "inspect_marking_task",
+      "permission": "exam.task.work",
+      "classification_boundary": "真实Event/Session Grant；具体当前分配任务；考试来源保持exam_protected；无旧admin或成员旁路",
+      "entrypoint": "huipi_cloud.modules.marking_tasks.service"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/marking-tasks/{task_id}/claim",
+      "policy": "claim_marking_task",
+      "permission": "exam.task.work",
+      "classification_boundary": "真实Event/Session Grant；具体当前分配任务；考试来源保持exam_protected；无旧admin或成员旁路",
+      "entrypoint": "huipi_cloud.modules.marking_tasks.service"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/marking-tasks/{task_id}/complete",
+      "policy": "complete_marking_task",
+      "permission": "exam.task.work",
+      "classification_boundary": "真实Event/Session Grant；具体当前分配任务；考试来源保持exam_protected；无旧admin或成员旁路",
+      "entrypoint": "huipi_cloud.modules.marking_tasks.service"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/marking-tasks/{task_id}/cancel",
+      "policy": "cancel_marking_task",
+      "permission": "exam.task.manage",
+      "classification_boundary": "真实Event/Session Grant；具体当前分配任务；考试来源保持exam_protected；无旧admin或成员旁路",
+      "entrypoint": "huipi_cloud.modules.marking_tasks.service"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marking-tasks/{task_id}/pages/{page_id}/preview",
+      "policy": "preview_marking_page",
+      "permission": "exam.task.work",
+      "classification_boundary": "真实Event/Session Grant；具体当前分配任务；考试来源保持exam_protected；无旧admin或成员旁路",
+      "entrypoint": "huipi_cloud.modules.marking_tasks.service"
     }
   ]
 }

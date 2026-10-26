@@ -233,6 +233,8 @@ def test_grants_manage_catalog_entry_was_not_extended_by_organization_actions():
         "exam.answer.review",
         "exam.score.request",
         "exam.score.review",
+        "exam.task.manage",
+        "exam.task.work",
         "paper.create",
         "paper.read",
         "paper.edit",

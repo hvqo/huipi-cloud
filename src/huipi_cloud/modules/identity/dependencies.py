@@ -17,6 +17,7 @@ from huipi_cloud.modules.exam_configuration.policies import POLICIES as CONFIG_P
 from huipi_cloud.modules.exam_configuration.policies import PREFIX as CONFIG_PREFIX
 from huipi_cloud.modules.identity import service
 from huipi_cloud.modules.identity.protocol import AccessError, Principal
+from huipi_cloud.modules.marking_tasks.policies import TASK_POLICIES
 from huipi_cloud.modules.papers.web_policies import POLICIES as PAPER_WEB_POLICIES
 from huipi_cloud.modules.papers.web_policies import PREFIX as PAPER_WEB_PREFIX
 
@@ -24,6 +25,7 @@ bearer = HTTPBearer(auto_error=False)
 verifier = TokenVerifier(settings)
 
 # Exact route names + allowed methods: a new route has no implicit permission.
+
 ADMIN_POLICIES = {
     "list_teachers": "/admin/teachers",
     "register_teacher": "/admin/teachers",
@@ -43,7 +45,6 @@ ORGANIZATION_POLICIES = {
     "school_classes": "organization.read",
     "school_import_template": "student.import.preview",
     "school_import_rows": "organization.read",
-
     "list_academic_years": "organization.read",
     "list_academic_terms": "organization.read",
     "list_grade_cohorts": "organization.read",
@@ -161,6 +162,7 @@ SCAN_POLICIES = {
 }
 
 POLICIES = {
+    **{name: {rule[0]} for name, rule in TASK_POLICIES.items()},
     **{name: {policy[0]} for name, policy in PAPER_WEB_POLICIES.items()},
     **{name: {policy[0]} for name, policy in CONFIG_POLICIES.items()},
     **{name: {policy[0]} for name, policy in RESULT_POLICIES.items()},
@@ -228,6 +230,7 @@ GRADE_REVIEW_PATH = (
 )
 
 POLICY_PATHS = {
+    **{name: rule[1] for name, rule in TASK_POLICIES.items()},
     **{name: PAPER_WEB_PREFIX + policy[1] for name, policy in PAPER_WEB_POLICIES.items()},
     **{name: CONFIG_PREFIX + policy[1] for name, policy in CONFIG_POLICIES.items()},
     **{name: policy[1] for name, policy in RESULT_POLICIES.items()},
@@ -349,7 +352,10 @@ async def authorize_request(
                     raise AccessError("administrator_required")
                 return current
             if name in {
-                "get_current_user", "get_school_access", "create_assignment", "list_assignments"
+                "get_current_user",
+                "get_school_access",
+                "create_assignment",
+                "list_assignments",
             }:
                 return current
             if name in {
@@ -403,6 +409,27 @@ async def authorize_request(
                     await authorize(
                         session, current, UUID(str(sid)), exporting=RESULT_POLICIES[name][2]
                     )
+                return current
+            if name in TASK_POLICIES:
+                from huipi_cloud.modules.marking_tasks import service as marking
+
+                try:
+                    kind = TASK_POLICIES[name][2]
+                    if kind == "manager":
+                        await marking.manager(
+                            session, current, UUID(str(request.path_params["session_id"]))
+                        )
+                    elif kind == "own":
+                        await marking.own(
+                            session, current, UUID(str(request.path_params["task_id"]))
+                        )
+                    elif kind == "cancel":
+                        task = await marking.task(
+                            session, UUID(str(request.path_params["task_id"]))
+                        )
+                        await marking.manager(session, current, task["exam_session_id"])
+                except ValueError:
+                    raise AccessError("invalid_resource_id", 422) from None
                 return current
             if name in EXAM_MARK_POLICIES:
                 from huipi_cloud.modules.exam_grading import service as exam_mark_service
