@@ -367,3 +367,41 @@ async def test_revoked_scorer_marks_existing_candidate_invalid_without_task(coll
     after = await view(c, "admin")
     assert after.status_code == 200, after.text
     assert after.json()["counts"]["scoring_invalidated"] == 1
+
+
+@pytest.mark.anyio
+async def test_scanner_can_find_unclaimed_pages_without_roster_or_grading_access(marking):
+    from huipi_cloud.modules.resource_security.models import SecurityScope
+    from huipi_cloud.modules.scans.permissions import SCAN_OPERATOR_ROLE
+
+    c = marking
+    async with c.factory() as db:
+        scope = await db.scalar(
+            select(SecurityScope.id).where(SecurityScope.exam_session_id == UUID(c.session["id"]))
+        )
+    async with c.factory() as db:
+        await security.grant_role(
+            db,
+            c.principals["admin"],
+            uuid4(),
+            user_id=c.users["b"].id,
+            role_version_id=SCAN_OPERATOR_ROLE,
+            scope_id=scope,
+        )
+    response = await view(c, "b")
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result["counts"].get("unclaimed_page", 0) == 2
+    assert result["capabilities"]["pages"] and not result["capabilities"]["scripts"]
+    assert not result["capabilities"]["grading"] and not result["capabilities"]["parsing"]
+    assert "student_name" not in response.text and "question_id" not in response.text
+    page = next(item for item in result["items"] if item["kind"] == "unclaimed_page")
+    preview = await c.client.get(
+        f"/api/v1/scan-pages/{page['page_id']}/preview", headers=c.headers("b")
+    )
+    assert preview.status_code == 200 and preview.headers["content-type"].startswith("image/jpeg")
+    assert (
+        await c.client.get(
+            f"/api/v1/exam-sessions/{c.session['id']}/answer-scripts", headers=c.headers("b")
+        )
+    ).status_code == 404

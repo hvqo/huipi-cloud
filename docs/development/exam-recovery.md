@@ -20,7 +20,7 @@
 - `/api/v1/recovery-sessions?offset=0`：20场次/页，SQL按现有真实Scope过滤；task.work岗位须已有本人current任务。
 - `/api/v1/exam-sessions/{session_id}/exceptions?offset=0&kind=...`：25条/页，有界类型枚举；`summary=true`只读统计，不返回明细。
 
-复用当前 OIDC/JWT、User 和密封 Role/Grant。文件、页面、答卷、解析、评分、负责人任务与本人任务分别按原动作组合过滤。需要同Grant的动作仍必须在同一Grant中具备；解析/评分另需同场次名单读取权。没有新增管理员捷径、自由Scope、权限自动分配或特权Session。旧作业HTTP/Worker隔离不变。
+复用当前 OIDC/JWT、User 和密封 Role/Grant。文件、页面、答卷、解析、评分、负责人任务与本人任务分别按授权动作组合过滤。持有同一真实场次的扫描文件读取与批次读取Grant的扫描员可查看未认领/疑似重复页及原件，投影不暴露答卷身份；编辑分卷或确认身份仍要求原分卷权限。需要同Grant的动作仍必须在同一Grant中具备；解析/评分另需同场次名单读取权。没有新增管理员捷径、自由Scope、权限自动分配或特权Session。旧作业HTTP/Worker隔离不变。
 
 task.work教师只能看到自己具体任务对应的异常，不会因为异常中心获得其他题、其他班、全校名单、原卷PDF或完整试卷权限。读取投影不代表获准修复；每个原写接口都重新授权和校验revision/request_id、来源及审计。
 

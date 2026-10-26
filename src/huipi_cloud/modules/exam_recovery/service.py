@@ -29,7 +29,7 @@ B, F, P, C, J, W, SC, AR, K, GP, T = (
 )
 GROUPS = {
     "files": {"scan.batch.read"},
-    "pages": {"exam.script.read", "scan.file.read"},
+    "pages": {"scan.batch.read", "scan.file.read"},
     "scripts": {"exam.script.read"},
     "parsing": {"exam.parse.read", "exam.script.read", "exam.identity.verify"},
     "grading": {"exam.mark.read", "exam.script.read", "exam.identity.verify"},
