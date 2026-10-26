@@ -1850,6 +1850,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/recovery-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Recovery Sessions */
+        get: operations["list_recovery_sessions_api_v1_recovery_sessions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-sessions/{session_id}/exceptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Inspect Exam Recovery */
+        get: operations["inspect_exam_recovery_api_v1_exam_sessions__session_id__exceptions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -5149,6 +5183,89 @@ export interface components {
             text_end: number;
             /** Quote */
             quote: string;
+        };
+        /** RecoveryItem */
+        RecoveryItem: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "upload_failed" | "upload_interrupted" | "unclaimed_page" | "duplicate_page_check" | "identity_pending" | "incomplete_script" | "source_changed" | "parsing_failed" | "parsing_invalidated" | "parsing_not_started" | "answer_unconfirmed" | "answer_absent" | "scoring_failed" | "scoring_abstained" | "scoring_invalidated" | "task_invalidated";
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            /** Title */
+            title: string;
+            /** Reason */
+            reason: string;
+            /**
+             * State
+             * @default pending
+             * @enum {string}
+             */
+            state: "pending" | "manual_review";
+            /** Batch Id */
+            batch_id?: string | null;
+            /** File Id */
+            file_id?: string | null;
+            /** Page Id */
+            page_id?: string | null;
+            /** Script Id */
+            script_id?: string | null;
+            /** Workspace Id */
+            workspace_id?: string | null;
+            /** Task Id */
+            task_id?: string | null;
+            /** Retry Request Id */
+            retry_request_id?: string | null;
+            /** Original Filename */
+            original_filename?: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** RecoveryView */
+        RecoveryView: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Session Title */
+            session_title: string;
+            /** Event Title */
+            event_title: string;
+            /** Items */
+            items: components["schemas"]["RecoveryItem"][];
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** Total */
+            total: number;
+            /** Offset */
+            offset: number;
+            /** Limit */
+            limit: number;
+            /** Has Next */
+            has_next: boolean;
+            /** Capabilities */
+            capabilities: {
+                [key: string]: boolean;
+            };
+            /** Results */
+            results: {
+                [key: string]: number;
+            };
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
         };
         /**
          * ReviewAssetReference
@@ -13421,6 +13538,74 @@ export interface operations {
                 };
                 content: {
                     "image/jpeg": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_recovery_sessions_api_v1_recovery_sessions_get: {
+        parameters: {
+            query?: {
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    inspect_exam_recovery_api_v1_exam_sessions__session_id__exceptions_get: {
+        parameters: {
+            query?: {
+                offset?: number;
+                kind?: ("upload_failed" | "upload_interrupted" | "unclaimed_page" | "duplicate_page_check" | "identity_pending" | "incomplete_script" | "source_changed" | "parsing_failed" | "parsing_invalidated" | "parsing_not_started" | "answer_unconfirmed" | "answer_absent" | "scoring_failed" | "scoring_abstained" | "scoring_invalidated" | "task_invalidated") | null;
+                summary?: boolean;
+            };
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecoveryView"];
                 };
             };
             /** @description Validation Error */

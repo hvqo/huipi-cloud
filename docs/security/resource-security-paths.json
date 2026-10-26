@@ -1,5 +1,5 @@
 {
-  "version": "collaborative-marking-1",
+  "version": "exam-recovery-1",
   "operations": [
     {
       "method": "POST",
@@ -1072,6 +1072,22 @@
       "permission": "exam.task.work",
       "classification_boundary": "真实Event/Session Grant；具体当前分配任务；考试来源保持exam_protected；无旧admin或成员旁路",
       "entrypoint": "huipi_cloud.modules.marking_tasks.service"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recovery-sessions",
+      "policy": "list_recovery_sessions",
+      "permission": "current_exam_recovery_scope",
+      "classification_boundary": "现有当前Grant及真实场次；按类别权限投影；任务教师仅本人current任务；修复沿原受保护业务入口",
+      "entrypoint": "huipi_cloud.modules.exam_recovery.service"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{session_id}/exceptions",
+      "policy": "inspect_exam_recovery",
+      "permission": "current_exam_recovery_scope",
+      "classification_boundary": "现有当前Grant及真实场次；按类别权限投影；任务教师仅本人current任务；修复沿原受保护业务入口",
+      "entrypoint": "huipi_cloud.modules.exam_recovery.service"
     }
   ]
 }

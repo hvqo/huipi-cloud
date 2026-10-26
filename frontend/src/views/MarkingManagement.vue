@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useRoute } from 'vue-router'
+import ExceptionBadge from '../components/ExceptionBadge.vue'
+import { recovery } from '../api/recovery'
 import {
   marking,
   taskStatus,
@@ -10,7 +13,7 @@ import {
 import { ApiError } from '../api/client'
 const props = defineProps<{ progressOnly?: boolean }>()
 const sessions = ref<Awaited<ReturnType<typeof marking.sessions>>>(),
-  sid = ref(''),
+  sid = ref(String(useRoute().query.session || '')),
   sessionOffset = ref(0),
   offset = ref(0),
   more = ref(false)
@@ -43,6 +46,14 @@ async function run(fn: () => Promise<void>) {
 async function loadSessions() {
   sessions.value = await marking.sessions(sessionOffset.value)
   sid.value ||= sessions.value.items[0]?.id || ''
+  if (sid.value && !sessions.value.items.some((item) => item.id === sid.value)) {
+    const current = await recovery.inspect(sid.value, 0, '', true)
+    sessions.value.items.push({
+      id: sid.value,
+      title: current.session_title,
+      event_title: current.event_title,
+    })
+  }
   await load()
 }
 async function load() {
@@ -138,6 +149,7 @@ onMounted(() => run(loadSessions))
       progressOnly ? '返回任务分配 →' : '查看阅卷进度 →'
     }}</RouterLink>
   </header>
+  <ExceptionBadge :session-id="sid" />
   <p v-if="error" role="alert">{{ error }}</p>
   <p v-if="notice" role="status">{{ notice }}</p>
   <aside v-if="pending" role="alert">

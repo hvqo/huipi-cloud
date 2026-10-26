@@ -965,3 +965,153 @@ test('协同阅卷：负责人跨班分配、两名教师提交与成绩预览',
   await page.screenshot({ path: 'test-results/marking-results-preview.png', fullPage: true })
   expect(errors).toEqual([])
 })
+
+test('异常补救：缺页身份待定、失败文件原请求恢复、跨批补页、解析失败重认后送回阅卷', async ({
+  page,
+  request,
+}) => {
+  test.skip(process.env.RUN_RECOVERY_BROWSER !== '1', 'recovery real business opt-in')
+  test.setTimeout(160000)
+  await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/a`, { ignoreHTTPSErrors: true })
+  const sid = process.env.WORKBENCH_SCAN_SESSION!
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(e.message))
+  page.on('dialog', (d) => d.accept())
+  await signIn(page, `/scans/sessions/${sid}/scripts`)
+  await page.locator('.script-saved-item').filter({ hasText: '合成1班' }).click()
+  await expect(page.locator('.script-identity')).toContainText('N001')
+  await page.getByRole('button', { name: '移除第2项', exact: true }).click()
+  await page.getByLabel('已核对页数，答卷完整').uncheck()
+  await page.getByLabel('操作说明').fill('异常补救：发现漏页，保留未确认草稿')
+  const saved = page
+    .waitForResponse((r) => r.url().endsWith('/versions') && r.request().method() === 'POST')
+    .then((r) => r.json())
+  await page.getByRole('button', { name: '保存为新版本草稿', exact: true }).click()
+  const { script_id: aid } = await saved
+  await page.getByRole('link', { name: '异常处理', exact: true }).click()
+  await page.getByLabel('考试与科目场次').selectOption(sid)
+  await expect(
+    page.locator(`tr[data-kind="identity_pending"][data-resource="${aid}"]`),
+  ).toBeVisible()
+  await page.screenshot({ path: 'test-results/recovery-missing-identity.png', fullPage: true })
+  // Real failure after the file reservation, before private S3 storage succeeds.
+  await page.getByRole('link', { name: '新建补扫批次 →', exact: true }).click()
+  await page.getByLabel('批次名称').fill('浏览器补扫批次')
+  await page.getByRole('button', { name: '新建扫描批次', exact: true }).click()
+  await page
+    .getByLabel('扫描 PDF', { exact: true })
+    .setInputFiles(process.env.WORKBENCH_RECOVERY_PDF!)
+  await page.getByRole('button', { name: '上传并生成预览', exact: true }).click()
+  await expect(page.getByRole('alert')).toBeVisible()
+  await page.getByRole('link', { name: '异常处理', exact: true }).click()
+  await page.getByLabel('考试与科目场次').selectOption(sid)
+  const failed = page.locator('tr[data-kind="upload_failed"]')
+  await expect(failed).toHaveCount(1)
+  await failed.locator('input[type=file]').setInputFiles(process.env.WORKBENCH_RECOVERY_PDF!)
+  await expect(page.getByText('重传已完成，页面仍待人工分卷及身份确认。')).toBeVisible()
+  await expect(page.locator('tr[data-kind="upload_failed"]')).toHaveCount(0)
+  await page.screenshot({ path: 'test-results/recovery-upload-restored.png', fullPage: true })
+  await page
+    .locator(`tr[data-resource="${aid}"]`)
+    .getByRole('link', { name: '补页、调序或重新确认', exact: true })
+    .click()
+  await expect(page.locator('.script-status')).toContainText('待身份确认')
+  await expect(page.locator('.script-order li')).toHaveCount(1)
+  const original = page.locator('.script-page').filter({ hasText: 'mixed-scan.pdf' })
+  await original.getByRole('button', { name: '加入扫描页 1', exact: true }).click()
+  const supplement = page.locator('.script-page').filter({ hasText: 'recover-upload.pdf' })
+  await supplement.getByRole('button', { name: '加入扫描页 1', exact: true }).click()
+  await page.getByRole('button', { name: '上移第3项', exact: true }).click()
+  await page.getByLabel('已核对页数，答卷完整').check()
+  await page.getByLabel('操作说明').fill('异常补救：测试解析资源故障')
+  await page.getByRole('button', { name: '核对学生并确认', exact: true }).click()
+  const identity = page.getByRole('dialog', { name: '核对学生身份与实际卷别' })
+  await identity.getByLabel('参试学生').selectOption({
+    label: await identity
+      .getByLabel('参试学生')
+      .locator('option')
+      .filter({ hasText: '考号 N001' })
+      .innerText(),
+  })
+  await identity.getByRole('button', { name: '确认身份并保存新版本' }).click()
+  await expect(identity).not.toBeVisible()
+  await page.getByRole('button', { name: '开始解析', exact: true }).click()
+  await expect(page.locator('.parse-state')).toHaveText('解析失败', { timeout: 40000 })
+  await page.getByRole('link', { name: '异常处理', exact: true }).click()
+  await page.getByLabel('考试与科目场次').selectOption(sid)
+  const parsing = page.locator(`tr[data-kind="parsing_failed"][data-resource="${aid}"]`)
+  await expect(parsing).toBeVisible()
+  await expect(parsing).toContainText('本地解析资源暂不可用')
+  await page.screenshot({ path: 'test-results/recovery-parse-failed.png', fullPage: true })
+  await parsing.getByRole('link', { name: '核对答卷与重新解析', exact: true }).click()
+  await expect(page.locator('.script-order li')).toHaveCount(3)
+  await page.getByLabel('操作说明').fill('资源修复后重新确认，保持三页顺序')
+  await page.getByRole('button', { name: '核对学生并确认', exact: true }).click()
+  await identity.getByLabel('参试学生').selectOption({
+    label: await identity
+      .getByLabel('参试学生')
+      .locator('option')
+      .filter({ hasText: '考号 N001' })
+      .innerText(),
+  })
+  await identity.getByRole('button', { name: '确认身份并保存新版本' }).click()
+  await expect(identity).not.toBeVisible()
+  await page.getByRole('button', { name: '开始解析', exact: true }).click()
+  await expect(page.locator('.parse-state')).toHaveText('解析完成', { timeout: 60000 })
+  await page.getByRole('button', { name: '查看解析内容', exact: true }).click()
+  await expect(page.locator('.parsed-content')).not.toBeEmpty()
+  await page.screenshot({ path: 'test-results/recovery-canonical-restored.png', fullPage: true })
+  await page.getByRole('link', { name: '异常处理', exact: true }).click()
+  await page.getByLabel('考试与科目场次').selectOption(sid)
+  await page.getByRole('link', { name: '送回阅卷流程 →', exact: true }).click()
+  // The repaired version receives new workspaces; none of the old scores is revived.
+  await page.getByRole('button', { name: '准备待批题目', exact: true }).first().click()
+  await page.getByLabel('阅卷教师').selectOption(process.env.WORKBENCH_MARKER_A!)
+  const paper = page.locator('.mark-script').filter({ hasText: '合成1班' })
+  await paper.locator('input[type=checkbox]').first().check()
+  await page.getByRole('button', { name: /分配选中题目/ }).click()
+  await expect(page.getByText('操作已保存。', { exact: true })).toBeVisible()
+  await page.screenshot({ path: 'test-results/recovery-return-to-marking.png', fullPage: true })
+  await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/marker_a`, {
+    ignoreHTTPSErrors: true,
+  })
+  const teacherContext = await page
+    .context()
+    .browser()!
+    .newContext({ ignoreHTTPSErrors: true, viewport: { width: 1440, height: 900 } })
+  const teacherPage = await teacherContext.newPage()
+  await signIn(teacherPage, '/marking/my')
+  await teacherPage.getByRole('link', { name: '进入任务 →' }).click()
+  await teacherPage.getByRole('button', { name: '领取并开始', exact: true }).click()
+  await expect(teacherPage.getByRole('region', { name: 'AI 批改与复核' })).toBeVisible()
+  const resumed = teacherPage.getByRole('region', { name: 'AI 批改与复核' })
+  await expect(resumed.getByRole('heading', { name: '第1题', exact: true })).toBeVisible()
+  await expect(resumed.locator('.mark-thumbs button')).toHaveCount(3)
+  await resumed.locator('.mark-thumbs button').first().scrollIntoViewIfNeeded()
+  await expect
+    .poll(() =>
+      resumed
+        .locator('.mark-thumbs img')
+        .first()
+        .evaluate((img) => (img as HTMLImageElement).naturalWidth),
+    )
+    .toBeGreaterThan(0)
+
+  await teacherPage.screenshot({
+    path: 'test-results/recovery-teacher-resumed.png',
+    fullPage: true,
+  })
+  await teacherContext.close()
+  await page.getByRole('link', { name: '成绩预览', exact: true }).click()
+  const correctedResult = page.locator('.result-table tbody tr').filter({ hasText: 'N001' })
+  await expect(correctedResult).toContainText('未完成')
+  await expect(correctedResult).not.toContainText('18.00')
+  await page.screenshot({ path: 'test-results/recovery-old-score-invalid.png', fullPage: true })
+
+  await page.getByRole('link', { name: '异常处理', exact: true }).click()
+  await page.getByLabel('考试与科目场次').selectOption(sid)
+  await expect(page.locator(`tr[data-kind="parsing_failed"][data-resource="${aid}"]`)).toHaveCount(
+    0,
+  )
+  expect(errors).toEqual([])
+})

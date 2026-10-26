@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { scans } from '../api/scans'
 import { ApiError, type Schema } from '../api/client'
 import PageState from '../components/PageState.vue'
+import ExceptionBadge from '../components/ExceptionBadge.vue'
 
 const route = useRoute()
 const sessions = ref<Schema['ScanSession'][]>([]),
@@ -224,7 +225,21 @@ async function paginateBatches(delta: number) {
 }
 const stateLabel = (s: string) =>
   ({ stored: '已接收', receiving: '接收处理中', failed: '接收失败' })[s] || s
-onMounted(loadSessions)
+onMounted(async () => {
+  await loadSessions()
+  if (route.query.batch && sessionId.value)
+    await run(async () => {
+      const selectedBatch = await scans.batch(String(route.query.batch))
+      if (selectedBatch.exam_session_id !== sessionId.value)
+        throw new Error('来源文件不属于当前场次。')
+      await chooseBatch(selectedBatch)
+      if (route.query.file) {
+        const selectedFile = await scans.file(String(route.query.file))
+        if (selectedFile.batch_id !== selectedBatch.id) throw new Error('来源文件不属于当前批次。')
+        await showFile(selectedFile)
+      }
+    })
+})
 onUnmounted(() => {
   generation++
   clearImage()
@@ -244,6 +259,7 @@ onUnmounted(() => {
       <p class="muted">接收混班扫描 PDF，逐页核对原件。此步骤不确认学生身份，也不生成成绩。</p>
     </div>
   </div>
+  <ExceptionBadge :session-id="sessionId" />
   <p v-if="error" class="scan-alert" role="alert">{{ error }}</p>
   <p v-if="notice" class="scan-notice" role="status">{{ notice }}</p>
   <p v-if="!loading && !error && !sessions.length" class="muted">

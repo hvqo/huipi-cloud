@@ -108,3 +108,7 @@ Vue 客户端没有可信授权能力；只允许标准 PKCE 登录并向固定�
 12个固定方法/路径已纳入机器权限目录。`exam.task.manage` 使用当前真实 Event/Session Scope 管理任务；`exam.task.work` 仅对当前分配给该主体、已领取的题目开放原考试批改能力。两动作不由 JWT 或旧 admin 授予。跨班分配是具体答卷题目授权，不授予全班成绩、全校名单或混班 PDF 读取权。
 
 任务预览只返回当前答卷中的单页校验JPEG。提交需本人本次分配后的完整 accepted/revised GradeReview；派单/重派不产生分数。任务 current、assignee、来源与当前 Grant 每次重新核验。详情及参数见[多人阅卷合同](../development/collaborative-marking.md)。
+
+## 考试异常处理
+
+异常场次与异常列表仅提供固定只读投影，按现有当前Grant及真实场次筛选，阅卷教师仅能查看本人已分配任务对应的异常。文件、扫描页、答卷、解析与评分类别分别要求原业务权限，修复继续调用原受保护写接口；不增加新的授权捷径。详见[异常处理合同](../development/exam-recovery.md)。
