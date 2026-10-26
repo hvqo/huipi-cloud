@@ -14,6 +14,7 @@ import AnswerScripts from './views/AnswerScripts.vue'
 import ExamResults from './views/ExamResults.vue'
 import ExamConfiguration from './views/ExamConfiguration.vue'
 import Papers from './views/Papers.vue'
+import School from './views/School.vue'
 import { initializeAuth, identity, callback } from './auth'
 
 export const router = createRouter({
@@ -37,6 +38,7 @@ export const router = createRouter({
     { path: '/scans', component: ScanIntake },
     { path: '/exam-results', component: ExamResults },
     { path: '/exams', component: ExamConfiguration },
+    { path: '/school', component: School },
     { path: '/papers', component: Papers },
     { path: '/papers/:pid', component: Papers },
     { path: '/exams/sessions/:sid', component: ExamConfiguration },

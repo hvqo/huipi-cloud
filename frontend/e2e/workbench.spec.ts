@@ -208,15 +208,17 @@ test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原�
   await page.getByRole('button', { name: '新建扫描批次' }).click()
   await expect(page.getByRole('heading', { name: '浏览器合成混班扫描' })).toBeVisible()
   await page.getByLabel('扫描 PDF', { exact: true }).setInputFiles(process.env.WORKBENCH_SCAN_PDF!)
-  const received = page.waitForResponse(
-    (r) =>
-      /\/scan-batches\/[^/]+\/files$/.test(new URL(r.url()).pathname) &&
-      r.request().method() === 'POST',
-  )
+  // Consume the no-store response immediately at the response event, before later UI work.
+  const received = page
+    .waitForResponse(
+      (r) =>
+        /\/scan-batches\/[^/]+\/files$/.test(new URL(r.url()).pathname) &&
+        r.request().method() === 'POST',
+    )
+    .then(async (response) => ({ status: response.status(), metadata: await response.json() }))
   await page.getByRole('button', { name: '上传并生成预览' }).click()
-  const result = await received
-  expect(result.status()).toBe(201)
-  const metadata = await result.json()
+  const { status, metadata } = await received
+  expect(status).toBe(201)
   expect(metadata.page_count).toBe(4)
   expect(metadata.status).toBe('stored')
   expect(metadata).not.toHaveProperty('object_key')
@@ -668,5 +670,214 @@ test('普通命题教师：最小建卷角色与新卷对象授权闭环', async
   await expect(editor.getByRole('button', { name: '检查并锁定试卷' })).toBeVisible()
   await expect(editor.getByRole('button', { name: '刷新版本', exact: true })).toBeEnabled()
   await page.screenshot({ path: 'test-results/paper-creator-successor.png', fullPage: true })
+  expect(errors).toEqual([])
+})
+
+test('学校管理：真实CSV预检确认、两班同名学生与冻结名单联动', async ({
+  page,
+  request,
+  browser,
+}) => {
+  test.skip(process.env.RUN_SCHOOL_WORKBENCH_BROWSER !== '1', 'school workbench opt-in')
+  test.setTimeout(120000)
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(e.message))
+  page.on('dialog', (d) => d.accept())
+  await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/school_admin`, {
+    ignoreHTTPSErrors: true,
+  })
+  await signIn(page, '/school')
+  await expect(page.getByRole('link', { name: '学校管理', exact: true })).toBeVisible()
+  const scope = page.getByRole('region', { name: '基础组织', exact: true })
+  const created: Record<string, string> = {}
+  async function create(kind: string, name: string, fields: Record<string, string>) {
+    await scope.getByLabel('新增类型').selectOption(kind)
+    await scope.getByRole('button', { name: '新建' + name, exact: true }).click()
+    const dialog = page.getByRole('dialog', { name: '新建' + name, exact: true })
+    for (const [label, value] of Object.entries(fields)) {
+      if (['学年状态', '所属学年', '所属届别'].includes(label))
+        await dialog.getByRole('combobox', { name: label, exact: true }).selectOption(value)
+      else await dialog.getByLabel(label, { exact: true }).fill(value)
+    }
+    // Read the real backend response before forwarding it, avoiding Chromium's no-store
+    // response-body eviction race. No synthetic response or extra write is introduced.
+    const path = '**/api/v1/organization/' + kind
+    await page.route(path, async (route) => {
+      if (route.request().method() !== 'POST') return route.continue()
+      const response = await route.fetch()
+      expect(response.status()).toBe(201)
+      const result = await response.json()
+      created[fields['编码']!] = result.id
+      await route.fulfill({ response })
+    })
+    await dialog.getByRole('button', { name: '保存' + name, exact: true }).click()
+    await expect(dialog).not.toBeVisible()
+    await expect(page.getByText('组织信息已保存。')).toBeVisible()
+    expect(created[fields['编码']!]).toBeTruthy()
+    await page.unroute(path)
+  }
+  await create('academic-years', '学年', {
+    编码: 'SCHOOL2026',
+    名称: '网页2026学年',
+    开始日期: '2026-09-01',
+    结束日期: '2027-07-10',
+    学年状态: 'active',
+  })
+  await create('academic-terms', '学期', {
+    编码: 'SCHOOLFALL',
+    所属学年: created.SCHOOL2026!,
+    开始日期: '2026-09-01',
+    结束日期: '2027-01-31',
+    学期序号: '1',
+  })
+  await create('grade-cohorts', '入学届别', {
+    编码: 'SCHOOLCOHORT',
+    名称: '网页2026入学',
+    入学年份: '2026',
+  })
+  await create('subjects', '学科', { 编码: 'SCHOOLMATH', 名称: '网页数学' })
+  await create('classes', '行政班', {
+    编码: 'WEB01',
+    名称: '网页高一1班',
+    所属届别: created.SCHOOLCOHORT!,
+  })
+  await create('classes', '行政班', {
+    编码: 'WEB02',
+    名称: '网页高一2班',
+    所属届别: created.SCHOOLCOHORT!,
+  })
+  await page.screenshot({ path: 'test-results/school-dictionaries.png', fullPage: true })
+  await page.getByRole('button', { name: '学生导入', exact: true }).click()
+  const download = page.waitForEvent('download')
+  await page.getByRole('button', { name: '下载CSV模板' }).click()
+  const downloaded = await download
+  const stream = await downloaded.createReadStream()
+  const bytes: Buffer[] = []
+  for await (const chunk of stream!) bytes.push(Buffer.from(chunk))
+  expect(
+    Buffer.concat(bytes)
+      .toString('utf8')
+      .replace(/^\uFEFF/, ''),
+  ).toBe('student_code,name,class_code,valid_from\r\n')
+  const header = 'student_code,name,class_code,valid_from\n'
+  async function upload(content: string) {
+    await page.getByLabel('导入学年').selectOption(created.SCHOOL2026!)
+    await page
+      .getByLabel('CSV文件')
+      .setInputFiles({ name: 'synthetic.csv', mimeType: 'text/csv', buffer: Buffer.from(content) })
+    await page.getByRole('button', { name: '预检CSV', exact: true }).click()
+    await expect(page.getByRole('heading', { name: '预检结果 · 尚未导入' })).toBeVisible()
+  }
+  await upload(
+    header +
+      '001,同名合成,WEB01,2026-09-01\n002,同名合成,WEB02,2026-09-01\n003,合成丙,WEB01,2026-09-01\n004,合成丁,WEB02,2026-09-01\n',
+  )
+  await expect(page.getByRole('region', { name: '导入预检结果' }).locator('tbody tr')).toHaveCount(
+    4,
+  )
+  await page.screenshot({ path: 'test-results/school-import-preview.png', fullPage: true })
+  let original = ''
+  let recovered = false
+  await page.route('**/api/v1/organization/student-imports/*/confirm', async (route) => {
+    if (!original) {
+      original = route.request().postData()!
+      const committed = await route.fetch()
+      expect(committed.status()).toBe(200)
+      await route.abort('failed')
+    } else {
+      expect(route.request().postData()).toBe(original)
+      recovered = true
+      await route.continue()
+    }
+  })
+  await page.getByRole('button', { name: '确认正式导入', exact: true }).click()
+  await expect(page.getByText(/保存结果尚未核实，请勿重复提交/)).toBeVisible()
+  await page.getByRole('button', { name: '重试原请求' }).click()
+  await expect(page.getByRole('heading', { name: '已正式导入', exact: true })).toBeVisible()
+  expect(recovered).toBe(true)
+  await page.unroute('**/api/v1/organization/student-imports/*/confirm')
+  await page.screenshot({ path: 'test-results/school-import-confirmed.png', fullPage: true })
+  await page.getByRole('button', { name: '学生名册', exact: true }).click()
+  await page.getByLabel('学号或姓名').fill('同名合成')
+  await page.getByRole('button', { name: '查询学生', exact: true }).click()
+  await expect(page.getByRole('region', { name: '学生名册' }).locator('tbody tr')).toHaveCount(2)
+  await expect(
+    page
+      .getByRole('region', { name: '学生名册' })
+      .locator('tbody tr')
+      .filter({ hasText: '同名合成' }),
+  ).toHaveCount(2)
+  await page.getByRole('link', { name: '前往考试配置 →', exact: true }).click()
+  await page.getByRole('button', { name: '新建考试', exact: true }).click()
+  const ed = page.getByRole('dialog', { name: '新建考试', exact: true })
+  await ed.getByLabel('考试名称').fill('学校资料联动合成考试')
+  await ed.getByLabel('学年', { exact: true }).selectOption(created.SCHOOL2026!)
+  await ed.getByLabel('学期', { exact: true }).selectOption(created.SCHOOLFALL!)
+  await ed.getByRole('button', { name: '创建考试', exact: true }).click()
+  await expect(ed).not.toBeVisible()
+  await page.getByRole('button', { name: '新建科目场次', exact: true }).click()
+  const sd = page.getByRole('dialog', { name: '新建科目场次', exact: true })
+  await sd.getByLabel('场次名称').fill('学校联动数学')
+  await sd.getByLabel('学科', { exact: true }).selectOption(created.SCHOOLMATH!)
+  await sd.getByLabel('开始时间（北京时间）').fill('2026-11-01T09:00')
+  await sd.getByLabel('结束时间（北京时间）').fill('2026-11-01T11:00')
+  await sd.getByLabel('用卷方式').selectOption('single')
+  await sd.getByRole('button', { name: '创建场次', exact: true }).click()
+  await expect(sd).not.toBeVisible()
+  await expect(page).toHaveURL(/\/exams\/sessions\//)
+  const sessionUrl = page.url()
+  const paper = page.getByRole('region', { name: '场次用卷' })
+  await paper.locator('select').last().selectOption(process.env.WORKBENCH_CONFIG_PAPER_A!)
+  await paper.getByRole('button', { name: '绑定试卷', exact: true }).click()
+  await expect(paper.locator('tbody tr')).toHaveCount(1)
+  await paper.getByRole('button', { name: '标记用卷准备就绪' }).click()
+  await expect(paper.getByText(/用卷已就绪/)).toBeVisible()
+  const roster = page.getByRole('region', { name: '参试名单配置' })
+  await roster.locator(`input[type=checkbox][value="${created.WEB01}"]`).check()
+  await roster.locator(`input[type=checkbox][value="${created.WEB02}"]`).check()
+  await roster.getByRole('button', { name: '按考试日期预览学生' }).click()
+  await expect(roster.locator('tbody tr')).toHaveCount(4)
+  await expect(roster.locator('tbody tr').filter({ hasText: '同名合成' })).toHaveCount(2)
+  await roster.getByRole('button', { name: '按当前顺序编排考号' }).click()
+  await roster.getByLabel('名单操作说明').fill('合成两班逐人核对；卷别保持待核验')
+  await roster.getByRole('button', { name: '保存名单草稿' }).click()
+  await expect(roster.getByRole('button', { name: '冻结当前名单' })).toBeEnabled()
+  await roster.getByRole('button', { name: '冻结当前名单' }).click()
+  await expect(roster.getByText(/本版已冻结，只读保留/)).toBeVisible()
+  await page.screenshot({ path: 'test-results/school-frozen-roster.png', fullPage: true })
+  await page.getByRole('link', { name: '学校管理', exact: true }).click()
+  await page.getByRole('button', { name: '学生导入', exact: true }).click()
+  await upload(header + '005,后续合成,WEB01,2026-09-01\n')
+  await page.getByRole('button', { name: '确认正式导入', exact: true }).click()
+  await expect(page.getByRole('heading', { name: '已正式导入', exact: true })).toBeVisible()
+  await page.getByRole('link', { name: '前往考试配置 →', exact: true }).click()
+  await page
+    .locator('article')
+    .filter({ has: page.getByRole('heading', { name: '学校联动数学', exact: true }) })
+    .getByRole('button', { name: '配置场次 →', exact: true })
+    .click()
+  await expect(page).toHaveURL(sessionUrl)
+  await expect(roster.getByText(/本版已冻结，只读保留/)).toBeVisible()
+  await expect(roster.locator('tbody tr')).toHaveCount(4)
+  await expect(roster.getByText('后续合成')).toHaveCount(0)
+  // Different signed identities, separate browser sessions; no token role substitution.
+  for (const actor of ['school_teacher', 'school_previewer']) {
+    await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/${actor}`, {
+      ignoreHTTPSErrors: true,
+    })
+    const context = await browser.newContext({ ignoreHTTPSErrors: true })
+    const other = await context.newPage()
+    await signIn(other, '/school')
+    if (actor === 'school_teacher') {
+      await expect(other.getByRole('link', { name: '学校管理', exact: true })).toHaveCount(0)
+      await expect(other.getByText(/当前没有学校组织读取权限/)).toBeVisible()
+      await expect(other.getByRole('button', { name: '新建学年', exact: true })).toHaveCount(0)
+    } else {
+      await other.getByRole('button', { name: '导入记录', exact: true }).click()
+      await other.getByRole('button', { name: '查看批次', exact: true }).first().click()
+      await expect(other.getByRole('button', { name: '确认正式导入', exact: true })).toHaveCount(0)
+    }
+    await context.close()
+  }
   expect(errors).toEqual([])
 })

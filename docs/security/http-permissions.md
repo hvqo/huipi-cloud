@@ -94,3 +94,11 @@ Vue 客户端没有可信授权能力；只允许标准 PKCE 登录并向固定�
 ## 考试扩展安全边界
 
 上述矩阵继续描述 legacy 作业合同。[资源安全基础](exam-resource-security.md)已加入可信分类、旧入口隔离和最小受控授权。考试资料读取、组织岗位、扫描和匿名阅卷仍未开放；[新岗位/资源范围方案](../product/role-permission-matrix.md)中的未来动作不能靠预留名称或自由 UUID 执行。不得据当前矩阵给扫描员或按题阅卷员整份作业权限。
+
+## 学校基础数据工作台
+
+`GET /api/v1/me/school-access` 仅在当前可信身份通过后读取四个安装级动作的当前 Grant，返回能力布尔值，不返回组织或学生数据。`User.is_admin` 与客户端角色不授权。
+
+新增五个组织创建 POST 全部要求 `organization.manage` 并调用原事务 Service。班级人数、预检行详情及原组织 GET 均在 `ORGANIZATION_POLICIES` 中明确要求 `organization.read`；CSV 模板与预检要求 `student.import.preview`；确认仍独立要求 `student.import.confirm`。没有新增通用管理员或自助授权入口。
+
+完整路径、分页与数据保护合同见[学校工作台](../development/school-workbench.md)。组织读取是当前明确批准的学校级读取，尚未提供“任课教师只读本班学生”的组织 Scope；不能把成绩模块的班级授权挪作组织授权。

@@ -62,6 +62,7 @@ export async function request<T>(
     blob?: boolean
     timeoutMs?: number
     maxBytes?: number
+    errorCode?: boolean
   } = {},
 ): Promise<T> {
   if (!/^\/api\/v1\//.test(path) || path.includes('://') || path.includes('\\'))
@@ -95,8 +96,20 @@ export async function request<T>(
       await expireAuth()
       throw new ApiError(401, 'invalid_token')
     }
-    if (!response.ok)
-      throw new ApiError(response.status, 'api_error', !!options.body && response.status >= 500)
+    if (!response.ok) {
+      let code = 'api_error'
+      if (options.errorCode) {
+        try {
+          const bytes = await readBounded(response, 8192)
+          const data = JSON.parse(new TextDecoder().decode(bytes)) as { detail?: unknown }
+          if (typeof data.detail === 'string' && /^[a-z0-9_]{1,80}$/.test(data.detail))
+            code = data.detail
+        } catch {
+          /* Never display arbitrary error bodies or validation input. */
+        }
+      }
+      throw new ApiError(response.status, code, !!options.body && response.status >= 500)
+    }
     const bytes = await readBounded(
       response,
       Math.min(

@@ -1,10 +1,11 @@
 """Organization, student identity and two-phase roster import HTTP contracts."""
 
 import asyncio
+from datetime import date
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, File, Form, Query, UploadFile
+from fastapi import APIRouter, File, Form, Query, Response, UploadFile
 from fastapi.routing import APIRoute
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -27,6 +28,10 @@ from huipi_cloud.modules.organization.schemas import (
     SubjectPage,
 )
 
+from . import schemas as s
+from . import workbench
+from .csv_import import MODE_COLUMNS
+
 
 class OrganizationRoute(APIRoute):
     """Stable 503 on database/OS faults; never leak SQL or student payloads."""
@@ -36,6 +41,18 @@ class OrganizationRoute(APIRoute):
 
         async def safe_handler(request):
             try:
+                # Only the fixed CSV preview route accepts a larger multipart body.
+                # Content-Type casing or a spoofed multipart header cannot bypass the
+                # dictionary/confirmation request limit.
+                if request.method == "POST" and self.name != "preview_student_import":
+                    chunks, size = [], 0
+                    async with asyncio.timeout(10):
+                        async for chunk in request.stream():
+                            size += len(chunk)
+                            if size > 8192:
+                                raise AccessError("organization_payload_too_large", 413)
+                            chunks.append(chunk)
+                    request._body = b"".join(chunks)
                 async with asyncio.timeout(30):
                     response = await handler(request)
                     response.headers["Cache-Control"] = "private, no-store"
@@ -129,6 +146,9 @@ async def list_students(
     class_id: UUID | None = None,
     query: str | None = Query(default=None, max_length=64),
     active_only: bool = True,
+    as_of: date | None = None,
+    academic_year_id: UUID | None = None,
+    cohort_id: UUID | None = None,
     limit: Limit = 25,
     offset: Offset = 0,
 ):
@@ -137,6 +157,9 @@ async def list_students(
         class_id=class_id,
         query=query,
         active_only=active_only,
+        as_of=as_of,
+        academic_year_id=academic_year_id,
+        cohort_id=cohort_id,
         limit=limit,
         offset=offset,
     )
@@ -212,3 +235,87 @@ async def confirm_student_import(
         batch_id=batch_id,
         expected_input_sha256=payload.expected_input_sha256,
     )
+
+
+@router.post("/academic-years", response_model=s.MutationResult, status_code=201)
+async def school_create_year(
+    body: s.AcademicYearCreate, session: DbSession, principal: AuthorizedPrincipal
+):
+    return await service.create_academic_year(session, principal, body)
+
+
+@router.post("/academic-terms", response_model=s.MutationResult, status_code=201)
+async def school_create_term(
+    body: s.AcademicTermCreate, session: DbSession, principal: AuthorizedPrincipal
+):
+    return await service.create_academic_term(session, principal, body)
+
+
+@router.post("/grade-cohorts", response_model=s.MutationResult, status_code=201)
+async def school_create_cohort(
+    body: s.GradeCohortCreate, session: DbSession, principal: AuthorizedPrincipal
+):
+    return await service.create_grade_cohort(session, principal, body)
+
+
+@router.post("/subjects", response_model=s.MutationResult, status_code=201)
+async def school_create_subject(
+    body: s.SubjectCreate, session: DbSession, principal: AuthorizedPrincipal
+):
+    return await service.create_subject(session, principal, body)
+
+
+@router.post("/classes", response_model=s.MutationResult, status_code=201)
+async def school_create_class(
+    body: s.AdministrativeClassCreate, session: DbSession, principal: AuthorizedPrincipal
+):
+    return await service.create_administrative_class(session, principal, body)
+
+
+@router.get("/class-summaries", response_model=s.SchoolClassPage)
+async def school_classes(
+    session: DbSession,
+    principal: AuthorizedPrincipal,
+    academic_year_id: UUID | None = None,
+    cohort_id: UUID | None = None,
+    as_of: date | None = None,
+    limit: Limit = 25,
+    offset: Offset = 0,
+):
+    return await workbench.classes(
+        session,
+        principal,
+        academic_year_id=academic_year_id,
+        cohort_id=cohort_id,
+        as_of=as_of,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.get("/student-import-template")
+async def school_import_template(
+    session: DbSession, principal: AuthorizedPrincipal, mode: ImportMode
+):
+    # Same parser registry; header only, so a template cannot accidentally import sample identities.
+    async with session.begin():
+        await service.authorize(session, principal, "student.import.preview")
+        return Response(
+            ("\ufeff" + ",".join(MODE_COLUMNS[mode]) + "\r\n").encode("utf-8"),
+            media_type="text/csv; charset=utf-8",
+            headers={
+                "Content-Disposition": f'attachment; filename="students-{mode}.csv"',
+                "X-Content-Type-Options": "nosniff",
+            },
+        )
+
+
+@router.get("/student-imports/{batch_id}/rows", response_model=s.StudentImportRowPage)
+async def school_import_rows(
+    batch_id: UUID,
+    session: DbSession,
+    principal: AuthorizedPrincipal,
+    limit: Limit = 25,
+    offset: Offset = 0,
+):
+    return await workbench.import_rows(session, principal, batch_id, limit=limit, offset=offset)

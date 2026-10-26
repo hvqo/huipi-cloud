@@ -229,3 +229,37 @@ class StudentImportBatchSummary(StrictModel):
 
 class StudentImportBatchPage(Page):
     records: list[StudentImportBatchSummary]
+
+
+class SchoolAccess(StrictModel):
+    can_read: bool
+    can_manage: bool
+    can_preview: bool
+    can_confirm: bool
+
+
+class SchoolClassSummary(AdministrativeClassSummary):
+    student_count: int
+    as_of: date
+    grade_label: str | None
+
+
+class SchoolClassPage(Page):
+    records: list[SchoolClassSummary]
+
+
+class StudentImportRowRead(StrictModel):
+    row_number: int
+    student_code: str | None
+    name: str | None
+    class_code: str | None
+    valid_from: date | None
+    row_state: Literal["valid", "warning", "error"]
+    outcome: str | None
+    errors: list[ImportErrorEntry]
+    warnings: list[ImportErrorEntry]
+
+
+class StudentImportRowPage(Page):
+    batch_id: UUID
+    records: list[StudentImportRowRead]

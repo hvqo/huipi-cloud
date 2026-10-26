@@ -1053,7 +1053,7 @@ async def test_student_import_history_empty_page_and_unknown_batch(org_api):
     assert unknown.status_code == 404
 
 
-def test_openapi_and_permission_inventory_cover_eleven_organization_operations():
+def test_openapi_and_permission_inventory_cover_all_organization_operations():
     expected = {
         ("GET", "/api/v1/organization/academic-years"),
         ("GET", "/api/v1/organization/academic-terms"),
@@ -1082,7 +1082,16 @@ def test_openapi_and_permission_inventory_cover_eleven_organization_operations()
         for row in inventory["operations"]
         if row["path"].startswith("/api/v1/organization/")
     }
-    assert len(expected) == 11
+    # Keep every original operation, and explicitly enumerate the school HTTP additions.
+    expected |= {
+        ("POST", "/api/v1/organization/" + name)
+        for name in ("academic-years", "academic-terms", "grade-cohorts", "subjects", "classes")
+    } | {
+        ("GET", "/api/v1/organization/class-summaries"),
+        ("GET", "/api/v1/organization/student-import-template"),
+        ("GET", "/api/v1/organization/student-imports/{batch_id}/rows"),
+    }
+    assert len(expected) == 19
     assert actual == expected
     assert documented == expected
     rows = {
@@ -1096,7 +1105,7 @@ def test_openapi_and_permission_inventory_cover_eleven_organization_operations()
         assert identity_dependencies.ORGANIZATION_POLICIES[policy] == row["permission"]
         assert identity_dependencies.POLICY_PATHS[policy] == row["path"][len("/api/v1") :]
         assert row["permission"] in identity_dependencies.ORGANIZATION_POLICIES.values()
-    # The fixed policy map is exactly the 11 organization route names.
+    # The fixed policy map exactly covers all original and new organization route names.
     assert set(rows) == set(identity_dependencies.ORGANIZATION_POLICIES)
 
 

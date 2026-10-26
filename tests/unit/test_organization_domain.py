@@ -255,6 +255,15 @@ def test_organization_http_policies_map_to_the_fixed_permission_catalog():
     policies = identity_dependencies.ORGANIZATION_POLICIES
     paths = identity_dependencies.POLICY_PATHS
     expected = {
+        "school_create_year": "organization.manage",
+        "school_create_term": "organization.manage",
+        "school_create_cohort": "organization.manage",
+        "school_create_subject": "organization.manage",
+        "school_create_class": "organization.manage",
+        "school_classes": "organization.read",
+        "school_import_template": "student.import.preview",
+        "school_import_rows": "organization.read",
+
         "list_academic_years": "organization.read",
         "list_academic_terms": "organization.read",
         "list_grade_cohorts": "organization.read",

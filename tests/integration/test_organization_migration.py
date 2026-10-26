@@ -30,7 +30,6 @@ from huipi_cloud.modules.submissions.models import ParsingTask, Submission
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BASE_REVISION = "e21a9b4c110a"
-HEAD_REVISION = "b14b41a2e903"
 OLD_TABLES = ("users", "assignments", "submissions", "parsing_tasks")
 INSTALLATION_SCOPE = UUID("11111111-b11a-4000-8000-000000000001")
 ORGANIZATION_MANAGER_ROLE = UUID("11111111-b11b-4000-8000-000000000002")
@@ -226,7 +225,7 @@ async def test_independent_organization_migration_roundtrip_and_guarded_downgrad
         await alembic(url, "check")
         assert await snapshot(url) == before
         revision, constraints, triggers = await migration_state(url)
-        assert revision == HEAD_REVISION
+        assert revision == migration_head()
         assert constraints == CONSTRAINTS | OLD_UNIQUE_CONSTRAINTS, constraints
         assert triggers == TRIGGERS, triggers
         scope_rows = await query_all(
@@ -305,7 +304,7 @@ async def test_independent_organization_migration_roundtrip_and_guarded_downgrad
         assert rejected.returncode != 0
         assert "organization_downgrade_requires_archived_new_data" in rejected.stderr
         revision, _, _ = await migration_state(url)
-        assert revision == HEAD_REVISION  # transactional downgrade did not half-apply
+        assert revision == migration_head()  # transactional downgrade did not half-apply
         tables_after_failed = {
             row[0]
             for row in await query_all(
@@ -338,7 +337,7 @@ async def test_independent_organization_migration_roundtrip_and_guarded_downgrad
         assert rejected_grant.returncode != 0
         assert "organization_downgrade_requires_archived_new_data" in rejected_grant.stderr
         revision, _, _ = await migration_state(url)
-        assert revision == HEAD_REVISION
+        assert revision == migration_head()
         await execute_sql(
             url,
             [
