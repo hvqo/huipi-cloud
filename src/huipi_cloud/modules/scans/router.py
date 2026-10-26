@@ -57,9 +57,13 @@ Offset = Annotated[int, Query(ge=0, le=100000)]
 
 @router.get("/scan-sessions", response_model=SessionPage)
 async def list_scan_sessions(
-    session: DbSession, principal: AuthorizedPrincipal, offset: Offset = 0, limit: Limit = 20
+    session: DbSession,
+    principal: AuthorizedPrincipal,
+    offset: Offset = 0,
+    limit: Limit = 20,
+    exam_session_id: UUID | None = None,
 ):
-    return await service.sessions(session, principal, offset, limit)
+    return await service.sessions(session, principal, offset, limit, session_id=exam_session_id)
 
 
 @router.post(

@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { scans } from '../api/scans'
 import { ApiError, type Schema } from '../api/client'
 import PageState from '../components/PageState.vue'
 
+const route = useRoute()
 const sessions = ref<Schema['ScanSession'][]>([]),
   sessionId = ref(''),
   sessionOffset = ref(0),
@@ -59,7 +61,7 @@ async function paginatePages(delta: number) {
 async function loadSessions() {
   loading.value = true
   await run(async () => {
-    const value = await scans.sessions(sessionOffset.value)
+    const value = await scans.sessions(sessionOffset.value, String(route.query.session || ''))
     sessions.value = value.items
     moreSessions.value = value.truncated
     limits.value = value.limits

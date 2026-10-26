@@ -14,6 +14,7 @@ from sqlalchemy.exc import DBAPIError, OperationalError
 from test_exam_rosters import create, entries, freeze, ready
 from test_exam_rosters import roster as roster
 from test_exam_sessions import exam as exam
+from test_organization_migration import migration_head
 from test_paper_versions import papers as papers
 from test_teacher_authorization import auth_api as auth_api
 
@@ -518,6 +519,9 @@ async def test_scan_migration_roundtrip_preserves_existing_business_graph(roster
                 "security_",
                 "permission_",
                 "exam_parsing_",
+                "exam_grading_",
+                "exam_scoring_",
+                "exam_result_",
                 "exam_submission_links",
                 "answer_script",
                 "current_page_allocations",
@@ -546,7 +550,7 @@ async def test_scan_migration_roundtrip_preserves_existing_business_graph(roster
     await alembic(url, "check")
     assert await snapshot() == before
     async with roster.factory() as db:
-        assert await db.scalar(text("SELECT version_num FROM alembic_version")) == "b14b41a2e903"
+        assert await db.scalar(text("SELECT version_num FROM alembic_version")) == migration_head()
 
 
 @pytest.mark.anyio
@@ -558,7 +562,7 @@ async def test_scan_facts_refuse_destructive_downgrade(scan_context, postgres_en
     with pytest.raises(AssertionError):
         await alembic(postgres_engine.url, "downgrade", "b12c9d20e411")
     async with scan_context.factory() as db:
-        assert await db.scalar(text("SELECT version_num FROM alembic_version")) == "b14b41a2e903"
+        assert await db.scalar(text("SELECT version_num FROM alembic_version")) == migration_head()
         assert await db.scalar(select(func.count()).select_from(ScanPage)) == 4
 
 

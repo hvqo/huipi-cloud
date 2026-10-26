@@ -143,6 +143,39 @@ async def test_teacher_workbench_browser_end_to_end(
                         class_id=cls.id,
                         export_allowed=True,
                     )
+    config_paper_b = None
+    config_year_id = None
+    if os.getenv("RUN_EXAM_CONFIGURATION_BROWSER") == "1":
+        from test_paper_versions import create as create_paper
+        from test_paper_versions import lock as lock_paper
+
+        from huipi_cloud.modules.exam_rosters.permissions import ROSTER_OPERATOR_ROLE
+        from huipi_cloud.modules.exams.permissions import EXAM_OPERATOR_ROLE
+        from huipi_cloud.modules.organization.models import AcademicTerm
+        from huipi_cloud.modules.scans.permissions import SCAN_OPERATOR_ROLE
+
+        config_paper_b = await lock_paper(ctx, await create_paper(ctx, title="网页合成B卷"))
+        async with ctx.factory() as db:
+            config_year_id = await db.scalar(
+                select(AcademicTerm.academic_year_id).where(AcademicTerm.id == ctx.term_id)
+            )
+        # Explicit TEST provisioning. Production configuration never grants these roles.
+        for role in [
+            EXAM_OPERATOR_ROLE,
+            ROSTER_OPERATOR_ROLE,
+            grants.ORGANIZATION_OPERATOR_ROLE,
+            SCAN_OPERATOR_ROLE,
+            SCRIPT_OPERATOR_ROLE,
+        ]:
+            async with ctx.factory() as db:
+                await grants.grant_role(
+                    db,
+                    ctx.principals["admin"],
+                    uuid4(),
+                    user_id=ctx.users["a"].id,
+                    role_version_id=role,
+                    scope_id=grants.INSTALLATION_SCOPE,
+                )
     worker_stop = asyncio.Event()
     worker_task = None
     grading_task = None
@@ -420,6 +453,13 @@ async def test_teacher_workbench_browser_end_to_end(
             WORKBENCH_IMAGE_SID=image_sid,
             WORKBENCH_SCAN_SESSION=scan_context.session["id"],
             WORKBENCH_SCAN_PDF=str(scan_pdf),
+            WORKBENCH_CONFIG_YEAR=str(config_year_id or ""),
+            WORKBENCH_CONFIG_TERM=str(ctx.term_id),
+            WORKBENCH_CONFIG_SUBJECT=str(ctx.subject_ids[0]),
+            WORKBENCH_CONFIG_PAPER_A=ctx.paper["paper_version_id"],
+            WORKBENCH_CONFIG_PAPER_B=config_paper_b["paper_version_id"] if config_paper_b else "",
+            WORKBENCH_CONFIG_CLASS_A=str(scan_context.classes[0].id),
+            WORKBENCH_CONFIG_CLASS_B=str(scan_context.classes[1].id),
         )
         # Dedicated exam worker consumes real PG jobs and persists real private S3 objects.
         config = Settings(

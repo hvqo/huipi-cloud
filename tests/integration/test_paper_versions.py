@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 import pytest
 from sqlalchemy import delete, event, func, insert, select, text, update
 from sqlalchemy.exc import DBAPIError, OperationalError
+from test_organization_migration import migration_head
 from test_teacher_authorization import auth_api as auth_api
 
 from huipi_cloud.modules.assignments.models import AnswerKey, Assignment, Question, RubricCriterion
@@ -957,7 +958,9 @@ async def test_paper_migration_roundtrip_preserves_actual_old_graph_and_guards_n
             and "paper_downgrade_requires_archived_new_data" in rejected.stderr
         )
         async with target.connect() as c:
-            assert await c.scalar(text("SELECT version_num FROM alembic_version")) == "b14b41a2e903"
+            assert (
+                await c.scalar(text("SELECT version_num FROM alembic_version")) == migration_head()
+            )
     finally:
         await target.dispose()
         async with admin.connect() as c:

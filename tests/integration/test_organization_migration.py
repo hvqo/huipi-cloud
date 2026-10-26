@@ -353,3 +353,16 @@ async def test_independent_organization_migration_roundtrip_and_guarded_downgrad
             async with admin.connect() as connection:
                 await connection.execute(text('DROP DATABASE IF EXISTS "' + name + '"'))
         await admin.dispose()
+
+
+def migration_head():
+    """Expected current head, independently resolved from the migration graph."""
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+
+    root = Path(__file__).resolve().parents[2]
+    config = Config(str(root / "alembic.ini"))
+    config.set_main_option("script_location", str(root / "migrations"))
+    heads = ScriptDirectory.from_config(config).get_heads()
+    assert len(heads) == 1
+    return heads[0]

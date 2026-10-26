@@ -1128,6 +1128,297 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/exam-configuration/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Configuration Options */
+        get: operations["configuration_options_api_v1_exam_configuration_options_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-configuration/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Configuration Events */
+        get: operations["configuration_events_api_v1_exam_configuration_events_get"];
+        put?: never;
+        /** Configuration Create Event */
+        post: operations["configuration_create_event_api_v1_exam_configuration_events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-configuration/events/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Configuration Event */
+        get: operations["configuration_event_api_v1_exam_configuration_events__event_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-configuration/events/{event_id}/state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Configuration Event State */
+        post: operations["configuration_event_state_api_v1_exam_configuration_events__event_id__state_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-configuration/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Configuration Sessions */
+        get: operations["configuration_sessions_api_v1_exam_configuration_sessions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-configuration/sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Configuration Session */
+        get: operations["configuration_session_api_v1_exam_configuration_sessions__session_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-configuration/events/{event_id}/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Configuration Create Session */
+        post: operations["configuration_create_session_api_v1_exam_configuration_events__event_id__sessions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-configuration/sessions/{session_id}/state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Configuration Session State */
+        post: operations["configuration_session_state_api_v1_exam_configuration_sessions__session_id__state_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-configuration/papers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Configuration Papers */
+        get: operations["configuration_papers_api_v1_exam_configuration_papers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-configuration/sessions/{session_id}/papers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Configuration Bind */
+        post: operations["configuration_bind_api_v1_exam_configuration_sessions__session_id__papers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-configuration/sessions/{session_id}/papers/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Configuration Unbind */
+        post: operations["configuration_unbind_api_v1_exam_configuration_sessions__session_id__papers_revoke_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-configuration/sessions/{session_id}/roster-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Configuration Candidates */
+        post: operations["configuration_candidates_api_v1_exam_configuration_sessions__session_id__roster_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-configuration/sessions/{session_id}/rosters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Configuration Rosters */
+        get: operations["configuration_rosters_api_v1_exam_configuration_sessions__session_id__rosters_get"];
+        put?: never;
+        /** Configuration Create Roster */
+        post: operations["configuration_create_roster_api_v1_exam_configuration_sessions__session_id__rosters_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-configuration/rosters/{roster_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Configuration Roster */
+        get: operations["configuration_roster_api_v1_exam_configuration_rosters__roster_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-configuration/rosters/{roster_id}/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Configuration Replace Roster */
+        post: operations["configuration_replace_roster_api_v1_exam_configuration_rosters__roster_id__entries_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-configuration/rosters/{roster_id}/freeze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Configuration Freeze Roster */
+        post: operations["configuration_freeze_roster_api_v1_exam_configuration_rosters__roster_id__freeze_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-configuration/rosters/{roster_id}/corrections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Configuration Correct Roster */
+        post: operations["configuration_correct_roster_api_v1_exam_configuration_rosters__roster_id__corrections_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2107,6 +2398,493 @@ export interface components {
             /** Class Name */
             class_name: string;
         };
+        /** ConfigurationBindBody */
+        ConfigurationBindBody: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Paper Version Id
+             * Format: uuid
+             */
+            paper_version_id: string;
+            /**
+             * Variant Code
+             * @enum {string}
+             */
+            variant_code: "A" | "B";
+        };
+        /** ConfigurationBindingView */
+        ConfigurationBindingView: {
+            /**
+             * Paper Version Id
+             * Format: uuid
+             */
+            paper_version_id: string;
+            /** Title */
+            title: string;
+            /** Version No */
+            version_no: number;
+            /** Status */
+            status: string;
+            /** Question Count */
+            question_count: number;
+            /** Max Points */
+            max_points: string;
+            /** Rubric Complete */
+            rubric_complete: boolean;
+            /** Content Current */
+            content_current: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Variant Code */
+            variant_code: string;
+            /** Paper Status */
+            paper_status: string;
+        };
+        /** ConfigurationCandidatePage */
+        ConfigurationCandidatePage: {
+            /**
+             * Business Date
+             * Format: date
+             */
+            business_date: string;
+            /** Session Revision */
+            session_revision: number;
+            /** Students */
+            students: components["schemas"]["ConfigurationCandidateStudent"][];
+            /** Total */
+            total: number;
+            /** Has More */
+            has_more: boolean;
+            /** Offset */
+            offset: number;
+            /** Class Counts */
+            class_counts: {
+                [key: string]: number;
+            };
+            /** Warnings */
+            warnings: string[];
+        };
+        /** ConfigurationCandidateRequest */
+        ConfigurationCandidateRequest: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Class Ids */
+            class_ids: string[];
+            /** Expected Session Revision */
+            expected_session_revision: number;
+            /**
+             * Offset
+             * @default 0
+             */
+            offset: number;
+            /**
+             * Limit
+             * @default 100
+             */
+            limit: number;
+        };
+        /** ConfigurationCandidateStudent */
+        ConfigurationCandidateStudent: {
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+            /** Student Code */
+            student_code: string;
+            /**
+             * Class Id
+             * Format: uuid
+             */
+            class_id: string;
+            /** Class Name */
+            class_name: string;
+            /** Exam Number */
+            exam_number?: string | null;
+            /** Session Paper Id */
+            session_paper_id?: string | null;
+            /** Issues */
+            issues: string[];
+        };
+        /** ConfigurationEventPage */
+        ConfigurationEventPage: {
+            /** Items */
+            items: components["schemas"]["ConfigurationEventView"][];
+            /** Has More */
+            has_more: boolean;
+        };
+        /** ConfigurationEventStateBody */
+        ConfigurationEventStateBody: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Lifecycle
+             * @enum {string}
+             */
+            lifecycle: "active" | "closed" | "cancelled";
+        };
+        /** ConfigurationEventView */
+        ConfigurationEventView: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Academic Term Id
+             * Format: uuid
+             */
+            academic_term_id: string;
+            /** Title */
+            title: string;
+            /** Category */
+            category: string;
+            /** Lifecycle */
+            lifecycle: string;
+            /** Revision */
+            revision: number;
+            /** Term Label */
+            term_label: string;
+            /** Actions */
+            actions?: string[];
+        };
+        /** ConfigurationOptions */
+        ConfigurationOptions: {
+            /** Can Create Event */
+            can_create_event: boolean;
+            /** Organization Available */
+            organization_available: boolean;
+            /** Years */
+            years: components["schemas"]["AcademicYearSummary"][];
+            /** Terms */
+            terms: components["schemas"]["AcademicTermSummary"][];
+            /** Subjects */
+            subjects: components["schemas"]["SubjectSummary"][];
+            /** Classes */
+            classes: components["schemas"]["AdministrativeClassSummary"][];
+            /** Truncated */
+            truncated: boolean;
+        };
+        /** ConfigurationPaperChoice */
+        ConfigurationPaperChoice: {
+            /**
+             * Paper Version Id
+             * Format: uuid
+             */
+            paper_version_id: string;
+            /** Title */
+            title: string;
+            /** Version No */
+            version_no: number;
+            /** Status */
+            status: string;
+            /** Question Count */
+            question_count: number;
+            /** Max Points */
+            max_points: string;
+            /** Rubric Complete */
+            rubric_complete: boolean;
+            /** Content Current */
+            content_current: boolean;
+        };
+        /** ConfigurationPaperPage */
+        ConfigurationPaperPage: {
+            /** Items */
+            items: components["schemas"]["ConfigurationPaperChoice"][];
+            /** Has More */
+            has_more: boolean;
+        };
+        /** ConfigurationRevisionRequest */
+        ConfigurationRevisionRequest: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+        };
+        /** ConfigurationRosterCorrectionBody */
+        ConfigurationRosterCorrectionBody: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Entries */
+            entries: components["schemas"]["EntrySelection"][];
+            /** Expected Revision */
+            expected_revision: number;
+            /** Reason */
+            reason: string;
+        };
+        /** ConfigurationRosterCreateBody */
+        ConfigurationRosterCreateBody: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Entries */
+            entries: components["schemas"]["EntrySelection"][];
+            /**
+             * Business Date
+             * Format: date
+             */
+            business_date: string;
+            /** Reason */
+            reason: string;
+        };
+        /** ConfigurationRosterEntry */
+        ConfigurationRosterEntry: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Participation Id
+             * Format: uuid
+             */
+            participation_id: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+            /** Student Code */
+            student_code: string;
+            /**
+             * Administrative Class Id
+             * Format: uuid
+             */
+            administrative_class_id: string;
+            /** Class Name */
+            class_name: string;
+            /** Exam Number */
+            exam_number: string | null;
+            /** Session Paper Id */
+            session_paper_id: string | null;
+        };
+        /** ConfigurationRosterHistory */
+        ConfigurationRosterHistory: {
+            /** Revisions */
+            revisions: components["schemas"]["ConfigurationRosterSummary"][];
+        };
+        /** ConfigurationRosterPage */
+        ConfigurationRosterPage: {
+            roster: components["schemas"]["ConfigurationRosterSummary"];
+            /** Entries */
+            entries: components["schemas"]["ConfigurationRosterEntry"][];
+            /** Total */
+            total: number;
+            /** Offset */
+            offset: number;
+            /** Limit */
+            limit: number;
+            /** Truncated */
+            truncated: boolean;
+            /** Unknown Variant Count */
+            unknown_variant_count: number;
+            /**
+             * Attendance Status
+             * @constant
+             */
+            attendance_status: "not_recorded";
+        };
+        /** ConfigurationRosterReplaceBody */
+        ConfigurationRosterReplaceBody: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Entries */
+            entries: components["schemas"]["EntrySelection"][];
+            /** Expected Revision */
+            expected_revision: number;
+        };
+        /** ConfigurationRosterSummary */
+        ConfigurationRosterSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Exam Session Id
+             * Format: uuid
+             */
+            exam_session_id: string;
+            /** Version No */
+            version_no: number;
+            /** Previous Revision Id */
+            previous_revision_id: string | null;
+            /**
+             * Business Date
+             * Format: date
+             */
+            business_date: string;
+            /** Status */
+            status: string;
+            /** Is Current */
+            is_current: boolean;
+            /** Revision */
+            revision: number;
+            /** Reason */
+            reason: string;
+            /** Frozen At */
+            frozen_at: string | null;
+        };
+        /** ConfigurationSessionCreateBody */
+        ConfigurationSessionCreateBody: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Title */
+            title: string;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /**
+             * Ends At
+             * Format: date-time
+             */
+            ends_at: string;
+            /**
+             * Paper Policy
+             * @default single
+             * @enum {string}
+             */
+            paper_policy: "single" | "ab";
+            /**
+             * Subject Id
+             * Format: uuid
+             */
+            subject_id: string;
+            /** Expected Event Revision */
+            expected_event_revision: number;
+        };
+        /** ConfigurationSessionPage */
+        ConfigurationSessionPage: {
+            /** Items */
+            items: components["schemas"]["ConfigurationSessionView"][];
+            /** Has More */
+            has_more: boolean;
+        };
+        /** ConfigurationSessionStateBody */
+        ConfigurationSessionStateBody: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Lifecycle
+             * @enum {string}
+             */
+            lifecycle: "ready" | "closed" | "cancelled";
+        };
+        /** ConfigurationSessionView */
+        ConfigurationSessionView: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Exam Event Id
+             * Format: uuid
+             */
+            exam_event_id: string;
+            /**
+             * Subject Id
+             * Format: uuid
+             */
+            subject_id: string;
+            /** Title */
+            title: string;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /**
+             * Ends At
+             * Format: date-time
+             */
+            ends_at: string;
+            /** Paper Policy */
+            paper_policy: string;
+            /** Lifecycle */
+            lifecycle: string;
+            /** Revision */
+            revision: number;
+            /** Event Title */
+            event_title: string;
+            /** Subject Name */
+            subject_name: string;
+            /** Term Label */
+            term_label: string;
+            /** Actions */
+            actions?: string[];
+            /** Papers */
+            papers?: components["schemas"]["ConfigurationBindingView"][];
+        };
+        /** ConfigurationUnbindBody */
+        ConfigurationUnbindBody: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Session Paper Id
+             * Format: uuid
+             */
+            session_paper_id: string;
+        };
+        /** ConfigurationWriteResult */
+        ConfigurationWriteResult: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Revision */
+            revision: number;
+            /** Related Id */
+            related_id?: string | null;
+        };
         /** ConfirmedRegionSummary */
         ConfirmedRegionSummary: {
             /**
@@ -2157,10 +2935,43 @@ export interface components {
             /** Is Active */
             is_active: boolean;
         };
+        /** EntrySelection */
+        EntrySelection: {
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Exam Number */
+            exam_number?: string | null;
+            /** Session Paper Id */
+            session_paper_id?: string | null;
+        };
         /** ErrorResponse */
         ErrorResponse: {
             /** Detail */
             detail: string;
+        };
+        /** EventCreate */
+        EventCreate: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /**
+             * Academic Term Id
+             * Format: uuid
+             */
+            academic_term_id: string;
+            /** Title */
+            title: string;
+            /**
+             * Category
+             * @default other
+             * @enum {string}
+             */
+            category: "midterm" | "final" | "monthly" | "other";
         };
         /** EvidenceSummary */
         EvidenceSummary: {
@@ -7909,6 +8720,7 @@ export interface operations {
             query?: {
                 offset?: number;
                 limit?: number;
+                exam_session_id?: string | null;
             };
             header?: never;
             path?: never;
@@ -9758,6 +10570,641 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    configuration_options_api_v1_exam_configuration_options_get: {
+        parameters: {
+            query?: {
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationOptions"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    configuration_events_api_v1_exam_configuration_events_get: {
+        parameters: {
+            query?: {
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationEventPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    configuration_create_event_api_v1_exam_configuration_events_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationWriteResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    configuration_event_api_v1_exam_configuration_events__event_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationEventView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    configuration_event_state_api_v1_exam_configuration_events__event_id__state_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigurationEventStateBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationWriteResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    configuration_sessions_api_v1_exam_configuration_sessions_get: {
+        parameters: {
+            query?: {
+                event_id?: string | null;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationSessionPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    configuration_session_api_v1_exam_configuration_sessions__session_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationSessionView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    configuration_create_session_api_v1_exam_configuration_events__event_id__sessions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigurationSessionCreateBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationWriteResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    configuration_session_state_api_v1_exam_configuration_sessions__session_id__state_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigurationSessionStateBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationWriteResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    configuration_papers_api_v1_exam_configuration_papers_get: {
+        parameters: {
+            query?: {
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationPaperPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    configuration_bind_api_v1_exam_configuration_sessions__session_id__papers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigurationBindBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationWriteResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    configuration_unbind_api_v1_exam_configuration_sessions__session_id__papers_revoke_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigurationUnbindBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationWriteResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    configuration_candidates_api_v1_exam_configuration_sessions__session_id__roster_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigurationCandidateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationCandidatePage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    configuration_rosters_api_v1_exam_configuration_sessions__session_id__rosters_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationRosterHistory"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    configuration_create_roster_api_v1_exam_configuration_sessions__session_id__rosters_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigurationRosterCreateBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationRosterSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    configuration_roster_api_v1_exam_configuration_rosters__roster_id__get: {
+        parameters: {
+            query?: {
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                roster_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationRosterPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    configuration_replace_roster_api_v1_exam_configuration_rosters__roster_id__entries_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                roster_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigurationRosterReplaceBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationRosterSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    configuration_freeze_roster_api_v1_exam_configuration_rosters__roster_id__freeze_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                roster_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigurationRevisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationRosterSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    configuration_correct_roster_api_v1_exam_configuration_rosters__roster_id__corrections_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                roster_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigurationRosterCorrectionBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationRosterSummary"];
                 };
             };
             /** @description Validation Error */

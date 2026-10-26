@@ -1,7 +1,9 @@
 import { request, id, type Schema } from './client'
 export const scans = {
-  sessions: (offset = 0) =>
-    request<Schema['SessionPage']>(`/api/v1/scan-sessions?offset=${offset}&limit=20`),
+  sessions: (offset = 0, sid = '') =>
+    request<Schema['SessionPage']>(
+      `/api/v1/scan-sessions?offset=${offset}&limit=20${sid ? `&exam_session_id=${id(sid)}` : ''}`,
+    ),
   batches: (sid: string, offset = 0) =>
     request<Schema['BatchPage']>(
       `/api/v1/exam-sessions/${id(sid)}/scan-batches?offset=${offset}&limit=20`,
