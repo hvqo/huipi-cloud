@@ -1,5 +1,5 @@
 {
-  "version": "exam-configuration-1",
+  "version": "paper-workbench-1",
   "operations": [
     {
       "method": "POST",
@@ -824,6 +824,86 @@
       "permission": "exam.roster.manage+exam.roster.correct",
       "classification_boundary": "真实安装/Event/Session/Paper Scope，原Service重验权限与事务；名单读取单独授权，不自动授予成绩班级权限",
       "entrypoint": "huipi_cloud.modules.exam_configuration.service.http_authorize"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/papers",
+      "policy": "paper_web_list",
+      "permission": "current_grant_filtered_paper_read",
+      "classification_boundary": "当前User/Grant + PaperVersion Scope；导入另验明确legacy成员及published；无旧admin捷径",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/papers/sources",
+      "policy": "paper_web_sources",
+      "permission": "paper.create",
+      "classification_boundary": "当前User/Grant + PaperVersion Scope；导入另验明确legacy成员及published；无旧admin捷径",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/papers",
+      "policy": "paper_web_create",
+      "permission": "paper.create",
+      "classification_boundary": "当前User/Grant + PaperVersion Scope；导入另验明确legacy成员及published；无旧admin捷径",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/papers/{paper_id}",
+      "policy": "paper_web_read",
+      "permission": "paper.read",
+      "classification_boundary": "当前User/Grant + PaperVersion Scope；导入另验明确legacy成员及published；无旧admin捷径",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/papers/{paper_id}/history",
+      "policy": "paper_web_history",
+      "permission": "paper.read",
+      "classification_boundary": "当前User/Grant + PaperVersion Scope；导入另验明确legacy成员及published；无旧admin捷径",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/papers/{paper_id}/questions",
+      "policy": "paper_web_edit",
+      "permission": "paper.edit",
+      "classification_boundary": "当前User/Grant + PaperVersion Scope；导入另验明确legacy成员及published；无旧admin捷径",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/papers/{paper_id}/order",
+      "policy": "paper_web_reorder",
+      "permission": "paper.edit",
+      "classification_boundary": "当前User/Grant + PaperVersion Scope；导入另验明确legacy成员及published；无旧admin捷径",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/papers/{paper_id}/lock",
+      "policy": "paper_web_lock",
+      "permission": "paper.lock",
+      "classification_boundary": "当前User/Grant + PaperVersion Scope；导入另验明确legacy成员及published；无旧admin捷径",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/papers/{paper_id}/fork",
+      "policy": "paper_web_fork",
+      "permission": "paper.edit",
+      "classification_boundary": "当前User/Grant + PaperVersion Scope；导入另验明确legacy成员及published；无旧admin捷径",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/papers/{paper_id}/retire",
+      "policy": "paper_web_retire",
+      "permission": "paper.edit",
+      "classification_boundary": "当前User/Grant + PaperVersion Scope；导入另验明确legacy成员及published；无旧admin捷径",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
     }
   ]
 }

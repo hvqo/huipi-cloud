@@ -422,3 +422,10 @@ accepted/revised 的有效题分才进入 Decimal 小计，全题完成才有总
 纸卷选择只返回可使用的元数据，不因paper.use泄露标准答案。名单ID在服务端向上解析真实场次，组合操作权限不能跨Grant拼接。
 组织读取、配置、名单冻结、扫描与成绩班级权限保持独立；创建考试不会自动授予下游权限。
 见[工作台合同](development/exam-configuration.md)。
+
+### 试卷管理网页边界
+
+`/papers`以固定HTTP适配器复用PaperVersion的快照、编辑、重排、锁定、fork和退役事务，
+不建立第二套题库。来源目录只允许明确成员授权的已发布legacy作业，独立于旧管理员全局读取捷径；
+创建在事务内重新核对来源。paper.read控制标准答案与Rubric，paper.use不等于读取，
+新卷不自动授权。详见[试卷管理](development/paper-workbench.md)。

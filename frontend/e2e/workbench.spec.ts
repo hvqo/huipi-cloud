@@ -448,7 +448,56 @@ test('网页考试配置：创建场次、共享A/B卷、混班名单与版本�
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
   page.on('dialog', (dialog) => dialog.accept())
-  await signIn(page, '/exams')
+  let paperA = process.env.WORKBENCH_CONFIG_PAPER_A!
+  let paperB = process.env.WORKBENCH_CONFIG_PAPER_B!
+  if (process.env.RUN_PAPER_WORKBENCH_BROWSER === '1') {
+    await signIn(page, '/papers')
+    await page.getByRole('button', { name: '从已发布作业创建', exact: true }).click()
+    const importing = page.getByRole('dialog', { name: '创建试卷快照' })
+    await importing.getByLabel('已发布来源').selectOption(process.env.WORKBENCH_PAPER_SOURCE!)
+    await importing.getByLabel('试卷名称').fill('浏览器教师命题')
+    await importing.getByRole('button', { name: '创建草稿快照' }).click()
+    await expect(importing).not.toBeVisible()
+    await expect(page).toHaveURL(/\/papers\//)
+    paperA = new URL(page.url()).pathname.split('/').pop()!
+    const editor = page.getByRole('main', { name: '试卷编辑工作区' })
+    await editor.getByLabel('题目正文', { exact: true }).fill('合成题1：计算3+3，并写出过程。')
+    await editor.getByLabel('教师标准答案', { exact: true }).fill('3+3=6')
+    await editor.getByLabel('评分要求').first().fill('正确列出计算过程')
+    await editor.getByRole('button', { name: '保存题目与评分标准', exact: true }).click()
+    await expect(editor.getByLabel('教师标准答案', { exact: true })).toHaveValue('3+3=6')
+    const order = page.getByRole('region', { name: '题序与显示题号' })
+    await order.getByRole('button', { name: '下移', exact: true }).first().click()
+    await order.getByRole('button', { name: '保存题序与题号', exact: true }).click()
+    await expect(editor.getByRole('button', { name: '检查并锁定试卷' })).toBeEnabled()
+    await page.screenshot({
+      path: 'test-results/paper-workbench-draft.png',
+      fullPage: true,
+      animations: 'disabled',
+    })
+    await editor.getByRole('button', { name: '检查并锁定试卷' }).click()
+    await expect(editor.getByText(/本版本只读保留/)).toBeVisible()
+    await expect(editor.getByRole('button', { name: '刷新版本', exact: true })).toBeEnabled()
+    await expect(editor.getByLabel('教师标准答案', { exact: true })).toBeDisabled()
+    await page.screenshot({
+      path: 'test-results/paper-workbench-locked.png',
+      fullPage: true,
+      animations: 'disabled',
+    })
+    await editor.getByRole('button', { name: '创建后继草稿' }).click()
+    await expect(page).not.toHaveURL(new RegExp(paperA + '$'))
+    paperB = new URL(page.url()).pathname.split('/').pop()!
+    await expect(editor.getByRole('button', { name: '检查并锁定试卷' })).toBeVisible()
+    await editor.getByRole('button', { name: '检查并锁定试卷' }).click()
+    await expect(editor.getByText(/本版本只读保留/)).toBeVisible()
+    await expect(editor.getByRole('button', { name: '刷新版本', exact: true })).toBeEnabled()
+    await page.screenshot({
+      path: 'test-results/paper-workbench-successor.png',
+      fullPage: true,
+      animations: 'disabled',
+    })
+    await page.getByRole('link', { name: '考试配置 →', exact: true }).click()
+  } else await signIn(page, '/exams')
   let lostBody = ''
   let recovered = false
   await page.route('**/api/v1/exam-configuration/events', async (route) => {
@@ -495,11 +544,11 @@ test('网页考试配置：创建场次、共享A/B卷、混班名单与版本�
   await expect(paperPanel).toBeVisible()
   const selector = paperPanel.locator('select')
   await selector.nth(0).selectOption('A')
-  await selector.nth(1).selectOption(process.env.WORKBENCH_CONFIG_PAPER_A!)
+  await selector.nth(1).selectOption(paperA)
   await paperPanel.getByRole('button', { name: '绑定试卷', exact: true }).click()
   await expect(paperPanel.locator('tbody tr')).toHaveCount(1)
   await selector.nth(0).selectOption('B')
-  await selector.nth(1).selectOption(process.env.WORKBENCH_CONFIG_PAPER_B!)
+  await selector.nth(1).selectOption(paperB)
   await paperPanel.getByRole('button', { name: '绑定试卷', exact: true }).click()
   await expect(paperPanel.locator('tbody tr')).toHaveCount(2)
   await paperPanel.getByRole('button', { name: '标记用卷准备就绪' }).click()

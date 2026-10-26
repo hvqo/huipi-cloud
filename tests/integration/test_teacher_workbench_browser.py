@@ -143,6 +143,18 @@ async def test_teacher_workbench_browser_end_to_end(
                         class_id=cls.id,
                         export_allowed=True,
                     )
+    if os.getenv("RUN_PAPER_WORKBENCH_BROWSER") == "1":
+        from huipi_cloud.modules.papers.permissions import PAPER_OPERATOR_ROLE
+
+        async with ctx.factory() as db:
+            await grants.grant_role(
+                db,
+                ctx.principals["admin"],
+                uuid4(),
+                user_id=ctx.users["a"].id,
+                role_version_id=PAPER_OPERATOR_ROLE,
+                scope_id=grants.INSTALLATION_SCOPE,
+            )
     config_paper_b = None
     config_year_id = None
     if os.getenv("RUN_EXAM_CONFIGURATION_BROWSER") == "1":
@@ -453,6 +465,7 @@ async def test_teacher_workbench_browser_end_to_end(
             WORKBENCH_IMAGE_SID=image_sid,
             WORKBENCH_SCAN_SESSION=scan_context.session["id"],
             WORKBENCH_SCAN_PDF=str(scan_pdf),
+            WORKBENCH_PAPER_SOURCE=str(ctx.aid),
             WORKBENCH_CONFIG_YEAR=str(config_year_id or ""),
             WORKBENCH_CONFIG_TERM=str(ctx.term_id),
             WORKBENCH_CONFIG_SUBJECT=str(ctx.subject_ids[0]),

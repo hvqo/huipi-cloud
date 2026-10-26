@@ -1,6 +1,6 @@
 # 共享试卷版本与锁卷（B-1.2a）
 
-本切片只有受控 CLI 和 Python Service，没有新增 HTTP、Vue 考试页面、考试场次、考生名单、扫描、阅卷或成绩发布。内容从明确授权的已有作业复制；不是 PDF 导入。
+B-1.2a最初交付受控CLI和Python Service；后续已增加[试卷管理工作台](paper-workbench.md)的HTTP及Vue入口。下文保留原版本、数据库与CLI合同。内容从明确授权的已有作业复制，不是PDF导入。
 
 ## 数据合同
 
