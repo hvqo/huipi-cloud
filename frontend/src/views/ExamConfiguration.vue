@@ -537,8 +537,9 @@ watch(
     </header>
     <section class="config-section" aria-label="场次用卷">
       <h2>1 · 选择已锁定试卷</h2>
+      <RouterLink to="/papers">管理试卷、标准答案与评分标准 →</RouterLink>
       <p class="muted">
-        共享用卷不复制题目。锁定内容不能在这里修改；试卷创建与锁定仍由受控工具完成。
+        共享用卷不复制题目。锁定内容不能在这里修改；可在试卷管理中创建草稿、核对并锁定。
       </p>
       <div class="config-overflow">
         <table>

@@ -1419,6 +1419,160 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/papers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Paper Web List */
+        get: operations["paper_web_list_api_v1_papers_get"];
+        put?: never;
+        /** Paper Web Create */
+        post: operations["paper_web_create_api_v1_papers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/papers/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Paper Web Sources */
+        get: operations["paper_web_sources_api_v1_papers_sources_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/papers/{paper_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Paper Web Read */
+        get: operations["paper_web_read_api_v1_papers__paper_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/papers/{paper_id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Paper Web History */
+        get: operations["paper_web_history_api_v1_papers__paper_id__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/papers/{paper_id}/questions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Paper Web Edit */
+        post: operations["paper_web_edit_api_v1_papers__paper_id__questions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/papers/{paper_id}/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Paper Web Reorder */
+        post: operations["paper_web_reorder_api_v1_papers__paper_id__order_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/papers/{paper_id}/lock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Paper Web Lock */
+        post: operations["paper_web_lock_api_v1_papers__paper_id__lock_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/papers/{paper_id}/fork": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Paper Web Fork */
+        post: operations["paper_web_fork_api_v1_papers__paper_id__fork_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/papers/{paper_id}/retire": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Paper Web Retire */
+        post: operations["paper_web_retire_api_v1_papers__paper_id__retire_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3837,6 +3991,16 @@ export interface components {
             request_id: string;
         };
         JsonValue: unknown;
+        /** MappingOrder */
+        MappingOrder: {
+            /**
+             * Question Key
+             * Format: uuid
+             */
+            question_key: string;
+            /** Printed Label */
+            printed_label: string;
+        };
         /** MarkNode */
         MarkNode: {
             /** Content Pointer */
@@ -3980,6 +4144,196 @@ export interface components {
             paper_version_id: string;
             /** Variant Code */
             variant_code: string;
+        };
+        /** PaperWebChecks */
+        PaperWebChecks: {
+            /** Questions Complete */
+            questions_complete: boolean;
+            /** Answers Complete */
+            answers_complete: boolean;
+            /** Rubric Complete */
+            rubric_complete: boolean;
+            /** Mapping Complete */
+            mapping_complete: boolean;
+            /** Content Current */
+            content_current: boolean;
+        };
+        /** PaperWebCriterion */
+        PaperWebCriterion: {
+            /** Description */
+            description: string;
+            /** Points */
+            points: string;
+            /** Sort Order */
+            sort_order: number;
+        };
+        /** PaperWebDetail */
+        PaperWebDetail: {
+            paper: components["schemas"]["PaperWebSummary"];
+            /** Questions */
+            questions: components["schemas"]["PaperWebQuestion"][];
+        };
+        /** PaperWebPage */
+        PaperWebPage: {
+            /** Items */
+            items: components["schemas"]["PaperWebSummary"][];
+            /** Has More */
+            has_more: boolean;
+            /** Can Create */
+            can_create: boolean;
+        };
+        /** PaperWebQuestion */
+        PaperWebQuestion: {
+            /**
+             * Question Key
+             * Format: uuid
+             */
+            question_key: string;
+            /** Printed Label */
+            printed_label: string;
+            /** Sort Order */
+            sort_order: number;
+            question: components["schemas"]["PaperWebQuestionValue"];
+            /** Answer Content */
+            answer_content: string;
+            rubric: components["schemas"]["PaperWebRubric"];
+        };
+        /** PaperWebQuestionEdit */
+        PaperWebQuestionEdit: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /** Expected Content Sha256 */
+            expected_content_sha256: string;
+            /** Expected Mapping Digest */
+            expected_mapping_digest: string;
+            /**
+             * Question Key
+             * Format: uuid
+             */
+            question_key: string;
+            question: components["schemas"]["QuestionCreate"];
+            /** Answer Content */
+            answer_content: string;
+            rubric: components["schemas"]["RubricReplace"];
+        };
+        /** PaperWebQuestionValue */
+        PaperWebQuestionValue: {
+            /** Question Number */
+            question_number: number;
+            question_type: components["schemas"]["QuestionType"];
+            /** Stem */
+            stem: string;
+            /** Max Score */
+            max_score: string;
+        };
+        /** PaperWebReorder */
+        PaperWebReorder: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /** Expected Content Sha256 */
+            expected_content_sha256: string;
+            /** Expected Mapping Digest */
+            expected_mapping_digest: string;
+            /** Mappings */
+            mappings: components["schemas"]["MappingOrder"][];
+        };
+        /** PaperWebRubric */
+        PaperWebRubric: {
+            /** Criteria */
+            criteria: components["schemas"]["PaperWebCriterion"][];
+        };
+        /** PaperWebSource */
+        PaperWebSource: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /** Subject */
+            subject: string;
+            /** Grade Level */
+            grade_level: string;
+        };
+        /** PaperWebSources */
+        PaperWebSources: {
+            /** Items */
+            items: components["schemas"]["PaperWebSource"][];
+            /** Has More */
+            has_more: boolean;
+        };
+        /** PaperWebSummary */
+        PaperWebSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Family Id
+             * Format: uuid
+             */
+            family_id: string;
+            /** Prior Version Id */
+            prior_version_id: string | null;
+            /** Version No */
+            version_no: number;
+            /** Revision */
+            revision: number;
+            /** Title */
+            title: string;
+            /** Status */
+            status: string;
+            /** Question Count */
+            question_count: number;
+            /** Max Points */
+            max_points: string;
+            /** Expected Content Sha256 */
+            expected_content_sha256: string;
+            /** Expected Mapping Digest */
+            expected_mapping_digest: string;
+            checks: components["schemas"]["PaperWebChecks"];
+            /** Usable For Exam */
+            usable_for_exam: boolean;
+            /** Actions */
+            actions: string[];
+        };
+        /** PaperWebWrite */
+        PaperWebWrite: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /** Expected Content Sha256 */
+            expected_content_sha256: string;
+            /** Expected Mapping Digest */
+            expected_mapping_digest: string;
+        };
+        /** PaperWebWriteResult */
+        PaperWebWriteResult: {
+            /**
+             * Paper Version Id
+             * Format: uuid
+             */
+            paper_version_id: string;
+            /** Revision */
+            revision: number;
+            /** Status */
+            status: string;
         };
         /** ParsePage */
         ParsePage: {
@@ -5013,6 +5367,21 @@ export interface components {
             items: components["schemas"]["SessionSummary"][];
             /** Truncated */
             truncated: boolean;
+        };
+        /** SnapshotCreate */
+        SnapshotCreate: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /**
+             * Source Assignment Id
+             * Format: uuid
+             */
+            source_assignment_id: string;
+            /** Title */
+            title: string;
         };
         /** SourcePage */
         SourcePage: {
@@ -11205,6 +11574,340 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ConfigurationRosterSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    paper_web_list_api_v1_papers_get: {
+        parameters: {
+            query?: {
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperWebPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    paper_web_create_api_v1_papers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SnapshotCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperWebWriteResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    paper_web_sources_api_v1_papers_sources_get: {
+        parameters: {
+            query?: {
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperWebSources"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    paper_web_read_api_v1_papers__paper_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                paper_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperWebDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    paper_web_history_api_v1_papers__paper_id__history_get: {
+        parameters: {
+            query?: {
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                paper_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperWebPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    paper_web_edit_api_v1_papers__paper_id__questions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                paper_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaperWebQuestionEdit"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperWebWriteResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    paper_web_reorder_api_v1_papers__paper_id__order_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                paper_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaperWebReorder"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperWebWriteResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    paper_web_lock_api_v1_papers__paper_id__lock_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                paper_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaperWebWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperWebWriteResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    paper_web_fork_api_v1_papers__paper_id__fork_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                paper_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaperWebWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperWebWriteResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    paper_web_retire_api_v1_papers__paper_id__retire_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                paper_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaperWebWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperWebWriteResult"];
                 };
             };
             /** @description Validation Error */

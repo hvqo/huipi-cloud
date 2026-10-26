@@ -17,6 +17,8 @@ from huipi_cloud.modules.exam_configuration.policies import POLICIES as CONFIG_P
 from huipi_cloud.modules.exam_configuration.policies import PREFIX as CONFIG_PREFIX
 from huipi_cloud.modules.identity import service
 from huipi_cloud.modules.identity.protocol import AccessError, Principal
+from huipi_cloud.modules.papers.web_policies import POLICIES as PAPER_WEB_POLICIES
+from huipi_cloud.modules.papers.web_policies import PREFIX as PAPER_WEB_PREFIX
 
 bearer = HTTPBearer(auto_error=False)
 verifier = TokenVerifier(settings)
@@ -150,6 +152,7 @@ SCAN_POLICIES = {
 }
 
 POLICIES = {
+    **{name: {policy[0]} for name, policy in PAPER_WEB_POLICIES.items()},
     **{name: {policy[0]} for name, policy in CONFIG_POLICIES.items()},
     **{name: {policy[0]} for name, policy in RESULT_POLICIES.items()},
     **{name: {policy[0]} for name, policy in EXAM_MARK_POLICIES.items()},
@@ -207,6 +210,7 @@ GRADE_REVIEW_PATH = (
 )
 
 POLICY_PATHS = {
+    **{name: PAPER_WEB_PREFIX + policy[1] for name, policy in PAPER_WEB_POLICIES.items()},
     **{name: CONFIG_PREFIX + policy[1] for name, policy in CONFIG_POLICIES.items()},
     **{name: policy[1] for name, policy in RESULT_POLICIES.items()},
     **{name: policy[1] for name, policy in EXAM_MARK_POLICIES.items()},
@@ -336,6 +340,19 @@ async def authorize_request(
                 await authorize_proposal(
                     session, principal=current, write=request.method != "GET", **ids
                 )
+                return current
+            if name in PAPER_WEB_POLICIES:
+                from huipi_cloud.modules.papers.web_service import authorize
+
+                try:
+                    pid = (
+                        UUID(str(request.path_params["paper_id"]))
+                        if "paper_id" in request.path_params
+                        else None
+                    )
+                except ValueError:
+                    raise AccessError("invalid_resource_id", 422) from None
+                await authorize(session, current, PAPER_WEB_POLICIES[name][2], pid)
                 return current
             if name in CONFIG_POLICIES:
                 from huipi_cloud.modules.exam_configuration.service import http_authorize

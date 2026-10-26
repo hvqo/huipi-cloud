@@ -62,7 +62,7 @@ export function accessToken(): string | null {
 }
 export function safeReturn(value: unknown) {
   return typeof value === 'string' &&
-    /^\/(assignments|submissions|scans|exams|exam-results)(\/|\?|$)/.test(value) &&
+    /^\/(assignments|submissions|scans|exams|exam-results|papers)(\/|\?|$)/.test(value) &&
     !value.includes('\\')
     ? value
     : '/assignments'

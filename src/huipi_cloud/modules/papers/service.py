@@ -351,6 +351,39 @@ async def clone(session, principal, source, family_id, title, version_no, prior=
 
 
 async def create_snapshot(session, principal, request: SnapshotCreate):
+    return await _create_snapshot(session, principal, request, member_source=False)
+
+
+async def require_member_source(session, principal, aid):
+    """Web import requires explicit membership, including for legacy administrators."""
+    from huipi_cloud.modules.identity.models import AssignmentMembership
+
+    await identity.require_assignment(session, principal, aid, lock=True)
+    member = await session.scalar(
+        select(AssignmentMembership.id)
+        .where(
+            AssignmentMembership.assignment_id == aid,
+            *identity.membership_filter(principal.user_id),
+        )
+        .with_for_update(read=True)
+    )
+    if member is None:
+        raise AccessError(DENIED, 404)
+    source = (
+        (await session.execute(select(A).where(A.c.id == aid).with_for_update())).mappings().one()
+    )
+    if source["security_classification"] != "legacy_homework":
+        raise AccessError(DENIED, 404)
+    if source["status"] != "published":
+        raise AccessError("paper_source_not_published", 409)
+
+
+async def create_member_snapshot(session, principal, request: SnapshotCreate):
+    """Fixed HTTP import entry; caller cannot relax this policy through a request."""
+    return await _create_snapshot(session, principal, request, member_source=True)
+
+
+async def _create_snapshot(session, principal, request, *, member_source):
     async with operation(
         session, principal, request.request_id, "snapshot", request.model_dump(mode="json")
     ) as op:
@@ -358,6 +391,8 @@ async def create_snapshot(session, principal, request: SnapshotCreate):
         await identity.require_assignment(
             session, principal, request.source_assignment_id, lock=True
         )
+        if member_source:
+            await require_member_source(session, principal, request.source_assignment_id)
         if op.replay is not None:
             return op.replay
         family_key = digest({"source": str(request.source_assignment_id), "title": request.title})

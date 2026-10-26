@@ -1,5 +1,5 @@
 {
-  "version": "exam-configuration-1",
+  "version": "paper-workbench-1",
   "operations": [
     {
       "method": "POST",
@@ -618,6 +618,66 @@
       "path": "/api/v1/exam-configuration/rosters/{roster_id}/corrections",
       "policy": "configuration_correct_roster",
       "permission": "exam.roster.manage+exam.roster.correct"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/papers",
+      "policy": "paper_web_list",
+      "permission": "current_grant_filtered_paper_read"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/papers/sources",
+      "policy": "paper_web_sources",
+      "permission": "paper.create"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/papers",
+      "policy": "paper_web_create",
+      "permission": "paper.create"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/papers/{paper_id}",
+      "policy": "paper_web_read",
+      "permission": "paper.read"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/papers/{paper_id}/history",
+      "policy": "paper_web_history",
+      "permission": "paper.read"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/papers/{paper_id}/questions",
+      "policy": "paper_web_edit",
+      "permission": "paper.edit"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/papers/{paper_id}/order",
+      "policy": "paper_web_reorder",
+      "permission": "paper.edit"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/papers/{paper_id}/lock",
+      "policy": "paper_web_lock",
+      "permission": "paper.lock"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/papers/{paper_id}/fork",
+      "policy": "paper_web_fork",
+      "permission": "paper.edit"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/papers/{paper_id}/retire",
+      "policy": "paper_web_retire",
+      "permission": "paper.edit"
     }
   ]
 }
