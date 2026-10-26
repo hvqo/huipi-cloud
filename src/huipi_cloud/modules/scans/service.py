@@ -191,7 +191,7 @@ async def create_batch(db, principal, sid, request):
         return BatchRead.model_validate(row)
 
 
-async def sessions(db, principal, offset, limit):
+async def sessions(db, principal, offset, limit, *, session_id=None):
     async with transaction(db):
         await identity.refresh_principal(db, principal)
         G, SC, RP, RV, PD = (
@@ -238,7 +238,7 @@ async def sessions(db, principal, offset, limit):
                     )
                     .join(EV, EV.c.id == S.c.exam_event_id)
                     .join(Subject, Subject.id == S.c.subject_id)
-                    .where(allowed)
+                    .where(allowed, S.c.id == session_id if session_id else True)
                     .order_by(S.c.starts_at.desc(), S.c.id)
                     .offset(offset)
                     .limit(limit + 1)

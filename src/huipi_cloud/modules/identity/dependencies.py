@@ -13,6 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from huipi_cloud.core.config import settings
 from huipi_cloud.infrastructure.auth.jwt import TokenVerifier, VerifiedIdentity
 from huipi_cloud.infrastructure.database import session as database
+from huipi_cloud.modules.exam_configuration.policies import POLICIES as CONFIG_POLICIES
+from huipi_cloud.modules.exam_configuration.policies import PREFIX as CONFIG_PREFIX
 from huipi_cloud.modules.identity import service
 from huipi_cloud.modules.identity.protocol import AccessError, Principal
 
@@ -43,6 +45,7 @@ ORGANIZATION_POLICIES = {
     "preview_student_import": "student.import.preview",
     "confirm_student_import": "student.import.confirm",
 }
+
 
 RESULT_POLICIES = {
     "list_exam_result_sessions": ("GET", "/exam-result-sessions", False),
@@ -147,6 +150,7 @@ SCAN_POLICIES = {
 }
 
 POLICIES = {
+    **{name: {policy[0]} for name, policy in CONFIG_POLICIES.items()},
     **{name: {policy[0]} for name, policy in RESULT_POLICIES.items()},
     **{name: {policy[0]} for name, policy in EXAM_MARK_POLICIES.items()},
     **{name: {policy[0]} for name, policy in EXAM_PARSE_POLICIES.items()},
@@ -203,6 +207,7 @@ GRADE_REVIEW_PATH = (
 )
 
 POLICY_PATHS = {
+    **{name: CONFIG_PREFIX + policy[1] for name, policy in CONFIG_POLICIES.items()},
     **{name: policy[1] for name, policy in RESULT_POLICIES.items()},
     **{name: policy[1] for name, policy in EXAM_MARK_POLICIES.items()},
     **{name: policy[1] for name, policy in EXAM_PARSE_POLICIES.items()},
@@ -330,6 +335,18 @@ async def authorize_request(
                     raise AccessError("invalid_resource_id", 422) from None
                 await authorize_proposal(
                     session, principal=current, write=request.method != "GET", **ids
+                )
+                return current
+            if name in CONFIG_POLICIES:
+                from huipi_cloud.modules.exam_configuration.service import http_authorize
+
+                policy = CONFIG_POLICIES[name]
+                await http_authorize(
+                    session,
+                    current,
+                    policy[2],
+                    {key: UUID(str(value)) for key, value in request.path_params.items()},
+                    policy[3],
                 )
                 return current
             if name in RESULT_POLICIES:

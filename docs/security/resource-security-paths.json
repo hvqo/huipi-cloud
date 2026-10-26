@@ -1,5 +1,5 @@
 {
-  "version": "exam-results-preview-1",
+  "version": "exam-configuration-1",
   "operations": [
     {
       "method": "POST",
@@ -672,6 +672,158 @@
       "permission": "exam.score.review+explicit_class_export",
       "classification_boundary": "单一当前Grant + 真实Session/Event Scope + 显式班级收窄；仅当前冻结名单，非正式成绩",
       "entrypoint": "huipi_cloud.modules.exam_results.access.authorize"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-configuration/options",
+      "policy": "configuration_options",
+      "permission": "current_grant_filtered_list",
+      "classification_boundary": "真实安装/Event/Session/Paper Scope，原Service重验权限与事务；名单读取单独授权，不自动授予成绩班级权限",
+      "entrypoint": "huipi_cloud.modules.exam_configuration.service.http_authorize"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-configuration/events",
+      "policy": "configuration_events",
+      "permission": "current_grant_filtered_list",
+      "classification_boundary": "真实安装/Event/Session/Paper Scope，原Service重验权限与事务；名单读取单独授权，不自动授予成绩班级权限",
+      "entrypoint": "huipi_cloud.modules.exam_configuration.service.http_authorize"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-configuration/sessions",
+      "policy": "configuration_sessions",
+      "permission": "current_grant_filtered_list",
+      "classification_boundary": "真实安装/Event/Session/Paper Scope，原Service重验权限与事务；名单读取单独授权，不自动授予成绩班级权限",
+      "entrypoint": "huipi_cloud.modules.exam_configuration.service.http_authorize"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-configuration/papers",
+      "policy": "configuration_papers",
+      "permission": "current_grant_filtered_list",
+      "classification_boundary": "真实安装/Event/Session/Paper Scope，原Service重验权限与事务；名单读取单独授权，不自动授予成绩班级权限",
+      "entrypoint": "huipi_cloud.modules.exam_configuration.service.http_authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-configuration/events",
+      "policy": "configuration_create_event",
+      "permission": "exam.event.create",
+      "classification_boundary": "真实安装/Event/Session/Paper Scope，原Service重验权限与事务；名单读取单独授权，不自动授予成绩班级权限",
+      "entrypoint": "huipi_cloud.modules.exam_configuration.service.http_authorize"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-configuration/events/{event_id}",
+      "policy": "configuration_event",
+      "permission": "exam.event.read",
+      "classification_boundary": "真实安装/Event/Session/Paper Scope，原Service重验权限与事务；名单读取单独授权，不自动授予成绩班级权限",
+      "entrypoint": "huipi_cloud.modules.exam_configuration.service.http_authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-configuration/events/{event_id}/state",
+      "policy": "configuration_event_state",
+      "permission": "exam.event.manage",
+      "classification_boundary": "真实安装/Event/Session/Paper Scope，原Service重验权限与事务；名单读取单独授权，不自动授予成绩班级权限",
+      "entrypoint": "huipi_cloud.modules.exam_configuration.service.http_authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-configuration/events/{event_id}/sessions",
+      "policy": "configuration_create_session",
+      "permission": "exam.event.manage",
+      "classification_boundary": "真实安装/Event/Session/Paper Scope，原Service重验权限与事务；名单读取单独授权，不自动授予成绩班级权限",
+      "entrypoint": "huipi_cloud.modules.exam_configuration.service.http_authorize"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-configuration/sessions/{session_id}",
+      "policy": "configuration_session",
+      "permission": "exam.session.read",
+      "classification_boundary": "真实安装/Event/Session/Paper Scope，原Service重验权限与事务；名单读取单独授权，不自动授予成绩班级权限",
+      "entrypoint": "huipi_cloud.modules.exam_configuration.service.http_authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-configuration/sessions/{session_id}/state",
+      "policy": "configuration_session_state",
+      "permission": "exam.session.manage",
+      "classification_boundary": "真实安装/Event/Session/Paper Scope，原Service重验权限与事务；名单读取单独授权，不自动授予成绩班级权限",
+      "entrypoint": "huipi_cloud.modules.exam_configuration.service.http_authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-configuration/sessions/{session_id}/papers",
+      "policy": "configuration_bind",
+      "permission": "exam.session.manage+exam.session.paper.bind",
+      "classification_boundary": "真实安装/Event/Session/Paper Scope，原Service重验权限与事务；名单读取单独授权，不自动授予成绩班级权限",
+      "entrypoint": "huipi_cloud.modules.exam_configuration.service.http_authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-configuration/sessions/{session_id}/papers/revoke",
+      "policy": "configuration_unbind",
+      "permission": "exam.session.manage+exam.session.paper.bind",
+      "classification_boundary": "真实安装/Event/Session/Paper Scope，原Service重验权限与事务；名单读取单独授权，不自动授予成绩班级权限",
+      "entrypoint": "huipi_cloud.modules.exam_configuration.service.http_authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-configuration/sessions/{session_id}/roster-preview",
+      "policy": "configuration_candidates",
+      "permission": "exam.roster.manage+exam.roster.read",
+      "classification_boundary": "真实安装/Event/Session/Paper Scope，原Service重验权限与事务；名单读取单独授权，不自动授予成绩班级权限",
+      "entrypoint": "huipi_cloud.modules.exam_configuration.service.http_authorize"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-configuration/sessions/{session_id}/rosters",
+      "policy": "configuration_rosters",
+      "permission": "exam.roster.read",
+      "classification_boundary": "真实安装/Event/Session/Paper Scope，原Service重验权限与事务；名单读取单独授权，不自动授予成绩班级权限",
+      "entrypoint": "huipi_cloud.modules.exam_configuration.service.http_authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-configuration/sessions/{session_id}/rosters",
+      "policy": "configuration_create_roster",
+      "permission": "exam.roster.manage",
+      "classification_boundary": "真实安装/Event/Session/Paper Scope，原Service重验权限与事务；名单读取单独授权，不自动授予成绩班级权限",
+      "entrypoint": "huipi_cloud.modules.exam_configuration.service.http_authorize"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-configuration/rosters/{roster_id}",
+      "policy": "configuration_roster",
+      "permission": "exam.roster.read",
+      "classification_boundary": "真实安装/Event/Session/Paper Scope，原Service重验权限与事务；名单读取单独授权，不自动授予成绩班级权限",
+      "entrypoint": "huipi_cloud.modules.exam_configuration.service.http_authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-configuration/rosters/{roster_id}/entries",
+      "policy": "configuration_replace_roster",
+      "permission": "exam.roster.manage",
+      "classification_boundary": "真实安装/Event/Session/Paper Scope，原Service重验权限与事务；名单读取单独授权，不自动授予成绩班级权限",
+      "entrypoint": "huipi_cloud.modules.exam_configuration.service.http_authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-configuration/rosters/{roster_id}/freeze",
+      "policy": "configuration_freeze_roster",
+      "permission": "exam.roster.freeze",
+      "classification_boundary": "真实安装/Event/Session/Paper Scope，原Service重验权限与事务；名单读取单独授权，不自动授予成绩班级权限",
+      "entrypoint": "huipi_cloud.modules.exam_configuration.service.http_authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-configuration/rosters/{roster_id}/corrections",
+      "policy": "configuration_correct_roster",
+      "permission": "exam.roster.manage+exam.roster.correct",
+      "classification_boundary": "真实安装/Event/Session/Paper Scope，原Service重验权限与事务；名单读取单独授权，不自动授予成绩班级权限",
+      "entrypoint": "huipi_cloud.modules.exam_configuration.service.http_authorize"
     }
   ]
 }

@@ -9,6 +9,7 @@ from sqlalchemy import delete, event, func, insert, select, text, update
 from sqlalchemy.exc import DBAPIError, OperationalError
 from test_exam_sessions import bind_request, call, new_session, state_request
 from test_exam_sessions import exam as exam
+from test_organization_migration import migration_head
 from test_paper_versions import papers as papers
 from test_paper_versions import wait_for_pg_lock, write
 from test_teacher_authorization import auth_api as auth_api
@@ -829,7 +830,7 @@ async def test_migration_roundtrip_old_exam_paper_graph_and_data_guard(exam, pos
         )
         async with target.connect() as db:
             assert (
-                await db.scalar(text("SELECT version_num FROM alembic_version")) == "b14b41a2e903"
+                await db.scalar(text("SELECT version_num FROM alembic_version")) == migration_head()
             )
     finally:
         await target.dispose()

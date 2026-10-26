@@ -39,3 +39,11 @@ it('allows the scan login destination without allowing external return targets',
   expect(safeReturn('//evil.invalid/scans')).toBe('/assignments')
   expect(safeReturn('/scans\\evil.invalid')).toBe('/assignments')
 })
+
+it('accepts only internal exam configuration and results login destinations', () => {
+  expect(safeReturn('/exams')).toBe('/exams')
+  expect(safeReturn('/exam-results')).toBe('/exam-results')
+  expect(safeReturn('/scans?session=synthetic')).toBe('/scans?session=synthetic')
+  expect(safeReturn('//evil.invalid/exams')).toBe('/assignments')
+  expect(safeReturn('/exams\\evil.invalid')).toBe('/assignments')
+})

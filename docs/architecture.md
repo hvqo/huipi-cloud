@@ -414,3 +414,11 @@ accepted/revised 的有效题分才进入 Decimal 小计，全题完成才有总
 没有正式成绩模型或发布端点。唯一新增数据表将真实 Grant/场次/行政班联系起来，单个完整 Grant 决定读取和导出能力，
 不能拼接或沿用旧管理员捷径。班级限制仅覆盖新预览接口，原批改 Scope 的兼容范围明确保留。
 一致性事务、私有来源校验、导出限制和受控班级授权见[整卷预览合同](development/exam-results-preview.md)。
+
+## 考试配置HTTP适配层
+
+`exam_configuration` 将现有考试及名单Service接入真实JWT工作台。新增有界、当前Grant过滤的考试/场次/锁定卷版元数据与
+考试日期班级学生预览；写入直接调用原事务、revision、request_id及审计协议，不新增领域模型或迁移。
+纸卷选择只返回可使用的元数据，不因paper.use泄露标准答案。名单ID在服务端向上解析真实场次，组合操作权限不能跨Grant拼接。
+组织读取、配置、名单冻结、扫描与成绩班级权限保持独立；创建考试不会自动授予下游权限。
+见[工作台合同](development/exam-configuration.md)。

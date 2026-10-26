@@ -7,6 +7,7 @@ from uuid import UUID, uuid4
 import pytest
 from sqlalchemy import delete, event, func, insert, select, text, update
 from sqlalchemy.exc import DBAPIError, OperationalError
+from test_organization_migration import migration_head
 from test_paper_versions import create, legacy_digest, lock, wait_for_pg_lock, write
 from test_paper_versions import papers as papers
 from test_teacher_authorization import auth_api as auth_api
@@ -908,7 +909,7 @@ async def test_migration_roundtrip_old_graph_paper_history_and_destructive_guard
         assert r.returncode != 0 and "exam_downgrade_requires_archived_new_data" in r.stderr
         async with target.connect() as db:
             assert (
-                await db.scalar(text("SELECT version_num FROM alembic_version")) == "b14b41a2e903"
+                await db.scalar(text("SELECT version_num FROM alembic_version")) == migration_head()
             )
     finally:
         await target.dispose()

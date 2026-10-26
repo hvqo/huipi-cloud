@@ -440,3 +440,137 @@ async function markExamAnswer(page: Page, revise: boolean, question = 1) {
     await panel.screenshot({ path: 'test-results/exam-grading-teacher-revision.png' })
   }
 }
+
+test('网页考试配置：创建场次、共享A/B卷、混班名单与版本化更正', async ({ page, request }) => {
+  test.skip(process.env.RUN_EXAM_CONFIGURATION_BROWSER !== '1', 'configuration opt-in')
+  test.setTimeout(120000)
+  await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/a`, { ignoreHTTPSErrors: true })
+  const errors: string[] = []
+  page.on('pageerror', (error) => errors.push(error.message))
+  page.on('dialog', (dialog) => dialog.accept())
+  await signIn(page, '/exams')
+  let lostBody = ''
+  let recovered = false
+  await page.route('**/api/v1/exam-configuration/events', async (route) => {
+    if (route.request().method() !== 'POST') return route.continue()
+    if (!lostBody) {
+      lostBody = route.request().postData()!
+      const committed = await route.fetch()
+      expect(committed.status()).toBe(201)
+      await route.abort('failed')
+    } else {
+      expect(route.request().postData()).toBe(lostBody)
+      recovered = true
+      await route.continue()
+    }
+  })
+  await page.getByRole('button', { name: '新建考试', exact: true }).click()
+  const eventDialog = page.getByRole('dialog', { name: '新建考试', exact: true })
+  await eventDialog.getByLabel('考试名称').fill('浏览器合成期中考试')
+  await eventDialog
+    .getByLabel('学年', { exact: true })
+    .selectOption(process.env.WORKBENCH_CONFIG_YEAR!)
+  await eventDialog
+    .getByLabel('学期', { exact: true })
+    .selectOption(process.env.WORKBENCH_CONFIG_TERM!)
+  await eventDialog.getByRole('button', { name: '创建考试', exact: true }).click()
+  await expect(eventDialog.getByText(/保存结果尚未核实/)).toBeVisible()
+  await eventDialog.getByRole('button', { name: '重试原请求' }).click()
+  await expect(eventDialog).not.toBeVisible()
+  expect(recovered).toBe(true)
+  await page.getByRole('button', { name: '新建科目场次', exact: true }).click()
+  const sessionDialog = page.getByRole('dialog', { name: '新建科目场次', exact: true })
+  await sessionDialog.getByLabel('场次名称').fill('网页数学场次')
+  await sessionDialog
+    .getByLabel('学科', { exact: true })
+    .selectOption(process.env.WORKBENCH_CONFIG_SUBJECT!)
+  await sessionDialog.getByLabel('开始时间（北京时间）').fill('2026-11-01T09:00')
+  await sessionDialog.getByLabel('结束时间（北京时间）').fill('2026-11-01T11:00')
+  await sessionDialog.getByLabel('用卷方式').selectOption('ab')
+  await sessionDialog.getByRole('button', { name: '创建场次', exact: true }).click()
+  await expect(sessionDialog).not.toBeVisible()
+  await expect(page).toHaveURL(/\/exams\/sessions\//)
+  const sid = new URL(page.url()).pathname.split('/').pop()!
+  const paperPanel = page.getByRole('region', { name: '场次用卷' })
+  await expect(paperPanel).toBeVisible()
+  const selector = paperPanel.locator('select')
+  await selector.nth(0).selectOption('A')
+  await selector.nth(1).selectOption(process.env.WORKBENCH_CONFIG_PAPER_A!)
+  await paperPanel.getByRole('button', { name: '绑定试卷', exact: true }).click()
+  await expect(paperPanel.locator('tbody tr')).toHaveCount(1)
+  await selector.nth(0).selectOption('B')
+  await selector.nth(1).selectOption(process.env.WORKBENCH_CONFIG_PAPER_B!)
+  await paperPanel.getByRole('button', { name: '绑定试卷', exact: true }).click()
+  await expect(paperPanel.locator('tbody tr')).toHaveCount(2)
+  await paperPanel.getByRole('button', { name: '标记用卷准备就绪' }).click()
+  await expect(paperPanel.getByText(/用卷已就绪。仍需单独/)).toBeVisible()
+  const rosterPanel = page.getByRole('region', { name: '参试名单配置' })
+  await rosterPanel
+    .locator(`input[type=checkbox][value="${process.env.WORKBENCH_CONFIG_CLASS_A}"]`)
+    .check()
+  await rosterPanel
+    .locator(`input[type=checkbox][value="${process.env.WORKBENCH_CONFIG_CLASS_B}"]`)
+    .check()
+  await rosterPanel.getByRole('button', { name: '按考试日期预览学生' }).click()
+  await expect(rosterPanel.locator('tbody tr')).toHaveCount(4)
+  await expect(rosterPanel.locator('tbody tr').filter({ hasText: '合成同名' })).toHaveCount(2)
+  await rosterPanel.getByRole('button', { name: '按当前顺序编排考号' }).click()
+  const variantSelector = rosterPanel
+    .locator('select')
+    .filter({ has: page.locator('option', { hasText: '待核验' }) })
+  const aOption = await variantSelector
+    .first()
+    .locator('option')
+    .filter({ hasText: 'A卷' })
+    .getAttribute('value')
+  await variantSelector.first().selectOption(aOption!)
+  const bOption = await variantSelector
+    .first()
+    .locator('option')
+    .filter({ hasText: 'B卷' })
+    .getAttribute('value')
+  await rosterPanel.locator('tbody select').nth(1).selectOption(bOption!)
+  await rosterPanel.getByLabel('名单操作说明').fill('浏览器核对两班参试名单')
+  await rosterPanel.getByRole('button', { name: '保存名单草稿' }).click()
+  await expect(rosterPanel.getByRole('button', { name: '冻结当前名单' })).toBeEnabled()
+  await page.evaluate(() => window.scrollTo(0, 0))
+  await page.screenshot({
+    path: 'test-results/exam-configuration-roster-draft.png',
+    fullPage: true,
+    animations: 'disabled',
+  })
+  await rosterPanel.getByRole('button', { name: '冻结当前名单' }).click()
+  await expect(rosterPanel.getByText(/本版已冻结，只读保留/)).toBeVisible()
+  await page.evaluate(() => window.scrollTo(0, 0))
+  await page.screenshot({
+    path: 'test-results/exam-configuration-frozen.png',
+    fullPage: true,
+    animations: 'disabled',
+  })
+  await rosterPanel.getByLabel('名单操作说明').fill('浏览器创建更正版本')
+  await rosterPanel.getByRole('button', { name: '创建更正草稿' }).click()
+  await expect(rosterPanel.getByText(/当前是更正草稿/)).toBeVisible()
+  const firstNumber = rosterPanel.locator('input[maxlength="32"]').first()
+  await firstNumber.fill('R0001')
+  await expect(rosterPanel.getByRole('button', { name: '冻结当前名单' })).toBeDisabled()
+  await rosterPanel.getByRole('button', { name: '保存名单草稿' }).click()
+  await rosterPanel.getByRole('button', { name: '冻结当前名单' }).click()
+  await expect(rosterPanel.getByText(/本版已冻结，只读保留/)).toBeVisible()
+  await expect(firstNumber).toHaveValue('R0001')
+  await page.evaluate(() => window.scrollTo(0, 0))
+  await page.screenshot({
+    path: 'test-results/exam-configuration-corrected.png',
+    fullPage: true,
+    animations: 'disabled',
+  })
+  await page.getByRole('link', { name: '扫描接收与页面预览 →' }).click()
+  await expect(page.getByLabel('考试场次')).toHaveValue(sid)
+  await expect(page.getByText('已具备冻结名单；页面身份仍须后续人工确认。')).toBeVisible()
+  await page.getByRole('link', { name: '人工分卷与身份确认 →' }).click()
+  await expect(page).toHaveURL(new RegExp(`/scans/sessions/${sid}/scripts$`))
+  await expect(page.getByRole('heading', { name: '人工分卷与身份确认' })).toBeVisible()
+  await page.getByRole('link', { name: '成绩预览', exact: true }).click()
+  await expect(page.getByRole('heading', { name: '整卷成绩预览' })).toBeVisible()
+  await expect(page.getByText('暂无已授权班级的考试场次，请联系考务负责人。')).toBeVisible()
+  expect(errors).toEqual([])
+})
