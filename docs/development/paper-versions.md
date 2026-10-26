@@ -53,6 +53,8 @@ B-1.2a最初交付受控CLI和Python Service；后续已增加[试卷管理工�
 
 - `11111111-b12a-4000-8000-000000000001`：`paper_operator`，受控部署安全根，含已有安全/组织与新试卷动作；**不得当作普通命题教师角色**。
 - `...0002`：`paper_editor`，paper.read/edit；`...0003`：`paper_locker`，paper.read/lock；`...0004`：`paper_reader`，paper.read。普通人员应绑定具体试卷 Scope。
+- 新增 `11111111-b15b-4000-8000-000000000001`：`paper_creator`，仅安装级 paper.create，供经审批的普通教师建卷。
+- 新增 `...b15b...0002`：保留 `paper_author`，只由[新对象创建政策](paper-creator.md)授予本卷 read/edit/lock，不允许通用委派。
 
 现有部署不会自动把旧管理员/操作员 Grant 升级到新根。持数据库凭据的部署人员经独立审批运行：
 
@@ -78,7 +80,9 @@ uv run python -m huipi_cloud.modules.papers retire --token-stdin --payload reque
 
 创建正文为 `request_id/source_assignment_id/title`；写正文的公共字段见上文。edit-question 还需 question_key、question（沿用 QuestionCreate）、answer_content、rubric（完整 criteria）；reorder 提交全部 `question_key/printed_label`，不接受任意目标 Question ID。完整严格 DTO 见 [schemas.py](../../src/huipi_cloud/modules/papers/schemas.py)。
 
-创建结果含真实 `paper_version_id`；Scope 可由受控部署按 FK 查得，用既有安全 grant/revoke CLI 授予具体 PaperVersion 的 editor/locker/reader。没有公开试卷授权后台。拥有某卷的 read/edit 不授权其他卷、组织名册或学生作答。旧 Assignment/Question/Submission、Canonical、审核、Copilot 与 Knowledge 路径依然默认拒绝考试内容。
+创建结果含真实 `paper_version_id`；真正新建或 fork 的版本按[创建政策](paper-creator.md)原子授予操作者本卷 read/edit/lock。
+fork 另需当前安装级 `paper.create`。历史版本不回填，复用/重放不补发。Scope 可由受控部署按 FK 查得，
+协作人员仍用既有安全 grant/revoke CLI 授予具体 PaperVersion 的 editor/locker/reader。没有公开试卷授权后台。拥有某卷的 read/edit 不授权其他卷、组织名册或学生作答。旧 Assignment/Question/Submission、Canonical、审核、Copilot 与 Knowledge 路径依然默认拒绝考试内容。
 
 ## 错误与恢复
 

@@ -5,7 +5,7 @@ import json
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from sqlalchemy import Text, cast, delete, func, insert, literal, select, update
 from sqlalchemy.dialects.postgresql import JSONB
@@ -17,12 +17,13 @@ from huipi_cloud.modules.identity import service as identity
 from huipi_cloud.modules.identity.models import User
 from huipi_cloud.modules.identity.protocol import AccessError, Principal
 from huipi_cloud.modules.papers.models import (
+    PaperCreatorAuthority,
     PaperFamily,
     PaperOperation,
     PaperQuestionMapping,
     PaperVersion,
 )
-from huipi_cloud.modules.papers.permissions import PAPER_OPERATOR_ROLE
+from huipi_cloud.modules.papers.permissions import PAPER_AUTHOR_ROLE, PAPER_OPERATOR_ROLE
 from huipi_cloud.modules.papers.schemas import QuestionEdit, Reorder, SnapshotCreate, VersionWrite
 from huipi_cloud.modules.resource_security import service as security
 from huipi_cloud.modules.resource_security.models import SecurityGrant, SecurityScope
@@ -49,6 +50,7 @@ def digest(value):
 @dataclass
 class Operation:
     replay: dict | None
+    operation_id: UUID
     result: dict | None = None
 
 
@@ -79,14 +81,14 @@ async def operation(session, principal, request_id, action, payload):
         )
         if old and old["payload_sha256"] != fingerprint:
             raise AccessError("paper_request_conflict", 409)
-        op = Operation(dict(old["result"]) if old else None)
+        op = Operation(dict(old["result"]) if old else None, old["id"] if old else uuid4())
         yield op
         if op.replay is None:
             if op.result is None:
                 raise RuntimeError("paper operation missing result")
             await session.execute(
                 insert(OPS).values(
-                    id=uuid4(),
+                    id=op.operation_id,
                     actor_user_id=principal.user_id,
                     request_id=request_id,
                     action=action,
@@ -252,7 +254,9 @@ async def source_rows(session, aid):
     return assignment, sorted(questions, key=lambda q: q["question_number"]), answers, rubrics
 
 
-async def clone(session, principal, source, family_id, title, version_no, prior=None):
+async def clone(
+    session, principal, source, family_id, title, version_no, prior=None, *, operation_id
+):
     assignment, questions, answers, rubrics = source
     source_sha = await digests(session, assignment["id"])
     carrier, pid = uuid4(), uuid4()
@@ -343,8 +347,43 @@ async def clone(session, principal, source, family_id, title, version_no, prior=
             for m in prepared
         ],
     )
+    scope_id, grant_id = uuid4(), uuid4()
+    # Serialize the existing active-Grant budget for concurrent creations by one actor.
+    budget_key = int.from_bytes(
+        hashlib.sha256(f"paper-creator-budget:{principal.user_id}".encode()).digest()[:8],
+        signed=True,
+    )
+    await session.execute(select(func.pg_advisory_xact_lock(budget_key)))
+    count = await session.scalar(
+        select(func.count())
+        .select_from(SecurityGrant)
+        .where(SecurityGrant.user_id == principal.user_id, SecurityGrant.revoked_at.is_(None))
+    )
+    if count >= 100:
+        raise AccessError("paper_creator_grant_limit", 409)
     await session.execute(
-        insert(SecurityScope).values(id=uuid4(), kind="paper_version", paper_version_id=pid)
+        insert(SecurityScope).values(id=scope_id, kind="paper_version", paper_version_id=pid)
+    )
+    codes = await security.role_codes(session, PAPER_AUTHOR_ROLE, "paper_version")
+    if codes != {"paper.read", "paper.edit", "paper.lock"}:
+        raise AccessError("paper_author_policy_invalid", 503)
+    # Domain endowment, NOT general self-delegation. IDs are exclusively minted above.
+    # DB deferred checks bind this Grant to this transaction's new version and audit.
+    await session.execute(
+        insert(SecurityGrant).values(
+            id=grant_id,
+            user_id=principal.user_id,
+            role_version_id=PAPER_AUTHOR_ROLE,
+            scope_id=scope_id,
+        )
+    )
+    await session.execute(
+        insert(PaperCreatorAuthority).values(
+            paper_version_id=pid,
+            grant_id=grant_id,
+            operation_id=operation_id,
+            actor_user_id=principal.user_id,
+        )
     )
     paper = await row(session, pid)
     return await summary(session, paper)
@@ -394,6 +433,9 @@ async def _create_snapshot(session, principal, request, *, member_source):
         if member_source:
             await require_member_source(session, principal, request.source_assignment_id)
         if op.replay is not None:
+            await authorize_paper(
+                session, principal, UUID(op.replay["paper_version_id"]), "paper.read"
+            )
             return op.replay
         family_key = digest({"source": str(request.source_assignment_id), "title": request.title})
         await session.execute(
@@ -448,6 +490,7 @@ async def _create_snapshot(session, principal, request, *, member_source):
             request.title,
             previous["version_no"] + 1 if previous else 1,
             previous,
+            operation_id=op.operation_id,
         )
         return op.result
 
@@ -609,7 +652,11 @@ async def fork_paper(session, principal, request: VersionWrite):
         session, principal, request.request_id, "fork", request.model_dump(mode="json")
     ) as op:
         await authorize_paper(session, principal, request.paper_version_id, "paper.edit")
+        await authorize_root(session, principal, "paper.create")
         if op.replay is not None:
+            await authorize_paper(
+                session, principal, UUID(op.replay["paper_version_id"]), "paper.read"
+            )
             return op.replay
         # Lock family before PaperVersion, matching snapshot creation order.
         original = await row(session, request.paper_version_id)
@@ -633,6 +680,7 @@ async def fork_paper(session, principal, request: VersionWrite):
             paper["title"],
             paper["version_no"] + 1,
             paper,
+            operation_id=op.operation_id,
         )
         return op.result
 

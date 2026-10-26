@@ -167,3 +167,12 @@ B-1.2c的exam.roster.read/manage/freeze/correct沿真实Event/Session Scope执�
 ## 考试评分任务绑定入口
 
 新增 exam.mark.read、exam.answer.review、exam.score.request、exam.score.review；具体动作与 mark.read/script.read/identity.verify 必须单 Grant 完整覆盖真实 Session，名单读取另验。所有考试评分新表对旧 ORM 默认隐藏，原评分表仍沿 protected Submission 隐藏。固定 Core 查询仅在精确 Job/工作区内使用，不提供自由 SQL、通用特权会话、客户端对象 Key 或权限回退。最终登记重查原申请人、当前人工复核与源版本，撤权后的幂等回放也不返回原结果。详见[安全及运行合同](../development/exam-grading.md)。
+
+## 普通教师建卷的固定对象授权
+
+`b15b71d5f016` 增加最小 installation `paper_creator`，只有 `paper.create`，无管理、试卷全局读写、名单或成绩权限。
+通用 Grant 委派依旧禁止自授，需同一有效 Grant 覆盖全部委派能力。
+另有明确的 `paper-creator-v1` **业务创建政策**：仅在真实新建卷版的事务中，
+给实际创建人本卷 `paper_author`（read/edit/lock），并用真实FK连接新卷、Grant、操作者和不可变创建审计。
+通用委派入口不能使用此保留角色；复用已有家族、重放或其他用户指定ID都不能补发。
+没有调用者可启用的通用特权会话。初始审批、撤销、fork要求与数据库延迟约束见[普通教师建卷](../development/paper-creator.md)。

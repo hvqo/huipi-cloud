@@ -13,7 +13,11 @@ from test_paper_versions import auth_api, create, lock, papers, write
 from huipi_cloud.modules.identity.models import AssignmentMembership
 from huipi_cloud.modules.papers import service as service
 from huipi_cloud.modules.papers.models import PaperOperation, PaperVersion
-from huipi_cloud.modules.papers.permissions import PAPER_EDITOR_ROLE, PAPER_READER_ROLE
+from huipi_cloud.modules.papers.permissions import (
+    PAPER_AUTHOR_ROLE,
+    PAPER_EDITOR_ROLE,
+    PAPER_READER_ROLE,
+)
 from huipi_cloud.modules.resource_security import service as grants
 from huipi_cloud.modules.resource_security.models import SecurityGrant, SecurityScope
 
@@ -298,7 +302,7 @@ async def test_web_retirement_preserves_existing_session_paper(roster):
 
 
 @pytest.mark.anyio
-async def test_family_history_filters_every_version_and_creation_does_not_grant(papers):
+async def test_family_history_filters_every_version_and_new_authority_is_object_only(papers):
     c = papers
     pid = (await snapshot(c))["paper_version_id"]
     d = await detail(c, pid)
@@ -324,7 +328,13 @@ async def test_family_history_filters_every_version_and_creation_does_not_grant(
     assert r.status_code == 201
     successor = r.json()["paper_version_id"]
     async with c.factory() as db:
-        assert set((await db.scalars(select(SecurityGrant.id))).all()) == before
+        after = set((await db.scalars(select(SecurityGrant.id))).all())
+        assert before < after and len(after - before) == 1
+        new_grant = await db.get(SecurityGrant, (after - before).pop())
+        scope = await db.get(SecurityScope, new_grant.scope_id)
+        assert new_grant.user_id == c.users["admin"].id
+        assert new_grant.role_version_id == PAPER_AUTHOR_ROLE
+        assert scope.kind == "paper_version" and str(scope.paper_version_id) == successor
     c.client.headers.update(c.headers("reader"))
     history = await c.client.get(BASE + f"/{pid}/history")
     assert history.status_code == 200

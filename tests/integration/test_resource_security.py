@@ -873,6 +873,7 @@ async def test_independent_migration_roundtrip_preserves_legacy_graph_and_refuse
         "paper_versions",
         "paper_question_mappings",
         "paper_operations",
+        "paper_creator_authorities",
         "exam_events",
         "exam_sessions",
         "session_papers",

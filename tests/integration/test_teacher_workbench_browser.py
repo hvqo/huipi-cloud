@@ -155,6 +155,71 @@ async def test_teacher_workbench_browser_end_to_end(
                 role_version_id=PAPER_OPERATOR_ROLE,
                 scope_id=grants.INSTALLATION_SCOPE,
             )
+    creator_source = None
+    if os.getenv("RUN_PAPER_CREATOR_BROWSER") == "1":
+        from huipi_cloud.modules.papers.permissions import PAPER_CREATOR_ROLE
+
+        # Separate user: never receives the test operator roles granted to actor a above.
+        async with ctx.factory() as db, db.begin():
+            teacher = User(
+                issuer=ctx.users["a"].issuer, subject=str(uuid4()), is_active=True, is_admin=False
+            )
+            db.add(teacher)
+            await db.flush()
+            ctx.users["creator"] = teacher
+        async with ctx.factory() as db:
+            await grants.grant_role(
+                db,
+                ctx.principals["admin"],
+                uuid4(),
+                user_id=teacher.id,
+                role_version_id=PAPER_CREATOR_ROLE,
+                scope_id=grants.INSTALLATION_SCOPE,
+            )
+        response = await ctx.client.post(
+            "/api/v1/assignments",
+            headers=ctx.headers("creator"),
+            json=dict(title="普通教师自己的命题作业", subject="数学", grade_level="高二"),
+        )
+        assert response.status_code == 201, response.text
+        creator_source = response.json()["id"]
+        for number in (1, 2):
+            response = await ctx.client.post(
+                f"/api/v1/assignments/{creator_source}/questions",
+                headers=ctx.headers("creator"),
+                json=dict(
+                    question_number=number,
+                    question_type="short_answer",
+                    stem=f"合成题{number}：3+3",
+                    max_score="10.00",
+                ),
+            )
+            assert response.status_code == 201, response.text
+            qid = response.json()["id"]
+            assert (
+                await ctx.client.put(
+                    f"/api/v1/questions/{qid}/answer-key",
+                    headers=ctx.headers("creator"),
+                    json=dict(answer_content="6"),
+                )
+            ).status_code == 200
+            assert (
+                await ctx.client.put(
+                    f"/api/v1/questions/{qid}/rubric",
+                    headers=ctx.headers("creator"),
+                    json=dict(
+                        criteria=[
+                            dict(description="方法正确", points="5.00", sort_order=1),
+                            dict(description="结果正确", points="5.00", sort_order=2),
+                        ]
+                    ),
+                )
+            ).status_code == 200
+        assert (
+            await ctx.client.post(
+                f"/api/v1/assignments/{creator_source}/publish", headers=ctx.headers("creator")
+            )
+        ).status_code == 200
     config_paper_b = None
     config_year_id = None
     if os.getenv("RUN_EXAM_CONFIGURATION_BROWSER") == "1":
@@ -466,6 +531,7 @@ async def test_teacher_workbench_browser_end_to_end(
             WORKBENCH_SCAN_SESSION=scan_context.session["id"],
             WORKBENCH_SCAN_PDF=str(scan_pdf),
             WORKBENCH_PAPER_SOURCE=str(ctx.aid),
+            WORKBENCH_CREATOR_SOURCE=str(creator_source or ""),
             WORKBENCH_CONFIG_YEAR=str(config_year_id or ""),
             WORKBENCH_CONFIG_TERM=str(ctx.term_id),
             WORKBENCH_CONFIG_SUBJECT=str(ctx.subject_ids[0]),
@@ -541,6 +607,43 @@ async def test_teacher_workbench_browser_end_to_end(
         (frontend / "test-results" / "browser-summary.txt").write_text(output.decode())
         assert browser.returncode == 0, output.decode()[-12000:]
         assert selection["pkce_verified"] >= 3
+        if os.getenv("RUN_PAPER_CREATOR_BROWSER") == "1":
+            from huipi_cloud.modules.papers.models import PaperCreatorAuthority
+            from huipi_cloud.modules.papers.permissions import PAPER_AUTHOR_ROLE, PAPER_CREATOR_ROLE
+            from huipi_cloud.modules.resource_security.models import SecurityGrant
+
+            async with ctx.factory() as db:
+                actor_grants = (
+                    await db.execute(
+                        select(
+                            SecurityGrant.role_version_id,
+                            SecurityScope.kind,
+                            SecurityScope.paper_version_id,
+                        )
+                        .join(SecurityScope, SecurityGrant.scope_id == SecurityScope.id)
+                        .where(SecurityGrant.user_id == ctx.users["creator"].id)
+                    )
+                ).all()
+                assert len(actor_grants) == 3
+                assert (
+                    sum(r[0] == PAPER_CREATOR_ROLE and r[1] == "installation" for r in actor_grants)
+                    == 1
+                )
+                assert (
+                    sum(
+                        r[0] == PAPER_AUTHOR_ROLE and r[1] == "paper_version" and r[2] is not None
+                        for r in actor_grants
+                    )
+                    == 2
+                )
+                facts = (
+                    await db.scalars(
+                        select(PaperCreatorAuthority).where(
+                            PaperCreatorAuthority.actor_user_id == ctx.users["creator"].id
+                        )
+                    )
+                ).all()
+                assert len(facts) == 2
         async with ctx.factory() as session:
             rows = list(
                 (
