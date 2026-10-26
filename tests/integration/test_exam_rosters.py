@@ -676,7 +676,6 @@ async def test_migration_roundtrip_old_exam_paper_graph_and_data_guard(exam, pos
 
     from huipi_cloud.infrastructure.database.base import Base
     from huipi_cloud.modules.exams.schemas import EventCreate
-    from huipi_cloud.modules.papers.schemas import SnapshotCreate
 
     c = exam
     name = "huipi_roster_roundtrip_" + uuid4().hex[:10] + "_test"
@@ -739,14 +738,9 @@ async def test_migration_roundtrip_old_exam_paper_graph_and_data_guard(exam, pos
             await paper_service.enable_operator(
                 db, c.users["admin"].id, c.users["admin"].id, uuid4(), "synthetic paper"
             )
-        async with factory() as db:
-            p = await paper_service.create_snapshot(
-                db,
-                c.principals["admin"],
-                SnapshotCreate(
-                    request_id=uuid4(), source_assignment_id=c.aid, title="合成迁移历史卷"
-                ),
-            )
+        from test_paper_versions import seed_pre_creator_draft
+
+        p = await seed_pre_creator_draft(c, factory, title="合成迁移历史卷")
         async with factory() as db:
             p = await paper_service.lock_paper(db, c.principals["admin"], write(p))
         async with factory() as db:

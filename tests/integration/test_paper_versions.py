@@ -45,7 +45,9 @@ async def papers(auth_api):
         for name, u in ctx.users.items()
     }
     async with ctx.factory() as s, s.begin():
-        await s.execute(text("TRUNCATE security_audit_events, paper_operations"))
+        await s.execute(
+            text("TRUNCATE security_audit_events, paper_operations, paper_creator_authorities")
+        )
     async with ctx.factory() as s:
         await security.deployment_bootstrap(s, ctx.users["admin"].id, uuid4(), "synthetic approval")
     async with ctx.factory() as s:
@@ -108,6 +110,49 @@ async def create(ctx, *, request=None, title="合成共享数学卷"):
     )
     async with ctx.factory() as s:
         return await paper.create_snapshot(s, ctx.principals["admin"], payload)
+
+
+async def seed_pre_creator_draft(ctx, target_factory, *, title):
+    """Copy a valid draft as pre-policy history, without invoking new create on old schemas.
+
+    Test-only fixture: future Grant/receipt tables are deliberately not backfilled. Real
+    source, carrier, mapping and operation IDs/content are retained; DB triggers stay on.
+    """
+    from huipi_cloud.infrastructure.database.base import Base
+
+    value = await create(ctx, title=title)
+    pid, carrier = UUID(value["paper_version_id"]), UUID(value["canonical_assignment_id"])
+    async with ctx.factory() as db:
+        condition = {
+            "assignments": Assignment.__table__.c.id == carrier,
+            "questions": Question.__table__.c.assignment_id == carrier,
+            "answer_keys": AnswerKey.__table__.c.question_id.in_(
+                select(Question.__table__.c.id).where(Question.__table__.c.assignment_id == carrier)
+            ),
+            "rubric_criteria": RubricCriterion.__table__.c.question_id.in_(
+                select(Question.__table__.c.id).where(Question.__table__.c.assignment_id == carrier)
+            ),
+            "paper_families": PaperFamily.__table__.c.id == UUID(value["paper_family_id"]),
+            "paper_versions": PaperVersion.__table__.c.id == pid,
+            "paper_question_mappings": PaperQuestionMapping.__table__.c.paper_version_id == pid,
+            "security_scopes": SecurityScope.__table__.c.paper_version_id == pid,
+            "paper_operations": PaperOperation.__table__.c.result["paper_version_id"].astext
+            == str(pid),
+        }
+        data = {
+            name: [
+                dict(r)
+                for r in (
+                    await db.execute(select(Base.metadata.tables[name]).where(where))
+                ).mappings()
+            ]
+            for name, where in condition.items()
+        }
+    async with target_factory() as db, db.begin():
+        for table in Base.metadata.sorted_tables:
+            if data.get(table.name):
+                await db.execute(insert(table), data[table.name])
+    return value
 
 
 async def inspect(ctx, pid, name="admin"):
@@ -391,7 +436,9 @@ async def test_real_scoped_read_edit_lock_revocation_and_legacy_admin_denial(pap
             update(SecurityGrant)
             .where(
                 SecurityGrant.user_id == ctx.users["admin"].id,
-                SecurityGrant.role_version_id == paper.PAPER_OPERATOR_ROLE,
+                SecurityGrant.role_version_id.in_(
+                    [paper.PAPER_OPERATOR_ROLE, paper.PAPER_AUTHOR_ROLE]
+                ),
             )
             .values(revoked_at=func.clock_timestamp())
         )
@@ -778,7 +825,9 @@ async def test_retirement_preserves_frozen_bytes_and_replay_still_checks_authori
             update(SecurityGrant)
             .where(
                 SecurityGrant.user_id == ctx.users["admin"].id,
-                SecurityGrant.role_version_id == paper.PAPER_OPERATOR_ROLE,
+                SecurityGrant.role_version_id.in_(
+                    [paper.PAPER_OPERATOR_ROLE, paper.PAPER_AUTHOR_ROLE]
+                ),
             )
             .values(revoked_at=func.clock_timestamp())
         )
@@ -870,7 +919,9 @@ async def test_paper_migration_roundtrip_preserves_actual_old_graph_and_guards_n
                         "permission_",
                         "exam_",
                         "scan_",
-                        "exam_parsing_", "exam_submission_links", "answer_script",
+                        "exam_parsing_",
+                        "exam_submission_links",
+                        "answer_script",
                         "current_page_allocations",
                     )
                 )

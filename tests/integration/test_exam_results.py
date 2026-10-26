@@ -574,6 +574,19 @@ async def test_new_migration_roundtrip_preserves_exam_and_review_facts(results):
         )
 
     blocked = await alembic("downgrade", "b14c52b3f014")
+    assert blocked.returncode != 0 and "paper_creator_facts_prevent_downgrade" in blocked.stderr
+    # Isolated TEST database only: remove the later creation-policy fixture metadata
+    # after proving its downgrade guard. Keep all paper/exam/review facts and original
+    # operator grants, then independently prove the older results migration guard below.
+    from huipi_cloud.modules.papers.permissions import PAPER_AUTHOR_ROLE
+
+    async with c.factory() as db, db.begin():
+        await db.execute(text("TRUNCATE paper_creator_authorities"))
+        await db.execute(
+            text("DELETE FROM security_grants WHERE role_version_id=:role"),
+            {"role": PAPER_AUTHOR_ROLE},
+        )
+    blocked = await alembic("downgrade", "b14c52b3f014")
     assert blocked.returncode != 0 and "prevent destructive downgrade" in blocked.stderr
     # Test-only cleanup of this new slice; never a production rollback procedure.
     async with c.factory() as db, db.begin():

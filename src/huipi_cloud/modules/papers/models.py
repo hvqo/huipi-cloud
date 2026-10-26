@@ -140,3 +140,30 @@ class PaperOperation(Base):
     payload_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
     result: Mapped[dict] = mapped_column(JSONB, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PaperCreatorAuthority(Base):
+    """Immutable provenance for one newly-created version's narrowly-scoped Grant."""
+
+    __tablename__ = "paper_creator_authorities"
+    paper_version_id: Mapped[UUID] = mapped_column(
+        ForeignKey("paper_versions.id", ondelete="RESTRICT"),
+        primary_key=True,
+    )
+    grant_id: Mapped[UUID] = mapped_column(
+        ForeignKey("security_grants.id", ondelete="RESTRICT"),
+        nullable=False,
+        unique=True,
+    )
+    operation_id: Mapped[UUID] = mapped_column(
+        ForeignKey(
+            "paper_operations.id", ondelete="RESTRICT", deferrable=True, initially="DEFERRED"
+        ),
+        nullable=False,
+        unique=True,
+    )
+    actor_user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

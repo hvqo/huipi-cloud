@@ -853,14 +853,9 @@ async def test_migration_roundtrip_old_graph_paper_history_and_destructive_guard
             await paper_service.enable_operator(
                 db, c.users["admin"].id, c.users["admin"].id, uuid4(), "synthetic scratch paper"
             )
-        from huipi_cloud.modules.papers.schemas import SnapshotCreate
+        from test_paper_versions import seed_pre_creator_draft
 
-        async with factory() as db:
-            v = await paper_service.create_snapshot(
-                db,
-                c.principals["admin"],
-                SnapshotCreate(request_id=uuid4(), source_assignment_id=c.aid, title="迁移历史卷"),
-            )
+        v = await seed_pre_creator_draft(c, factory, title="迁移历史卷")
         async with factory() as db:
             await paper_service.lock_paper(db, c.principals["admin"], write(v))
         names = list(source) + [

@@ -21,7 +21,11 @@ from huipi_cloud.modules.exams.permissions import EXAM_ACTIONS
 from huipi_cloud.modules.identity import service as identity
 from huipi_cloud.modules.identity.models import User
 from huipi_cloud.modules.identity.protocol import AccessError, Principal
-from huipi_cloud.modules.papers.permissions import PAPER_ACTIONS
+from huipi_cloud.modules.papers.permissions import (
+    PAPER_ACTIONS,
+    PAPER_AUTHOR_ROLE,
+    PAPER_CREATOR_ROLE,
+)
 from huipi_cloud.modules.resource_security.models import (
     PermissionDefinition,
     SecurityAudit,
@@ -134,6 +138,10 @@ async def scope(session, scope_id):
 
 
 async def role_codes(session, role_id, kind):
+    if (role_id == PAPER_AUTHOR_ROLE and kind != "paper_version") or (
+        role_id == PAPER_CREATOR_ROLE and kind != "installation"
+    ):
+        raise AccessError("security_role_scope_invalid", 422)
     role = await session.get(SecurityRoleVersion, role_id)
     if role is None or role.sealed_at is None:
         raise AccessError("security_role_invalid", 422)
@@ -303,6 +311,8 @@ async def create_protected_assignment(session, principal, request_id, payload: A
 
 
 async def grant_role(session, principal, request_id, *, user_id, role_version_id, scope_id):
+    if role_version_id == PAPER_AUTHOR_ROLE:
+        raise AccessError("paper_author_role_creation_only", 403)
     payload = dict(
         user_id=str(user_id), role_version_id=str(role_version_id), scope_id=str(scope_id)
     )

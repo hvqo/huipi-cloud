@@ -812,20 +812,37 @@ async def test_grading_facts_prevent_destructive_migration_downgrade(marking):
     import sys
 
     c = marking
-    process = await asyncio.create_subprocess_exec(
-        sys.executable,
-        "-m",
-        "alembic",
-        "downgrade",
-        "b14b41a2e903",
-        env=dict(os.environ, DATABASE_URL=os.environ["TEST_DATABASE_URL"]),
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.STDOUT,
-    )
-    output, _ = await asyncio.wait_for(process.communicate(), 30)
-    assert process.returncode != 0 and b"exam_mark_downgrade_requires_archived_data" in output
+    from test_organization_migration import migration_head
+
+    from huipi_cloud.modules.papers.permissions import PAPER_AUTHOR_ROLE
+
+    async def downgrade():
+        process = await asyncio.create_subprocess_exec(
+            sys.executable,
+            "-m",
+            "alembic",
+            "downgrade",
+            "b14b41a2e903",
+            env=dict(os.environ, DATABASE_URL=os.environ["TEST_DATABASE_URL"]),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+        )
+        output, _ = await asyncio.wait_for(process.communicate(), 30)
+        assert process.returncode != 0
+        return output
+
+    assert b"paper_creator_facts_prevent_downgrade" in await downgrade()
+    # Isolated test fixtures only: after proving the newer guard, discard only its
+    # grant provenance, preserving the older actual grading graph and operator grants.
+    async with c.factory() as db, db.begin():
+        await db.execute(text("TRUNCATE paper_creator_authorities"))
+        await db.execute(
+            text("DELETE FROM security_grants WHERE role_version_id=:role"),
+            {"role": PAPER_AUTHOR_ROLE},
+        )
+    assert b"exam_mark_downgrade_requires_archived_data" in await downgrade()
     async with c.factory() as db:
-        assert await db.scalar(text("SELECT version_num FROM alembic_version")) == "b15a60c4f015"
+        assert await db.scalar(text("SELECT version_num FROM alembic_version")) == migration_head()
         assert await db.scalar(select(g.W.c.id).where(g.W.c.id == UUID(c.wid))) == UUID(c.wid)
 
 

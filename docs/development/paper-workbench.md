@@ -3,7 +3,8 @@
 ## 网页入口与能力
 
 `/papers`、`/papers/{PaperVersion ID}` 与 `/exams` 双向衔接。
-复用 PaperFamily/PaperVersion/PaperQuestionMapping 和原 `papers.service`，无新数据库模型或迁移。
+复用 PaperFamily/PaperVersion/PaperQuestionMapping 和原 `papers.service`；
+最小建卷角色与创建授权来源新增迁移见[普通教师建卷](paper-creator.md)。
 
 有相应当前授权的人员可在网页：
 
@@ -23,10 +24,11 @@
 JWT角色、User.is_admin、旧AssignmentMembership不能替代试卷授权。
 
 - 列表、详情与家族历史需要 `paper.read`；每个历史版本单独过滤，不能从可读前版推导后版可读。
-- `paper.edit` 用于编辑、重排、fork及退役；`paper.lock` 用于锁定；创建需要安装级 `paper.create`。
+- `paper.edit` 用于编辑、重排、fork及退役；`paper.lock` 用于锁定；创建和 fork 另外需要安装级 `paper.create`。
 - `paper.use` 仅供考试选卷，不返回题干、标准答案、Rubric，也不允许进入试卷详情。
-- 创建不复制成员或Grant，不为创建人自动追加Paper Scope。若用户只有创建权限而没有新卷读取权限，
-  页面显示“需要授权”，由受控部署流程另行授权，不重复创建或临时提权。
+- 真正新建或 fork 的卷版在同事务按固定创建政策授予创建人本卷的 read/edit/lock；不复制来源成员、全局角色或其他Grant。
+  已有版本复用、重放不补发授权，历史版本不回填；详见[创建政策及撤权](paper-creator.md)。
+  提交后若权限已撤销，页面仍显示需要授权，不假装可编辑。
 
 旧作业读取具有历史管理员全局访问语义，不能将其作为新网页导入的来源目录。
 因此 `GET /papers/sources` 只列出当前用户**明确、未撤销的AssignmentMembership**关联的已发布普通作业，
@@ -71,12 +73,10 @@ HTTP固定目录及TypeScript合同同时更新。
 
 ## 仍需受控工具的操作
 
-首次OIDC身份/Grant、明确来源成员登记、新版本权限分配及班级成绩授权仍由现有受控安全流程完成。
+首次OIDC身份、最小 creator 角色、明确来源成员及班级成绩授权仍由现有受控安全流程完成。
 不能用网页自声明role或actor替代这些授权。原CLI继续可用，见[试卷版本指南](paper-versions.md)。
-当前预置角色中，含 `paper.create` 的是部署级 `paper_operator`，其权限很广，不能为了开放建卷按钮直接授予普通教师。
-普通教师优先使用具体卷版的 reader/editor/locker；网页创建由已获审批的命题/考务操作员执行。
-本轮没有新增角色。若需普通教师独立创建，应另行提供最小 `paper.create` 安装级角色及相应受控部署验收，
-而不是恢复旧管理员捷径或自动扩大Grant。
+普通教师使用最小 `paper_creator`；部署级 `paper_operator` 权限很广，不得授予普通教师。
+真正新卷的对象授权由固定事务政策创建；已有版本的协作权限仍由可信管理员按原委派规则登记。
 退役保留历史考试引用，但会阻止新用卷及要求后续消费者重新核对状态；不是删除或悄悄替换已用试卷。
 
 验收、合成截图与局限见[工作台验收](../evaluation/paper-workbench.md)。
