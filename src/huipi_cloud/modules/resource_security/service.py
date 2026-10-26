@@ -21,6 +21,7 @@ from huipi_cloud.modules.exams.permissions import EXAM_ACTIONS
 from huipi_cloud.modules.identity import service as identity
 from huipi_cloud.modules.identity.models import User
 from huipi_cloud.modules.identity.protocol import AccessError, Principal
+from huipi_cloud.modules.marking_tasks.permissions import TASK_ACTIONS
 from huipi_cloud.modules.papers.permissions import (
     PAPER_ACTIONS,
     PAPER_AUTHOR_ROLE,
@@ -50,6 +51,7 @@ STUDENT_IMPORTER_ROLE = UUID("11111111-b11b-4000-8000-000000000003")
 # Both code AND current persisted catalog must allow execution. Future IDs cannot be activated
 # by merely inserting a row/setting enabled in the database.
 CATALOG = {
+    **TASK_ACTIONS,
     **PAPER_ACTIONS,
     **EXAM_ACTIONS,
     **ROSTER_ACTIONS,

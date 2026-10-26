@@ -881,3 +881,87 @@ test('学校管理：真实CSV预检确认、两班同名学生与冻结名单�
   }
   expect(errors).toEqual([])
 })
+
+test('协同阅卷：负责人跨班分配、两名教师提交与成绩预览', async ({ page, request, browser }) => {
+  test.skip(process.env.RUN_MARKING_TASKS_BROWSER !== '1', 'collaborative marking opt-in')
+  test.setTimeout(150000)
+  await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/a`, { ignoreHTTPSErrors: true })
+  page.on('dialog', (d) => d.accept())
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(e.message))
+  await signIn(page, '/marking/manage')
+  await page.getByLabel('考试与科目场次').selectOption(process.env.WORKBENCH_SCAN_SESSION!)
+  const first = page.locator('.mark-script').filter({ hasText: '合成1班' })
+  const second = page.locator('.mark-script').filter({ hasText: '合成2班' })
+  await expect(first).toHaveCount(1)
+  await expect(second).toHaveCount(1)
+  await first.getByRole('button', { name: '选择整卷', exact: true }).click()
+  await page.getByLabel('阅卷教师').selectOption(process.env.WORKBENCH_MARKER_A!)
+  await page.getByRole('button', { name: '分配选中题目（2）', exact: true }).click()
+  await expect(page.getByText('操作已保存。')).toBeVisible()
+  await second.getByRole('checkbox').first().check()
+  await page.getByLabel('阅卷教师').selectOption(process.env.WORKBENCH_MARKER_B!)
+  await page.getByRole('button', { name: '分配选中题目（1）', exact: true }).click()
+  await expect(page.getByText('操作已保存。')).toBeVisible()
+  await page.screenshot({ path: 'test-results/marking-management.png', fullPage: true })
+  async function teacher(actor: string, count: number) {
+    await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/${actor}`, {
+      ignoreHTTPSErrors: true,
+    })
+    const context = await browser.newContext({
+      ignoreHTTPSErrors: true,
+      viewport: { width: 1440, height: 1000 },
+    })
+    const tab = await context.newPage()
+    tab.on('dialog', (d) => d.accept())
+    tab.on('pageerror', (e) => errors.push(e.message))
+    await signIn(tab, '/marking/my')
+    await expect(tab.getByRole('region', { name: '个人任务列表' }).locator('tbody tr')).toHaveCount(
+      count,
+    )
+    for (let index = 0; index < count; index++) {
+      if (index === 0) await tab.getByRole('link', { name: '进入任务 →' }).first().click()
+      await tab.getByRole('button', { name: '领取并开始', exact: true }).click()
+      const panel = tab.getByRole('region', { name: 'AI 批改与复核' })
+      await expect(panel.getByRole('button', { name: '接受模型建议', exact: true })).toBeEnabled()
+      await panel.getByRole('button', { name: '接受模型建议', exact: true }).click()
+      await expect(panel.getByText('已保存，请核对当前结果。尚未发布正式成绩。')).toBeVisible()
+      if (index === 0) {
+        await panel.locator('.mark-thumbs button').first().click()
+        await expect(panel.getByAltText('当前答卷扫描原页')).toBeVisible()
+        await tab.screenshot({ path: `test-results/marking-${actor}-review.png`, fullPage: true })
+      }
+      await tab.getByRole('button', { name: '提交当前任务', exact: true }).click()
+      await expect(tab.getByText('任务已提交，可进入下一题。')).toBeVisible()
+      await expect(
+        tab.getByRole('region', { name: '当前阅卷任务' }).getByText(/已完成/),
+      ).toBeVisible()
+      if (index < count - 1)
+        await tab.getByRole('button', { name: '下一道待批题目', exact: true }).click()
+    }
+    await context.close()
+  }
+  // Assignment does not itself create a final score from an existing candidate/review.
+  await page.getByRole('link', { name: '成绩预览', exact: true }).click()
+  const firstResult = page.locator('.result-table tbody tr').filter({ hasText: 'N001' })
+  await expect(firstResult).toContainText('未完成')
+  await teacher('marker_a', 2)
+  await teacher('marker_b', 1)
+  // The supervisor's in-memory session is unchanged by the two other browser contexts.
+  await page.getByRole('link', { name: '阅卷进度', exact: true }).click()
+  await page.getByLabel('考试与科目场次').selectOption(process.env.WORKBENCH_SCAN_SESSION!)
+  const progress = page.getByRole('region', { name: '任务明细' })
+  await expect(progress.locator('tbody tr')).toHaveCount(3)
+  for (const row of await progress.locator('tbody tr').all())
+    await expect(row).toContainText('已完成')
+  await page.screenshot({ path: 'test-results/marking-progress.png', fullPage: true })
+  await page.getByRole('link', { name: '整卷成绩预览（需独立班级授权） →', exact: true }).click()
+  await expect(firstResult).toContainText('全部复核完成')
+  await expect(firstResult).toContainText('20.00')
+  const secondResult = page.locator('.result-table tbody tr').filter({ hasText: 'N002' })
+  await expect(secondResult).toContainText('未完成')
+  await expect(secondResult.locator('td').nth(5)).toContainText('未完成')
+  await expect(secondResult).toContainText('10.00')
+  await page.screenshot({ path: 'test-results/marking-results-preview.png', fullPage: true })
+  expect(errors).toEqual([])
+})

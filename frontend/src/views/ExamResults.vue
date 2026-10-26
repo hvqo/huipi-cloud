@@ -43,6 +43,7 @@ const reasons: Record<string, string> = {
   attendance_not_determined: '尚未确认是否缺考',
   variant_unverified: '请先核验实际卷别',
   parsing_not_complete: '解析尚未完成',
+  marking_task_not_submitted_or_changed: '阅卷任务尚未提交或已调整',
   script_or_roster_changed: '答卷或名单已变更，请重新核对',
   paper_unavailable: '试卷已失效',
   source_or_authority_changed: '来源或相关授权已变更',

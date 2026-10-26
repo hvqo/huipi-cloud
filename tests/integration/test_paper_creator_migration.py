@@ -6,7 +6,7 @@ import json
 from uuid import uuid4
 
 import pytest
-from sqlalchemy import insert, select, text
+from sqlalchemy import bindparam, insert, select, text
 from sqlalchemy.ext.asyncio import create_async_engine
 from test_organization_migration import alembic
 from test_paper_versions import auth_api, create, papers
@@ -87,6 +87,11 @@ async def test_creator_migration_retains_old_history_no_backfill_roundtrip_and_r
                     for table in names
                 }
 
+        async with target.connect() as db:
+            baseline_role_ids = (
+                await db.scalars(text("SELECT id FROM security_role_versions"))
+            ).all()
+
         async def old_roles():
             async with target.connect() as db:
                 return {
@@ -96,10 +101,9 @@ async def test_creator_migration_retains_old_history_no_backfill_roundtrip_and_r
                             for r in (
                                 await db.execute(
                                     text(
-                                        f"SELECT * FROM {table} WHERE {column} "
-                                        "NOT IN (:creator,:author)"
-                                    ),
-                                    dict(creator=PAPER_CREATOR_ROLE, author=PAPER_AUTHOR_ROLE),
+                                        f"SELECT * FROM {table} WHERE {column} IN :baseline_ids"
+                                    ).bindparams(bindparam("baseline_ids", expanding=True)),
+                                    dict(baseline_ids=baseline_role_ids),
                                 )
                             ).mappings()
                         ]
@@ -124,7 +128,7 @@ async def test_creator_migration_retains_old_history_no_backfill_roundtrip_and_r
                     )
                     assert (
                         await db.scalar(text("SELECT version_num FROM alembic_version"))
-                        == "b15b71d5f016"
+                        == "b16a82e6a017"
                     )
         # Genuine new role fact is retained even if revoked; destructive downgrade must refuse.
         async with target.begin() as db:
@@ -146,7 +150,7 @@ async def test_creator_migration_retains_old_history_no_backfill_roundtrip_and_r
         )
         async with target.connect() as db:
             assert (
-                await db.scalar(text("SELECT version_num FROM alembic_version")) == "b15b71d5f016"
+                await db.scalar(text("SELECT version_num FROM alembic_version")) == "b16a82e6a017"
             )
     finally:
         await target.dispose()

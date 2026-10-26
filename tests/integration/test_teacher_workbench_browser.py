@@ -293,6 +293,49 @@ async def test_teacher_workbench_browser_end_to_end(
                         role_version_id=role,
                         scope_id=grants.INSTALLATION_SCOPE,
                     )
+    marking_teacher_ids = {}
+    if os.getenv("RUN_MARKING_TASKS_BROWSER") == "1":
+        from huipi_cloud.modules.marking_tasks import service as tasks_service
+        from huipi_cloud.modules.marking_tasks.permissions import MANAGER_ROLE, TEACHER_ROLE
+
+        async with ctx.factory() as db:
+            await tasks_service.enable_operator(
+                db,
+                ctx.users["admin"].id,
+                ctx.users["admin"].id,
+                uuid4(),
+                "synthetic marking task approval",
+            )
+        for name in ["marker_a", "marker_b"]:
+            async with ctx.factory() as db, db.begin():
+                u = User(
+                    issuer=ctx.users["a"].issuer,
+                    subject=str(uuid4()),
+                    is_active=True,
+                    is_admin=False,
+                )
+                db.add(u)
+                await db.flush()
+                ctx.users[name] = u
+                marking_teacher_ids[name] = str(u.id)
+            async with ctx.factory() as db:
+                await grants.grant_role(
+                    db,
+                    ctx.principals["admin"],
+                    uuid4(),
+                    user_id=u.id,
+                    role_version_id=TEACHER_ROLE,
+                    scope_id=scope_id,
+                )
+        async with ctx.factory() as db:
+            await grants.grant_role(
+                db,
+                ctx.principals["admin"],
+                uuid4(),
+                user_id=ctx.users["a"].id,
+                role_version_id=MANAGER_ROLE,
+                scope_id=scope_id,
+            )
     worker_stop = asyncio.Event()
     worker_task = None
     grading_task = None
@@ -572,6 +615,8 @@ async def test_teacher_workbench_browser_end_to_end(
             WORKBENCH_SCAN_PDF=str(scan_pdf),
             WORKBENCH_PAPER_SOURCE=str(ctx.aid),
             WORKBENCH_CREATOR_SOURCE=str(creator_source or ""),
+            WORKBENCH_MARKER_A=marking_teacher_ids.get("marker_a", ""),
+            WORKBENCH_MARKER_B=marking_teacher_ids.get("marker_b", ""),
             WORKBENCH_CONFIG_YEAR=str(config_year_id or ""),
             WORKBENCH_CONFIG_TERM=str(ctx.term_id),
             WORKBENCH_CONFIG_SUBJECT=str(ctx.subject_ids[0]),
@@ -647,6 +692,45 @@ async def test_teacher_workbench_browser_end_to_end(
         (frontend / "test-results" / "browser-summary.txt").write_text(output.decode())
         assert browser.returncode == 0, output.decode()[-12000:]
         assert selection["pkce_verified"] >= 3
+        if os.getenv("RUN_MARKING_TASKS_BROWSER") == "1":
+            from sqlalchemy import func
+
+            from huipi_cloud.modules.marking_tasks.models import MarkingTask
+
+            async with ctx.factory() as db:
+                assert (
+                    await db.scalar(
+                        select(func.count())
+                        .select_from(MarkingTask)
+                        .where(MarkingTask.status == "completed", MarkingTask.is_current)
+                    )
+                    == 3
+                )
+                assert (
+                    await db.scalar(
+                        select(func.count()).select_from(MarkingTask).where(MarkingTask.is_current)
+                    )
+                    == 3
+                )
+                teacher_ids = [ctx.users[n].id for n in ["marker_a", "marker_b"]]
+                records = (
+                    (await db.execute(select(AnswerReviewDecision.reviewer_user_id)))
+                    .scalars()
+                    .all()
+                )
+                assert all(user_id is not None for user_id in records)
+                from huipi_cloud.modules.grading.grade_review_models import GradeReviewRevision
+
+                assert set(
+                    (
+                        await db.scalars(
+                            select(GradeReviewRevision.__table__.c.reviewer_user_id).where(
+                                GradeReviewRevision.__table__.c.reviewer_user_id.in_(teacher_ids)
+                            )
+                        )
+                    ).all()
+                ) == set(teacher_ids)
+
         if os.getenv("RUN_SCHOOL_WORKBENCH_BROWSER") == "1":
             # Independently check the real database, not only the rendered list.
             async with ctx.factory() as db:
@@ -758,6 +842,7 @@ async def test_teacher_workbench_browser_end_to_end(
         if parse_executor is not None:
             await parse_executor.aclose()
         async with ctx.factory() as db, db.begin():
+            await db.execute(text("TRUNCATE marking_operations,marking_tasks CASCADE"))
             await db.execute(
                 text(
                     "TRUNCATE exam_grading_operations,exam_scoring_jobs,exam_grading_workspaces,"

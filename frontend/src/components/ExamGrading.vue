@@ -6,7 +6,13 @@ import { selectedRegion, addRegion } from '../lib/selection'
 import { scans } from '../api/scans'
 import ScanThumbnail from './ScanThumbnail.vue'
 
-const props = defineProps<{ jobId: string; studentLabel?: string }>()
+const props = defineProps<{
+  jobId: string
+  studentLabel?: string
+  workspaceId?: string
+  taskId?: string
+  readOnly?: boolean
+}>()
 const questions = ref<MarkQuestionLink[]>([]),
   current = ref<Schema['ExamMarkDetails']>()
 const workspace = ref(''),
@@ -28,7 +34,7 @@ const pending = ref<{
 const initRequest = ref('')
 let alive = true,
   timer: ReturnType<typeof setTimeout> | undefined
-const locked = computed(() => busy.value || !!pending.value)
+const locked = computed(() => busy.value || !!pending.value || !!props.readOnly)
 const labels: Record<string, string> = {
   not_started: '尚未评分',
   pending: '等待评分',
@@ -74,6 +80,21 @@ async function refresh() {
     timer = setTimeout(() => void run(refresh), 3000)
 }
 async function load() {
+  if (props.workspaceId) {
+    workspace.value = props.workspaceId
+    await refresh()
+    if (current.value)
+      questions.value = [
+        {
+          question_id: current.value.question.id,
+          question_number: current.value.question.number,
+          stem: current.value.question.stem,
+          max_score: current.value.question.max_score,
+          workspace_id: props.workspaceId,
+        },
+      ]
+    return
+  }
   const r = await examGrading.questions(props.jobId)
   if (!alive) return
   questions.value = r.questions
@@ -231,9 +252,14 @@ async function review(status: 'accepted' | 'revised' | 'rejected' | 'regrading_r
   }
   await run(send)
 }
+async function taskPreview(page: string) {
+  if (!props.taskId) return scans.preview(page)
+  const { marking } = await import('../api/marking')
+  return marking.preview(props.taskId, page)
+}
 async function showSource(page: string) {
   await run(async () => {
-    const blob = await scans.preview(page)
+    const blob = await taskPreview(page)
     if (preview.value) URL.revokeObjectURL(preview.value)
     if (alive) preview.value = URL.createObjectURL(blob)
   })
@@ -302,10 +328,13 @@ onUnmounted(() => {
             <button
               v-for="p in current.source_pages"
               :key="p.scan_page_id"
-              :disabled="locked"
+              :disabled="busy"
               @click="showSource(p.scan_page_id)"
             >
-              <ScanThumbnail :page-id="p.scan_page_id" />原第{{ p.source_page_index + 1 }}页
+              <ScanThumbnail
+                :page-id="p.scan_page_id"
+                :load-preview="props.taskId ? taskPreview : undefined"
+              />原第{{ p.source_page_index + 1 }}页
             </button>
           </div>
           <img v-if="preview" :src="preview" alt="当前答卷扫描原页" class="mark-source" />

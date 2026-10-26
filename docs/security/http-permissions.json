@@ -1,5 +1,5 @@
 {
-  "version": "school-workbench-1",
+  "version": "collaborative-marking-1",
   "operations": [
     {
       "method": "POST",
@@ -732,6 +732,78 @@
       "path": "/api/v1/organization/student-imports/{batch_id}/rows",
       "policy": "school_import_rows",
       "permission": "organization.read"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marking-sessions",
+      "policy": "list_marking_sessions",
+      "permission": "filtered_marking_list"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/my-marking-tasks",
+      "policy": "list_my_marking_tasks",
+      "permission": "filtered_marking_list"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{session_id}/marking-pool",
+      "policy": "list_marking_pool",
+      "permission": "exam.task.manage"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{session_id}/marking-teachers",
+      "policy": "list_marking_teachers",
+      "permission": "exam.task.manage"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{session_id}/marking-progress",
+      "policy": "inspect_marking_progress",
+      "permission": "exam.task.manage"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-sessions/{session_id}/marking-jobs/{job_id}/prepare",
+      "policy": "prepare_marking_questions",
+      "permission": "exam.task.manage"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-sessions/{session_id}/marking-assignments",
+      "policy": "assign_marking_tasks",
+      "permission": "exam.task.manage"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marking-tasks/{task_id}",
+      "policy": "inspect_marking_task",
+      "permission": "exam.task.work"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/marking-tasks/{task_id}/claim",
+      "policy": "claim_marking_task",
+      "permission": "exam.task.work"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/marking-tasks/{task_id}/complete",
+      "policy": "complete_marking_task",
+      "permission": "exam.task.work"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/marking-tasks/{task_id}/cancel",
+      "policy": "cancel_marking_task",
+      "permission": "exam.task.manage"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marking-tasks/{task_id}/pages/{page_id}/preview",
+      "policy": "preview_marking_page",
+      "permission": "exam.task.work"
     }
   ]
 }
