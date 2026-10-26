@@ -87,3 +87,19 @@ it('scan multipart lets the browser set its boundary and sends no JSON header', 
   expect(options.credentials).toBe('omit')
   expect(options.redirect).toBe('error')
 })
+
+it('school errors opt in only to bounded public codes, never arbitrary private bodies', async () => {
+  for (const [detail, code] of [
+    ['student_import_preview_stale', 'student_import_preview_stale'],
+    ['Student 001 / private SQL', 'api_error'],
+    ['x'.repeat(81), 'api_error'],
+  ] as const) {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response(JSON.stringify({ detail }), { status: 409 })),
+    )
+    await expect(
+      request('/api/v1/organization/student-imports/x/confirm', { body: '{}', errorCode: true }),
+    ).rejects.toMatchObject({ status: 409, code })
+  }
+})

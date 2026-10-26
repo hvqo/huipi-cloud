@@ -1,5 +1,5 @@
 {
-  "version": "paper-workbench-1",
+  "version": "school-workbench-1",
   "operations": [
     {
       "method": "POST",
@@ -903,6 +903,78 @@
       "policy": "paper_web_retire",
       "permission": "paper.edit",
       "classification_boundary": "当前User/Grant + PaperVersion Scope；导入另验明确legacy成员及published；无旧admin捷径",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/me/school-access",
+      "policy": "get_school_access",
+      "permission": "current_school_capabilities",
+      "classification_boundary": "已认证Principal；四项能力分别读取当前安装级Grant；仅返回布尔值，不读取学生或组织正文",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/organization/academic-years",
+      "policy": "school_create_year",
+      "permission": "organization.manage",
+      "classification_boundary": "固定ORGANIZATION_POLICIES动作 + 当前安装级Grant；原organization Service授权/事务；无旧admin或Membership旁路",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/organization/academic-terms",
+      "policy": "school_create_term",
+      "permission": "organization.manage",
+      "classification_boundary": "固定ORGANIZATION_POLICIES动作 + 当前安装级Grant；原organization Service授权/事务；无旧admin或Membership旁路",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/organization/grade-cohorts",
+      "policy": "school_create_cohort",
+      "permission": "organization.manage",
+      "classification_boundary": "固定ORGANIZATION_POLICIES动作 + 当前安装级Grant；原organization Service授权/事务；无旧admin或Membership旁路",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/organization/subjects",
+      "policy": "school_create_subject",
+      "permission": "organization.manage",
+      "classification_boundary": "固定ORGANIZATION_POLICIES动作 + 当前安装级Grant；原organization Service授权/事务；无旧admin或Membership旁路",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/organization/classes",
+      "policy": "school_create_class",
+      "permission": "organization.manage",
+      "classification_boundary": "固定ORGANIZATION_POLICIES动作 + 当前安装级Grant；原organization Service授权/事务；无旧admin或Membership旁路",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/organization/class-summaries",
+      "policy": "school_classes",
+      "permission": "organization.read",
+      "classification_boundary": "固定ORGANIZATION_POLICIES动作 + 当前安装级Grant；原organization Service授权/事务；无旧admin或Membership旁路",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/organization/student-import-template",
+      "policy": "school_import_template",
+      "permission": "student.import.preview",
+      "classification_boundary": "固定ORGANIZATION_POLICIES动作 + 当前安装级Grant；原organization Service授权/事务；无旧admin或Membership旁路",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/organization/student-imports/{batch_id}/rows",
+      "policy": "school_import_rows",
+      "permission": "organization.read",
+      "classification_boundary": "固定ORGANIZATION_POLICIES动作 + 当前安装级Grant；原organization Service授权/事务；无旧admin或Membership旁路",
       "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
     }
   ]

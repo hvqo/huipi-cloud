@@ -35,6 +35,15 @@ ADMIN_POLICIES = {
 # Organization routes use the fixed installation-scoped permission catalog; they never
 # fall back to legacy User.is_admin or AssignmentMembership authority.
 ORGANIZATION_POLICIES = {
+    "school_create_year": "organization.manage",
+    "school_create_term": "organization.manage",
+    "school_create_cohort": "organization.manage",
+    "school_create_subject": "organization.manage",
+    "school_create_class": "organization.manage",
+    "school_classes": "organization.read",
+    "school_import_template": "student.import.preview",
+    "school_import_rows": "organization.read",
+
     "list_academic_years": "organization.read",
     "list_academic_terms": "organization.read",
     "list_grade_cohorts": "organization.read",
@@ -159,6 +168,15 @@ POLICIES = {
     **{name: {policy[0]} for name, policy in EXAM_PARSE_POLICIES.items()},
     **{name: {policy[0]} for name, policy in SCRIPT_POLICIES.items()},
     **{name: {policy[0]} for name, policy in SCAN_POLICIES.items()},
+    "get_school_access": {"GET"},
+    "school_create_year": {"POST"},
+    "school_create_term": {"POST"},
+    "school_create_cohort": {"POST"},
+    "school_create_subject": {"POST"},
+    "school_create_class": {"POST"},
+    "school_classes": {"GET"},
+    "school_import_template": {"GET"},
+    "school_import_rows": {"GET"},
     "get_current_user": {"GET"},
     "list_academic_years": {"GET"},
     "list_academic_terms": {"GET"},
@@ -217,6 +235,15 @@ POLICY_PATHS = {
     **{name: policy[1] for name, policy in EXAM_PARSE_POLICIES.items()},
     **{name: policy[1] for name, policy in SCRIPT_POLICIES.items()},
     **{name: policy[1] for name, policy in SCAN_POLICIES.items()},
+    "get_school_access": "/me/school-access",
+    "school_create_year": "/organization/academic-years",
+    "school_create_term": "/organization/academic-terms",
+    "school_create_cohort": "/organization/grade-cohorts",
+    "school_create_subject": "/organization/subjects",
+    "school_create_class": "/organization/classes",
+    "school_classes": "/organization/class-summaries",
+    "school_import_template": "/organization/student-import-template",
+    "school_import_rows": "/organization/student-imports/{batch_id}/rows",
     "get_current_user": "/me",
     "list_academic_years": "/organization/academic-years",
     "list_academic_terms": "/organization/academic-terms",
@@ -321,7 +348,9 @@ async def authorize_request(
                 if not current.is_admin:
                     raise AccessError("administrator_required")
                 return current
-            if name in {"get_current_user", "create_assignment", "list_assignments"}:
+            if name in {
+                "get_current_user", "get_school_access", "create_assignment", "list_assignments"
+            }:
                 return current
             if name in {
                 "inspect_grade_review",

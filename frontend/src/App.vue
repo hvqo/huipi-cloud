@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
+import { schoolAccess, resetSchoolAccess, loadSchoolAccess } from './api/school'
 import { ElConfigProvider } from 'element-plus'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import { useRoute, useRouter } from 'vue-router'
@@ -7,23 +8,39 @@ import { identity, logout } from './auth'
 const route = useRoute(),
   router = useRouter()
 const title = computed(() =>
-  route.path.startsWith('/papers')
-    ? '试卷管理'
-    : route.path.startsWith('/exams')
-      ? '考试配置工作台'
-      : route.path.endsWith('/results') || route.path === '/exam-results'
-        ? '整卷成绩预览'
-        : route.path.endsWith('/scripts') && route.path.startsWith('/scans/')
-          ? '人工分卷与身份确认'
-          : route.path === '/scans'
-            ? '考试扫描'
-            : route.path.endsWith('/review')
-              ? '作答证据复核'
-              : route.params.sid
-                ? '学生提交'
-                : route.params.aid
-                  ? '作业详情'
-                  : '我的作业',
+  route.path.startsWith('/school')
+    ? '学校基础数据'
+    : route.path.startsWith('/papers')
+      ? '试卷管理'
+      : route.path.startsWith('/exams')
+        ? '考试配置工作台'
+        : route.path.endsWith('/results') || route.path === '/exam-results'
+          ? '整卷成绩预览'
+          : route.path.endsWith('/scripts') && route.path.startsWith('/scans/')
+            ? '人工分卷与身份确认'
+            : route.path === '/scans'
+              ? '考试扫描'
+              : route.path.endsWith('/review')
+                ? '作答证据复核'
+                : route.params.sid
+                  ? '学生提交'
+                  : route.params.aid
+                    ? '作业详情'
+                    : '我的作业',
+)
+watch(
+  () => identity.actor,
+  async (actor) => {
+    resetSchoolAccess()
+    if (!actor) return
+    try {
+      const value = await loadSchoolAccess()
+      if (identity.actor === actor) Object.assign(schoolAccess, value)
+    } catch {
+      /* No capability projection means no school navigation. */
+    }
+  },
+  { immediate: true },
 )
 watch(
   () => identity.authenticated,
@@ -60,6 +77,18 @@ async function signOut() {
         <RouterLink to="/scans" class="nav-link">▤ <span>考试扫描</span></RouterLink>
         <RouterLink to="/exam-results" class="nav-link" aria-label="成绩预览"
           >▦ <span>成绩预览</span></RouterLink
+        >
+        <RouterLink
+          v-if="
+            schoolAccess.can_read ||
+            schoolAccess.can_manage ||
+            schoolAccess.can_preview ||
+            schoolAccess.can_confirm
+          "
+          to="/school"
+          aria-label="学校管理"
+          class="nav-link"
+          >▦ <span>学校基础数据</span></RouterLink
         >
         <div class="nav-note">考试批改与复核<small>从考试答卷工作区进入</small></div>
         <div class="sidebar-foot">

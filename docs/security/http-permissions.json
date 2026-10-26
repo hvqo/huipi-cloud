@@ -1,5 +1,5 @@
 {
-  "version": "paper-workbench-1",
+  "version": "school-workbench-1",
   "operations": [
     {
       "method": "POST",
@@ -678,6 +678,60 @@
       "path": "/api/v1/papers/{paper_id}/retire",
       "policy": "paper_web_retire",
       "permission": "paper.edit"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/me/school-access",
+      "policy": "get_school_access",
+      "permission": "current_school_capabilities"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/organization/academic-years",
+      "policy": "school_create_year",
+      "permission": "organization.manage"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/organization/academic-terms",
+      "policy": "school_create_term",
+      "permission": "organization.manage"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/organization/grade-cohorts",
+      "policy": "school_create_cohort",
+      "permission": "organization.manage"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/organization/subjects",
+      "policy": "school_create_subject",
+      "permission": "organization.manage"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/organization/classes",
+      "policy": "school_create_class",
+      "permission": "organization.manage"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/organization/class-summaries",
+      "policy": "school_classes",
+      "permission": "organization.read"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/organization/student-import-template",
+      "policy": "school_import_template",
+      "permission": "student.import.preview"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/organization/student-imports/{batch_id}/rows",
+      "policy": "school_import_rows",
+      "permission": "organization.read"
     }
   ]
 }

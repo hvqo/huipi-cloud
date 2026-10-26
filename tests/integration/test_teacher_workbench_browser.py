@@ -253,6 +253,46 @@ async def test_teacher_workbench_browser_end_to_end(
                     role_version_id=role,
                     scope_id=grants.INSTALLATION_SCOPE,
                 )
+    if os.getenv("RUN_SCHOOL_WORKBENCH_BROWSER") == "1":
+        from test_school_workbench import preview_role
+
+        from huipi_cloud.modules.exam_rosters.permissions import ROSTER_OPERATOR_ROLE
+        from huipi_cloud.modules.exams.permissions import EXAM_OPERATOR_ROLE
+        from huipi_cloud.modules.papers.permissions import PAPER_CREATOR_ROLE
+
+        # Explicit synthetic deployment approvals, separate from all existing test actors.
+        for name in ["school_admin", "school_teacher", "school_previewer"]:
+            async with ctx.factory() as db, db.begin():
+                user = User(
+                    issuer=ctx.users["a"].issuer,
+                    subject=str(uuid4()),
+                    is_active=True,
+                    is_admin=False,
+                )
+                db.add(user)
+                await db.flush()
+                ctx.users[name] = user
+        preview_id = await preview_role(ctx)
+        for name, roles in {
+            "school_admin": [
+                grants.ORGANIZATION_MANAGER_ROLE,
+                grants.STUDENT_IMPORTER_ROLE,
+                EXAM_OPERATOR_ROLE,
+                ROSTER_OPERATOR_ROLE,
+            ],
+            "school_teacher": [PAPER_CREATOR_ROLE],
+            "school_previewer": [preview_id],
+        }.items():
+            for role in roles:
+                async with ctx.factory() as db:
+                    await grants.grant_role(
+                        db,
+                        ctx.principals["admin"],
+                        uuid4(),
+                        user_id=ctx.users[name].id,
+                        role_version_id=role,
+                        scope_id=grants.INSTALLATION_SCOPE,
+                    )
     worker_stop = asyncio.Event()
     worker_task = None
     grading_task = None
@@ -607,6 +647,47 @@ async def test_teacher_workbench_browser_end_to_end(
         (frontend / "test-results" / "browser-summary.txt").write_text(output.decode())
         assert browser.returncode == 0, output.decode()[-12000:]
         assert selection["pkce_verified"] >= 3
+        if os.getenv("RUN_SCHOOL_WORKBENCH_BROWSER") == "1":
+            # Independently check the real database, not only the rendered list.
+            async with ctx.factory() as db:
+                assert (
+                    await db.scalar(
+                        text(
+                            "SELECT count(*) FROM students WHERE school_student_code "
+                            "IN ('001','002','003','004','005')"
+                        )
+                    )
+                    == 5
+                )
+                assert (
+                    await db.scalar(
+                        text("SELECT count(*) FROM student_import_batches WHERE status='confirmed'")
+                    )
+                    == 2
+                )
+                assert (
+                    await db.scalar(
+                        text(
+                            "SELECT count(*) FROM roster_entry_snapshots e "
+                            "JOIN roster_revisions r ON r.id=e.roster_revision_id "
+                            "JOIN exam_sessions s ON s.id=r.exam_session_id "
+                            "WHERE s.title='学校联动数学' AND r.status='frozen' AND r.is_current"
+                        )
+                    )
+                    == 4
+                )
+                from huipi_cloud.modules.papers.permissions import PAPER_CREATOR_ROLE
+                from huipi_cloud.modules.resource_security.models import SecurityGrant
+
+                teacher_roles = (
+                    await db.scalars(
+                        select(SecurityGrant.role_version_id).where(
+                            SecurityGrant.user_id == ctx.users["school_teacher"].id,
+                            SecurityGrant.revoked_at.is_(None),
+                        )
+                    )
+                ).all()
+                assert teacher_roles == [PAPER_CREATOR_ROLE]
         if os.getenv("RUN_PAPER_CREATOR_BROWSER") == "1":
             from huipi_cloud.modules.papers.models import PaperCreatorAuthority
             from huipi_cloud.modules.papers.permissions import PAPER_AUTHOR_ROLE, PAPER_CREATOR_ROLE
@@ -687,6 +768,14 @@ async def test_teacher_workbench_browser_end_to_end(
                 )
             )
             await db.execute(text("TRUNCATE answer_script_operations,answer_scripts CASCADE"))
+        if os.getenv("RUN_SCHOOL_WORKBENCH_BROWSER") == "1":
+            async with ctx.factory() as db, db.begin():
+                await db.execute(
+                    text(
+                        "TRUNCATE organization_operations,student_import_batches,"
+                        "academic_years,grade_cohorts,subjects,students CASCADE"
+                    )
+                )
         import signal
 
         for process in processes:

@@ -50,16 +50,16 @@ def grade_label(intake_year: int, academic_year_start_year: int) -> tuple[int, s
     return (grade_no, label) if label is not None else None
 
 
-def current_enrollment():
+def current_enrollment(as_of=None):
     """Enrollment in force now; the range is half-open ``[valid_from, valid_to)``.
 
     A future-dated enrollment is history, not the current class, so both bounds matter.
     """
     return and_(
-        ClassEnrollment.valid_from <= func.current_date(),
+        ClassEnrollment.valid_from <= (as_of or func.current_date()),
         or_(
             ClassEnrollment.valid_to.is_(None),
-            ClassEnrollment.valid_to > func.current_date(),
+            ClassEnrollment.valid_to > (as_of or func.current_date()),
         ),
     )
 
@@ -185,9 +185,7 @@ async def list_academic_years(session, *, limit: int, offset: int) -> dict:
     return _envelope(rows, limit, offset, _year_summary)
 
 
-async def list_academic_terms(
-    session, *, academic_year_id: UUID, limit: int, offset: int
-) -> dict:
+async def list_academic_terms(session, *, academic_year_id: UUID, limit: int, offset: int) -> dict:
     rows = (
         await session.scalars(
             select(AcademicTerm)
@@ -229,9 +227,7 @@ async def list_administrative_classes(
     limit: int,
     offset: int,
 ) -> dict:
-    query = select(AdministrativeClass).order_by(
-        AdministrativeClass.code, AdministrativeClass.id
-    )
+    query = select(AdministrativeClass).order_by(AdministrativeClass.code, AdministrativeClass.id)
     if grade_cohort_id is not None:
         query = query.where(AdministrativeClass.grade_cohort_id == grade_cohort_id)
     if status is not None:
@@ -246,22 +242,40 @@ async def list_students(
     class_id: UUID | None,
     query: str | None,
     active_only: bool,
+    as_of=None,
+    academic_year_id: UUID | None = None,
+    cohort_id: UUID | None = None,
     limit: int,
     offset: int,
 ) -> dict:
     statement = select(Student).order_by(Student.school_student_code, Student.id)
     if active_only:
         statement = statement.where(Student.is_active.is_(True))
-    if class_id is not None:
-        statement = statement.where(
-            exists(
-                select(1).where(
-                    ClassEnrollment.student_id == Student.id,
-                    ClassEnrollment.administrative_class_id == class_id,
-                    current_enrollment(),
-                )
+    if class_id is not None or academic_year_id is not None or cohort_id is not None:
+        enrollment = (
+            select(1)
+            .select_from(ClassEnrollment)
+            .join(
+                AdministrativeClass,
+                AdministrativeClass.id == ClassEnrollment.administrative_class_id,
             )
+            .join(GradeCohort, GradeCohort.id == AdministrativeClass.grade_cohort_id)
+            .where(ClassEnrollment.student_id == Student.id, current_enrollment(as_of))
         )
+        if class_id is not None:
+            enrollment = enrollment.where(ClassEnrollment.administrative_class_id == class_id)
+        if cohort_id is not None:
+            enrollment = enrollment.where(GradeCohort.id == cohort_id)
+        if academic_year_id is not None:
+            year = await session.get(AcademicYear, academic_year_id)
+            if year is None:
+                raise AccessError("academic_year_not_found", 404)
+            if as_of and not year.start_date <= as_of <= year.end_date:
+                raise AccessError("school_date_outside_academic_year", 422)
+            enrollment = enrollment.where(
+                GradeCohort.intake_year.between(year.start_date.year - 2, year.start_date.year)
+            )
+        statement = statement.where(exists(enrollment))
     if query is not None:
         normalized = _normalize_query(query)
         if normalized:
@@ -276,9 +290,7 @@ async def list_students(
     return _envelope(rows, limit, offset, _student_summary)
 
 
-async def list_student_enrollments(
-    session, *, student_id: UUID, limit: int, offset: int
-) -> dict:
+async def list_student_enrollments(session, *, student_id: UUID, limit: int, offset: int) -> dict:
     if await session.scalar(select(Student.id).where(Student.id == student_id)) is None:
         raise AccessError("resource_not_found_or_forbidden", 404)
     rows = (
@@ -444,9 +456,7 @@ async def create_administrative_class(
         try:
             await session.flush()
         except IntegrityError as error:
-            raise _conflict(
-                error, {"uq_administrative_classes_code": CODE_CONFLICT}
-            ) from None
+            raise _conflict(error, {"uq_administrative_classes_code": CODE_CONFLICT}) from None
         op.result = {"id": str(row.id), "action": "administrative_class.created"}
         return op.result
 
@@ -479,9 +489,7 @@ async def transfer_student(
             raise AccessError("resource_not_found_or_forbidden", 404)
         if not student.is_active:
             raise AccessError("student_inactive", 409)
-        target = await session.get(
-            AdministrativeClass, payload.to_administrative_class_id
-        )
+        target = await session.get(AdministrativeClass, payload.to_administrative_class_id)
         if target is None or target.status != "active":
             raise AccessError("administrative_class_unavailable", 409)
         # Operate on the open-ended tail of the enrollment chain, not only on the row in
@@ -494,9 +502,7 @@ async def transfer_student(
                 ClassEnrollment.student_id == student.id,
                 ClassEnrollment.valid_to.is_(None),
             )
-            .order_by(
-                ClassEnrollment.valid_from.desc(), ClassEnrollment.created_at.desc()
-            )
+            .order_by(ClassEnrollment.valid_from.desc(), ClassEnrollment.created_at.desc())
             .limit(1)
             .with_for_update()
         )

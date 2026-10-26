@@ -26,6 +26,7 @@ from huipi_cloud.modules.identity.http_schemas import (
 )
 from huipi_cloud.modules.identity.models import AdminOperation, AssignmentMembership, User
 from huipi_cloud.modules.identity.protocol import AccessError
+from huipi_cloud.modules.organization.schemas import SchoolAccess
 
 
 class IdentityRoute(APIRoute):
@@ -194,3 +195,10 @@ async def list_admin_audit_events(
                 actor_user_id=r.actor_user_id,
             ),
         )
+
+
+@router.get("/me/school-access", response_model=SchoolAccess)
+async def get_school_access(session: DbSession, principal: AuthorizedPrincipal):
+    from huipi_cloud.modules.organization.workbench import school_access
+
+    return await school_access(session, principal)

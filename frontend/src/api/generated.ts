@@ -423,6 +423,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/school-access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get School Access */
+        get: operations["get_school_access_api_v1_me_school_access_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/submissions/{submission_id}/answer-reviews": {
         parameters: {
             query?: never;
@@ -520,7 +537,8 @@ export interface paths {
         /** List Academic Years */
         get: operations["list_academic_years_api_v1_organization_academic_years_get"];
         put?: never;
-        post?: never;
+        /** School Create Year */
+        post: operations["school_create_year_api_v1_organization_academic_years_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -537,7 +555,8 @@ export interface paths {
         /** List Academic Terms */
         get: operations["list_academic_terms_api_v1_organization_academic_terms_get"];
         put?: never;
-        post?: never;
+        /** School Create Term */
+        post: operations["school_create_term_api_v1_organization_academic_terms_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -554,7 +573,8 @@ export interface paths {
         /** List Grade Cohorts */
         get: operations["list_grade_cohorts_api_v1_organization_grade_cohorts_get"];
         put?: never;
-        post?: never;
+        /** School Create Cohort */
+        post: operations["school_create_cohort_api_v1_organization_grade_cohorts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -571,7 +591,8 @@ export interface paths {
         /** List Subjects */
         get: operations["list_subjects_api_v1_organization_subjects_get"];
         put?: never;
-        post?: never;
+        /** School Create Subject */
+        post: operations["school_create_subject_api_v1_organization_subjects_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -588,7 +609,8 @@ export interface paths {
         /** List Administrative Classes */
         get: operations["list_administrative_classes_api_v1_organization_classes_get"];
         put?: never;
-        post?: never;
+        /** School Create Class */
+        post: operations["school_create_class_api_v1_organization_classes_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -675,6 +697,57 @@ export interface paths {
         put?: never;
         /** Confirm Student Import */
         post: operations["confirm_student_import_api_v1_organization_student_imports__batch_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organization/class-summaries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** School Classes */
+        get: operations["school_classes_api_v1_organization_class_summaries_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organization/student-import-template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** School Import Template */
+        get: operations["school_import_template_api_v1_organization_student_import_template_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organization/student-imports/{batch_id}/rows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** School Import Rows */
+        get: operations["school_import_rows_api_v1_organization_student_imports__batch_id__rows_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1577,6 +1650,33 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AcademicTermCreate */
+        AcademicTermCreate: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /**
+             * Academic Year Id
+             * Format: uuid
+             */
+            academic_year_id: string;
+            /** Term No */
+            term_no: number;
+            /** Code */
+            code: string;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /**
+             * End Date
+             * Format: date
+             */
+            end_date: string;
+        };
         /** AcademicTermPage */
         AcademicTermPage: {
             /** Limit */
@@ -1616,6 +1716,34 @@ export interface components {
              * Format: date
              */
             end_date: string;
+        };
+        /** AcademicYearCreate */
+        AcademicYearCreate: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Code */
+            code: string;
+            /** Display Name */
+            display_name: string;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /**
+             * End Date
+             * Format: date
+             */
+            end_date: string;
+            /**
+             * Status
+             * @default planned
+             * @enum {string}
+             */
+            status: "planned" | "active" | "closed";
         };
         /** AcademicYearPage */
         AcademicYearPage: {
@@ -1756,6 +1884,23 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /** AdministrativeClassCreate */
+        AdministrativeClassCreate: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /**
+             * Grade Cohort Id
+             * Format: uuid
+             */
+            grade_cohort_id: string;
+            /** Code */
+            code: string;
+            /** Display Name */
+            display_name: string;
         };
         /** AdministrativeClassPage */
         AdministrativeClassPage: {
@@ -3250,6 +3395,20 @@ export interface components {
              */
             updated_at: string;
         };
+        /** GradeCohortCreate */
+        GradeCohortCreate: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Code */
+            code: string;
+            /** Display Name */
+            display_name: string;
+            /** Intake Year */
+            intake_year: number;
+        };
         /** GradeCohortPage */
         GradeCohortPage: {
             /** Limit */
@@ -4081,6 +4240,21 @@ export interface components {
             /** Can Write */
             can_write: boolean;
             operation: components["schemas"]["AdminOperationResult"];
+        };
+        /** MutationResult */
+        MutationResult: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Action */
+            action: string;
+            /**
+             * Replayed
+             * @default false
+             */
+            replayed: boolean;
         };
         /**
          * NoEvidenceReference
@@ -5111,6 +5285,61 @@ export interface components {
             /** Roster Frozen */
             roster_frozen: boolean;
         };
+        /** SchoolAccess */
+        SchoolAccess: {
+            /** Can Read */
+            can_read: boolean;
+            /** Can Manage */
+            can_manage: boolean;
+            /** Can Preview */
+            can_preview: boolean;
+            /** Can Confirm */
+            can_confirm: boolean;
+        };
+        /** SchoolClassPage */
+        SchoolClassPage: {
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Has Next */
+            has_next: boolean;
+            /** Next Offset */
+            next_offset: number | null;
+            /** Records */
+            records: components["schemas"]["SchoolClassSummary"][];
+        };
+        /** SchoolClassSummary */
+        SchoolClassSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Grade Cohort Id
+             * Format: uuid
+             */
+            grade_cohort_id: string;
+            /** Code */
+            code: string;
+            /** Display Name */
+            display_name: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "inactive";
+            /** Student Count */
+            student_count: number;
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            /** Grade Label */
+            grade_label: string | null;
+        };
         /** ScoreRequest */
         ScoreRequest: {
             /**
@@ -5602,6 +5831,48 @@ export interface components {
              */
             created_at: string;
         };
+        /** StudentImportRowPage */
+        StudentImportRowPage: {
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Has Next */
+            has_next: boolean;
+            /** Next Offset */
+            next_offset: number | null;
+            /**
+             * Batch Id
+             * Format: uuid
+             */
+            batch_id: string;
+            /** Records */
+            records: components["schemas"]["StudentImportRowRead"][];
+        };
+        /** StudentImportRowRead */
+        StudentImportRowRead: {
+            /** Row Number */
+            row_number: number;
+            /** Student Code */
+            student_code: string | null;
+            /** Name */
+            name: string | null;
+            /** Class Code */
+            class_code: string | null;
+            /** Valid From */
+            valid_from: string | null;
+            /**
+             * Row State
+             * @enum {string}
+             */
+            row_state: "valid" | "warning" | "error";
+            /** Outcome */
+            outcome: string | null;
+            /** Errors */
+            errors: components["schemas"]["ImportErrorEntry"][];
+            /** Warnings */
+            warnings: components["schemas"]["ImportErrorEntry"][];
+        };
         /** StudentPage */
         StudentPage: {
             /** Limit */
@@ -5697,6 +5968,18 @@ export interface components {
             name: string;
             /** Is Active */
             is_active: boolean;
+        };
+        /** SubjectCreate */
+        SubjectCreate: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Code */
+            code: string;
+            /** Display Name */
+            display_name: string;
         };
         /** SubjectPage */
         SubjectPage: {
@@ -7917,6 +8200,68 @@ export interface operations {
             };
         };
     };
+    get_school_access_api_v1_me_school_access_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchoolAccess"];
+                };
+            };
+            /** @description 缺少或无效教师Token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 无权执行操作 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 资源不存在或没有作业授权 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 身份已登记、教师已停用或 request_id 内容冲突 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 输入不合法或 Issuer 不匹配服务配置 */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 认证或授权服务不可用，拒绝访问 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     list_answer_reviews_api_v1_submissions__submission_id__answer_reviews_get: {
         parameters: {
             query?: {
@@ -8473,6 +8818,67 @@ export interface operations {
             };
         };
     };
+    school_create_year_api_v1_organization_academic_years_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcademicYearCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MutationResult"];
+                };
+            };
+            /** @description 缺少或无效身份 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 缺少固定组织动作权限 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 资源不存在或不在授权范围 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description 组织或授权服务不可用 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     list_academic_terms_api_v1_organization_academic_terms_get: {
         parameters: {
             query: {
@@ -8493,6 +8899,67 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AcademicTermPage"];
+                };
+            };
+            /** @description 缺少或无效身份 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 缺少固定组织动作权限 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 资源不存在或不在授权范围 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description 组织或授权服务不可用 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    school_create_term_api_v1_organization_academic_terms_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcademicTermCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MutationResult"];
                 };
             };
             /** @description 缺少或无效身份 */
@@ -8594,6 +9061,67 @@ export interface operations {
             };
         };
     };
+    school_create_cohort_api_v1_organization_grade_cohorts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GradeCohortCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MutationResult"];
+                };
+            };
+            /** @description 缺少或无效身份 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 缺少固定组织动作权限 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 资源不存在或不在授权范围 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description 组织或授权服务不可用 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     list_subjects_api_v1_organization_subjects_get: {
         parameters: {
             query?: {
@@ -8613,6 +9141,67 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SubjectPage"];
+                };
+            };
+            /** @description 缺少或无效身份 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 缺少固定组织动作权限 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 资源不存在或不在授权范围 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description 组织或授权服务不可用 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    school_create_subject_api_v1_organization_subjects_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubjectCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MutationResult"];
                 };
             };
             /** @description 缺少或无效身份 */
@@ -8716,12 +9305,76 @@ export interface operations {
             };
         };
     };
+    school_create_class_api_v1_organization_classes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdministrativeClassCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MutationResult"];
+                };
+            };
+            /** @description 缺少或无效身份 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 缺少固定组织动作权限 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 资源不存在或不在授权范围 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description 组织或授权服务不可用 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     list_students_api_v1_organization_students_get: {
         parameters: {
             query?: {
                 class_id?: string | null;
                 query?: string | null;
                 active_only?: boolean;
+                as_of?: string | null;
+                academic_year_id?: string | null;
+                cohort_id?: string | null;
                 limit?: number;
                 offset?: number;
             };
@@ -9043,6 +9696,190 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StudentImportConfirmResult"];
+                };
+            };
+            /** @description 缺少或无效身份 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 缺少固定组织动作权限 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 资源不存在或不在授权范围 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description 组织或授权服务不可用 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    school_classes_api_v1_organization_class_summaries_get: {
+        parameters: {
+            query?: {
+                academic_year_id?: string | null;
+                cohort_id?: string | null;
+                as_of?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchoolClassPage"];
+                };
+            };
+            /** @description 缺少或无效身份 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 缺少固定组织动作权限 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 资源不存在或不在授权范围 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description 组织或授权服务不可用 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    school_import_template_api_v1_organization_student_import_template_get: {
+        parameters: {
+            query: {
+                mode: "student_only" | "enrollment_only" | "student_with_enrollment";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description 缺少或无效身份 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 缺少固定组织动作权限 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 资源不存在或不在授权范围 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description 组织或授权服务不可用 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    school_import_rows_api_v1_organization_student_imports__batch_id__rows_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                batch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentImportRowPage"];
                 };
             };
             /** @description 缺少或无效身份 */
