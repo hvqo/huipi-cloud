@@ -846,6 +846,7 @@ async def test_independent_migration_roundtrip_preserves_legacy_graph_and_refuse
         "exam_grading_workspaces",
         "exam_scoring_jobs",
         "exam_grading_operations",
+        "exam_result_class_access",
         "exam_parsing_jobs",
         "exam_submission_links",
         "exam_parsing_operations",

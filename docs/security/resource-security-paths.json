@@ -1,5 +1,5 @@
 {
-  "version": "exam-grading-1",
+  "version": "exam-results-preview-1",
   "operations": [
     {
       "method": "POST",
@@ -648,6 +648,30 @@
       "permission": "exam.score.review",
       "classification_boundary": "真实ExamParsingJob/Workspace绑定 + 当前User/单Grant/Session Scope + 来源版本；固定Core查询，不放开legacy ORM",
       "entrypoint": "huipi_cloud.modules.exam_grading.service.http_authorize"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-result-sessions",
+      "policy": "list_exam_result_sessions",
+      "permission": "result_class_filtered_list",
+      "classification_boundary": "单一当前Grant + 真实Session/Event Scope + 显式班级收窄；仅当前冻结名单，非正式成绩",
+      "entrypoint": "huipi_cloud.modules.exam_results.access.authorize"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/results-preview",
+      "policy": "read_exam_results",
+      "permission": "exam.mark.read+explicit_class",
+      "classification_boundary": "单一当前Grant + 真实Session/Event Scope + 显式班级收窄；仅当前冻结名单，非正式成绩",
+      "entrypoint": "huipi_cloud.modules.exam_results.access.authorize"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/results-preview.xlsx",
+      "policy": "export_exam_results",
+      "permission": "exam.score.review+explicit_class_export",
+      "classification_boundary": "单一当前Grant + 真实Session/Event Scope + 显式班级收窄；仅当前冻结名单，非正式成绩",
+      "entrypoint": "huipi_cloud.modules.exam_results.access.authorize"
     }
   ]
 }

@@ -15,6 +15,7 @@ from huipi_cloud.modules.assignments.workbench_router import router as workbench
 from huipi_cloud.modules.canonical_documents.router import router as canonical_document_router
 from huipi_cloud.modules.exam_grading.router import router as exam_grading_router
 from huipi_cloud.modules.exam_parsing.router import router as exam_parse_router
+from huipi_cloud.modules.exam_results.router import router as exam_results_router
 from huipi_cloud.modules.grading.grade_review_router import router as grade_review_router
 from huipi_cloud.modules.identity.admin_router import router as admin_router
 from huipi_cloud.modules.identity.dependencies import authorize_request
@@ -59,3 +60,6 @@ api_router.include_router(protected_router)
 
 
 api_router.include_router(exam_grading_router)
+
+
+api_router.include_router(exam_results_router)

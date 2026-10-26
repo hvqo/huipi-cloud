@@ -1077,6 +1077,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/exam-result-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Exam Result Sessions */
+        get: operations["list_exam_result_sessions_api_v1_exam_result_sessions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-sessions/{exam_session_id}/results-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Exam Results */
+        get: operations["read_exam_results_api_v1_exam_sessions__exam_session_id__results_preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-sessions/{exam_session_id}/results-preview.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Exam Results */
+        get: operations["export_exam_results_api_v1_exam_sessions__exam_session_id__results_preview_xlsx_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2045,6 +2096,16 @@ export interface components {
              * @enum {string}
              */
             source: "manual" | "student_import";
+        };
+        /** ClassSummary */
+        ClassSummary: {
+            /**
+             * Class Id
+             * Format: uuid
+             */
+            class_id: string;
+            /** Class Name */
+            class_name: string;
         };
         /** ConfirmedRegionSummary */
         ConfirmedRegionSummary: {
@@ -3300,6 +3361,56 @@ export interface components {
             /** Last Error Message */
             last_error_message: string | null;
         };
+        /** Preview */
+        Preview: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /**
+             * Event Id
+             * Format: uuid
+             */
+            event_id: string;
+            /** Event Title */
+            event_title: string;
+            /** Session Title */
+            session_title: string;
+            /** Roster Revision Id */
+            roster_revision_id: string | null;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /** Snapshot Sha256 */
+            snapshot_sha256: string;
+            /**
+             * Published
+             * @default false
+             * @constant
+             */
+            published: false;
+            /** Classes */
+            classes: components["schemas"]["ClassSummary"][];
+            /** Students */
+            students: components["schemas"]["StudentResult"][];
+            /** Offset */
+            offset: number;
+            /** Limit */
+            limit: number;
+            /** Total Students */
+            total_students: number;
+            /** Has More */
+            has_more: boolean;
+            /**
+             * Scope Note
+             * @default explicit_classes_only
+             * @constant
+             */
+            scope_note: "explicit_classes_only";
+        };
         /**
          * QuestionAlignmentRead
          * @description One Question's mapped source slices and their alignment evidence.
@@ -3413,6 +3524,42 @@ export interface components {
             answer_key: components["schemas"]["AnswerKeyRead"] | null;
             /** Rubric Criteria */
             rubric_criteria: components["schemas"]["RubricCriterionRead"][];
+        };
+        /** QuestionResult */
+        QuestionResult: {
+            /**
+             * Mapping Id
+             * Format: uuid
+             */
+            mapping_id: string;
+            /**
+             * Question Id
+             * Format: uuid
+             */
+            question_id: string;
+            /** Number */
+            number: number;
+            /** Max Points */
+            max_points: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "reviewed" | "not_scored" | "awaiting_review" | "regrading_required" | "rejected" | "abstained" | "source_stale";
+            /** Points */
+            points?: string | null;
+            /** Workspace Id */
+            workspace_id?: string | null;
+            /** Proposal Id */
+            proposal_id?: string | null;
+            /** Review Id */
+            review_id?: string | null;
+            /** Review Revision */
+            review_revision?: number | null;
+            /** Review Status */
+            review_status?: string | null;
+            /** Reason */
+            reason?: string | null;
         };
         /**
          * QuestionType
@@ -4030,6 +4177,32 @@ export interface components {
             truncated: boolean;
             limits: components["schemas"]["ScanLimits"];
         };
+        /** SessionSummary */
+        SessionSummary: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /**
+             * Event Id
+             * Format: uuid
+             */
+            event_id: string;
+            /** Event Title */
+            event_title: string;
+            /** Title */
+            title: string;
+            /** Classes */
+            classes: components["schemas"]["ClassSummary"][];
+        };
+        /** SessionsRead */
+        SessionsRead: {
+            /** Items */
+            items: components["schemas"]["SessionSummary"][];
+            /** Truncated */
+            truncated: boolean;
+        };
         /** SourcePage */
         SourcePage: {
             /**
@@ -4261,6 +4434,75 @@ export interface components {
             next_offset: number | null;
             /** Records */
             records: components["schemas"]["StudentSummary"][];
+        };
+        /** StudentResult */
+        StudentResult: {
+            /**
+             * Participation Id
+             * Format: uuid
+             */
+            participation_id: string;
+            /**
+             * Roster Entry Id
+             * Format: uuid
+             */
+            roster_entry_id: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+            /** Student Code */
+            student_code: string;
+            /** Exam Number */
+            exam_number: string | null;
+            /**
+             * Class Id
+             * Format: uuid
+             */
+            class_id: string;
+            /** Class Name */
+            class_name: string;
+            /** Session Paper Id */
+            session_paper_id?: string | null;
+            /** Paper Version Id */
+            paper_version_id?: string | null;
+            /** Variant */
+            variant?: string | null;
+            /** Script Id */
+            script_id?: string | null;
+            /** Script Version Id */
+            script_version_id?: string | null;
+            /**
+             * Reviewed Count
+             * @default 0
+             */
+            reviewed_count: number;
+            /** Required Count */
+            required_count?: number | null;
+            /** Subtotal */
+            subtotal?: string | null;
+            /** Total */
+            total?: string | null;
+            /** Max Points */
+            max_points?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "complete" | "incomplete" | "identity_pending" | "source_stale" | "variant_unverified";
+            /**
+             * Attendance Status
+             * @default not_determined
+             * @constant
+             */
+            attendance_status: "not_determined";
+            /** Reasons */
+            reasons?: string[];
+            /** Questions */
+            questions?: components["schemas"]["QuestionResult"][];
         };
         /** StudentSummary */
         StudentSummary: {
@@ -9415,6 +9657,107 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_exam_result_sessions_api_v1_exam_result_sessions_get: {
+        parameters: {
+            query?: {
+                exam_event_id?: string | null;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionsRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_exam_results_api_v1_exam_sessions__exam_session_id__results_preview_get: {
+        parameters: {
+            query?: {
+                class_id?: string | null;
+                offset?: number;
+                limit?: number;
+                participation_id?: string | null;
+            };
+            header?: never;
+            path: {
+                exam_session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Preview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_exam_results_api_v1_exam_sessions__exam_session_id__results_preview_xlsx_get: {
+        parameters: {
+            query?: {
+                class_id?: string | null;
+            };
+            header?: never;
+            path: {
+                exam_session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

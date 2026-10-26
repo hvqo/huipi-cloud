@@ -1,5 +1,5 @@
 {
-  "version": "exam-grading-1",
+  "version": "exam-results-preview-1",
   "operations": [
     {
       "method": "POST",
@@ -486,6 +486,24 @@
       "path": "/api/v1/exam-grading-workspaces/{workspace_id}/score-review",
       "policy": "record_exam_score_review",
       "permission": "exam.score.review"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-result-sessions",
+      "policy": "list_exam_result_sessions",
+      "permission": "result_class_filtered_list"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/results-preview",
+      "policy": "read_exam_results",
+      "permission": "exam.mark.read+explicit_class"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/results-preview.xlsx",
+      "policy": "export_exam_results",
+      "permission": "exam.score.review+explicit_class_export"
     }
   ]
 }

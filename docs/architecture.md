@@ -406,3 +406,11 @@ ScanBatch真实关联ExamSession并固定exam_protected，可保存创建时冻�
 ## 考试候选评分工作区
 
 [考试评分合同](development/exam-grading.md)从精确 ExamParsingJob/PaperQuestionMapping 建立受保护对齐与人工来源确认，复用原 GradeInput、GradeProposal 和 GradeReview 协议。独立有租约队列在模型请求前后、登记事务内复核当前来源和权限；旧 ORM/HTTP/CLI 仍不读取考试载体。教师审核记录不等于有效题分或正式发布成绩。真实本地模型校验失败与 Synthetic 工程验收分开记录。
+
+## 教师整卷分数只读预览
+
+`exam_results` 在当前冻结名单、答卷版本、实际用卷映射与教师最新 GradeReview 之间建立只读投影；
+accepted/revised 的有效题分才进入 Decimal 小计，全题完成才有总分。空白、弃权、缺评与零分保持不同。
+没有正式成绩模型或发布端点。唯一新增数据表将真实 Grant/场次/行政班联系起来，单个完整 Grant 决定读取和导出能力，
+不能拼接或沿用旧管理员捷径。班级限制仅覆盖新预览接口，原批改 Scope 的兼容范围明确保留。
+一致性事务、私有来源校验、导出限制和受控班级授权见[整卷预览合同](development/exam-results-preview.md)。

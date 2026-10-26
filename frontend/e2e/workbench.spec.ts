@@ -194,8 +194,7 @@ test('真实PNG预览与新建作业表单', async ({ page, request }) => {
 })
 
 test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原件校验', async ({ page, request }) => {
-  if (process.env.RUN_EXAM_GRADING_BROWSER === '1') test.setTimeout(180000)
-  test.setTimeout(120000)
+  test.setTimeout(process.env.RUN_EXAM_GRADING_BROWSER === '1' ? 180000 : 120000)
   const { readFile } = await import('node:fs/promises')
   const { createHash } = await import('node:crypto')
   await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/a`, { ignoreHTTPSErrors: true })
@@ -297,6 +296,7 @@ test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原�
   await expect(page.locator('.parsed-content')).not.toBeEmpty()
   await page.screenshot({ path: 'test-results/exam-protected-canonical.png', fullPage: true })
   if (process.env.RUN_EXAM_GRADING_BROWSER === '1') await markExamAnswer(page, true)
+  if (process.env.RUN_EXAM_RESULTS_BROWSER === '1') await markExamAnswer(page, false, 2)
 
   await page.getByRole('button', { name: '新建答卷', exact: true }).click()
   await page.getByRole('button', { name: '加入扫描页 2', exact: true }).click()
@@ -354,17 +354,67 @@ test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原�
       animations: 'disabled',
     })
   }
+  if (process.env.RUN_EXAM_RESULTS_BROWSER === '1') {
+    await page.getByRole('link', { name: '成绩预览', exact: true }).click()
+    await expect(page.getByRole('heading', { name: '整卷成绩预览' })).toBeVisible()
+    const first = page.locator('.result-table tbody tr').filter({ hasText: 'N001' })
+    const second = page.locator('.result-table tbody tr').filter({ hasText: 'N002' })
+    await expect(first).toContainText('全部复核完成')
+    await expect(first).toContainText('18.00')
+    await expect(second).toContainText('未完成')
+    await expect(second).toContainText('10.00')
+    await page.screenshot({
+      path: 'test-results/exam-results-preview.png',
+      fullPage: true,
+      animations: 'disabled',
+    })
+    await first.getByRole('button', { name: '查看各题与复核' }).click()
+    const dialog = page.getByRole('dialog', { name: '逐题教师复核' })
+    await expect(dialog).toContainText('8.00')
+    await expect(dialog).toContainText('10.00')
+    await expect(dialog).toContainText('修订2')
+    await expect(dialog.getByRole('table')).toBeVisible()
+    await dialog.screenshot({
+      path: 'test-results/exam-results-question-review.png',
+      animations: 'disabled',
+    })
+    await dialog.getByRole('button', { name: /Close this dialog|关闭此对话框/ }).click()
+    const filter = page.locator('.result-filters select').nth(2)
+    const oneClass = await filter
+      .locator('option')
+      .filter({ hasText: '合成1班' })
+      .getAttribute('value')
+    await filter.selectOption(oneClass!)
+    await expect(page.locator('.result-table tbody tr')).toHaveCount(2)
+    await expect(page.locator('.result-table')).not.toContainText('N002')
+    await filter.selectOption('')
+    await expect(page.locator('.result-table tbody tr')).toHaveCount(4)
+    const download = page.waitForEvent('download')
+    await page.getByRole('button', { name: '导出 Excel 预览' }).click()
+    await (await download).saveAs('test-results/exam-results-preview.xlsx')
+    expect(errors).toEqual([])
+  }
 })
 
-async function markExamAnswer(page: Page, revise: boolean) {
+async function markExamAnswer(page: Page, revise: boolean, question = 1) {
   const panel = page.getByRole('region', { name: 'AI 批改与复核', exact: true })
   await expect(panel).toBeVisible()
-  await panel.getByRole('button', { name: '准备题目作答核对', exact: true }).click()
-  await expect(panel.getByRole('heading', { name: '第1题', exact: true })).toBeVisible()
+  if (question === 1)
+    await panel.getByRole('button', { name: '准备题目作答核对', exact: true }).click()
+  else {
+    const selector = panel.locator('select').first()
+    const value = await selector
+      .locator('option')
+      .filter({ hasText: '第2题' })
+      .getAttribute('value')
+    expect(value).toBeTruthy()
+    await selector.selectOption(value!)
+  }
+  await expect(panel.getByRole('heading', { name: `第${question}题`, exact: true })).toBeVisible()
   const paragraph = panel
     .locator('.mark-node')
     .filter({ hasText: /Student response/i })
-    .first()
+    .nth(question - 1)
   await expect(paragraph).toBeVisible()
   await paragraph.getByRole('button', { name: '选择此段', exact: true }).click()
   await panel.getByRole('checkbox', { name: '我已核对原页，人工指定所选内容属于本题' }).check()

@@ -7,17 +7,19 @@ import { identity, logout } from './auth'
 const route = useRoute(),
   router = useRouter()
 const title = computed(() =>
-  route.path.endsWith('/scripts') && route.path.startsWith('/scans/')
-    ? '人工分卷与身份确认'
-    : route.path === '/scans'
-      ? '考试扫描'
-      : route.path.endsWith('/review')
-        ? '作答证据复核'
-        : route.params.sid
-          ? '学生提交'
-          : route.params.aid
-            ? '作业详情'
-            : '我的作业',
+  route.path.endsWith('/results') || route.path === '/exam-results'
+    ? '整卷成绩预览'
+    : route.path.endsWith('/scripts') && route.path.startsWith('/scans/')
+      ? '人工分卷与身份确认'
+      : route.path === '/scans'
+        ? '考试扫描'
+        : route.path.endsWith('/review')
+          ? '作答证据复核'
+          : route.params.sid
+            ? '学生提交'
+            : route.params.aid
+              ? '作业详情'
+              : '我的作业',
 )
 watch(
   () => identity.authenticated,
@@ -48,6 +50,9 @@ async function signOut() {
         <p class="nav-caption">教学工作空间</p>
         <RouterLink to="/assignments" class="nav-link">▦ <span>我的作业</span></RouterLink>
         <RouterLink to="/scans" class="nav-link">▤ <span>考试扫描</span></RouterLink>
+        <RouterLink to="/exam-results" class="nav-link" aria-label="成绩预览"
+          >▦ <span>成绩预览</span></RouterLink
+        >
         <div class="nav-note">候选评分审核<small>尚未开放工作台页面</small></div>
         <div class="sidebar-foot">
           <span class="live-dot" /> 受保护的教师工作台<small>人工确认 · 来源可追溯</small>

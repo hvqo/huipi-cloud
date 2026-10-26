@@ -825,7 +825,7 @@ async def test_grading_facts_prevent_destructive_migration_downgrade(marking):
     output, _ = await asyncio.wait_for(process.communicate(), 30)
     assert process.returncode != 0 and b"exam_mark_downgrade_requires_archived_data" in output
     async with c.factory() as db:
-        assert await db.scalar(text("SELECT version_num FROM alembic_version")) == "b14c52b3f014"
+        assert await db.scalar(text("SELECT version_num FROM alembic_version")) == "b15a60c4f015"
         assert await db.scalar(select(g.W.c.id).where(g.W.c.id == UUID(c.wid))) == UUID(c.wid)
 
 

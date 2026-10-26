@@ -236,6 +236,9 @@ onUnmounted(() => {
       <RouterLink v-if="sessionId" :to="`/scans/sessions/${sessionId}/scripts`"
         >人工分卷与身份确认 →</RouterLink
       >
+      <RouterLink v-if="sessionId" :to="`/scans/sessions/${sessionId}/results`"
+        >整卷成绩预览 →</RouterLink
+      >
       <p class="muted">接收混班扫描 PDF，逐页核对原件。此步骤不确认学生身份，也不生成成绩。</p>
     </div>
   </div>
