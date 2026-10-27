@@ -9,6 +9,73 @@ async function signIn(page: Page, target = '/assignments') {
   await expect(page).toHaveURL(new RegExp(target + '$'))
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
 }
+
+test('答题卡：打印、扫描、人工分卷、真实识别、教师确认与成绩预览', async ({
+  page,
+  request,
+}, testInfo) => {
+  test.skip(process.env.RUN_OMR_BROWSER !== '1', 'real OpenCV OMR opt-in')
+  test.setTimeout(120000)
+  page.setDefaultTimeout(10000)
+  const { execFileSync } = await import('node:child_process')
+  const sid = process.env.WORKBENCH_SCAN_SESSION!
+  const paper = process.env.WORKBENCH_OMR_PAPER!
+  await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/a`, { ignoreHTTPSErrors: true })
+  await signIn(page, '/omr')
+  await expect(page.getByLabel('锁定试卷').locator(`option[value="${paper}"]`)).toHaveCount(1)
+  await page.getByLabel('锁定试卷').selectOption(paper)
+  await expect(page.getByText('第 1 题 · 10.00 分')).toBeVisible()
+  await page.getByRole('button', { name: '创建答题卡' }).click()
+  await expect(page.getByRole('button', { name: '下载 A4 打印版' })).toBeVisible()
+  await page.screenshot({ path: 'test-results/omr-template.png', fullPage: true })
+  const downloaded = page.waitForEvent('download')
+  await page.getByRole('button', { name: '下载 A4 打印版' }).click()
+  const printPath = testInfo.outputPath('print.pdf'),
+    scanPath = testInfo.outputPath('synthetic-filled.pdf')
+  await (await downloaded).saveAs(printPath)
+  const draw = `import sys\nfrom io import BytesIO\nimport pypdfium2 as pdfium\nfrom PIL import ImageDraw\nfrom huipi_cloud.modules.omr.engine import bubble_center\ndoc=pdfium.PdfDocument(sys.argv[1])\nim=doc[0].render(scale=150/72).to_pil().convert('RGB')\nd=ImageDraw.Draw(im)\nfor i,o in [(0,0),(1,1)]:\n x,y=bubble_center(i,o); d.ellipse((x-16,y-16,x+16,y+16),fill='black')\nim.save(sys.argv[2],format='PDF',resolution=150)\ndoc.close()\n`
+  execFileSync(process.env.WORKBENCH_PYTHON!, ['-c', draw, printPath, scanPath])
+
+  await page.getByRole('link', { name: '进入考试扫描 →' }).click()
+  await page.getByLabel('考试场次').selectOption(sid)
+  await page.getByLabel('批次名称').fill('OMR 合成扫描')
+  await page.getByRole('button', { name: '新建扫描批次' }).click()
+  await page.getByLabel('扫描 PDF', { exact: true }).setInputFiles(scanPath)
+  await page.getByRole('button', { name: '上传并生成预览' }).click()
+  await expect(page.getByRole('button', { name: '第 1 页', exact: true })).toBeVisible()
+  await page.getByRole('link', { name: '人工分卷与身份确认 →' }).click()
+  const source = page.locator('.script-page').filter({ hasText: 'synthetic-filled.pdf' })
+  await expect(source).toBeVisible()
+  await source.getByRole('button', { name: '加入扫描页 1' }).click()
+  await page.getByLabel('已核对页数，答卷完整').check()
+  await page.getByLabel('操作说明').fill('合成答题卡，人工核对页面')
+  await page.getByRole('button', { name: '保存答卷草稿', exact: true }).click()
+  await page.getByLabel('操作说明').fill('核对第三位学生身份')
+  await page.getByRole('button', { name: '核对学生并确认', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: '核对学生身份与实际卷别' })
+  const student = dialog.getByLabel('参试学生').locator('option').filter({ hasText: '考号 N003' })
+  await dialog.getByLabel('参试学生').selectOption((await student.getAttribute('value'))!)
+  await dialog.getByRole('button', { name: '确认身份并保存新版本' }).click()
+  await expect(dialog).not.toBeVisible()
+  await page.getByRole('link', { name: '答题卡批改' }).click()
+  await page.getByLabel('考试场次').selectOption(sid)
+  await page.locator('.omr-scripts button').filter({ hasText: 'N003' }).click()
+  await page.getByLabel('答题卡页面').selectOption({ label: 'synthetic-filled.pdf · 第 1 页' })
+  await page.getByRole('button', { name: '识别该页' }).click()
+  await expect(page.getByText('识别完成，请对照原图确认；识别建议还不是有效分数。')).toBeVisible()
+  await expect(page.getByAltText('扫描原图与填涂区域')).toBeVisible()
+  await expect(page.locator('.omr-table tbody tr')).toHaveCount(2)
+  await page.screenshot({ path: 'test-results/omr-recognition.png', fullPage: true })
+  await page.getByLabel('已核对该答卷').check()
+  await page.getByRole('button', { name: '批量确认已核对的清晰题' }).click()
+  await expect(page.getByRole('status')).toContainText('已确认 2 道清晰题')
+  await page.screenshot({ path: 'test-results/omr-confirmed.png', fullPage: true })
+  await page.getByRole('link', { name: '查看成绩预览 →' }).click()
+  await expect(page.locator('.result-table tbody tr').filter({ hasText: 'N003' })).toContainText(
+    '20.00',
+  )
+  await page.screenshot({ path: 'test-results/omr-results.png', fullPage: true })
+})
 async function select(page: Page, prompt = false) {
   await page
     .locator('[data-source-pointer]')

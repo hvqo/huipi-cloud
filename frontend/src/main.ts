@@ -18,6 +18,7 @@ import School from './views/School.vue'
 import ExamRecovery from './views/ExamRecovery.vue'
 import MarkingManagement from './views/MarkingManagement.vue'
 import MyMarkingTasks from './views/MyMarkingTasks.vue'
+import OmrWorkbench from './views/OmrWorkbench.vue'
 import { initializeAuth, identity, callback } from './auth'
 
 export const router = createRouter({
@@ -49,6 +50,7 @@ export const router = createRouter({
     { path: '/marking/my/:tid', component: MyMarkingTasks },
     { path: '/papers', component: Papers },
     { path: '/papers/:pid', component: Papers },
+    { path: '/omr', component: OmrWorkbench },
     { path: '/exams/sessions/:sid', component: ExamConfiguration },
     { path: '/scans/sessions/:sid/results', component: ExamResults },
     { path: '/scans/sessions/:sid/scripts', component: AnswerScripts },

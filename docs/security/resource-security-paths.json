@@ -1,5 +1,5 @@
 {
-  "version": "exam-recovery-1",
+  "version": "exam-omr-1",
   "operations": [
     {
       "method": "POST",
@@ -1088,6 +1088,70 @@
       "permission": "current_exam_recovery_scope",
       "classification_boundary": "现有当前Grant及真实场次；按类别权限投影；任务教师仅本人current任务；修复沿原受保护业务入口",
       "entrypoint": "huipi_cloud.modules.exam_recovery.service"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/omr/papers/{paper_id}",
+      "policy": "omr_paper_view",
+      "permission": "paper_read",
+      "classification_boundary": "PaperVersion 或当前 ExamSession 的真实授权；答卷、名单及来源版本在服务内重新校验",
+      "entrypoint": "huipi_cloud.modules.omr.service"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/omr/papers/{paper_id}",
+      "policy": "omr_create_template",
+      "permission": "paper_write",
+      "classification_boundary": "PaperVersion 或当前 ExamSession 的真实授权；答卷、名单及来源版本在服务内重新校验",
+      "entrypoint": "huipi_cloud.modules.omr.service"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/omr/templates/{template_id}/print.pdf",
+      "policy": "omr_print_template",
+      "permission": "template",
+      "classification_boundary": "PaperVersion 或当前 ExamSession 的真实授权；答卷、名单及来源版本在服务内重新校验",
+      "entrypoint": "huipi_cloud.modules.omr.service"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/answer-scripts/{script_id}/omr",
+      "policy": "omr_current",
+      "permission": "script_read",
+      "classification_boundary": "PaperVersion 或当前 ExamSession 的真实授权；答卷、名单及来源版本在服务内重新校验",
+      "entrypoint": "huipi_cloud.modules.omr.service"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/answer-scripts/{script_id}/omr",
+      "policy": "omr_recognize",
+      "permission": "script_write",
+      "classification_boundary": "PaperVersion 或当前 ExamSession 的真实授权；答卷、名单及来源版本在服务内重新校验",
+      "entrypoint": "huipi_cloud.modules.omr.service"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/omr/recognitions/{recognition_id}",
+      "policy": "omr_inspect",
+      "permission": "recognition_read",
+      "classification_boundary": "PaperVersion 或当前 ExamSession 的真实授权；答卷、名单及来源版本在服务内重新校验",
+      "entrypoint": "huipi_cloud.modules.omr.service"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/omr/recognitions/{recognition_id}/image",
+      "policy": "omr_image",
+      "permission": "recognition_read",
+      "classification_boundary": "PaperVersion 或当前 ExamSession 的真实授权；答卷、名单及来源版本在服务内重新校验",
+      "entrypoint": "huipi_cloud.modules.omr.service"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/omr/recognitions/{recognition_id}/confirm",
+      "policy": "omr_confirm",
+      "permission": "recognition_write",
+      "classification_boundary": "PaperVersion 或当前 ExamSession 的真实授权；答卷、名单及来源版本在服务内重新校验",
+      "entrypoint": "huipi_cloud.modules.omr.service"
     }
   ]
 }

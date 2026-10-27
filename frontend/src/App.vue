@@ -8,29 +8,31 @@ import { identity, logout } from './auth'
 const route = useRoute(),
   router = useRouter()
 const title = computed(() =>
-  route.path.startsWith('/exceptions')
-    ? '异常处理与扫描补救'
-    : route.path.startsWith('/marking')
-      ? '协同阅卷工作台'
-      : route.path.startsWith('/school')
-        ? '学校基础数据'
-        : route.path.startsWith('/papers')
-          ? '试卷管理'
-          : route.path.startsWith('/exams')
-            ? '考试配置工作台'
-            : route.path.endsWith('/results') || route.path === '/exam-results'
-              ? '整卷成绩预览'
-              : route.path.endsWith('/scripts') && route.path.startsWith('/scans/')
-                ? '人工分卷与身份确认'
-                : route.path === '/scans'
-                  ? '考试扫描'
-                  : route.path.endsWith('/review')
-                    ? '作答证据复核'
-                    : route.params.sid
-                      ? '学生提交'
-                      : route.params.aid
-                        ? '作业详情'
-                        : '我的作业',
+  route.path.startsWith('/omr')
+    ? '答题卡与客观题批改'
+    : route.path.startsWith('/exceptions')
+      ? '异常处理与扫描补救'
+      : route.path.startsWith('/marking')
+        ? '协同阅卷工作台'
+        : route.path.startsWith('/school')
+          ? '学校基础数据'
+          : route.path.startsWith('/papers')
+            ? '试卷管理'
+            : route.path.startsWith('/exams')
+              ? '考试配置工作台'
+              : route.path.endsWith('/results') || route.path === '/exam-results'
+                ? '整卷成绩预览'
+                : route.path.endsWith('/scripts') && route.path.startsWith('/scans/')
+                  ? '人工分卷与身份确认'
+                  : route.path === '/scans'
+                    ? '考试扫描'
+                    : route.path.endsWith('/review')
+                      ? '作答证据复核'
+                      : route.params.sid
+                        ? '学生提交'
+                        : route.params.aid
+                          ? '作业详情'
+                          : '我的作业',
 )
 watch(
   () => identity.actor,
@@ -75,6 +77,7 @@ async function signOut() {
         <p class="nav-caption">教学工作空间</p>
         <RouterLink to="/assignments" class="nav-link">▦ <span>我的作业</span></RouterLink>
         <RouterLink to="/papers" class="nav-link">▤ <span>试卷管理</span></RouterLink>
+        <RouterLink to="/omr" class="nav-link">▤ <span>答题卡批改</span></RouterLink>
         <RouterLink to="/exams" class="nav-link" aria-label="考试配置"
           >▦ <span>考试配置</span></RouterLink
         >

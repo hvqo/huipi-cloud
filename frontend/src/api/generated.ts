@@ -1884,6 +1884,110 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/omr/papers/{paper_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Omr Paper View */
+        get: operations["omr_paper_view_api_v1_omr_papers__paper_id__get"];
+        put?: never;
+        /** Omr Create Template */
+        post: operations["omr_create_template_api_v1_omr_papers__paper_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/omr/templates/{template_id}/print.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Omr Print Template */
+        get: operations["omr_print_template_api_v1_omr_templates__template_id__print_pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/answer-scripts/{script_id}/omr": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Omr Current */
+        get: operations["omr_current_api_v1_answer_scripts__script_id__omr_get"];
+        put?: never;
+        /** Omr Recognize */
+        post: operations["omr_recognize_api_v1_answer_scripts__script_id__omr_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/omr/recognitions/{recognition_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Omr Inspect */
+        get: operations["omr_inspect_api_v1_omr_recognitions__recognition_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/omr/recognitions/{recognition_id}/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Omr Image */
+        get: operations["omr_image_api_v1_omr_recognitions__recognition_id__image_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/omr/recognitions/{recognition_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Omr Confirm */
+        post: operations["omr_confirm_api_v1_omr_recognitions__recognition_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2902,6 +3006,23 @@ export interface components {
          * @enum {string}
          */
         Capability: "assignment:create" | "assignment:read_scoped" | "assignment:write_scoped" | "review:write_scoped" | "assignment:access_all" | "teacher:manage" | "membership:manage" | "audit:read";
+        /** ChoiceReview */
+        ChoiceReview: {
+            /**
+             * Mapping Id
+             * Format: uuid
+             */
+            mapping_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Choice
+             * @enum {string}
+             */
+            choice: "A" | "B" | "C" | "D" | "blank";
+            /** Reason */
+            reason: string;
+        };
         /** ClassEnrollmentPage */
         ClassEnrollmentPage: {
             /** Limit */
@@ -3444,6 +3565,16 @@ export interface components {
             /** Related Id */
             related_id?: string | null;
         };
+        /** ConfirmRequest */
+        ConfirmRequest: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Decisions */
+            decisions: components["schemas"]["ChoiceReview"][];
+        };
         /** ConfirmedRegionSummary */
         ConfirmedRegionSummary: {
             /**
@@ -3478,6 +3609,25 @@ export interface components {
             rationale: string;
             /** Evidence References */
             evidence_references: (components["schemas"]["QuoteEvidenceReference"] | components["schemas"]["NoEvidenceReference"])[];
+        };
+        /** CurrentRecognition */
+        CurrentRecognition: {
+            /** Id */
+            id: string | null;
+            /** Template Id */
+            template_id: string | null;
+            /**
+             * Paper Version Id
+             * Format: uuid
+             */
+            paper_version_id: string;
+            /**
+             * Script Version Id
+             * Format: uuid
+             */
+            script_version_id: string;
+            /** Revision */
+            revision: number;
         };
         /** CurrentUser */
         CurrentUser: {
@@ -5159,6 +5309,10 @@ export interface components {
             review_status?: string | null;
             /** Reason */
             reason?: string | null;
+            /** Evidence Source */
+            evidence_source?: ("teacher_review" | "omr") | null;
+            /** Omr Decision Id */
+            omr_decision_id?: string | null;
         };
         /**
          * QuestionType
@@ -5183,6 +5337,88 @@ export interface components {
             text_end: number;
             /** Quote */
             quote: string;
+        };
+        /** RecognitionCreate */
+        RecognitionCreate: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /**
+             * Template Id
+             * Format: uuid
+             */
+            template_id: string;
+            /**
+             * Scan Page Id
+             * Format: uuid
+             */
+            scan_page_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+        };
+        /** RecognitionQuestion */
+        RecognitionQuestion: {
+            /**
+             * Mapping Id
+             * Format: uuid
+             */
+            mapping_id: string;
+            /** Label */
+            label: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "single" | "blank" | "multiple" | "uncertain";
+            /** Choice */
+            choice: string | null;
+            /** Ratios */
+            ratios: number[];
+            /** Correct Choice */
+            correct_choice: string;
+            /** Suggested Points */
+            suggested_points: string | null;
+            /** Confirmed Choice */
+            confirmed_choice?: string | null;
+            /** Confirmed Points */
+            confirmed_points?: string | null;
+            /**
+             * Revision
+             * @default 0
+             */
+            revision: number;
+        };
+        /** RecognitionRead */
+        RecognitionRead: {
+            /**
+             * Recognition Id
+             * Format: uuid
+             */
+            recognition_id: string;
+            /**
+             * Template Id
+             * Format: uuid
+             */
+            template_id: string;
+            /**
+             * Script Id
+             * Format: uuid
+             */
+            script_id: string;
+            /**
+             * Script Version Id
+             * Format: uuid
+             */
+            script_version_id: string;
+            /**
+             * Scan Page Id
+             * Format: uuid
+             */
+            scan_page_id: string;
+            /** Questions */
+            questions: components["schemas"]["RecognitionQuestion"][];
         };
         /** RecoveryItem */
         RecoveryItem: {
@@ -6459,6 +6695,44 @@ export interface components {
             /** Subject */
             subject: string;
         };
+        /** TemplateCreate */
+        TemplateCreate: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Mapping Ids */
+            mapping_ids: string[];
+        };
+        /** TemplateQuestion */
+        TemplateQuestion: {
+            /**
+             * Mapping Id
+             * Format: uuid
+             */
+            mapping_id: string;
+            /** Printed Label */
+            printed_label: string;
+            /** Correct Choice */
+            correct_choice: string;
+            /** Max Points */
+            max_points: string;
+        };
+        /** TemplateRead */
+        TemplateRead: {
+            /** Template Id */
+            template_id: string | null;
+            /**
+             * Paper Version Id
+             * Format: uuid
+             */
+            paper_version_id: string;
+            /** Title */
+            title: string;
+            /** Questions */
+            questions: components["schemas"]["TemplateQuestion"][];
+        };
         /** Transition */
         Transition: {
             /**
@@ -6561,6 +6835,14 @@ export interface components {
             rubric_count: number;
             /** Rubric Truncated */
             rubric_truncated: boolean;
+        };
+        /** WriteReceipt */
+        WriteReceipt: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
         };
     };
     responses: never;
@@ -13606,6 +13888,268 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecoveryView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    omr_paper_view_api_v1_omr_papers__paper_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                paper_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    omr_create_template_api_v1_omr_papers__paper_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                paper_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WriteReceipt"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    omr_print_template_api_v1_omr_templates__template_id__print_pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    omr_current_api_v1_answer_scripts__script_id__omr_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                script_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurrentRecognition"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    omr_recognize_api_v1_answer_scripts__script_id__omr_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                script_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecognitionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WriteReceipt"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    omr_inspect_api_v1_omr_recognitions__recognition_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recognition_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecognitionRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    omr_image_api_v1_omr_recognitions__recognition_id__image_get: {
+        parameters: {
+            query?: {
+                overlay?: boolean;
+            };
+            header?: never;
+            path: {
+                recognition_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    omr_confirm_api_v1_omr_recognitions__recognition_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recognition_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WriteReceipt"];
                 };
             };
             /** @description Validation Error */

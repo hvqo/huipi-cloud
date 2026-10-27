@@ -138,7 +138,7 @@ onUnmounted(() => {
     <div>
       <p class="eyebrow">教师核对 · 内部预览</p>
       <h1>整卷成绩预览</h1>
-      <p class="muted">仅汇总教师已接受或修订的分数。未完成不补零，预览与导出均不发布成绩。</p>
+      <p class="muted">仅汇总教师已复核或确认的分数。未完成不补零，预览与导出均不发布成绩。</p>
     </div>
     <el-button :disabled="!result || exporting || loading" @click="exportFile">{{
       exporting ? '正在核验并导出…' : '导出 Excel 预览'
@@ -226,6 +226,11 @@ onUnmounted(() => {
                   :to="`/scans/sessions/${result.session_id}/scripts?script=${s.script_id}`"
                   >进入答卷批改</RouterLink
                 >
+                <RouterLink
+                  v-if="(s.questions || []).some((q) => q.evidence_source === 'omr')"
+                  :to="{ path: '/omr', query: { session: result.session_id } }"
+                  >查看答题卡确认</RouterLink
+                >
               </td>
             </tr>
           </tbody>
@@ -281,6 +286,9 @@ onUnmounted(() => {
                 >{{ text(q.review_status || '') }} · 修订{{ q.review_revision }}<br />记录
                 {{ q.review_id }}</small
               >
+              <small v-else-if="q.evidence_source === 'omr'">
+                答题卡填涂 · {{ q.omr_decision_id ? '教师已确认' : '等待教师确认' }}
+              </small>
             </td>
           </tr>
         </tbody>

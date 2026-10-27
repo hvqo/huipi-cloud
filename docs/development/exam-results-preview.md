@@ -14,6 +14,9 @@
 - `accepted`：原 GradeReview 已明确接受的候选分值。
 - `revised`：该次完整 Criterion 修订快照中的教师分值，不从前一条记录增量累加。
 - 最新 `rejected` / `regrading_required` 覆盖旧的接受记录；弃权、缺少复核和任务失败没有有效题分。
+- 已配置答题卡模板的客观题采用当前答卷的最新 OMR 教师确认记录；识别建议本身不计分，
+  确认空白后的零分与尚未确认的空白分开。模板中的题目以答题卡确认为准，不与同题文本复核相加；
+  非模板题目继续使用原 GradeReview。纯客观题可在未运行文本解析时完成预览。
 - 按 GradeInput 的真实题目、Rubric、Proposal 及私有对象 SHA 重新验证，保留原 Decimal、正分 Quote、总分约束。
 - 当前答卷/名单、卷版、来源 Canonical 与原扫描文件/预览字节都要有效；原评分申请人的授权也继续校验。
 - 所有必要题目有效复核后才有 `total`；否则只有已复核题目的 `subtotal`。没有任何有效复核时小计也是 `null`。
@@ -21,6 +24,7 @@
 - `attendance_status=not_determined`、`published=false` 固定表明未确认到考、未发布成绩。
 
 当前记录 ID、review_revision、script_version_id、paper_version_id 和 roster_revision_id 可回溯。
+客观题结果以 `evidence_source=omr` 和 `omr_decision_id` 标记，原图及识别证据由答题卡工作台查看。
 逐题对话框展示当前记录，完整修订历史通过「进入答卷批改」查看现有工作区。
 来源失效不显示旧完整总分；答卷更正草稿取消身份关联时显示待重新确认，而非沿用旧学生分数。
 
