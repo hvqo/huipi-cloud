@@ -261,7 +261,11 @@ test('真实PNG预览与新建作业表单', async ({ page, request }) => {
 })
 
 test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原件校验', async ({ page, request }) => {
-  test.setTimeout(process.env.RUN_EXAM_GRADING_BROWSER === '1' ? 180000 : 120000)
+  test.setTimeout(
+    process.env.RUN_EXAM_GRADING_BROWSER === '1' || process.env.RUN_EXAM_VISUAL_BROWSER === '1'
+      ? 240000
+      : 120000,
+  )
   const { readFile } = await import('node:fs/promises')
   const { createHash } = await import('node:crypto')
   await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/a`, { ignoreHTTPSErrors: true })
@@ -364,6 +368,7 @@ test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原�
   await expect(page.getByText('解析第 1 页 · 原扫描第 3 页', { exact: true })).toBeVisible()
   await expect(page.locator('.parsed-content')).not.toBeEmpty()
   await page.screenshot({ path: 'test-results/exam-protected-canonical.png', fullPage: true })
+  if (process.env.RUN_EXAM_VISUAL_BROWSER === '1') await markVisualAnswer(page)
   if (process.env.RUN_EXAM_GRADING_BROWSER === '1') await markExamAnswer(page, true)
   if (process.env.RUN_EXAM_RESULTS_BROWSER === '1') await markExamAnswer(page, false, 2)
 
@@ -463,7 +468,47 @@ test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原�
     await (await download).saveAs('test-results/exam-results-preview.xlsx')
     expect(errors).toEqual([])
   }
+  if (process.env.RUN_EXAM_VISUAL_BROWSER === '1') {
+    await page.getByRole('link', { name: '成绩预览', exact: true }).click()
+    await expect(page.getByRole('heading', { name: '整卷成绩预览' })).toBeVisible()
+    const first = page.locator('.result-table tbody tr').filter({ hasText: 'N001' })
+    await expect(first).toContainText('1 / 2')
+    await expect(first).toContainText('未完成')
+    await page.screenshot({ path: 'test-results/exam-visual-results.png', fullPage: true })
+  }
 })
+
+async function markVisualAnswer(page: Page) {
+  const panel = page.getByRole('region', { name: 'AI 批改与复核', exact: true })
+  await expect(panel).toBeVisible()
+  await panel.getByRole('button', { name: '准备题目作答核对', exact: true }).click()
+  await expect(panel.getByRole('heading', { name: '第1题', exact: true })).toBeVisible()
+  const visual = panel.getByRole('region', { name: '图像作答区域与多模态评分' })
+  for (const pageNumber of [3, 1]) {
+    await visual.getByRole('button', { name: `原文件第${pageNumber}页` }).click()
+    const canvas = visual.locator('.visual-image')
+    await expect(canvas).toBeVisible()
+    await canvas.scrollIntoViewIfNeeded()
+    const box = await canvas.boundingBox()
+    expect(box).not.toBeNull()
+    await page.mouse.move(box!.x + box!.width * 0.07, box!.y + box!.height * 0.11)
+    await page.mouse.down()
+    await page.mouse.move(box!.x + box!.width * 0.86, box!.y + box!.height * 0.62, { steps: 8 })
+    await page.mouse.up()
+  }
+  await expect(visual.locator('ol li')).toHaveCount(2)
+  await visual.screenshot({ path: 'test-results/exam-visual-selection.png' })
+  await visual.getByRole('button', { name: '确认图像作答区域' }).click()
+  await expect(visual.getByText(/已确认（版本 1）/)).toBeVisible()
+  await visual.getByRole('button', { name: '请求图文 AI 评分' }).click()
+  await expect(visual.getByText(/评分状态：建议已生成/)).toBeVisible({ timeout: 120000 })
+  await expect(visual.getByText('仅为候选，需教师复核', { exact: false })).toBeVisible()
+  await expect(visual.getByRole('button', { name: /查看原图区域/ }).first()).toBeVisible()
+  await visual.screenshot({ path: 'test-results/exam-visual-candidate.png' })
+  await visual.getByRole('button', { name: '接受建议', exact: true }).click()
+  await expect(visual.getByText(/修订1 ·/)).toBeVisible()
+  await visual.screenshot({ path: 'test-results/exam-visual-review.png' })
+}
 
 async function markExamAnswer(page: Page, revise: boolean, question = 1) {
   const panel = page.getByRole('region', { name: 'AI 批改与复核', exact: true })

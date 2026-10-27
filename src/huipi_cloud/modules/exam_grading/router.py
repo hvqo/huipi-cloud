@@ -18,7 +18,16 @@ from huipi_cloud.modules.scans.router import ScanRoute
 from huipi_cloud.modules.submissions.router import Storage
 
 from . import service
-from .schemas import AnswerDecision, ExamMarkDetails, Intent, ScoreRequest, ScoreReview
+from .schemas import (
+    AnswerDecision,
+    ExamMarkDetails,
+    Intent,
+    ScoreRequest,
+    ScoreReview,
+    VisualScoreRequest,
+    VisualScoreReview,
+    VisualSelectionRequest,
+)
 
 router = APIRouter(tags=["exam-grading"], route_class=ScanRoute)
 
@@ -102,3 +111,47 @@ async def record_exam_score_review(
     storage: Storage,
 ):
     return await service.record_score_review(session, principal, storage, workspace_id, body)
+
+
+@router.post("/exam-grading-workspaces/{workspace_id}/visual-selection", response_model=dict)
+@safe
+async def record_exam_visual_selection(
+    workspace_id: UUID,
+    body: VisualSelectionRequest,
+    session: DbSession,
+    principal: AuthorizedPrincipal,
+    storage: Storage,
+):
+    from .visual_selection import select_regions
+
+    return await select_regions(session, principal, storage, workspace_id, body)
+
+
+@router.post(
+    "/exam-grading-workspaces/{workspace_id}/visual-scoring", response_model=dict, status_code=202
+)
+@safe
+async def request_exam_visual_scoring(
+    workspace_id: UUID,
+    body: VisualScoreRequest,
+    session: DbSession,
+    principal: AuthorizedPrincipal,
+    storage: Storage,
+):
+    from .visual_scoring import enqueue
+
+    return await enqueue(session, principal, storage, workspace_id, body)
+
+
+@router.post("/exam-grading-workspaces/{workspace_id}/visual-score-review", response_model=dict)
+@safe
+async def record_exam_visual_score_review(
+    workspace_id: UUID,
+    body: VisualScoreReview,
+    session: DbSession,
+    principal: AuthorizedPrincipal,
+    storage: Storage,
+):
+    from .visual_scoring import record_review
+
+    return await record_review(session, principal, storage, workspace_id, body)

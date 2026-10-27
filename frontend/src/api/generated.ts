@@ -1150,6 +1150,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/exam-grading-workspaces/{workspace_id}/visual-selection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record Exam Visual Selection */
+        post: operations["record_exam_visual_selection_api_v1_exam_grading_workspaces__workspace_id__visual_selection_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-grading-workspaces/{workspace_id}/visual-scoring": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Request Exam Visual Scoring */
+        post: operations["request_exam_visual_scoring_api_v1_exam_grading_workspaces__workspace_id__visual_scoring_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-grading-workspaces/{workspace_id}/visual-score-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record Exam Visual Score Review */
+        post: operations["record_exam_visual_score_review_api_v1_exam_grading_workspaces__workspace_id__visual_score_review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/exam-result-sessions": {
         parameters: {
             query?: never;
@@ -3725,6 +3776,7 @@ export interface components {
                 [key: string]: unknown;
             };
             answer_review: components["schemas"]["AnswerReviewDecisionRead"] | null;
+            visual_selection?: components["schemas"]["VisualSelectionRead"] | null;
             /** Scoring Job Id */
             scoring_job_id: string | null;
             /** Scoring Status */
@@ -3735,6 +3787,10 @@ export interface components {
             grade_input: components["schemas"]["GradeInputDocument"] | null;
             /** History */
             history: components["schemas"]["GradeReviewRevisionDocument"][];
+            visual_proposal?: components["schemas"]["VisualProposal"] | null;
+            visual_grade_input?: components["schemas"]["VisualGradeInput"] | null;
+            /** Visual History */
+            visual_history?: components["schemas"]["VisualReview"][];
             /** History Has More */
             history_has_more: boolean;
         };
@@ -5310,7 +5366,7 @@ export interface components {
             /** Reason */
             reason?: string | null;
             /** Evidence Source */
-            evidence_source?: ("teacher_review" | "omr") | null;
+            evidence_source?: ("teacher_review" | "visual" | "omr") | null;
             /** Omr Decision Id */
             omr_decision_id?: string | null;
         };
@@ -6813,6 +6869,433 @@ export interface components {
             identity: components["schemas"]["IdentityCandidate"] | null;
             /** Pages */
             pages: components["schemas"]["SourcePage"][];
+        };
+        /** VisualCriterionScore */
+        VisualCriterionScore: {
+            /**
+             * Criterion Id
+             * Format: uuid
+             */
+            criterion_id: string;
+            /** Awarded Points */
+            awarded_points: string;
+            /** Rationale */
+            rationale: string;
+            /** Evidence References */
+            evidence_references: components["schemas"]["VisualEvidence"][];
+            /** Max Points */
+            max_points: string;
+        };
+        /** VisualEvidence */
+        VisualEvidence: {
+            /**
+             * Kind
+             * @constant
+             */
+            kind: "image_region";
+            /** Region Index */
+            region_index: number;
+            /** Description */
+            description: string;
+        };
+        /** VisualGradeInput */
+        VisualGradeInput: {
+            /**
+             * Schema Name
+             * @default huipi.grading.visual-input
+             * @constant
+             */
+            schema_name: "huipi.grading.visual-input";
+            /**
+             * Schema Version
+             * @default 1.0
+             * @constant
+             */
+            schema_version: "1.0";
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /**
+             * Selection Id
+             * Format: uuid
+             */
+            selection_id: string;
+            /** Selection Revision */
+            selection_revision: number;
+            /** Selection Sha256 */
+            selection_sha256: string;
+            /**
+             * Submission Id
+             * Format: uuid
+             */
+            submission_id: string;
+            /**
+             * Assignment Id
+             * Format: uuid
+             */
+            assignment_id: string;
+            question: components["schemas"]["GradeInputQuestionSnapshot"];
+            /**
+             * Canonical Artifact Id
+             * Format: uuid
+             */
+            canonical_artifact_id: string;
+            /** Canonical Sha256 */
+            canonical_sha256: string;
+            /**
+             * Alignment Artifact Id
+             * Format: uuid
+             */
+            alignment_artifact_id: string;
+            /** Alignment Sha256 */
+            alignment_sha256: string;
+            /** Assignment Questions Digest */
+            assignment_questions_digest: string;
+            /** Source File Sha256 */
+            source_file_sha256: string;
+            answer_key: components["schemas"]["AnswerKeySnapshot"];
+            /** Rubric Snapshot */
+            rubric_snapshot: components["schemas"]["RubricCriterionSnapshot"][];
+            /** Rubric Sha256 */
+            rubric_sha256: string;
+            /** Regions */
+            regions: components["schemas"]["VisualRegion"][];
+            /**
+             * Artifact Id
+             * Format: uuid
+             */
+            artifact_id: string;
+            /** Input Sha256 */
+            input_sha256: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** VisualProposal */
+        VisualProposal: {
+            /**
+             * Schema Name
+             * @default huipi.grading.visual-proposal
+             * @constant
+             */
+            schema_name: "huipi.grading.visual-proposal";
+            /**
+             * Schema Version
+             * @default 1.0
+             * @constant
+             */
+            schema_version: "1.0";
+            /**
+             * Proposal Id
+             * Format: uuid
+             */
+            proposal_id: string;
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Request Fingerprint */
+            request_fingerprint: string;
+            /**
+             * Grade Input Artifact Id
+             * Format: uuid
+             */
+            grade_input_artifact_id: string;
+            /** Grade Input Sha256 */
+            grade_input_sha256: string;
+            /**
+             * Submission Id
+             * Format: uuid
+             */
+            submission_id: string;
+            /**
+             * Question Id
+             * Format: uuid
+             */
+            question_id: string;
+            /** Model Id */
+            model_id: string;
+            /**
+             * Provider
+             * @enum {string}
+             */
+            provider: "ollama_native" | "openai_compatible";
+            /** Prompt Version */
+            prompt_version: string;
+            /** Generation Config Digest */
+            generation_config_digest: string;
+            /** Criterion Scores */
+            criterion_scores?: components["schemas"]["VisualCriterionScore"][];
+            /** Total Score */
+            total_score?: string | null;
+            /** Max Score */
+            max_score: string;
+            /**
+             * Grading Status
+             * @enum {string}
+             */
+            grading_status: "completed_candidate" | "grading_abstained";
+            /** Reason Codes */
+            reason_codes?: string[];
+            /** Abstention Reason */
+            abstention_reason?: string | null;
+            /** Prompt Tokens */
+            prompt_tokens?: number | null;
+            /** Completion Tokens */
+            completion_tokens?: number | null;
+            /** Model Elapsed Ms */
+            model_elapsed_ms: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * VisualRectangle
+         * @description Coordinates are ten-thousandths of the verified preview dimensions.
+         */
+        VisualRectangle: {
+            /**
+             * Scan Page Id
+             * Format: uuid
+             */
+            scan_page_id: string;
+            /** X0 */
+            x0: number;
+            /** Y0 */
+            y0: number;
+            /** X1 */
+            x1: number;
+            /** Y1 */
+            y1: number;
+        };
+        /** VisualRegion */
+        VisualRegion: {
+            /** Region Index */
+            region_index: number;
+            /**
+             * Scan Page Id
+             * Format: uuid
+             */
+            scan_page_id: string;
+            /**
+             * Scan File Id
+             * Format: uuid
+             */
+            scan_file_id: string;
+            /** Source Page Index */
+            source_page_index: number;
+            /** Page Sha256 */
+            page_sha256: string;
+            /** Crop Sha256 */
+            crop_sha256: string;
+            /** Width */
+            width: number;
+            /** Height */
+            height: number;
+            /** X0 */
+            x0: number;
+            /** Y0 */
+            y0: number;
+            /** X1 */
+            x1: number;
+            /** Y1 */
+            y1: number;
+        };
+        /** VisualReview */
+        VisualReview: {
+            /**
+             * Schema Name
+             * @default huipi.grading.visual-review
+             * @constant
+             */
+            schema_name: "huipi.grading.visual-review";
+            /**
+             * Schema Version
+             * @default 2.0
+             * @constant
+             */
+            schema_version: "2.0";
+            /**
+             * Review Id
+             * Format: uuid
+             */
+            review_id: string;
+            /**
+             * Proposal Id
+             * Format: uuid
+             */
+            proposal_id: string;
+            /**
+             * Grade Input Artifact Id
+             * Format: uuid
+             */
+            grade_input_artifact_id: string;
+            /** Proposal Sha256 */
+            proposal_sha256: string;
+            /** Grade Input Sha256 */
+            grade_input_sha256: string;
+            /**
+             * Submission Id
+             * Format: uuid
+             */
+            submission_id: string;
+            /**
+             * Question Id
+             * Format: uuid
+             */
+            question_id: string;
+            /** Review Revision */
+            review_revision: number;
+            /** Supersedes Review Id */
+            supersedes_review_id?: string | null;
+            /** Reviewer Ref */
+            reviewer_ref: string;
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Request Sha256 */
+            request_sha256: string;
+            /**
+             * Review Status
+             * @enum {string}
+             */
+            review_status: "accepted" | "revised" | "rejected" | "regrading_required";
+            /** Criterion Reviews */
+            criterion_reviews: components["schemas"]["VisualReviewCriterion"][];
+            /** Review Reason Codes */
+            review_reason_codes: ("rubric_interpretation_error" | "incorrect_partial_credit" | "unsupported_score" | "evidence_not_sufficient" | "candidate_not_reliable" | "source_quality_problem" | "additional_evidence_required" | "manual_follow_up_needed" | "other")[];
+            /** Review Comment */
+            review_comment?: string | null;
+            /** Proposed Total Score */
+            proposed_total_score?: string | null;
+            /** Reviewed Total Score */
+            reviewed_total_score?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** VisualReviewCriterion */
+        VisualReviewCriterion: {
+            /**
+             * Criterion Id
+             * Format: uuid
+             */
+            criterion_id: string;
+            /** Proposed Points */
+            proposed_points: string;
+            /** Reviewed Points */
+            reviewed_points: string;
+            /** Max Points */
+            max_points: string;
+            /** Rationale */
+            rationale: string;
+            /** Evidence References */
+            evidence_references: components["schemas"]["VisualEvidence"][];
+            /** Changed */
+            changed: boolean;
+        };
+        /** VisualReviewCriterionInput */
+        VisualReviewCriterionInput: {
+            /**
+             * Criterion Id
+             * Format: uuid
+             */
+            criterion_id: string;
+            /** Reviewed Points */
+            reviewed_points: number | string;
+            /** Rationale */
+            rationale?: string | null;
+            /** Evidence References */
+            evidence_references?: components["schemas"]["VisualEvidence"][] | null;
+        };
+        /** VisualReviewDecision */
+        VisualReviewDecision: {
+            /**
+             * Schema Name
+             * @constant
+             */
+            schema_name: "huipi.grading.visual-review";
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "2.0";
+            /**
+             * Review Status
+             * @enum {string}
+             */
+            review_status: "accepted" | "revised" | "rejected" | "regrading_required";
+            /** Reviewer Ref */
+            reviewer_ref: string;
+            /** Review Reason Codes */
+            review_reason_codes?: ("rubric_interpretation_error" | "incorrect_partial_credit" | "unsupported_score" | "evidence_not_sufficient" | "candidate_not_reliable" | "source_quality_problem" | "additional_evidence_required" | "manual_follow_up_needed" | "other")[];
+            /** Review Comment */
+            review_comment?: string | null;
+            /** Criterion Reviews */
+            criterion_reviews?: components["schemas"]["VisualReviewCriterionInput"][];
+        };
+        /** VisualScoreRequest */
+        VisualScoreRequest: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Expected Selection Revision */
+            expected_selection_revision: number;
+        };
+        /** VisualScoreReview */
+        VisualScoreReview: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            payload: components["schemas"]["VisualReviewDecision"];
+        };
+        /** VisualSelectionRead */
+        VisualSelectionRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Revision */
+            revision: number;
+            /** Active */
+            active: boolean;
+            /** Regions */
+            regions: components["schemas"]["VisualRegion"][];
+        };
+        /** VisualSelectionRequest */
+        VisualSelectionRequest: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "select" | "clear";
+            /** Regions */
+            regions?: components["schemas"]["VisualRectangle"][];
         };
         /** WorkbenchQuestion */
         WorkbenchQuestion: {
@@ -12318,6 +12801,117 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ScoreReview"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_exam_visual_selection_api_v1_exam_grading_workspaces__workspace_id__visual_selection_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VisualSelectionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_exam_visual_scoring_api_v1_exam_grading_workspaces__workspace_id__visual_scoring_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VisualScoreRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_exam_visual_score_review_api_v1_exam_grading_workspaces__workspace_id__visual_score_review_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VisualScoreReview"];
             };
         };
         responses: {

@@ -336,7 +336,9 @@ async def complete(db, p, storage, tid, request):
                 return op["replay"]
             if t["revision"] != request.expected_revision or t["status"] != "in_progress":
                 raise AccessError("marking_revision_conflict", 409)
-            if d["scoring_status"] != "succeeded" or not d["proposal"] or not d["history"]:
+            proposal = d["visual_proposal"] or d["proposal"]
+            history = d["visual_history"] or d["history"]
+            if d["scoring_status"] != "succeeded" or not proposal or not history:
                 raise AccessError("marking_review_required", 409)
             job = await g.row(db, g.S, UUID(d["scoring_job_id"]))
             await g.scoring_context(db, p, job)
@@ -360,7 +362,7 @@ async def complete(db, p, storage, tid, request):
             )
             if (
                 not review
-                or str(review["review_id"]) != d["history"][-1]["review_id"]
+                or str(review["review_id"]) != history[-1]["review_id"]
                 or review["reviewer_user_id"] != p.user_id
                 or review["created_at"] < t["assigned_at"]
                 or review["review_status"] not in {"accepted", "revised"}

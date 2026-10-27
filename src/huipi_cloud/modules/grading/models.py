@@ -53,6 +53,12 @@ class GradeInputArtifact(Base):
             "AND length(trim(object_key)) > 0 AND object_size_bytes > 0",
             name="ck_grade_inputs_storage_metadata",
         ),
+        CheckConstraint(
+            "(schema_version='visual-1.0' AND visual_selection_id IS NOT NULL "
+            "AND review_decision_id IS NULL) OR (schema_version<>'visual-1.0' "
+            "AND visual_selection_id IS NULL AND review_decision_id IS NOT NULL)",
+            name="ck_grade_inputs_source_mode",
+        ),
         Index("ix_grade_inputs_submission_created", "submission_id", "created_at"),
         Index("ix_grade_inputs_question_created", "question_id", "created_at"),
     )
@@ -88,10 +94,13 @@ class GradeInputArtifact(Base):
     )
     alignment_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
     assignment_questions_digest: Mapped[str] = mapped_column(String(64), nullable=False)
-    review_decision_id: Mapped[UUID] = mapped_column(
+    review_decision_id: Mapped[UUID | None] = mapped_column(
         Uuid(as_uuid=True),
         ForeignKey("answer_review_decisions.id", ondelete="RESTRICT"),
-        nullable=False,
+        nullable=True,
+    )
+    visual_selection_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("exam_visual_selections.id", ondelete="RESTRICT")
     )
     review_revision: Mapped[int] = mapped_column(Integer, nullable=False)
     review_request_sha256: Mapped[str] = mapped_column(String(64), nullable=False)

@@ -147,47 +147,61 @@ class ScoringWorker:
             )
         await s.parsing.scripts.verify_sources(self.storage, c.source[2])
         document = await s.read_input(self.storage, indexed, self.config)
-        prompt_version = proposals.production_prompt_version(self.config)
-        reply, model, usage, elapsed = await proposals._call_and_validate(
-            self.provider, document, config=self.config, prompt_version=prompt_version,
-            audit_response=(
-                response_auditor(self.storage, document, job["id"], self.provider, prompt_version)
-                if self.config.grading_strategy == "quote_selection" else None
-            ),
-        )
-        if reply.outcome == "abstain":
-            scores, total, state = [], None, "grading_abstained"
+        if job["visual_selection_id"] is not None:
+            from . import visual_scoring, visual_selection
+
+            images = await visual_selection.materialize(self.storage, document.regions, c.source[2])
+            proposal = await visual_scoring.make_proposal(
+                self.provider, document, images, job["id"], self.config
+            )
         else:
-            scores, total = proposals._validate_candidate_scores(reply, document, self.config)
-            state = "completed_candidate"
+            prompt_version = proposals.production_prompt_version(self.config)
+            reply, model, usage, elapsed = await proposals._call_and_validate(
+                self.provider,
+                document,
+                config=self.config,
+                prompt_version=prompt_version,
+                audit_response=(
+                    response_auditor(
+                        self.storage, document, job["id"], self.provider, prompt_version
+                    )
+                    if self.config.grading_strategy == "quote_selection"
+                    else None
+                ),
+            )
+            if reply.outcome == "abstain":
+                scores, total, state = [], None, "grading_abstained"
+            else:
+                scores, total = proposals._validate_candidate_scores(reply, document, self.config)
+                state = "completed_candidate"
+            proposal = GradeProposalDocument(
+                proposal_id=uuid4(),
+                request_id=job["id"],
+                request_fingerprint=proposals._request_fingerprint(
+                    document, self.provider, prompt_version=prompt_version
+                ),
+                grade_input_artifact_id=document.artifact_id,
+                grade_input_sha256=document.input_sha256,
+                submission_id=document.submission_id,
+                question_id=document.question.question_id,
+                model_id=model,
+                provider=self.provider.provider_name,
+                prompt_version=prompt_version,
+                generation_config_digest=self.provider.generation_config_digest,
+                criterion_scores=scores,
+                total_score=total,
+                max_score=document.question.max_score,
+                grading_status=state,
+                reason_codes=reply.reason_codes,
+                abstention_reason=reply.abstention_reason,
+                prompt_tokens=usage[0],
+                completion_tokens=usage[1],
+                model_elapsed_ms=elapsed,
+                created_at=datetime.now(UTC),
+            )
         await s.parsing.scripts.verify_sources(self.storage, c.source[2])
         async with worker_transaction(self.factory) as db:
             await self.valid(db, job)
-        proposal = GradeProposalDocument(
-            proposal_id=uuid4(),
-            request_id=job["id"],
-            request_fingerprint=proposals._request_fingerprint(
-                document, self.provider, prompt_version=prompt_version
-            ),
-            grade_input_artifact_id=document.artifact_id,
-            grade_input_sha256=document.input_sha256,
-            submission_id=document.submission_id,
-            question_id=document.question.question_id,
-            model_id=model,
-            provider=self.provider.provider_name,
-            prompt_version=prompt_version,
-            generation_config_digest=self.provider.generation_config_digest,
-            criterion_scores=scores,
-            total_score=total,
-            max_score=document.question.max_score,
-            grading_status=state,
-            reason_codes=reply.reason_codes,
-            abstention_reason=reply.abstention_reason,
-            prompt_tokens=usage[0],
-            completion_tokens=usage[1],
-            model_elapsed_ms=elapsed,
-            created_at=datetime.now(UTC),
-        )
         stored = await s.upload(
             self.storage,
             "proposal",
