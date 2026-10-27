@@ -7,6 +7,7 @@ import ipaddress
 import json
 import os
 import socket
+import sys
 import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -155,6 +156,42 @@ async def test_teacher_workbench_browser_end_to_end(
                 role_version_id=PAPER_OPERATOR_ROLE,
                 scope_id=grants.INSTALLATION_SCOPE,
             )
+    if os.getenv("RUN_OMR_BROWSER") == "1":
+        from huipi_cloud.modules.exam_grading import service as marking
+        from huipi_cloud.modules.exam_grading.permissions import MARK_OPERATOR_ROLE
+        from huipi_cloud.modules.exam_results.access import grant_class
+        from huipi_cloud.modules.papers.permissions import PAPER_OPERATOR_ROLE
+
+        async with ctx.factory() as db:
+            await marking.enable_operator(
+                db, ctx.users["admin"].id, ctx.users["admin"].id, uuid4(), "synthetic OMR browser"
+            )
+        for role, scope in [
+            (PAPER_OPERATOR_ROLE, grants.INSTALLATION_SCOPE),
+            (UUID(MARK_OPERATOR_ROLE), scope_id),
+        ]:
+            async with ctx.factory() as db:
+                value = await grants.grant_role(
+                    db,
+                    ctx.principals["admin"],
+                    uuid4(),
+                    user_id=ctx.users["a"].id,
+                    role_version_id=role,
+                    scope_id=scope,
+                )
+                if role == UUID(MARK_OPERATOR_ROLE):
+                    omr_grant = value
+        for cls in scan_context.classes:
+            async with ctx.factory() as db:
+                await grant_class(
+                    db,
+                    ctx.principals["admin"],
+                    uuid4(),
+                    grant_id=UUID(omr_grant["grant_id"]),
+                    session_id=UUID(scan_context.session["id"]),
+                    class_id=cls.id,
+                    export_allowed=True,
+                )
     creator_source = None
     if os.getenv("RUN_PAPER_CREATOR_BROWSER") == "1":
         from huipi_cloud.modules.papers.permissions import PAPER_CREATOR_ROLE
@@ -659,6 +696,8 @@ async def test_teacher_workbench_browser_end_to_end(
             WORKBENCH_CONFIG_PAPER_B=config_paper_b["paper_version_id"] if config_paper_b else "",
             WORKBENCH_CONFIG_CLASS_A=str(scan_context.classes[0].id),
             WORKBENCH_CONFIG_CLASS_B=str(scan_context.classes[1].id),
+            WORKBENCH_OMR_PAPER=ctx.paper["paper_version_id"],
+            WORKBENCH_PYTHON=sys.executable,
         )
         # Dedicated exam worker consumes real PG jobs and persists real private S3 objects.
         config = Settings(
@@ -897,6 +936,22 @@ async def test_teacher_workbench_browser_end_to_end(
 
                 assigned = (await db.execute(select(task_service.T))).mappings().all()
                 assert len(assigned) == 1 and assigned[0]["status"] == "in_progress"
+        elif os.getenv("RUN_OMR_BROWSER") == "1":
+            assert len(scan_files) == 2 and len(scan_pages) == 5
+            omr_file = next(f for f in scan_files if f.original_filename == "synthetic-filled.pdf")
+            assert omr_file.status == "stored"
+            assert len([p for p in scan_pages if p.file_id == omr_file.id]) == 1
+            async with ctx.factory() as db:
+                choices = (
+                    await db.execute(
+                        text("SELECT choice, points FROM omr_decisions ORDER BY choice")
+                    )
+                ).all()
+                assert [(c, str(points)) for c, points in choices] == [
+                    ("A", "10.00"),
+                    ("B", "10.00"),
+                ]
+                assert await db.scalar(text("SELECT count(*) FROM omr_recognitions")) == 1
         else:
             assert len(scan_files) == 1 and len(scan_pages) == 4
         assert len(rows) == 3 and rows[0].decision == "response_present"
@@ -916,6 +971,13 @@ async def test_teacher_workbench_browser_end_to_end(
         if parse_executor is not None:
             await parse_executor.aclose()
         async with ctx.factory() as db, db.begin():
+            if os.getenv("RUN_OMR_BROWSER") == "1":
+                await db.execute(
+                    text(
+                        "TRUNCATE omr_operations,omr_decisions,omr_recognitions,"
+                        "omr_template_questions,omr_templates CASCADE"
+                    )
+                )
             await db.execute(text("TRUNCATE marking_operations,marking_tasks CASCADE"))
             await db.execute(
                 text(

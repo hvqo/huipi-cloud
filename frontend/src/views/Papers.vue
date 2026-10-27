@@ -363,6 +363,12 @@ watch(
       <p v-if="paper.status !== 'draft'" class="paper-warning">
         本版本只读保留。需要修改时请创建后继草稿；不能解锁或覆盖原版。
       </p>
+      <RouterLink
+        v-if="paper.status === 'locked'"
+        :to="{ path: '/omr', query: { paper: paper.id } }"
+      >
+        配置答题卡 →
+      </RouterLink>
       <p v-if="dirty" role="status" class="paper-warning">
         有未保存修改，锁定与版本操作暂不可用。保存题目和保存题序是两项独立操作。
       </p>

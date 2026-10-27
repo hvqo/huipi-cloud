@@ -101,6 +101,7 @@ class PaperQuestionMapping(Base):
             ondelete="RESTRICT",
         ),
         UniqueConstraint("paper_version_id", "question_key", name="uq_mapping_question_key"),
+        UniqueConstraint("id", "paper_version_id", name="uq_mapping_id_paper"),
         UniqueConstraint("paper_version_id", "legacy_question_id", name="uq_mapping_question"),
         UniqueConstraint("paper_version_id", "sort_order", name="uq_mapping_order"),
         UniqueConstraint("paper_version_id", "printed_label", name="uq_mapping_label"),

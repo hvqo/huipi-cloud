@@ -345,6 +345,7 @@ onUnmounted(() => {
       <div>
         <RouterLink to="/scans">← 考试扫描</RouterLink>
         <h1>人工分卷与身份确认</h1>
+        <RouterLink :to="{ path: '/omr', query: { session: sid } }">答题卡识别与确认 →</RouterLink>
         <p>先整理答卷页面，再核对名单。原始扫描页始终保留。</p>
       </div>
       <button :disabled="!canEdit" class="primary" @click="reset">新建答卷</button>

@@ -19,6 +19,7 @@ from huipi_cloud.modules.exam_recovery.policies import POLICIES as RECOVERY_POLI
 from huipi_cloud.modules.identity import service
 from huipi_cloud.modules.identity.protocol import AccessError, Principal
 from huipi_cloud.modules.marking_tasks.policies import TASK_POLICIES
+from huipi_cloud.modules.omr.policies import POLICIES as OMR_POLICIES
 from huipi_cloud.modules.papers.web_policies import POLICIES as PAPER_WEB_POLICIES
 from huipi_cloud.modules.papers.web_policies import PREFIX as PAPER_WEB_PREFIX
 
@@ -163,6 +164,7 @@ SCAN_POLICIES = {
 }
 
 POLICIES = {
+    **{name: {rule[0]} for name, rule in OMR_POLICIES.items()},
     **{name: {rule[0]} for name, rule in TASK_POLICIES.items()},
     **{name: {rule[0]} for name, rule in RECOVERY_POLICIES.items()},
     **{name: {policy[0]} for name, policy in PAPER_WEB_POLICIES.items()},
@@ -232,6 +234,7 @@ GRADE_REVIEW_PATH = (
 )
 
 POLICY_PATHS = {
+    **{name: rule[1] for name, rule in OMR_POLICIES.items()},
     **{name: rule[1] for name, rule in TASK_POLICIES.items()},
     **{name: rule[1] for name, rule in RECOVERY_POLICIES.items()},
     **{name: PAPER_WEB_PREFIX + policy[1] for name, policy in PAPER_WEB_POLICIES.items()},
@@ -391,6 +394,16 @@ async def authorize_request(
                 except ValueError:
                     raise AccessError("invalid_resource_id", 422) from None
                 await authorize(session, current, PAPER_WEB_POLICIES[name][2], pid)
+                return current
+            if name in OMR_POLICIES:
+                from huipi_cloud.modules.omr.service import http_authorize
+
+                try:
+                    await http_authorize(
+                        session, current, request.path_params, OMR_POLICIES[name][2]
+                    )
+                except ValueError:
+                    raise AccessError("invalid_resource_id", 422) from None
                 return current
             if name in CONFIG_POLICIES:
                 from huipi_cloud.modules.exam_configuration.service import http_authorize

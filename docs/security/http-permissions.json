@@ -1,5 +1,5 @@
 {
-  "version": "exam-recovery-1",
+  "version": "exam-omr-1",
   "operations": [
     {
       "method": "POST",
@@ -816,6 +816,54 @@
       "path": "/api/v1/exam-sessions/{session_id}/exceptions",
       "policy": "inspect_exam_recovery",
       "permission": "current_exam_recovery_scope"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/omr/papers/{paper_id}",
+      "policy": "omr_paper_view",
+      "permission": "paper_read"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/omr/papers/{paper_id}",
+      "policy": "omr_create_template",
+      "permission": "paper_write"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/omr/templates/{template_id}/print.pdf",
+      "policy": "omr_print_template",
+      "permission": "template"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/answer-scripts/{script_id}/omr",
+      "policy": "omr_current",
+      "permission": "script_read"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/answer-scripts/{script_id}/omr",
+      "policy": "omr_recognize",
+      "permission": "script_write"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/omr/recognitions/{recognition_id}",
+      "policy": "omr_inspect",
+      "permission": "recognition_read"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/omr/recognitions/{recognition_id}/image",
+      "policy": "omr_image",
+      "permission": "recognition_read"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/omr/recognitions/{recognition_id}/confirm",
+      "policy": "omr_confirm",
+      "permission": "recognition_write"
     }
   ]
 }

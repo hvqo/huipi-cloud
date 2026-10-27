@@ -362,51 +362,55 @@ async def student_result(db, p, storage, entry, roster, cache, source_rows, conf
         .mappings()
         .first()
     )
-    if job is None or job["status"] not in {"succeeded"}:
-        result.status, result.reasons = "incomplete", ["parsing_not_complete"]
-        return result
+    parsing_not_complete = job is None or job["status"] != "succeeded"
     try:
-        c = await g.context(db, p, job["id"])
-        for row in c.source[2]:
-            source_rows[row["id"]] = row
-        # Canonical remains a checked source, even though only score summaries are returned.
-        ca = c.canonical
-        if ca["bucket"] != storage.bucket:
-            raise AccessError("result_storage_unavailable", 503)
-        checked = await g._read_checked_object(
-            storage,
-            ca["canonical_object_key"],
-            expected_size=ca["canonical_size_bytes"],
-            expected_sha256=ca["canonical_sha256"],
-            maximum=config.canonical_max_document_bytes,
-        )
-        canonical = g.CanonicalDocument.model_validate_json(checked.data)
-        if (
-            canonical.document_id != ca["id"]
-            or canonical.submission_id != c.link["submission_id"]
-            or canonical.source_sha256 != ca["source_sha256"]
-            or canonical.source_artifact_id != ca["parsed_artifact_id"]
-        ):
-            raise AccessError("result_source_changed", 409)
-        workspaces = (
-            (await db.execute(select(g.W).where(g.W.c.parsing_job_id == job["id"])))
-            .mappings()
-            .all()
-        )
-        by_mapping = {w["paper_question_mapping_id"]: w for w in workspaces}
-        result.questions = [
-            await question_result(
-                db,
-                p,
+        from huipi_cloud.modules.omr.service import result_questions
+
+        objective = await result_questions(db, p, root, version, pv, source_rows)
+        by_mapping = {q.mapping_id: q for q in result.questions}
+        by_mapping.update(objective)
+        if not parsing_not_complete and len(objective) < len(mappings):
+            c = await g.context(db, p, job["id"])
+            for row in c.source[2]:
+                source_rows[row["id"]] = row
+            # Canonical remains a checked source, even though only score summaries are returned.
+            ca = c.canonical
+            if ca["bucket"] != storage.bucket:
+                raise AccessError("result_storage_unavailable", 503)
+            checked = await g._read_checked_object(
                 storage,
-                c,
-                by_mapping.get(m["id"]),
-                m,
-                rules[m["legacy_question_id"]],
-                config,
+                ca["canonical_object_key"],
+                expected_size=ca["canonical_size_bytes"],
+                expected_sha256=ca["canonical_sha256"],
+                maximum=config.canonical_max_document_bytes,
             )
-            for m in mappings
-        ]
+            canonical = g.CanonicalDocument.model_validate_json(checked.data)
+            if (
+                canonical.document_id != ca["id"]
+                or canonical.submission_id != c.link["submission_id"]
+                or canonical.source_sha256 != ca["source_sha256"]
+                or canonical.source_artifact_id != ca["parsed_artifact_id"]
+            ):
+                raise AccessError("result_source_changed", 409)
+            workspaces = (
+                (await db.execute(select(g.W).where(g.W.c.parsing_job_id == job["id"])))
+                .mappings()
+                .all()
+            )
+            workspaces_by_mapping = {w["paper_question_mapping_id"]: w for w in workspaces}
+            for m in mappings:
+                if m["id"] not in objective:
+                    by_mapping[m["id"]] = await question_result(
+                        db,
+                        p,
+                        storage,
+                        c,
+                        workspaces_by_mapping.get(m["id"]),
+                        m,
+                        rules[m["legacy_question_id"]],
+                        config,
+                    )
+        result.questions = [by_mapping[m["id"]] for m in mappings]
     except AccessError as error:
         if error.status_code in {413, 503}:
             raise
@@ -424,6 +428,8 @@ async def student_result(db, p, storage, entry, roster, cache, source_rows, conf
     if result.status == "complete":
         result.total = result.subtotal
     result.reasons = sorted({q.status for q in result.questions if q.status != "reviewed"})
+    if parsing_not_complete and any(m["id"] not in objective for m in mappings):
+        result.reasons.append("parsing_not_complete")
     return result
 
 
