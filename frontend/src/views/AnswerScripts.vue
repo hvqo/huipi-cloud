@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import ScanThumbnail from '../components/ScanThumbnail.vue'
+import ExceptionBadge from '../components/ExceptionBadge.vue'
 import ExamGrading from '../components/ExamGrading.vue'
 import { scripts } from '../api/answer-scripts'
 import { examParsing } from '../api/exam-parsing'
@@ -206,23 +207,24 @@ function reset() {
   entryId.value = ''
   paperId.value = ''
 }
+async function loadScript(item: Schema['ScriptRead']) {
+  current.value = await scripts.inspect(item.script_id)
+  selected.value = [...current.value.current.pages]
+  complete.value = current.value.current.completeness === 'complete'
+  reason.value = ''
+  entryId.value = ''
+  paperId.value = ''
+  history.value = []
+  historyOffset.value = 0
+  historyTotal.value = 0
+  notice.value = ''
+  parseRequestId.value = ''
+  parsedPage.value = undefined
+  parsedPageNumber.value = 0
+  await fetchParsing()
+}
 async function choose(item: Schema['ScriptRead']) {
-  await run(async () => {
-    current.value = await scripts.inspect(item.script_id)
-    selected.value = [...current.value.current.pages]
-    complete.value = current.value.current.completeness === 'complete'
-    reason.value = ''
-    entryId.value = ''
-    paperId.value = ''
-    history.value = []
-    historyOffset.value = 0
-    historyTotal.value = 0
-    notice.value = ''
-    parseRequestId.value = ''
-    parsedPage.value = undefined
-    parsedPageNumber.value = 0
-    await fetchParsing()
-  })
+  await run(() => loadScript(item))
 }
 async function view(page: Schema['SourcePage']) {
   await run(async () => {
@@ -326,7 +328,7 @@ onMounted(() =>
     if (requested) {
       const value = await scripts.inspect(requested)
       if (value.exam_session_id !== sid) throw new Error('答卷不属于当前场次。')
-      await choose(value)
+      await loadScript(value)
     }
   }),
 )
@@ -347,6 +349,7 @@ onUnmounted(() => {
       </div>
       <button :disabled="!canEdit" class="primary" @click="reset">新建答卷</button>
     </header>
+    <ExceptionBadge :session-id="sid" />
     <div v-if="error" role="alert" class="script-alert">{{ error }}</div>
     <div v-if="notice" role="status" class="script-notice">{{ notice }}</div>
     <div v-if="pending" class="script-alert">

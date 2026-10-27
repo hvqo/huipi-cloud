@@ -15,6 +15,7 @@ from huipi_cloud.infrastructure.auth.jwt import TokenVerifier, VerifiedIdentity
 from huipi_cloud.infrastructure.database import session as database
 from huipi_cloud.modules.exam_configuration.policies import POLICIES as CONFIG_POLICIES
 from huipi_cloud.modules.exam_configuration.policies import PREFIX as CONFIG_PREFIX
+from huipi_cloud.modules.exam_recovery.policies import POLICIES as RECOVERY_POLICIES
 from huipi_cloud.modules.identity import service
 from huipi_cloud.modules.identity.protocol import AccessError, Principal
 from huipi_cloud.modules.marking_tasks.policies import TASK_POLICIES
@@ -163,6 +164,7 @@ SCAN_POLICIES = {
 
 POLICIES = {
     **{name: {rule[0]} for name, rule in TASK_POLICIES.items()},
+    **{name: {rule[0]} for name, rule in RECOVERY_POLICIES.items()},
     **{name: {policy[0]} for name, policy in PAPER_WEB_POLICIES.items()},
     **{name: {policy[0]} for name, policy in CONFIG_POLICIES.items()},
     **{name: {policy[0]} for name, policy in RESULT_POLICIES.items()},
@@ -231,6 +233,7 @@ GRADE_REVIEW_PATH = (
 
 POLICY_PATHS = {
     **{name: rule[1] for name, rule in TASK_POLICIES.items()},
+    **{name: rule[1] for name, rule in RECOVERY_POLICIES.items()},
     **{name: PAPER_WEB_PREFIX + policy[1] for name, policy in PAPER_WEB_POLICIES.items()},
     **{name: CONFIG_PREFIX + policy[1] for name, policy in CONFIG_POLICIES.items()},
     **{name: policy[1] for name, policy in RESULT_POLICIES.items()},
@@ -409,6 +412,15 @@ async def authorize_request(
                     await authorize(
                         session, current, UUID(str(sid)), exporting=RESULT_POLICIES[name][2]
                     )
+                return current
+            if name in RECOVERY_POLICIES:
+                from huipi_cloud.modules.exam_recovery.service import scope
+
+                if name == "inspect_exam_recovery":
+                    try:
+                        await scope(session, current, UUID(str(request.path_params["session_id"])))
+                    except ValueError:
+                        raise AccessError("invalid_resource_id", 422) from None
                 return current
             if name in TASK_POLICIES:
                 from huipi_cloud.modules.marking_tasks import service as marking

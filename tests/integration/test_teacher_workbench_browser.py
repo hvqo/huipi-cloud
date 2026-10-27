@@ -294,7 +294,7 @@ async def test_teacher_workbench_browser_end_to_end(
                         scope_id=grants.INSTALLATION_SCOPE,
                     )
     marking_teacher_ids = {}
-    if os.getenv("RUN_MARKING_TASKS_BROWSER") == "1":
+    if os.getenv("RUN_MARKING_TASKS_BROWSER") == "1" or os.getenv("RUN_RECOVERY_BROWSER") == "1":
         from huipi_cloud.modules.marking_tasks import service as tasks_service
         from huipi_cloud.modules.marking_tasks.permissions import MANAGER_ROLE, TEACHER_ROLE
 
@@ -336,6 +336,36 @@ async def test_teacher_workbench_browser_end_to_end(
                 role_version_id=MANAGER_ROLE,
                 scope_id=scope_id,
             )
+    if os.getenv("RUN_RECOVERY_BROWSER") == "1":
+        original_upload = ctx.storage.upload_path
+        failed_uploads = set()
+
+        async def interrupt_recovery_upload(path, key, content_type):
+            if "/exam-scans/" in key and key.endswith("/original.pdf"):
+                async with ctx.factory() as db:
+                    file = (
+                        (
+                            await db.execute(
+                                select(ScanFile.__table__).where(
+                                    ScanFile.__table__.c.object_key == key
+                                )
+                            )
+                        )
+                        .mappings()
+                        .first()
+                    )
+                if (
+                    file
+                    and file["original_filename"] == "recover-upload.pdf"
+                    and file["id"] not in failed_uploads
+                ):
+                    failed_uploads.add(file["id"])
+                    from huipi_cloud.infrastructure.storage.s3 import StorageUnavailableError
+
+                    raise StorageUnavailableError("synthetic first upload interruption")
+            return await original_upload(path, key, content_type)
+
+        monkeypatch.setattr(ctx.storage, "upload_path", interrupt_recovery_upload)
     worker_stop = asyncio.Event()
     worker_task = None
     grading_task = None
@@ -603,6 +633,10 @@ async def test_teacher_workbench_browser_end_to_end(
             scan_pdf.write_bytes(grading_mixed_scan_pdf())
         else:
             scan_pdf.write_bytes(mixed_scan_pdf())
+        recovery_pdf = tmp_path / "recover-upload.pdf"
+        from test_scan_intake import pdf_bytes
+
+        recovery_pdf.write_bytes(pdf_bytes(1, label="Synthetic supplementary sheet Class 1 N001"))
         browser_env = dict(
             os.environ,
             WORKBENCH_URL=origin,
@@ -613,6 +647,7 @@ async def test_teacher_workbench_browser_end_to_end(
             WORKBENCH_IMAGE_SID=image_sid,
             WORKBENCH_SCAN_SESSION=scan_context.session["id"],
             WORKBENCH_SCAN_PDF=str(scan_pdf),
+            WORKBENCH_RECOVERY_PDF=str(recovery_pdf),
             WORKBENCH_PAPER_SOURCE=str(ctx.aid),
             WORKBENCH_CREATOR_SOURCE=str(creator_source or ""),
             WORKBENCH_MARKER_A=marking_teacher_ids.get("marker_a", ""),
@@ -631,6 +666,8 @@ async def test_teacher_workbench_browser_end_to_end(
             parsing_lease_seconds=180,
             parsing_heartbeat_seconds=2,
             parsing_poll_seconds=0.1,
+            parsing_retry_base_seconds=1,
+            parsing_retry_max_seconds=1,
             parsing_execution_timeout_seconds=240,
         )
         backend = ExamBackend(ctx.storage, config)
@@ -654,6 +691,25 @@ async def test_teacher_workbench_browser_end_to_end(
             from test_exam_parsing import SyntheticExecutor
 
             parser = SyntheticExecutor(ctx.storage)
+            if os.getenv("RUN_RECOVERY_BROWSER") == "1":
+                normal_execute = parser.execute
+
+                async def recoverable_failure(task):
+                    async with ctx.factory() as db:
+                        job = await exam_parsing_service.scripts.exams.row(
+                            db, exam_parsing_service.J, task.task_id
+                        )
+                        version = await exam_parsing_service.scripts.exams.row(
+                            db, scripts.V, job["answer_script_version_id"]
+                        )
+                    if version["reason"] == "异常补救：测试解析资源故障":
+                        from huipi_cloud.modules.parsing.errors import RetryableParsingError
+
+                        raise RetryableParsingError("parser_unavailable")
+                    return await normal_execute(task)
+
+                parser.execute = recoverable_failure
+
         parse_executor = ProtectedExecutor(parser, backend)
         worker = ParsingWorker(ctx.factory, parse_executor, config, repository_backend=backend)
         worker_task = asyncio.create_task(worker.run(worker_stop))
@@ -822,9 +878,27 @@ async def test_teacher_workbench_browser_end_to_end(
         async with ctx.factory() as db:
             scan_files = list((await db.scalars(select(ScanFile))).all())
             scan_pages = list((await db.scalars(select(ScanPage))).all())
-        assert len(scan_files) == 1 and scan_files[0].status == "stored"
-        assert scan_files[0].sha256 == hashlib.sha256(scan_pdf.read_bytes()).hexdigest()
-        assert len(scan_pages) == 4 and all(p.identity_status == "unconfirmed" for p in scan_pages)
+        original_sha = hashlib.sha256(scan_pdf.read_bytes()).hexdigest()
+        originals = [f for f in scan_files if f.sha256 == original_sha]
+        assert len(originals) == 1 and originals[0].status == "stored"
+        original_pages = [p for p in scan_pages if p.file_id == originals[0].id]
+        assert len(original_pages) == 4 and all(
+            p.identity_status == "unconfirmed" for p in original_pages
+        )
+        if os.getenv("RUN_RECOVERY_BROWSER") == "1":
+            assert len(scan_files) == 2 and len(scan_pages) == 5
+            recovered = next(f for f in scan_files if f.original_filename == "recover-upload.pdf")
+            assert recovered.status == "stored" and recovered.attempt_number == 2
+            async with ctx.factory() as db:
+                jobs = (await db.execute(select(exam_parsing_service.J))).mappings().all()
+                assert any(j["status"] == "failed" and j["attempt_count"] == 3 for j in jobs)
+                assert sum(j["status"] == "succeeded" for j in jobs) == 3
+                from huipi_cloud.modules.marking_tasks import service as task_service
+
+                assigned = (await db.execute(select(task_service.T))).mappings().all()
+                assert len(assigned) == 1 and assigned[0]["status"] == "in_progress"
+        else:
+            assert len(scan_files) == 1 and len(scan_pages) == 4
         assert len(rows) == 3 and rows[0].decision == "response_present"
         assert all(row.reviewer_user_id is not None for row in rows)
         assert len({row.request_id for row in rows}) == len(rows)

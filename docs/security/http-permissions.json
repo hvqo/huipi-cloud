@@ -1,5 +1,5 @@
 {
-  "version": "collaborative-marking-1",
+  "version": "exam-recovery-1",
   "operations": [
     {
       "method": "POST",
@@ -804,6 +804,18 @@
       "path": "/api/v1/marking-tasks/{task_id}/pages/{page_id}/preview",
       "policy": "preview_marking_page",
       "permission": "exam.task.work"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recovery-sessions",
+      "policy": "list_recovery_sessions",
+      "permission": "current_exam_recovery_scope"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{session_id}/exceptions",
+      "policy": "inspect_exam_recovery",
+      "permission": "current_exam_recovery_scope"
     }
   ]
 }

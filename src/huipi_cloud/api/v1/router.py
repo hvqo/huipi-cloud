@@ -15,6 +15,7 @@ from huipi_cloud.modules.canonical_documents.router import router as canonical_d
 from huipi_cloud.modules.exam_configuration.router import router as exam_configuration_router
 from huipi_cloud.modules.exam_grading.router import router as exam_grading_router
 from huipi_cloud.modules.exam_parsing.router import router as exam_parse_router
+from huipi_cloud.modules.exam_recovery.router import router as recovery_router
 from huipi_cloud.modules.exam_results.router import router as exam_results_router
 from huipi_cloud.modules.grading.grade_review_router import router as grade_review_router
 from huipi_cloud.modules.identity.admin_router import router as admin_router
@@ -72,3 +73,6 @@ api_router.include_router(paper_web_router)
 
 
 api_router.include_router(marking_tasks_router)
+
+
+api_router.include_router(recovery_router)
