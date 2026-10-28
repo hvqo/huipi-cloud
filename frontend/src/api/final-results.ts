@@ -23,7 +23,7 @@ export interface Version {
   published_at: string | null
 }
 export interface FinalRead {
-  version: Version
+  version: Pick<Version, 'id' | 'version_no' | 'status' | 'published_at' | 'supersedes_id'>
   result: Omit<Schema['Preview'], 'published'> & { published: boolean }
   statistics: {
     completion_definition: string
