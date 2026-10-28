@@ -1,5 +1,5 @@
 {
-  "version": "exam-omr-1",
+  "version": "exam-visual-grading-1",
   "operations": [
     {
       "method": "POST",
@@ -485,6 +485,24 @@
       "method": "POST",
       "path": "/api/v1/exam-grading-workspaces/{workspace_id}/score-review",
       "policy": "record_exam_score_review",
+      "permission": "exam.score.review"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-grading-workspaces/{workspace_id}/visual-selection",
+      "policy": "record_exam_visual_selection",
+      "permission": "exam.answer.review"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-grading-workspaces/{workspace_id}/visual-scoring",
+      "policy": "request_exam_visual_scoring",
+      "permission": "exam.score.request"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-grading-workspaces/{workspace_id}/visual-score-review",
+      "policy": "record_exam_visual_score_review",
       "permission": "exam.score.review"
     },
     {

@@ -465,11 +465,12 @@ async def test_parallel_assignment_has_one_winner_and_guarded_downgrade(
     assert sorted(r.status_code for r in responses) == [200, 409]
     async with c.factory() as db:
         before = (await db.execute(select(tasks.T))).mappings().all()
+        head_before = await db.scalar(text("SELECT version_num FROM alembic_version"))
     result = await alembic(postgres_engine.url, "downgrade", "b15b71d5f016", success=False)
     assert result.returncode != 0 and "marking_facts_prevent_downgrade" in result.stderr
     async with c.factory() as db:
         assert (await db.execute(select(tasks.T))).mappings().all() == before
-        assert await db.scalar(text("SELECT version_num FROM alembic_version")) == "b16a82e6a017"
+        assert await db.scalar(text("SELECT version_num FROM alembic_version")) == head_before
 
 
 @pytest.mark.anyio

@@ -50,7 +50,7 @@ class QuestionResult(ReadModel):
     review_revision: int | None = None
     review_status: str | None = None
     reason: str | None = None
-    evidence_source: Literal["teacher_review", "omr"] | None = None
+    evidence_source: Literal["teacher_review", "visual", "omr"] | None = None
     omr_decision_id: UUID | None = None
 
 

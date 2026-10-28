@@ -94,6 +94,21 @@ EXAM_MARK_POLICIES = {
         "/exam-grading-workspaces/{workspace_id}/score-review",
         "exam.score.review",
     ),
+    "record_exam_visual_selection": (
+        "POST",
+        "/exam-grading-workspaces/{workspace_id}/visual-selection",
+        "exam.answer.review",
+    ),
+    "request_exam_visual_scoring": (
+        "POST",
+        "/exam-grading-workspaces/{workspace_id}/visual-scoring",
+        "exam.score.request",
+    ),
+    "record_exam_visual_score_review": (
+        "POST",
+        "/exam-grading-workspaces/{workspace_id}/visual-score-review",
+        "exam.score.review",
+    ),
 }
 
 EXAM_PARSE_POLICIES = {

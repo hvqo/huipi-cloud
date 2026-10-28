@@ -5,6 +5,7 @@ import { request, ApiError, type Schema, type Region } from '../api/client'
 import { selectedRegion, addRegion } from '../lib/selection'
 import { scans } from '../api/scans'
 import ScanThumbnail from './ScanThumbnail.vue'
+import VisualGrading from './VisualGrading.vue'
 
 const props = defineProps<{
   jobId: string
@@ -386,7 +387,14 @@ onUnmounted(() => {
           </p>
         </section>
       </div>
-      <section>
+      <VisualGrading
+        :details="current"
+        :user-id="userId"
+        :disabled="locked"
+        :load-preview="taskPreview"
+        @changed="run(refresh)"
+      />
+      <section v-if="!current.visual_selection?.active">
         <h3>AI 候选评分</h3>
         <p role="status">{{ labels[current.scoring_status] || current.scoring_status }}</p>
         <p v-if="current.scoring_status === 'invalidated' || current.scoring_status === 'failed'">
@@ -486,7 +494,7 @@ onUnmounted(() => {
           </div>
         </template>
       </section>
-      <section>
+      <section v-if="!current.visual_selection?.active">
         <h3>教师审核历史</h3>
         <p v-if="current.history_has_more">仅展示最近20次修订，较早记录仍保留于审计历史。</p>
         <p v-if="!current.history.length">尚无审核记录。</p>

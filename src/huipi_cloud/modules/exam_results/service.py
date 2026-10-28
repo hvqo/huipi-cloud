@@ -184,15 +184,17 @@ async def question_result(db, p, storage, c, workspace, mapping, rules, config):
     )
     if not workspace:
         return result
+    from huipi_cloud.modules.exam_grading import visual_selection
+
+    selection = await visual_selection.latest(db, workspace["id"])
+    job_query = select(g.S).where(g.S.c.workspace_id == workspace["id"])
+    if selection and selection["active"]:
+        job_query = job_query.where(g.S.c.visual_selection_id == selection["id"])
+        result.evidence_source = "visual"
+    else:
+        job_query = job_query.where(g.S.c.visual_selection_id.is_(None))
     job = (
-        (
-            await db.execute(
-                select(g.S)
-                .where(g.S.c.workspace_id == workspace["id"])
-                .order_by(g.S.c.created_at.desc(), g.S.c.id.desc())
-                .limit(1)
-            )
-        )
+        (await db.execute(job_query.order_by(g.S.c.created_at.desc(), g.S.c.id.desc()).limit(1)))
         .mappings()
         .first()
     )
@@ -214,10 +216,23 @@ async def question_result(db, p, storage, c, workspace, mapping, rules, config):
             return result
         pr = await g.row(db, g.GP, job["proposal_id"])
         doc = await g.read_input(storage, indexed, config)
+        is_visual = job["visual_selection_id"] is not None
+        if is_visual:
+            from huipi_cloud.modules.exam_grading.visual_protocol import VisualProposal
+            from huipi_cloud.modules.exam_grading.visual_scoring import (
+                validate_binding as validate_visual_binding,
+            )
+
         proposal = await g.read_document(
-            storage, pr, g.GradeProposalDocument, config.grading_max_proposal_bytes
+            storage,
+            pr,
+            VisualProposal if is_visual else g.GradeProposalDocument,
+            config.grading_max_proposal_bytes,
         )
-        g.reviews._validate_proposal_binding(proposal, doc, config)
+        if is_visual:
+            validate_visual_binding(proposal, doc, config)
+        else:
+            g.reviews._validate_proposal_binding(proposal, doc, config)
         if {r.criterion_id: r.points for r in doc.rubric_snapshot} != rules:
             raise AccessError("result_rubric_changed", 409)
         result.proposal_id = proposal.proposal_id
@@ -239,7 +254,7 @@ async def question_result(db, p, storage, c, workspace, mapping, rules, config):
         if review is None:
             result.status = "awaiting_review"
             return result
-        value = g.reviews._row_to_document(g.obj(review))
+        value = g.review_document(review)
         if (
             value.proposal_sha256 != pr["object_sha256"]
             or value.grade_input_sha256 != doc.input_sha256
@@ -263,9 +278,14 @@ async def question_result(db, p, storage, c, workspace, mapping, rules, config):
                 or item.proposed_points != proposed[identifier].awarded_points
             ):
                 raise AccessError("result_review_changed", 409)
-            g.reviews._validate_score_evidence(
-                item.reviewed_points, item.evidence_references, doc, config
-            )
+            if is_visual:
+                from huipi_cloud.modules.exam_grading.visual_scoring import validate_evidence
+
+                validate_evidence(item.reviewed_points, item.evidence_references, doc, config)
+            else:
+                g.reviews._validate_score_evidence(
+                    item.reviewed_points, item.evidence_references, doc, config
+                )
         from huipi_cloud.modules.marking_tasks.access import result_valid
 
         if not await result_valid(db, workspace["id"], value.review_id):

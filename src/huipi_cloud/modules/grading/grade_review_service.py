@@ -285,7 +285,11 @@ def _build_review_criteria(
     grade_input,
     payload: GradeReviewDecisionCreate,
     config: Settings,
+    *,
+    evidence_validator=None,
+    criterion_model=GradeReviewCriterionReview,
 ) -> tuple[list[GradeReviewCriterionReview], Decimal | None, Decimal | None]:
+    validate_evidence = evidence_validator or _validate_score_evidence
     if proposal.grading_status != "completed_candidate":
         if payload.review_status in {"accepted", "revised"}:
             raise GradeReviewInvalidDecisionError("abstained_proposal_cannot_be_scored")
@@ -300,7 +304,7 @@ def _build_review_criteria(
     ):
         raise GradeReviewArtifactCorruptError("proposal_rubric_snapshot_mismatch")
     for item in proposal.criterion_scores:
-        _validate_score_evidence(item.awarded_points, item.evidence_references, grade_input, config)
+        validate_evidence(item.awarded_points, item.evidence_references, grade_input, config)
 
     proposed_total = proposal.total_score
     if payload.review_status in {"rejected", "regrading_required"}:
@@ -308,7 +312,7 @@ def _build_review_criteria(
 
     if payload.review_status == "accepted":
         reviews = [
-            GradeReviewCriterionReview(
+            criterion_model(
                 criterion_id=criterion.criterion_id,
                 proposed_points=original[criterion.criterion_id].awarded_points,
                 reviewed_points=original[criterion.criterion_id].awarded_points,
@@ -347,9 +351,9 @@ def _build_review_criteria(
                 raise GradeReviewInvalidDecisionError("unchanged_criterion_must_preserve_proposal")
             rationale = original_score.rationale
             evidence_references = original_score.evidence_references
-        _validate_score_evidence(points, evidence_references, grade_input, config)
+        validate_evidence(points, evidence_references, grade_input, config)
         reviews.append(
-            GradeReviewCriterionReview(
+            criterion_model(
                 criterion_id=criterion.criterion_id,
                 proposed_points=original_score.awarded_points,
                 reviewed_points=points,
@@ -409,9 +413,11 @@ def _validate_score_evidence(points, evidence_references, grade_input, config: S
         raise GradeReviewInvalidDecisionError("positive_score_requires_valid_quote")
 
 
-def _row_to_document(record: GradeReviewRevision) -> GradeReviewRevisionDocument:
+def _row_to_document(
+    record: GradeReviewRevision, *, document_model=GradeReviewRevisionDocument
+) -> GradeReviewRevisionDocument:
     try:
-        return GradeReviewRevisionDocument.model_validate(
+        return document_model.model_validate(
             {
                 "review_id": record.review_id,
                 "proposal_id": record.proposal_id,

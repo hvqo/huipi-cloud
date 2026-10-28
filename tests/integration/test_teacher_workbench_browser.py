@@ -109,7 +109,7 @@ async def test_teacher_workbench_browser_end_to_end(
             role_version_id=PARSE_OPERATOR_ROLE,
             scope_id=scope_id,
         )
-    if os.getenv("RUN_EXAM_GRADING_BROWSER") == "1":
+    if os.getenv("RUN_EXAM_GRADING_BROWSER") == "1" or os.getenv("RUN_EXAM_VISUAL_BROWSER") == "1":
         from huipi_cloud.modules.exam_grading import service as marking
         from huipi_cloud.modules.exam_grading.permissions import MARK_OPERATOR_ROLE
 
@@ -130,7 +130,10 @@ async def test_teacher_workbench_browser_end_to_end(
                 role_version_id=UUID(MARK_OPERATOR_ROLE),
                 scope_id=scope_id,
             )
-        if os.getenv("RUN_EXAM_RESULTS_BROWSER") == "1":
+        if (
+            os.getenv("RUN_EXAM_RESULTS_BROWSER") == "1"
+            or os.getenv("RUN_EXAM_VISUAL_BROWSER") == "1"
+        ):
             from huipi_cloud.modules.exam_results.access import grant_class
 
             for cls in scan_context.classes:
@@ -664,7 +667,11 @@ async def test_teacher_workbench_browser_end_to_end(
                         0.1
                     )  # Bounded service readiness only; not a concurrency race.
         scan_pdf = tmp_path / "mixed-scan.pdf"
-        if os.getenv("RUN_EXAM_GRADING_BROWSER") == "1":
+        if os.getenv("RUN_EXAM_VISUAL_BROWSER") == "1":
+            from test_exam_visual_grading import visual_mixed_scan_pdf
+
+            scan_pdf.write_bytes(visual_mixed_scan_pdf())
+        elif os.getenv("RUN_EXAM_GRADING_BROWSER") == "1":
             from test_exam_grading import grading_mixed_scan_pdf
 
             scan_pdf.write_bytes(grading_mixed_scan_pdf())
@@ -752,7 +759,86 @@ async def test_teacher_workbench_browser_end_to_end(
         parse_executor = ProtectedExecutor(parser, backend)
         worker = ParsingWorker(ctx.factory, parse_executor, config, repository_backend=backend)
         worker_task = asyncio.create_task(worker.run(worker_stop))
-        if os.getenv("RUN_EXAM_GRADING_BROWSER") == "1":
+        if os.getenv("RUN_EXAM_VISUAL_BROWSER") == "1":
+            from huipi_cloud.core.config import settings as app_settings
+            from huipi_cloud.modules.exam_grading.runtime import ScoringWorker
+
+            monkeypatch.setattr(app_settings, "grading_enabled", True)
+            monkeypatch.setattr(app_settings, "grading_visual_enabled", True)
+            if os.getenv("RUN_VISUAL_REAL") == "1":
+                from huipi_cloud.infrastructure.grading.provider import build_text_grading_provider
+
+                assert app_settings.grading_provider == "openai_compatible"
+                assert app_settings.grading_model == "deepseek-flash"
+                assert (
+                    app_settings.grading_allow_remote
+                    and app_settings.grading_external_data_authorized
+                )
+                assert (
+                    app_settings.grading_api_key and app_settings.grading_api_key.get_secret_value()
+                )
+                score_config = app_settings.model_copy(
+                    update={
+                        "grading_visual_enabled": True,
+                        "grading_invalid_response_retries": 0,
+                        "grading_deepseek_thinking": "disabled",
+                        "grading_max_output_tokens": 1200,
+                    }
+                )
+                real_provider = build_text_grading_provider(score_config)
+
+                class RecordingVisualProvider:
+                    provider_name = real_provider.provider_name
+                    model_id = real_provider.model_id
+                    generation_config_digest = real_provider.generation_config_digest
+                    calls = 0
+
+                    async def complete_visual(self, **kwargs):
+                        self.calls += 1
+                        if self.calls > 1:
+                            raise RuntimeError("live visual browser request cap exceeded")
+                        assert len(kwargs["images"]) == 2
+                        response = await real_provider.complete_visual(**kwargs)
+                        output = Path(os.environ["VISUAL_ACCEPTANCE_DIR"])
+                        output.mkdir(parents=True, exist_ok=True)
+                        (output / "model-response.json").write_text(
+                            response.content, encoding="utf-8"
+                        )
+                        (output / "model-usage.json").write_text(
+                            json.dumps(
+                                dict(
+                                    model_id=response.model_id,
+                                    elapsed_ms=response.elapsed_ms,
+                                    prompt_tokens=response.usage.prompt_tokens,
+                                    completion_tokens=response.usage.completion_tokens,
+                                    cache_hit_tokens=response.usage.cache_hit_tokens,
+                                    cache_miss_tokens=response.usage.cache_miss_tokens,
+                                    image_count=len(kwargs["images"]),
+                                    finish_reason=response.finish_reason,
+                                ),
+                                ensure_ascii=False,
+                            ),
+                            encoding="utf-8",
+                        )
+                        return response
+
+                score_provider = RecordingVisualProvider()
+            else:
+                from test_exam_visual_grading import SyntheticVisualProvider
+
+                score_config = config.model_copy(
+                    update={
+                        "grading_enabled": True,
+                        "grading_visual_enabled": True,
+                    }
+                )
+                score_provider = SyntheticVisualProvider()
+            grading_task = asyncio.create_task(
+                ScoringWorker(ctx.factory, ctx.storage, score_provider, score_config).run(
+                    worker_stop
+                )
+            )
+        elif os.getenv("RUN_EXAM_GRADING_BROWSER") == "1":
             from test_exam_grading import SyntheticScoreProvider, SyntheticSelectionProvider
 
             from huipi_cloud.modules.exam_grading.runtime import ScoringWorker

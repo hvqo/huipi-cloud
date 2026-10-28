@@ -2,6 +2,8 @@
 
 本切片在已成功的 `ExamParsingJob` 上提供浏览器工作区。教师确认作答、模型候选评分和人工审核是三个独立事实；任何一个都不是正式成绩发布。
 
+教师选择扫描页图像区域的独立视觉评分合同、开关和限制见[考试主观题图像辅助评分](exam-visual-grading.md)；下文的文字引用合同继续适用于文本评分。
+
 ## 复用与新增边界
 
 - 自动对齐直接使用 `align_canonical_document`，只读取所选 PaperVersion 的 PaperQuestionMapping 和不可变题目载体。

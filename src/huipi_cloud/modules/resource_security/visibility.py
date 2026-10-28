@@ -75,6 +75,8 @@ def rules():
         ExamGradingOperation,
         ExamGradingWorkspace,
         ExamScoringJob,
+        ExamVisualRegion,
+        ExamVisualSelection,
     )
     from huipi_cloud.modules.exam_results.models import ExamResultClassAccess
 
@@ -84,6 +86,8 @@ def rules():
         (ExamGradingWorkspace, false()),
         (ExamScoringJob, false()),
         (ExamGradingOperation, false()),
+        (ExamVisualSelection, false()),
+        (ExamVisualRegion, false()),
     ]
     from huipi_cloud.modules.exam_parsing.models import ExamSubmissionLink
 

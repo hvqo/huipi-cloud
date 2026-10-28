@@ -41,7 +41,7 @@ class GradeReviewRevision(Base):
         Index("ix_grade_review_reviewer_user", "reviewer_user_id"),
         CheckConstraint("review_revision > 0", name="ck_grade_review_revision_positive"),
         CheckConstraint(
-            "review_schema_version = '1.0' AND length(trim(reviewer_ref)) > 0 "
+            "review_schema_version IN ('1.0','2.0') AND length(trim(reviewer_ref)) > 0 "
             "AND length(proposal_sha256) = 64 AND length(grade_input_sha256) = 64 "
             "AND length(request_sha256) = 64",
             name="ck_grade_review_metadata",

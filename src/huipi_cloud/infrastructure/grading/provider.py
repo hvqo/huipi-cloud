@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import time
@@ -98,11 +99,15 @@ class _HttpTextGradingProvider:
         self._max_tokens = config.grading_max_output_tokens
         self._transport = transport
         self._native_ollama = native_ollama
+        self._visual_enabled = config.grading_visual_enabled
         self._deepseek_options = (
             deepseek_options(
-                endpoint, config.grading_deepseek_thinking,
+                endpoint,
+                config.grading_deepseek_thinking,
                 config.grading_deepseek_reasoning_effort,
-            ) if not native_ollama else {}
+            )
+            if not native_ollama
+            else {}
         )
         api_key = config.grading_api_key.get_secret_value() if config.grading_api_key else None
         if self._deepseek_options and (not api_key or not api_key.strip()):
@@ -117,15 +122,15 @@ class _HttpTextGradingProvider:
                     "endpoint_sha256": hashlib.sha256(endpoint.encode()).hexdigest(),
                     "model": self._model,
                     "temperature": (
-                        None if self._deepseek_options.get("thinking") == {"type": "enabled"}
-                        else 0
+                        None if self._deepseek_options.get("thinking") == {"type": "enabled"} else 0
                     ),
                     **(
                         {
                             "deepseek_options": self._deepseek_options,
                             "configured_reasoning_effort": config.grading_deepseek_reasoning_effort,
                         }
-                        if self._deepseek_options else {}
+                        if self._deepseek_options
+                        else {}
                     ),
                     "max_output_tokens": self._max_tokens,
                     "max_input_tokens": config.grading_max_input_tokens,
@@ -133,7 +138,8 @@ class _HttpTextGradingProvider:
                     "invalid_response_retries": config.grading_invalid_response_retries,
                     **(
                         {"strategy": "quote_selection", "locator": "segment-unique-exact-v1"}
-                        if config.grading_strategy == "quote_selection" else {}
+                        if config.grading_strategy == "quote_selection"
+                        else {}
                     ),
                 },
                 sort_keys=True,
@@ -142,6 +148,31 @@ class _HttpTextGradingProvider:
         ).hexdigest()
 
     async def complete(self, *, system_prompt: str, user_prompt: str) -> TextGradingResponse:
+        return await self._complete(system_prompt=system_prompt, user_prompt=user_prompt)
+
+    async def complete_visual(
+        self, *, system_prompt: str, user_prompt: str, images: list[bytes]
+    ) -> TextGradingResponse:
+        """Send only bounded, server-cropped PNGs; never accept an external image URL."""
+        if (
+            not self._visual_enabled
+            or self._native_ollama
+            or not is_deepseek_endpoint(self._endpoint)
+            or self._model != "deepseek-flash"
+        ):
+            raise GradeProposalProviderError("visual_grading_not_enabled")
+        if not 1 <= len(images) <= 8 or any(
+            not image.startswith(b"\x89PNG\r\n\x1a\n") or len(image) > 1024 * 1024
+            for image in images
+        ):
+            raise GradeProposalProviderError("visual_grading_image_invalid")
+        return await self._complete(
+            system_prompt=system_prompt, user_prompt=user_prompt, images=images
+        )
+
+    async def _complete(
+        self, *, system_prompt: str, user_prompt: str, images: list[bytes] | None = None
+    ) -> TextGradingResponse:
         started = time.perf_counter()
         if self._native_ollama:
             body: dict[str, object] = {
@@ -156,11 +187,28 @@ class _HttpTextGradingProvider:
                 "options": {"temperature": 0, "num_predict": self._max_tokens},
             }
         else:
+            content: object = user_prompt
+            if images:
+                content = [{"type": "text", "text": user_prompt}]
+                for index, image in enumerate(images):
+                    content.extend(
+                        [
+                            {"type": "text", "text": f"作答图片区域 region_index={index}"},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": "data:image/png;base64,"
+                                    + base64.b64encode(image).decode("ascii"),
+                                    "detail": "high",
+                                },
+                            },
+                        ]
+                    )
             body = {
                 "model": self._model,
                 "messages": [
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
+                    {"role": "user", "content": content},
                 ],
                 "temperature": 0,
                 "max_tokens": self._max_tokens,
@@ -222,8 +270,12 @@ class _HttpTextGradingProvider:
                     prompt_tokens=_optional_nonnegative_int(prompt_tokens),
                     completion_tokens=_optional_nonnegative_int(completion_tokens),
                     reasoning_tokens=_optional_nonnegative_int(details.get("reasoning_tokens")),
-                    cache_hit_tokens=_optional_nonnegative_int(usage.get("prompt_cache_hit_tokens")),
-                    cache_miss_tokens=_optional_nonnegative_int(usage.get("prompt_cache_miss_tokens")),
+                    cache_hit_tokens=_optional_nonnegative_int(
+                        usage.get("prompt_cache_hit_tokens")
+                    ),
+                    cache_miss_tokens=_optional_nonnegative_int(
+                        usage.get("prompt_cache_miss_tokens")
+                    ),
                 ),
                 finish_reason=finish_reason if isinstance(finish_reason, str) else None,
             )

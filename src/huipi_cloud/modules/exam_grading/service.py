@@ -526,6 +526,9 @@ async def confirm_answer(db, p, storage, wid, request, config=settings):
                 supersedes_decision_id=latest["id"] if latest else None,
             )
         )
+        from .visual_selection import reset_for_text
+
+        await reset_for_text(db, c, p, aid)
         result = dict(decision_id=str(aid), revision=revision + 1)
         await audit(db, p, c.job["id"], request.request_id, "answer", digest, result)
         return result
@@ -538,15 +541,22 @@ async def enqueue(db, p, storage, wid, request, config=settings):
     )
     async with scans.transaction(db):
         await workspace_context(db, p, wid, "exam.score.request")
+        from .visual_selection import latest as latest_visual_selection
+
+        selection = await latest_visual_selection(db, wid)
+        if selection and selection["active"]:
+            raise AccessError("exam_visual_clear_before_text_scoring", 409)
         from huipi_cloud.modules.marking_tasks.access import require_working
 
         await require_working(db, p, wid)
-        old = await replay(db, p, request.request_id, digest)
-        if old:
-            return old
         latest = await latest_answer(db, c)
         if not latest or latest["revision"] != request.expected_answer_revision:
             raise AccessError("exam_mark_answer_changed", 409)
+        if selection and selection["text_answer_review_id"] != latest["id"]:
+            raise AccessError("exam_visual_requires_text_confirmation", 409)
+        old = await replay(db, p, request.request_id, digest)
+        if old:
+            return old
         existing = (
             (
                 await db.execute(
@@ -577,12 +587,17 @@ async def enqueue(db, p, storage, wid, request, config=settings):
         from huipi_cloud.modules.marking_tasks.access import require_working
 
         await require_working(db, p, wid)
+        selection = await latest_visual_selection(db, wid)
+        if selection and selection["active"]:
+            raise AccessError("exam_visual_clear_before_text_scoring", 409)
+        latest = await latest_answer(db, c)
+        if not latest or latest["id"] != doc.review_decision_id:
+            raise AccessError("exam_mark_answer_changed", 409)
+        if selection and selection["text_answer_review_id"] != latest["id"]:
+            raise AccessError("exam_visual_requires_text_confirmation", 409)
         old = await replay(db, p, request.request_id, digest)
         if old:
             return old
-        latest = await latest_answer(db, c)
-        if latest["id"] != doc.review_decision_id:
-            raise AccessError("exam_mark_answer_changed", 409)
         existing = (
             (
                 await db.execute(
@@ -641,9 +656,27 @@ async def enqueue(db, p, storage, wid, request, config=settings):
 
 async def scoring_context(db, p, job, action="exam.mark.read", config=settings):
     c = await workspace_context(db, p, job["workspace_id"], action)
+    from . import visual_scoring, visual_selection
+
+    current_visual = await visual_selection.latest(db, job["workspace_id"])
+    if job["visual_selection_id"] is not None:
+        selected, _ = await visual_scoring.current_selection(db, p, c, job["visual_selection_id"])
+        indexed = await row(db, GI, job["grade_input_id"])
+        if (
+            indexed["visual_selection_id"] != selected["id"]
+            or indexed["schema_version"] != "visual-1.0"
+            or indexed["submission_id"] != c.link["submission_id"]
+            or indexed["question_id"] != c.question.id
+        ):
+            raise AccessError("exam_visual_input_changed", 409)
+        return c, indexed
+    if current_visual and current_visual["active"]:
+        raise AccessError("exam_mark_answer_changed", 409)
     latest = await latest_answer(db, c)
     if latest is None or latest["id"] != job["answer_review_id"]:
         raise AccessError("exam_mark_answer_changed", 409)
+    if current_visual and current_visual["text_answer_review_id"] != latest["id"]:
+        raise AccessError("exam_visual_requires_text_confirmation", 409)
     indexed = await row(db, GI, job["grade_input_id"])
     if (
         indexed["review_decision_id"] != latest["id"]
@@ -655,6 +688,10 @@ async def scoring_context(db, p, job, action="exam.mark.read", config=settings):
 
 
 async def read_input(storage, indexed, config=settings):
+    if indexed["schema_version"] == "visual-1.0":
+        from .visual_scoring import read_input as read_visual_input
+
+        return await read_visual_input(storage, indexed, config)
     doc = await read_document(
         storage, indexed, GradeInputDocument, config.grade_input_max_document_bytes
     )
@@ -672,6 +709,9 @@ async def details(db, p, storage, wid, config=settings):
     c = await bundle(db, p, storage, wid, config=config)
     async with scans.transaction(db):
         await workspace_context(db, p, wid)
+        from .visual_selection import read as read_visual_selection
+
+        visual_selection = await read_visual_selection(db, c)
         review = await latest_answer(db, c)
         ak = (
             (await db.execute(select(AK).where(AK.c.question_id == c.question.id)))
@@ -687,15 +727,13 @@ async def details(db, p, storage, wid, config=settings):
             .mappings()
             .all()
         )
+        job_query = select(S).where(S.c.workspace_id == wid)
+        if visual_selection and visual_selection["active"]:
+            job_query = job_query.where(S.c.visual_selection_id == visual_selection["id"])
+        else:
+            job_query = job_query.where(S.c.visual_selection_id.is_(None))
         job = (
-            (
-                await db.execute(
-                    select(S)
-                    .where(S.c.workspace_id == wid)
-                    .order_by(S.c.created_at.desc(), S.c.id.desc())
-                    .limit(1)
-                )
-            )
+            (await db.execute(job_query.order_by(S.c.created_at.desc(), S.c.id.desc()).limit(1)))
             .mappings()
             .first()
         )
@@ -731,11 +769,21 @@ async def details(db, p, storage, wid, config=settings):
                     .all()
                 )
     if job and state == "succeeded":
+        from .visual_protocol import VisualProposal
+        from .visual_scoring import validate_binding as validate_visual_binding
+
+        is_visual = job["visual_selection_id"] is not None
         proposal = await read_document(
-            storage, pr, GradeProposalDocument, config.grading_max_proposal_bytes
+            storage,
+            pr,
+            VisualProposal if is_visual else GradeProposalDocument,
+            config.grading_max_proposal_bytes,
         )
         inputdoc = await read_input(storage, ir, config)
-        reviews._validate_proposal_binding(proposal, inputdoc, config)
+        if is_visual:
+            validate_visual_binding(proposal, inputdoc, config)
+        else:
+            reviews._validate_proposal_binding(proposal, inputdoc, config)
         async with scans.transaction(db):
             await scoring_context(db, p, job)
             await scoring_context(
@@ -766,6 +814,8 @@ async def details(db, p, storage, wid, config=settings):
         )
     async with scans.transaction(db):
         await workspace_context(db, p, wid)
+    is_visual = bool(job and job["visual_selection_id"] is not None)
+    projected_history = [review_document(r).model_dump(mode="json") for r in reversed(history)]
     result = dict(
         workspace_id=str(wid),
         question=dict(
@@ -789,14 +839,16 @@ async def details(db, p, storage, wid, config=settings):
         answer_review=answers.decision_read(obj(review)).model_dump(mode="json")
         if review
         else None,
+        visual_selection=visual_selection,
         scoring_job_id=str(job["id"]) if job else None,
         scoring_status=state,
         failure_code=job["failure_code"] if job else None,
-        proposal=proposal.model_dump(mode="json") if proposal else None,
-        grade_input=inputdoc.model_dump(mode="json") if inputdoc else None,
-        history=[
-            reviews._row_to_document(obj(r)).model_dump(mode="json") for r in reversed(history)
-        ],
+        proposal=proposal.model_dump(mode="json") if proposal and not is_visual else None,
+        grade_input=inputdoc.model_dump(mode="json") if inputdoc and not is_visual else None,
+        history=projected_history if not is_visual else [],
+        visual_proposal=proposal.model_dump(mode="json") if proposal and is_visual else None,
+        visual_grade_input=inputdoc.model_dump(mode="json") if inputdoc and is_visual else None,
+        visual_history=projected_history if is_visual else [],
         history_has_more=bool(history and history[-1]["review_revision"] > 1),
     )
 
@@ -806,6 +858,14 @@ async def details(db, p, storage, wid, config=settings):
     if len(canonical_json_bytes(result)) > 2 * 1024**2:
         raise AccessError("exam_mark_response_limit", 413)
     return result
+
+
+def review_document(record):
+    if record["review_schema_version"] == "2.0":
+        from .visual_protocol import VisualReview
+
+        return reviews._row_to_document(obj(record), document_model=VisualReview)
+    return reviews._row_to_document(obj(record))
 
 
 async def list_workspaces(db, p, jid):

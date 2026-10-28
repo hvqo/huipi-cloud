@@ -111,6 +111,8 @@ class Settings(BaseSettings):
     rerank_min_score: float = Field(default=0.5, ge=0, le=1)
     rerank_allow_fallback: bool = False
     grading_enabled: bool = False
+    # Image scoring is opt-in; the existing text protocol remains the default.
+    grading_visual_enabled: bool = False
     grading_strategy: Literal["strict_offsets", "quote_selection"] = "strict_offsets"
     copilot_enabled: bool = False
     copilot_api_key: SecretStr | None = None
