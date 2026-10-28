@@ -412,6 +412,7 @@ test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原�
     await page.getByRole('button', { name: '开始解析', exact: true }).click()
     await expect(page.locator('.parse-state')).toHaveText('解析完成', { timeout: 90000 })
     await markExamAnswer(page, false)
+    if (process.env.RUN_EXAM_FINAL_BROWSER === '1') await markExamAnswer(page, false, 2)
     await expect(page.locator('.script-identity')).toContainText('N002')
     await page.screenshot({ path: 'test-results/exam-grading-second-student.png', fullPage: true })
   }
@@ -428,7 +429,7 @@ test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原�
       animations: 'disabled',
     })
   }
-  if (process.env.RUN_EXAM_RESULTS_BROWSER === '1') {
+  if (process.env.RUN_EXAM_RESULTS_BROWSER === '1' && process.env.RUN_EXAM_FINAL_BROWSER !== '1') {
     await page.getByRole('link', { name: '成绩预览', exact: true }).click()
     await expect(page.getByRole('heading', { name: '整卷成绩预览' })).toBeVisible()
     const first = page.locator('.result-table tbody tr').filter({ hasText: 'N001' })
@@ -476,7 +477,75 @@ test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原�
     await expect(first).toContainText('未完成')
     await page.screenshot({ path: 'test-results/exam-visual-results.png', fullPage: true })
   }
+  if (process.env.RUN_EXAM_FINAL_BROWSER === '1') await manageFinalResults(page)
 })
+
+async function manageFinalResults(page: Page) {
+  await page.getByRole('link', { name: '成绩管理', exact: true }).click()
+  await expect(page.getByRole('heading', { name: '成绩管理', exact: true })).toBeVisible()
+  await page.getByLabel('考试场次').selectOption(process.env.WORKBENCH_SCAN_SESSION!)
+  const attendance = page.locator('section').filter({ has: page.getByRole('heading', { name: '到考核对与批改进度' }) })
+  for (const [number, status, label] of [
+    ['N001', 'present', '到考'], ['N002', 'present', '到考'],
+    ['N003', 'absent', '缺考'], ['N004', 'absent', '缺考'],
+  ]) {
+    const row = attendance.locator('tr').filter({ hasText: number })
+    await expect(row).toBeVisible()
+    await row.locator('select').selectOption(status!)
+    const submitted = page.waitForRequest((request) =>
+      request.method() === 'POST' && request.url().endsWith('/final-results/attendance'),
+    )
+    await row.getByRole('button', { name: '确认' }).click()
+    expect((await submitted).postDataJSON().status).toBe(status)
+    await expect(row).toContainText(`已保存：${label}`)
+  }
+  await page.screenshot({ path: 'test-results/final-attendance.png', fullPage: true })
+  await page.getByRole('button', { name: '生成待审批版本' }).click()
+  const first = page.locator('tr').filter({ hasText: '第 1 版' })
+  await expect(first).toContainText('待审批')
+  await first.getByRole('button', { name: '查看待审批快照' }).click()
+  await expect(page.getByRole('heading', { name: '待审批快照 · 第 1 版' })).toBeVisible()
+  await first.getByRole('button', { name: '批准', exact: true }).click()
+  await expect(first).toContainText('已批准待发布')
+  await first.getByRole('button', { name: '发布', exact: true }).click()
+  await expect(first).toContainText('已发布')
+  await first.getByRole('button', { name: '查看正式成绩' }).click()
+  const published = page.locator('section').filter({ has: page.getByRole('heading', { name: '已发布 · 第 1 版' }) })
+  await expect(published).toContainText('18.00')
+  await expect(published).toContainText('缺考')
+  await expect(published).toContainText('平均')
+  await page.screenshot({ path: 'test-results/final-published-v1.png', fullPage: true })
+  const download = page.waitForEvent('download')
+  await page.getByRole('button', { name: '导出正式成绩 Excel' }).click()
+  await (await download).saveAs('test-results/final-published-v1.xlsx')
+  const student = published.locator('tr').filter({ hasText: 'N001' })
+  // The formal snapshot is unchanged while the teacher corrects the source review.
+  await student.getByRole('link', { name: '进入批改' }).click()
+  const panel = page.getByRole('region', { name: 'AI 批改与复核', exact: true })
+  await expect(panel).toBeVisible()
+  await expect(panel.getByRole('heading', { name: '第1题', exact: true })).toBeVisible()
+  await panel.getByRole('button', { name: '载入完整分数快照', exact: true }).click()
+  await panel.getByLabel(/^教师分 /).first().fill('2.00')
+  await panel.getByLabel('审核说明').fill('合成成绩更正：再次核对步骤')
+  await panel.getByRole('button', { name: '提交完整修订', exact: true }).click()
+  await expect(panel.getByText(/修订3 · 教师修订/)).toBeVisible()
+  await page.getByRole('link', { name: '成绩管理', exact: true }).click()
+  await page.getByLabel('考试场次').selectOption(process.env.WORKBENCH_SCAN_SESSION!)
+  await page.getByRole('button', { name: '生成更正版本' }).click()
+  const second = page.locator('tr').filter({ hasText: '第 2 版' })
+  await expect(second).toContainText('待审批')
+  await second.getByRole('button', { name: '批准', exact: true }).click()
+  await expect(second).toContainText('已批准待发布')
+  await second.getByRole('button', { name: '发布', exact: true }).click()
+  await expect(second).toContainText('已发布')
+  await second.getByRole('button', { name: '查看正式成绩' }).click()
+  await expect(page.getByRole('heading', { name: '已发布 · 第 2 版' })).toBeVisible()
+  await expect(page.locator('section').filter({ has: page.getByRole('heading', { name: '已发布 · 第 2 版' }) })).toContainText('17.00')
+  await page.screenshot({ path: 'test-results/final-published-v2.png', fullPage: true })
+  await first.getByRole('button', { name: '查看正式成绩' }).click()
+  await expect(page.getByRole('heading', { name: '已发布 · 第 1 版' })).toBeVisible()
+  await expect(page.locator('section').filter({ has: page.getByRole('heading', { name: '已发布 · 第 1 版' }) })).toContainText('18.00')
+}
 
 async function markVisualAnswer(page: Page) {
   const panel = page.getByRole('region', { name: 'AI 批改与复核', exact: true })

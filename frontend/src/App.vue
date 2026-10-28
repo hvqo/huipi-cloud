@@ -8,7 +8,9 @@ import { identity, logout } from './auth'
 const route = useRoute(),
   router = useRouter()
 const title = computed(() =>
-  route.path.startsWith('/omr')
+  route.path.startsWith('/final-results')
+    ? '正式成绩管理'
+    : route.path.startsWith('/omr')
     ? '答题卡与客观题批改'
     : route.path.startsWith('/exceptions')
       ? '异常处理与扫描补救'
@@ -84,6 +86,9 @@ async function signOut() {
         <RouterLink to="/scans" class="nav-link">▤ <span>考试扫描</span></RouterLink>
         <RouterLink to="/exam-results" class="nav-link" aria-label="成绩预览"
           >▦ <span>成绩预览</span></RouterLink
+        >
+        <RouterLink to="/final-results" class="nav-link" aria-label="成绩管理"
+          >▦ <span>成绩管理</span></RouterLink
         >
         <RouterLink
           v-if="

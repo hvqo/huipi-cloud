@@ -78,10 +78,22 @@ def rules():
         ExamVisualRegion,
         ExamVisualSelection,
     )
-    from huipi_cloud.modules.exam_results.models import ExamResultClassAccess
+    from huipi_cloud.modules.exam_results.models import (
+        ExamAttendanceDecision,
+        ExamFinalOperation,
+        ExamFinalQuestion,
+        ExamFinalStudent,
+        ExamFinalVersion,
+        ExamResultClassAccess,
+    )
 
     result = [
         (ExamResultClassAccess, false()),
+        (ExamAttendanceDecision, false()),
+        (ExamFinalVersion, false()),
+        (ExamFinalStudent, false()),
+        (ExamFinalQuestion, false()),
+        (ExamFinalOperation, false()),
         (Assignment, Assignment.security_classification == LEGACY),
         (ExamGradingWorkspace, false()),
         (ExamScoringJob, false()),

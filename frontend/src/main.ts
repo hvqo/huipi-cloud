@@ -12,6 +12,7 @@ import Review from './views/Review.vue'
 import ScanIntake from './views/ScanIntake.vue'
 import AnswerScripts from './views/AnswerScripts.vue'
 import ExamResults from './views/ExamResults.vue'
+import FinalResults from './views/FinalResults.vue'
 import ExamConfiguration from './views/ExamConfiguration.vue'
 import Papers from './views/Papers.vue'
 import School from './views/School.vue'
@@ -41,6 +42,7 @@ export const router = createRouter({
     { path: '/assignments', component: Assignments },
     { path: '/scans', component: ScanIntake },
     { path: '/exam-results', component: ExamResults },
+    { path: '/final-results', component: FinalResults },
     { path: '/exams', component: ExamConfiguration },
     { path: '/school', component: School },
     { path: '/exceptions', component: ExamRecovery },

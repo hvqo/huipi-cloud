@@ -20,10 +20,10 @@ REQUIRED = {"exam.mark.read", "exam.roster.read", "exam.script.read", "exam.iden
 DENIED = "resource_not_found_or_forbidden"
 
 
-async def covered(db, grant, sid, exporting=False):
+async def covered(db, grant, sid, exporting=False, extra_actions=frozenset()):
     scope = await security.scope(db, grant["scope_id"])
     codes = await security.role_codes(db, grant["role_version_id"], scope.kind)
-    required = REQUIRED | ({"exam.score.review"} if exporting else set())
+    required = REQUIRED | ({"exam.score.review"} if exporting else set()) | set(extra_actions)
     session = await exams.row(db, exams.S, sid)
     matches = (
         scope.kind == "installation"
@@ -35,7 +35,7 @@ async def covered(db, grant, sid, exporting=False):
     return matches and required <= codes
 
 
-async def authorize(db, p, sid, class_id=None, *, exporting=False):
+async def authorize(db, p, sid, class_id=None, *, exporting=False, extra_actions=frozenset()):
     await identity.refresh_principal(db, p, lock=True)
     rows = (
         (
@@ -60,7 +60,9 @@ async def authorize(db, p, sid, class_id=None, *, exporting=False):
         raise AccessError("result_access_limit", 413)
     allowed = set()
     for row in rows:
-        if (not exporting or row["export_allowed"]) and await covered(db, row, sid, exporting):
+        if (not exporting or row["export_allowed"]) and await covered(
+            db, row, sid, exporting, extra_actions
+        ):
             allowed.add(row["administrative_class_id"])
     if not allowed or class_id is not None and class_id not in allowed:
         raise AccessError(DENIED, 404)

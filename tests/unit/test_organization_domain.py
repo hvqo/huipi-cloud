@@ -213,7 +213,7 @@ def test_grants_manage_catalog_entry_was_not_extended_by_organization_actions():
     assert security_service.CATALOG["security.classification.inspect"] == frozenset(
         {"installation", "assignment"}
     )
-    # Exactly the B-1.1b additive change: four installation-scoped codes.
+    # Keep the complete catalog explicit, including separately scoped result actions.
     assert set(security_service.CATALOG) == {
         "security.grants.manage",
         "security.protected.create",
@@ -233,6 +233,9 @@ def test_grants_manage_catalog_entry_was_not_extended_by_organization_actions():
         "exam.answer.review",
         "exam.score.request",
         "exam.score.review",
+        "exam.result.manage",
+        "exam.result.approve",
+        "exam.result.publish",
         "exam.task.manage",
         "exam.task.work",
         "paper.create",

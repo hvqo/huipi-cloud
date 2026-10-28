@@ -1,5 +1,5 @@
 {
-  "version": "exam-visual-grading-1",
+  "version": "exam-final-results-1",
   "operations": [
     {
       "method": "POST",
@@ -1176,6 +1176,62 @@
       "permission": "recognition_write",
       "classification_boundary": "PaperVersion 或当前 ExamSession 的真实授权；答卷、名单及来源版本在服务内重新校验",
       "entrypoint": "huipi_cloud.modules.omr.service"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/final-results/attendance",
+      "policy": "list_final_attendance",
+      "permission": "exam.mark.read+explicit_class",
+      "classification_boundary": "真实当前Grant和显式班级授权；写入另要求同Grant成绩管理动作及全部名单班级",
+      "entrypoint": "huipi_cloud.modules.exam_results.final_service"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/final-results/attendance",
+      "policy": "record_final_attendance",
+      "permission": "exam.mark.read+explicit_class",
+      "classification_boundary": "真实当前Grant和显式班级授权；写入另要求同Grant成绩管理动作及全部名单班级",
+      "entrypoint": "huipi_cloud.modules.exam_results.final_service"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/final-results/versions",
+      "policy": "list_final_versions",
+      "permission": "exam.mark.read+explicit_class",
+      "classification_boundary": "真实当前Grant和显式班级授权；写入另要求同Grant成绩管理动作及全部名单班级",
+      "entrypoint": "huipi_cloud.modules.exam_results.final_service"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/final-results/versions",
+      "policy": "prepare_final_version",
+      "permission": "exam.mark.read+explicit_class",
+      "classification_boundary": "真实当前Grant和显式班级授权；写入另要求同Grant成绩管理动作及全部名单班级",
+      "entrypoint": "huipi_cloud.modules.exam_results.final_service"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/final-results/versions/{version_id}/transition",
+      "policy": "transition_final_version",
+      "permission": "exam.mark.read+explicit_class",
+      "classification_boundary": "真实当前Grant和显式班级授权；写入另要求同Grant成绩管理动作及全部名单班级",
+      "entrypoint": "huipi_cloud.modules.exam_results.final_service"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/final-results/versions/{version_id}",
+      "policy": "read_final_version",
+      "permission": "exam.mark.read+explicit_class",
+      "classification_boundary": "真实当前Grant和显式班级授权；写入另要求同Grant成绩管理动作及全部名单班级",
+      "entrypoint": "huipi_cloud.modules.exam_results.final_service"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/final-results/versions/{version_id}/export.xlsx",
+      "policy": "export_final_version",
+      "permission": "exam.score.review+explicit_class_export",
+      "classification_boundary": "真实当前Grant和显式班级授权；写入另要求同Grant成绩管理动作及全部名单班级",
+      "entrypoint": "huipi_cloud.modules.exam_results.final_service"
     }
   ]
 }

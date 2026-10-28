@@ -1,5 +1,5 @@
 {
-  "version": "exam-visual-grading-1",
+  "version": "exam-final-results-1",
   "operations": [
     {
       "method": "POST",
@@ -882,6 +882,48 @@
       "path": "/api/v1/omr/recognitions/{recognition_id}/confirm",
       "policy": "omr_confirm",
       "permission": "recognition_write"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/final-results/attendance",
+      "policy": "list_final_attendance",
+      "permission": "exam.mark.read+explicit_class"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/final-results/attendance",
+      "policy": "record_final_attendance",
+      "permission": "exam.mark.read+explicit_class"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/final-results/versions",
+      "policy": "list_final_versions",
+      "permission": "exam.mark.read+explicit_class"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/final-results/versions",
+      "policy": "prepare_final_version",
+      "permission": "exam.mark.read+explicit_class"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/final-results/versions/{version_id}/transition",
+      "policy": "transition_final_version",
+      "permission": "exam.mark.read+explicit_class"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/final-results/versions/{version_id}",
+      "policy": "read_final_version",
+      "permission": "exam.mark.read+explicit_class"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exam-sessions/{exam_session_id}/final-results/versions/{version_id}/export.xlsx",
+      "policy": "export_final_version",
+      "permission": "exam.score.review+explicit_class_export"
     }
   ]
 }

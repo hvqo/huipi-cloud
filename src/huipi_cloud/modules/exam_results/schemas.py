@@ -74,9 +74,11 @@ class StudentResult(ReadModel):
     total: str | None = None
     max_points: str | None = None
     status: Literal[
-        "complete", "incomplete", "identity_pending", "source_stale", "variant_unverified"
+        "complete", "incomplete", "identity_pending", "source_stale", "variant_unverified", "absent"
     ]
-    attendance_status: Literal["not_determined"] = "not_determined"
+    attendance_status: Literal["not_determined", "present", "absent", "unverified"] = (
+        "not_determined"
+    )
     reasons: list[str] = Field(default_factory=list)
     questions: list[QuestionResult] = Field(default_factory=list)
 
@@ -97,3 +99,7 @@ class Preview(ReadModel):
     total_students: int
     has_more: bool
     scope_note: Literal["explicit_classes_only"] = "explicit_classes_only"
+
+
+class FormalPreview(Preview):
+    published: bool = True

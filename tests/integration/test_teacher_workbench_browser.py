@@ -147,6 +147,39 @@ async def test_teacher_workbench_browser_end_to_end(
                         class_id=cls.id,
                         export_allowed=True,
                     )
+        if os.getenv("RUN_EXAM_FINAL_BROWSER") == "1":
+            from huipi_cloud.modules.exam_results import final_service
+            from huipi_cloud.modules.exam_results.access import grant_class
+            from huipi_cloud.modules.exam_results.permissions import RESULT_MANAGER_ROLE
+
+            async with ctx.factory() as db:
+                await final_service.enable_operator(
+                    db,
+                    ctx.users["admin"].id,
+                    ctx.users["admin"].id,
+                    uuid4(),
+                    "synthetic final results deployment",
+                )
+            async with ctx.factory() as db:
+                final_grant = await grants.grant_role(
+                    db,
+                    ctx.principals["admin"],
+                    uuid4(),
+                    user_id=ctx.users["a"].id,
+                    role_version_id=RESULT_MANAGER_ROLE,
+                    scope_id=scope_id,
+                )
+            for cls in scan_context.classes:
+                async with ctx.factory() as db:
+                    await grant_class(
+                        db,
+                        ctx.principals["admin"],
+                        uuid4(),
+                        grant_id=UUID(final_grant["grant_id"]),
+                        session_id=UUID(scan_context.session["id"]),
+                        class_id=cls.id,
+                        export_allowed=True,
+                    )
     if os.getenv("RUN_PAPER_WORKBENCH_BROWSER") == "1":
         from huipi_cloud.modules.papers.permissions import PAPER_OPERATOR_ROLE
 
