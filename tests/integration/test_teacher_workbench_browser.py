@@ -91,6 +91,80 @@ async def test_teacher_workbench_browser_end_to_end(
             "build_text_grading_provider",
             lambda _config: SyntheticScoreProvider(),
         )
+    if os.getenv("RUN_HOMEWORK_VISUAL_BROWSER") == "1":
+        from huipi_cloud.core.config import settings as app_settings
+        from huipi_cloud.modules.homework import visual_service
+
+        monkeypatch.setattr(app_settings, "grading_enabled", True)
+        monkeypatch.setattr(app_settings, "grading_visual_enabled", True)
+        if os.getenv("RUN_HOMEWORK_VISUAL_REAL") == "1":
+            from huipi_cloud.infrastructure.grading.provider import build_text_grading_provider
+
+            assert app_settings.grading_provider == "openai_compatible"
+            assert app_settings.grading_model == "deepseek-flash"
+            assert (
+                app_settings.grading_allow_remote
+                and app_settings.grading_external_data_authorized
+            )
+            assert app_settings.grading_api_key and app_settings.grading_api_key.get_secret_value()
+            assert app_settings.grading_base_url.rstrip("/") == "https://api.deepseek.com"
+            real_config = app_settings.model_copy(
+                update={
+                    "grading_visual_enabled": True,
+                    "grading_invalid_response_retries": 0,
+                    "grading_deepseek_thinking": "disabled",
+                    "grading_max_output_tokens": 1200,
+                }
+            )
+            actual = build_text_grading_provider(real_config)
+
+            class OneRealVisualRequest:
+                provider_name = actual.provider_name
+                model_id = actual.model_id
+                generation_config_digest = actual.generation_config_digest
+                calls = 0
+
+                async def complete_visual(self, **kwargs):
+                    self.calls += 1
+                    if self.calls > 1:
+                        raise RuntimeError("one synthetic visual request only")
+                    assert len(kwargs["images"]) == 1
+                    assert kwargs["images"][0].startswith(b"\x89PNG")
+                    text_bytes = len(
+                        (kwargs["system_prompt"] + kwargs["user_prompt"]).encode("utf-8")
+                    )
+                    # Conservative peak-hour bound: $0.30/M input, $1.20/M output.
+                    maximum_usd = (
+                        (text_bytes + 256 + 1024) * 0.30 + 1200 * 1.20
+                    ) / 1_000_000
+                    assert maximum_usd <= 0.05
+                    response = await actual.complete_visual(**kwargs)
+                    output = Path(os.environ["HOMEWORK_VISUAL_ACCEPTANCE_DIR"])
+                    output.mkdir(parents=True, exist_ok=True)
+                    payload = {
+                        "model_id": response.model_id,
+                        "elapsed_ms": response.elapsed_ms,
+                        "prompt_tokens": response.usage.prompt_tokens,
+                        "completion_tokens": response.usage.completion_tokens,
+                        "cache_hit_tokens": response.usage.cache_hit_tokens,
+                        "cache_miss_tokens": response.usage.cache_miss_tokens,
+                        "image_count": len(kwargs["images"]),
+                        "finish_reason": response.finish_reason,
+                    }
+                    (output / "model-usage.json").write_text(json.dumps(payload))
+                    (output / "synthetic-model-response.json").write_text(response.content)
+                    (output / "model-usage.json").chmod(0o600)
+                    (output / "synthetic-model-response.json").chmod(0o600)
+                    return response
+
+            visual_provider = OneRealVisualRequest()
+        else:
+            from test_homework_visual import ImageScoreProvider
+
+            visual_provider = ImageScoreProvider()
+        monkeypatch.setattr(
+            visual_service, "build_text_grading_provider", lambda _config: visual_provider
+        )
     async with ctx.factory() as db:
         await scripts.enable_operator(
             db,
@@ -723,6 +797,11 @@ async def test_teacher_workbench_browser_end_to_end(
                         0.1
                     )  # Bounded service readiness only; not a concurrency race.
         scan_pdf = tmp_path / "mixed-scan.pdf"
+        homework_image = tmp_path / "synthetic-homework.png"
+        if os.getenv("RUN_HOMEWORK_VISUAL_BROWSER") == "1":
+            from test_homework_visual import synthetic_png
+
+            homework_image.write_bytes(synthetic_png())
         if os.getenv("RUN_EXAM_VISUAL_BROWSER") == "1":
             from test_exam_visual_grading import visual_mixed_scan_pdf
 
@@ -760,6 +839,7 @@ async def test_teacher_workbench_browser_end_to_end(
             WORKBENCH_CONFIG_CLASS_A=str(scan_context.classes[0].id),
             WORKBENCH_CONFIG_CLASS_B=str(scan_context.classes[1].id),
             WORKBENCH_HOMEWORK_TEACHER_B=str(ctx.users["b"].id),
+            WORKBENCH_HOMEWORK_IMAGE=str(homework_image),
             WORKBENCH_OMR_PAPER=ctx.paper["paper_version_id"],
             WORKBENCH_PYTHON=sys.executable,
         )

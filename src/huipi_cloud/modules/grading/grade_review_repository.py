@@ -249,7 +249,11 @@ async def authorize_proposal(
         await session.execute(text("SET LOCAL lock_timeout = '3000ms'"))
         await session.execute(text("SET LOCAL statement_timeout = '5000ms'"))
     query = (
-        select(GradeInputArtifact.assignment_id, GradeProposalArtifact.submission_id)
+        select(
+            GradeInputArtifact.assignment_id,
+            GradeProposalArtifact.submission_id,
+            GradeInputArtifact.homework_visual_selection_id,
+        )
         .select_from(GradeProposalArtifact)
         .join(
             GradeInputArtifact,
@@ -272,6 +276,8 @@ async def authorize_proposal(
         query = query.where(GradeProposalArtifact.question_id == question_id)
     binding = (await session.execute(query)).first()
     if binding is None:
+        raise AccessError("resource_not_found_or_forbidden", 404)
+    if binding.homework_visual_selection_id is not None:
         raise AccessError("resource_not_found_or_forbidden", 404)
     await require_assignment(session, principal, binding.assignment_id, write=write, lock=lock)
     from huipi_cloud.modules.homework.access import submission_access

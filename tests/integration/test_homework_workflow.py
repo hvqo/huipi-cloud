@@ -79,6 +79,9 @@ async def homework(auth_api):
         yield ctx
     finally:
         async with ctx.factory() as db, db.begin():
+            # Mixed homework tests can create ordinary answer-review decisions,
+            # which reference test users but not the homework attempt table.
+            await db.execute(text("TRUNCATE answer_review_decisions CASCADE"))
             await db.execute(
                 text(
                     "TRUNCATE homework_attempts, homework_participants, homework_classes, "

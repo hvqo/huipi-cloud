@@ -34,6 +34,10 @@ def rules():
         HomeworkParticipant,
         TeachingAssignment,
     )
+    from huipi_cloud.modules.homework.visual_models import (
+        HomeworkVisualJob,
+        HomeworkVisualSelection,
+    )
     from huipi_cloud.modules.identity.models import AdminOperation, AssignmentMembership
     from huipi_cloud.modules.knowledge.models import KnowledgeChunk, KnowledgeDocument
     from huipi_cloud.modules.parsing.models import ParsedArtifact
@@ -95,6 +99,8 @@ def rules():
     )
 
     result = [
+        (HomeworkVisualSelection, false()),
+        (HomeworkVisualJob, false()),
         (TeachingAssignment, false()),
         (HomeworkOffering, false()),
         (HomeworkClass, false()),

@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from uuid import uuid4
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import case, func, insert, select, update
+from sqlalchemy import case, func, insert, or_, select, update
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from huipi_cloud.core.config import settings
@@ -369,6 +369,28 @@ async def create_offering(db, principal, assignment_id, payload):
 
 async def read_offering(db, principal, assignment_id, class_id=None, offset=0, limit=50):
     from huipi_cloud.modules.grading.grade_review_models import GradeReviewRevision
+    from huipi_cloud.modules.grading.models import GradeInputArtifact
+    from huipi_cloud.modules.homework.visual_models import HomeworkVisualSelection
+
+    # Compare immutable source identities, not application/DB wall-clock time.
+    # Older image selections cannot contribute after a newer selection exists.
+    visuals = HomeworkVisualSelection.__table__
+    inputs = GradeInputArtifact.__table__
+    current_visual_selection = (
+        select(visuals.c.id)
+        .where(
+            visuals.c.submission_id == GradeReviewRevision.submission_id,
+            visuals.c.question_id == GradeReviewRevision.question_id,
+        )
+        .order_by(visuals.c.revision.desc())
+        .limit(1)
+        .correlate(GradeReviewRevision)
+        .scalar_subquery()
+    )
+    current_review_source = or_(
+        inputs.c.homework_visual_selection_id.is_(None),
+        inputs.c.homework_visual_selection_id == current_visual_selection,
+    )
 
     async with db.begin():
         offering, classes = await access.offering_access(db, principal, assignment_id)
@@ -421,21 +443,29 @@ async def read_offering(db, principal, assignment_id, class_id=None, offset=0, l
         question_count = await db.scalar(
             select(func.count(Question.id)).where(Question.assignment_id == assignment_id)
         )
-        latest_reviews = select(
-            GradeReviewRevision.submission_id.label("submission_id"),
-            GradeReviewRevision.question_id.label("question_id"),
-            GradeReviewRevision.review_status.label("review_status"),
-            GradeReviewRevision.reviewer_user_id.label("reviewer_user_id"),
-            func.row_number()
-            .over(
-                partition_by=(GradeReviewRevision.submission_id, GradeReviewRevision.question_id),
-                order_by=(
-                    GradeReviewRevision.created_at.desc(),
-                    GradeReviewRevision.review_revision.desc(),
-                ),
+        latest_reviews = (
+            select(
+                GradeReviewRevision.submission_id.label("submission_id"),
+                GradeReviewRevision.question_id.label("question_id"),
+                GradeReviewRevision.review_status.label("review_status"),
+                GradeReviewRevision.reviewer_user_id.label("reviewer_user_id"),
+                func.row_number()
+                .over(
+                    partition_by=(
+                        GradeReviewRevision.submission_id,
+                        GradeReviewRevision.question_id,
+                    ),
+                    order_by=(
+                        GradeReviewRevision.created_at.desc(),
+                        GradeReviewRevision.review_revision.desc(),
+                    ),
+                )
+                .label("row_number"),
             )
-            .label("row_number"),
-        ).subquery()
+            .join(inputs, inputs.c.id == GradeReviewRevision.grade_input_artifact_id)
+            .where(current_review_source)
+            .subquery()
+        )
         reviewed_by_class = dict(
             (
                 await db.execute(
@@ -484,7 +514,11 @@ async def read_offering(db, principal, assignment_id, class_id=None, offset=0, l
                             GradeReviewRevision.review_status,
                             GradeReviewRevision.reviewer_user_id,
                         )
-                        .where(GradeReviewRevision.submission_id == attempt["submission_id"])
+                        .join(inputs, inputs.c.id == GradeReviewRevision.grade_input_artifact_id)
+                        .where(
+                            GradeReviewRevision.submission_id == attempt["submission_id"],
+                            current_review_source,
+                        )
                         .order_by(
                             GradeReviewRevision.created_at.desc(),
                             GradeReviewRevision.review_revision.desc(),
@@ -854,7 +888,7 @@ async def read_candidate(db, principal, participant_id, question_id, storage):
     from sqlalchemy.ext.asyncio import async_sessionmaker
 
     from huipi_cloud.modules.grading.grade_review_service import inspect_grade_proposal
-    from huipi_cloud.modules.grading.models import GradeProposalArtifact
+    from huipi_cloud.modules.grading.models import GradeInputArtifact, GradeProposalArtifact
     from huipi_cloud.modules.grading.proposal_errors import GradeProposalError
     from huipi_cloud.modules.grading.proposal_service import read_grade_proposal_artifact
 
@@ -863,9 +897,14 @@ async def read_candidate(db, principal, participant_id, question_id, storage):
             source = await current_source(db, principal, participant_id, question_id)
             proposal_id = await db.scalar(
                 select(GradeProposalArtifact.id)
+                .join(
+                    GradeInputArtifact,
+                    GradeInputArtifact.id == GradeProposalArtifact.grade_input_artifact_id,
+                )
                 .where(
                     GradeProposalArtifact.submission_id == source["submission_id"],
                     GradeProposalArtifact.question_id == question_id,
+                    GradeInputArtifact.homework_visual_selection_id.is_(None),
                 )
                 .order_by(GradeProposalArtifact.created_at.desc(), GradeProposalArtifact.id.desc())
                 .limit(1)

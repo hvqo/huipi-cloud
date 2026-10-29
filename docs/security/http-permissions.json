@@ -1002,6 +1002,36 @@
       "path": "/api/v1/homework/admin/teaching-assignments",
       "policy": "list_teaching_assignments",
       "permission": "homework_scoped"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/homework/submissions/{submission_id}/visual-pages/{page_index}",
+      "policy": "preview_homework_visual_page",
+      "permission": "homework_scoped"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/homework/submissions/{submission_id}/questions/{question_id}/visual",
+      "policy": "read_homework_visual",
+      "permission": "homework_scoped"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/homework/submissions/{submission_id}/questions/{question_id}/visual/selection",
+      "policy": "select_homework_visual",
+      "permission": "homework_scoped"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/homework/submissions/{submission_id}/questions/{question_id}/visual/score",
+      "policy": "score_homework_visual",
+      "permission": "homework_scoped"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/homework/submissions/{submission_id}/questions/{question_id}/visual/review",
+      "policy": "review_homework_visual",
+      "permission": "homework_scoped"
     }
   ]
 }

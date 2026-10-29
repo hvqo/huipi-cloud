@@ -55,9 +55,21 @@ class GradeInputArtifact(Base):
         ),
         CheckConstraint(
             "(schema_version='visual-1.0' AND visual_selection_id IS NOT NULL "
-            "AND review_decision_id IS NULL) OR (schema_version<>'visual-1.0' "
-            "AND visual_selection_id IS NULL AND review_decision_id IS NOT NULL)",
+            "AND homework_visual_selection_id IS NULL AND review_decision_id IS NULL) OR "
+            "(schema_version='hw-visual-1' AND homework_visual_selection_id IS NOT NULL "
+            "AND visual_selection_id IS NULL AND review_decision_id IS NULL) OR "
+            "(schema_version NOT IN ('visual-1.0','hw-visual-1') "
+            "AND visual_selection_id IS NULL AND homework_visual_selection_id IS NULL "
+            "AND review_decision_id IS NOT NULL)",
             name="ck_grade_inputs_source_mode",
+        ),
+        CheckConstraint(
+            "(canonical_artifact_id IS NOT NULL AND canonical_sha256 IS NOT NULL "
+            "AND alignment_artifact_id IS NOT NULL AND alignment_sha256 IS NOT NULL) OR "
+            "(schema_version='hw-visual-1' AND canonical_artifact_id IS NULL "
+            "AND canonical_sha256 IS NULL AND alignment_artifact_id IS NULL "
+            "AND alignment_sha256 IS NULL)",
+            name="ck_grade_inputs_text_sources",
         ),
         Index("ix_grade_inputs_submission_created", "submission_id", "created_at"),
         Index("ix_grade_inputs_question_created", "question_id", "created_at"),
@@ -81,18 +93,18 @@ class GradeInputArtifact(Base):
         nullable=False,
     )
     question_number: Mapped[int] = mapped_column(Integer, nullable=False)
-    canonical_artifact_id: Mapped[UUID] = mapped_column(
+    canonical_artifact_id: Mapped[UUID | None] = mapped_column(
         Uuid(as_uuid=True),
         ForeignKey("canonical_artifacts.id", ondelete="RESTRICT"),
-        nullable=False,
+        nullable=True,
     )
-    canonical_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
-    alignment_artifact_id: Mapped[UUID] = mapped_column(
+    canonical_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    alignment_artifact_id: Mapped[UUID | None] = mapped_column(
         Uuid(as_uuid=True),
         ForeignKey("answer_alignment_artifacts.id", ondelete="RESTRICT"),
-        nullable=False,
+        nullable=True,
     )
-    alignment_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    alignment_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
     assignment_questions_digest: Mapped[str] = mapped_column(String(64), nullable=False)
     review_decision_id: Mapped[UUID | None] = mapped_column(
         Uuid(as_uuid=True),
@@ -101,6 +113,9 @@ class GradeInputArtifact(Base):
     )
     visual_selection_id: Mapped[UUID | None] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("exam_visual_selections.id", ondelete="RESTRICT")
+    )
+    homework_visual_selection_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("homework_visual_selections.id", ondelete="RESTRICT")
     )
     review_revision: Mapped[int] = mapped_column(Integer, nullable=False)
     review_request_sha256: Mapped[str] = mapped_column(String(64), nullable=False)

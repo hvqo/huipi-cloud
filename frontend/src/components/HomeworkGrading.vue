@@ -27,7 +27,7 @@ async function grade() {
     await request(`/api/v1/homework/participants/${id(link.value.participant_id)}/questions/${id(props.questionId)}/candidate`, { body: JSON.stringify({ request_id: pendingScore.value }), timeoutMs: 180000, errorCode: true })
     pendingScore.value = undefined
     notice.value = '评分建议已生成，请核对证据并由教师确认。'; await load()
-  } catch(e) { if (e instanceof ApiError && !e.uncertain) pendingScore.value = undefined; error.value = pendingScore.value ? '评分结果尚未确认，请重试原请求。' : e instanceof ApiError && e.code === 'homework_visual_scoring_not_supported' ? '本次作答包含图片等非文本证据，日常作业暂不支持直接图文评分，请人工处理。' : e instanceof ApiError && e.code === 'homework_answer_not_ready' ? '请先保存本题的学生作答确认。' : e instanceof Error ? e.message : '评分失败。' } finally { busy.value = false }
+  } catch(e) { if (e instanceof ApiError && !e.uncertain) pendingScore.value = undefined; error.value = pendingScore.value ? '评分结果尚未确认，请重试原请求。' : e instanceof ApiError && e.code === 'homework_visual_scoring_not_supported' ? '本次作答包含图片证据，请使用下方的图片作答批改。' : e instanceof ApiError && e.code === 'homework_answer_not_ready' ? '请先保存本题的学生作答确认。' : e instanceof Error ? e.message : '评分失败。' } finally { busy.value = false }
 }
 async function review(status: 'accepted' | 'revised' | 'rejected' | 'regrading_required') {
   if (!candidate.value || busy.value) return

@@ -44,6 +44,21 @@ HOMEWORK_POLICIES = {
     "read_homework_candidate": (
         "GET", "/homework/participants/{participant_id}/questions/{question_id}/candidate"
     ),
+    "preview_homework_visual_page": (
+        "GET", "/homework/submissions/{submission_id}/visual-pages/{page_index}"
+    ),
+    "read_homework_visual": (
+        "GET", "/homework/submissions/{submission_id}/questions/{question_id}/visual"
+    ),
+    "select_homework_visual": (
+        "POST", "/homework/submissions/{submission_id}/questions/{question_id}/visual/selection"
+    ),
+    "score_homework_visual": (
+        "POST", "/homework/submissions/{submission_id}/questions/{question_id}/visual/score"
+    ),
+    "review_homework_visual": (
+        "POST", "/homework/submissions/{submission_id}/questions/{question_id}/visual/review"
+    ),
 }
 
 # Exact route names + allowed methods: a new route has no implicit permission.

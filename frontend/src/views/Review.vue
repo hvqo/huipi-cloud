@@ -26,6 +26,7 @@ import PageState from '../components/PageState.vue'
 import SourceNode from '../components/SourceNode.vue'
 import FilePreview from '../components/FilePreview.vue'
 import HomeworkGrading from '../components/HomeworkGrading.vue'
+import HomeworkVisualGrading from '../components/HomeworkVisualGrading.vue'
 
 const route = useRoute(),
   aid = String(route.params.aid),
@@ -51,6 +52,7 @@ const pageNumber = ref(1),
   busy = ref(false),
   frozen = ref(false)
 const permissionDenied = ref(false)
+const visualOpen = ref(false)
 const pending = new PendingReview(`huipi.review.${identity.actor}.${sid}.${qid}`)
 frozen.value = !!pending.body
 const nodes = new Map<string, string>(),
@@ -434,6 +436,10 @@ onMounted(load)
         </aside>
       </div>
       <HomeworkGrading :submission-id="sid" :question-id="qid" />
+      <details v-if="workbench?.can_write" @toggle="visualOpen = ($event.target as HTMLDetailsElement).open">
+        <summary>图片作答批改</summary>
+        <HomeworkVisualGrading v-if="visualOpen" :submission-id="sid" :question-id="qid" />
+      </details>
       <section class="panel history-panel">
         <div class="section-heading">
           <div>

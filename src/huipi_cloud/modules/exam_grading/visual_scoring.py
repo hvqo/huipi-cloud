@@ -71,6 +71,13 @@ def prompt(doc: VisualGradeInput) -> str:
             for r in doc.regions
         ],
     }
+    confirmed_text = getattr(doc, "confirmed_text", [])
+    if confirmed_text:
+        contract["confirmed_student_text"] = [s.text for s in confirmed_text]
+        contract["instruction"] += (
+            "已确认文字仅作为所选图片的阅读辅助；不得将文字误写为图片中不可见的步骤。"
+            "评分证据必须对应教师选定的图片区域，不得虚构文字引用。"
+        )
     return json.dumps(contract, ensure_ascii=False, separators=(",", ":"))
 
 
@@ -335,7 +342,9 @@ async def read_input(storage, indexed, config=settings):
     return doc
 
 
-async def make_proposal(provider, doc, images, job_id, config=settings):
+async def make_proposal(
+    provider, doc, images, job_id, config=settings, *, prompt_version=PROMPT_VERSION
+):
     user_prompt = prompt(doc)
     text_bytes = len((SYSTEM + user_prompt).encode())
     # DeepSeek documents at most 1024 input tokens per image; text bytes are a
@@ -368,7 +377,7 @@ async def make_proposal(provider, doc, images, job_id, config=settings):
             input_sha256=doc.input_sha256,
             provider=provider.provider_name,
             model=provider.model_id,
-            prompt=PROMPT_VERSION,
+            prompt=prompt_version,
             generation=generation,
         )
     )
@@ -382,7 +391,7 @@ async def make_proposal(provider, doc, images, job_id, config=settings):
         question_id=doc.question.question_id,
         model_id=response.model_id,
         provider=provider.provider_name,
-        prompt_version=PROMPT_VERSION,
+        prompt_version=prompt_version,
         generation_config_digest=generation,
         criterion_scores=scores,
         total_score=total,

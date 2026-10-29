@@ -5,6 +5,7 @@ import { api, ApiError, id, request, type Schema } from '../api/client'
 import { useLoad, date, status } from '../lib/load'
 import PageState from '../components/PageState.vue'
 import FilePreview from '../components/FilePreview.vue'
+import HomeworkVisualGrading from '../components/HomeworkVisualGrading.vue'
 const route = useRoute(),
   aid = String(route.params.aid),
   sid = String(route.params.sid),
@@ -12,6 +13,7 @@ const route = useRoute(),
 const alignment = ref<Schema['AlignmentSummaryRead'] | null>(null)
 const homework = ref<{student_name: string; student_code: string; version: number; is_current: boolean} | null>(null)
 const preparing = ref(false), preparationError = ref('')
+const visualQuestion = ref<string | null>(null)
 const submission = ref<Schema['SubmissionRead']>(),
   workbench = ref<Schema['AssignmentWorkbench']>(),
   canonical = ref<Schema['CanonicalDocumentStatusRead']>(),
@@ -121,7 +123,11 @@ async function prepareHomework() {
             class="action-link"
             :to="`/assignments/${aid}/submissions/${sid}/questions/${q.id}/review`"
             >核对作答 →</RouterLink
-          ><span v-else class="muted">等待来源就绪</span>
+          ><span v-else class="muted">文字核对等待来源就绪</span>
+          <details v-if="homework?.is_current && workbench.can_write" @toggle="visualQuestion = ($event.target as HTMLDetailsElement).open ? q.id : null">
+            <summary>图片作答批改</summary>
+            <HomeworkVisualGrading v-if="visualQuestion === q.id" :submission-id="sid" :question-id="q.id" />
+          </details>
         </div>
         <div class="pager">
           <el-button :disabled="!offset" @click="paginate('offset', -20)">上一页题目</el-button
@@ -133,3 +139,8 @@ async function prepareHomework() {
     ></PageState
   >
 </template>
+
+<style scoped>
+.question-row { flex-wrap: wrap; }
+.question-row details { flex-basis: 100%; }
+</style>
