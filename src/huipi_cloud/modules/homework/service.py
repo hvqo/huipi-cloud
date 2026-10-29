@@ -783,13 +783,28 @@ async def prepare_submission(db, principal, submission_id, storage):
         raise AccessError("homework_source_preparation_failed", 409) from None
 
 
+def grade_input_error_code(status):
+    return {
+        "unsupported_modality": "homework_visual_scoring_not_supported",
+        "review_required": "homework_answer_not_ready",
+        "source_stale": "homework_source_changed",
+        "source_unavailable": "homework_source_unavailable",
+        "invalid_rubric": "homework_rubric_invalid",
+        "size_limit_exceeded": "homework_input_too_large",
+    }.get(status, "homework_grade_input_unavailable")
+
+
 async def request_candidate(db, principal, participant_id, question_id, payload, storage):
     """Reuse GradeInput and GradeProposal; no provider fallback and no auto-review."""
     from uuid import NAMESPACE_URL, uuid5
 
     from sqlalchemy.ext.asyncio import async_sessionmaker
 
-    from huipi_cloud.modules.grading.errors import GradeInputError
+    from huipi_cloud.modules.grading.errors import (
+        GradeInputCommitOutcomeUnknownError,
+        GradeInputError,
+        GradeInputRegistrationRolledBackError,
+    )
     from huipi_cloud.modules.grading.proposal_errors import GradeProposalError
     from huipi_cloud.modules.grading.proposal_service import grade_input_artifact
     from huipi_cloud.modules.grading.service import prepare_grade_input
@@ -807,7 +822,7 @@ async def request_candidate(db, principal, participant_id, question_id, payload,
             request_id=uuid5(NAMESPACE_URL, f"homework-input:{payload.request_id}"),
         )
         if prepared.artifact_id is None:
-            raise AccessError("homework_answer_not_ready", 409)
+            raise AccessError(grade_input_error_code(prepared.inspection.status), 409)
         result = await grade_input_artifact(
             factory,
             storage,
@@ -829,6 +844,8 @@ async def request_candidate(db, principal, participant_id, question_id, payload,
             not in {"provider_unavailable", "provider_timeout", "commit_outcome_unknown"}
             else 503,
         ) from None
+    except (GradeInputCommitOutcomeUnknownError, GradeInputRegistrationRolledBackError):
+        raise AccessError("homework_grade_input_commit_unavailable", 503) from None
     except GradeInputError:
         raise AccessError("homework_grade_input_unavailable", 409) from None
 

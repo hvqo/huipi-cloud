@@ -4,6 +4,7 @@
 import asyncio
 from datetime import UTC, date, datetime, timedelta
 from io import BytesIO
+from types import SimpleNamespace
 from uuid import uuid4
 
 import pytest
@@ -93,7 +94,7 @@ async def homework(auth_api):
 
 
 @pytest.mark.anyio
-async def test_teacher_classes_roster_reupload_and_cross_class(homework):
+async def test_teacher_classes_roster_reupload_and_cross_class(homework, monkeypatch):
     c = homework
     assert (
         await c.client.get("/api/v1/homework/admin/teaching-assignments", headers=c.headers("a"))
@@ -185,6 +186,31 @@ async def test_teacher_classes_roster_reupload_and_cross_class(homework):
     new = await c.client.get(f"/api/v1/assignments/{aid}/homework", headers=c.headers("a"))
     row = next(r for r in new.json()["students"] if r["participant_id"] == pid)
     assert row["current_submission_id"] == second.json()["submission_id"]
+    from huipi_cloud.modules.grading import service as grade_inputs
+    from huipi_cloud.modules.grading.errors import GradeInputCommitOutcomeUnknownError
+
+    async def uncertain_input(*args, **kwargs):
+        raise GradeInputCommitOutcomeUnknownError()
+
+    async def visual_only_input(*args, **kwargs):
+        return SimpleNamespace(
+            artifact_id=None, inspection=SimpleNamespace(status="unsupported_modality")
+        )
+
+    path = f"/api/v1/homework/participants/{pid}/questions/{qid}/candidate"
+    with monkeypatch.context() as patch:
+        patch.setattr(grade_inputs, "prepare_grade_input", uncertain_input)
+        uncertain = await c.client.post(
+            path, headers=c.headers("a"), json={"request_id": str(uuid4())}
+        )
+        assert uncertain.status_code == 503
+        assert uncertain.json()["detail"] == "homework_grade_input_commit_unavailable"
+        patch.setattr(grade_inputs, "prepare_grade_input", visual_only_input)
+        unsupported = await c.client.post(
+            path, headers=c.headers("a"), json={"request_id": str(uuid4())}
+        )
+        assert unsupported.status_code == 409
+        assert unsupported.json()["detail"] == "homework_visual_scoring_not_supported"
     assert (
         await c.client.get(
             f"/api/v1/submissions/{second.json()['submission_id']}", headers=c.headers("b")

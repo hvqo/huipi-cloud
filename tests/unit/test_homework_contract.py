@@ -10,6 +10,7 @@ from huipi_cloud.modules.homework.schemas import (
     OfferingCreate,
     TeachingCreate,
 )
+from huipi_cloud.modules.homework.service import grade_input_error_code
 
 
 def test_homework_question_requires_complete_exact_rubric():
@@ -53,3 +54,8 @@ def test_client_cannot_claim_admin_or_choose_extra_scope_on_teaching_grant():
     TeachingCreate.model_validate(identifiers)
     with pytest.raises(ValidationError):
         TeachingCreate.model_validate({**identifiers, "is_admin": True})
+
+
+def test_visual_evidence_is_not_reported_as_missing_teacher_confirmation():
+    assert grade_input_error_code("unsupported_modality") == "homework_visual_scoring_not_supported"
+    assert grade_input_error_code("review_required") == "homework_answer_not_ready"
