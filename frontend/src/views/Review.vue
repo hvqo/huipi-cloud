@@ -25,6 +25,7 @@ import { date, status, useLoad } from '../lib/load'
 import PageState from '../components/PageState.vue'
 import SourceNode from '../components/SourceNode.vue'
 import FilePreview from '../components/FilePreview.vue'
+import HomeworkGrading from '../components/HomeworkGrading.vue'
 
 const route = useRoute(),
   aid = String(route.params.aid),
@@ -432,6 +433,7 @@ onMounted(load)
           </p>
         </aside>
       </div>
+      <HomeworkGrading :submission-id="sid" :question-id="qid" />
       <section class="panel history-panel">
         <div class="section-heading">
           <div>

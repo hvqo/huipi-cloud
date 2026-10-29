@@ -69,6 +69,28 @@ async def test_teacher_workbench_browser_end_to_end(
     monkeypatch,
 ):
     ctx = auth_api
+    if os.getenv("RUN_HOMEWORK_BROWSER") == "1":
+        for classroom in scan_context.classes:
+            response = await ctx.client.post(
+                "/api/v1/homework/admin/teaching-assignments",
+                headers=ctx.headers("admin"),
+                json={
+                    "teacher_id": str(ctx.users["a"].id),
+                    "class_id": str(classroom.id),
+                    "term_id": str(ctx.term_id),
+                    "subject_id": str(ctx.subject_ids[0]),
+                },
+            )
+            assert response.status_code == 200, response.text
+        from test_exam_grading import SyntheticScoreProvider
+
+        from huipi_cloud.modules.grading import proposal_service
+
+        monkeypatch.setattr(
+            proposal_service,
+            "build_text_grading_provider",
+            lambda _config: SyntheticScoreProvider(),
+        )
     async with ctx.factory() as db:
         await scripts.enable_operator(
             db,
@@ -441,6 +463,7 @@ async def test_teacher_workbench_browser_end_to_end(
         monkeypatch.setattr(ctx.storage, "upload_path", interrupt_recovery_upload)
     worker_stop = asyncio.Event()
     worker_task = None
+    homework_worker_task = None
     grading_task = None
     parse_executor = None
     previous_headers = ctx.client.headers.copy()
@@ -736,6 +759,7 @@ async def test_teacher_workbench_browser_end_to_end(
             WORKBENCH_CONFIG_PAPER_B=config_paper_b["paper_version_id"] if config_paper_b else "",
             WORKBENCH_CONFIG_CLASS_A=str(scan_context.classes[0].id),
             WORKBENCH_CONFIG_CLASS_B=str(scan_context.classes[1].id),
+            WORKBENCH_HOMEWORK_TEACHER_B=str(ctx.users["b"].id),
             WORKBENCH_OMR_PAPER=ctx.paper["paper_version_id"],
             WORKBENCH_PYTHON=sys.executable,
         )
@@ -792,6 +816,12 @@ async def test_teacher_workbench_browser_end_to_end(
         parse_executor = ProtectedExecutor(parser, backend)
         worker = ParsingWorker(ctx.factory, parse_executor, config, repository_backend=backend)
         worker_task = asyncio.create_task(worker.run(worker_stop))
+        if os.getenv("RUN_HOMEWORK_BROWSER") == "1":
+            from test_exam_parsing import SyntheticExecutor
+
+            legacy_parser = SyntheticExecutor(ctx.storage, text="第1题 学生作答：2+2=4。")
+            legacy_worker = ParsingWorker(ctx.factory, legacy_parser, config)
+            homework_worker_task = asyncio.create_task(legacy_worker.run(worker_stop))
         if os.getenv("RUN_EXAM_VISUAL_BROWSER") == "1":
             from huipi_cloud.core.config import settings as app_settings
             from huipi_cloud.modules.exam_grading.runtime import ScoringWorker
@@ -1083,6 +1113,8 @@ async def test_teacher_workbench_browser_end_to_end(
         assert rows[0].response_regions[0]["text_end"] == len(text_value)
     finally:
         worker_stop.set()
+        if homework_worker_task is not None:
+            await asyncio.wait_for(homework_worker_task, timeout=15)
         if grading_task is not None:
             await asyncio.wait_for(grading_task, timeout=15)
         if worker_task is not None:
@@ -1090,6 +1122,13 @@ async def test_teacher_workbench_browser_end_to_end(
         if parse_executor is not None:
             await parse_executor.aclose()
         async with ctx.factory() as db, db.begin():
+            if os.getenv("RUN_HOMEWORK_BROWSER") == "1":
+                await db.execute(
+                    text(
+                        "TRUNCATE homework_attempts,homework_participants,homework_classes,"
+                        "homework_offerings,homework_teaching_assignments CASCADE"
+                    )
+                )
             if os.getenv("RUN_OMR_BROWSER") == "1":
                 await db.execute(
                     text(

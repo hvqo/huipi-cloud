@@ -45,6 +45,9 @@ onMounted(load)
       <div v-if="!view.can_write" class="notice">
         当前作业为只读授权，可以查看内容，不能保存复核。
       </div>
+      <RouterLink class="action-link" :to="`/assignments/${aid}/homework`">
+        布置班级作业与查看完成情况 →
+      </RouterLink>
       <div class="tabs" role="tablist" aria-label="作业内容">
         <button role="tab" :aria-selected="tab === 'questions'" @click="tab = 'questions'">
           题目与评分细则</button

@@ -24,6 +24,7 @@ from huipi_cloud.modules.exam_rosters import models as roster_models  # noqa: F4
 from huipi_cloud.modules.exams import models as exam_models  # noqa: F401
 from huipi_cloud.modules.grading import grade_review_models  # noqa: F401
 from huipi_cloud.modules.grading import models as grading_models  # noqa: F401
+from huipi_cloud.modules.homework import models as homework_models  # noqa: F401
 from huipi_cloud.modules.identity import models as identity_models  # noqa: F401
 from huipi_cloud.modules.knowledge import models as knowledge_models  # noqa: F401
 from huipi_cloud.modules.marking_tasks import models as marking_models  # noqa: F401

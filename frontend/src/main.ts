@@ -13,6 +13,8 @@ import ScanIntake from './views/ScanIntake.vue'
 import AnswerScripts from './views/AnswerScripts.vue'
 import ExamResults from './views/ExamResults.vue'
 import FinalResults from './views/FinalResults.vue'
+import Homework from './views/Homework.vue'
+import TeachingAssignments from './views/TeachingAssignments.vue'
 import ExamConfiguration from './views/ExamConfiguration.vue'
 import Papers from './views/Papers.vue'
 import School from './views/School.vue'
@@ -40,11 +42,13 @@ export const router = createRouter({
     },
     { path: '/', redirect: '/assignments' },
     { path: '/assignments', component: Assignments },
+    { path: '/assignments/:aid/homework', component: Homework },
     { path: '/scans', component: ScanIntake },
     { path: '/exam-results', component: ExamResults },
     { path: '/final-results', component: FinalResults },
     { path: '/exams', component: ExamConfiguration },
     { path: '/school', component: School },
+    { path: '/school/teaching', component: TeachingAssignments },
     { path: '/exceptions', component: ExamRecovery },
     { path: '/marking/manage', component: MarkingManagement },
     { path: '/marking/progress', component: MarkingManagement, props: { progressOnly: true } },

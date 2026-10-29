@@ -1,5 +1,5 @@
 {
-  "version": "exam-final-results-1",
+  "version": "homework-workflow-1",
   "operations": [
     {
       "method": "POST",
@@ -924,6 +924,84 @@
       "path": "/api/v1/exam-sessions/{exam_session_id}/final-results/versions/{version_id}/export.xlsx",
       "policy": "export_final_version",
       "permission": "exam.score.review+explicit_class_export"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/homework/teaching-assignments",
+      "policy": "list_my_teaching_assignments",
+      "permission": "homework_scoped"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/homework/admin/teaching-assignments",
+      "policy": "create_teaching_assignment",
+      "permission": "homework_scoped"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/homework/admin/teaching-assignments/{teaching_id}",
+      "policy": "revoke_teaching_assignment",
+      "permission": "homework_scoped"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assignments/{assignment_id}/homework",
+      "policy": "assign_homework",
+      "permission": "homework_scoped"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assignments/{assignment_id}/homework-questions",
+      "policy": "create_homework_question",
+      "permission": "homework_scoped"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/assignments/{assignment_id}/homework",
+      "policy": "read_homework",
+      "permission": "homework_scoped"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/homework/participants/{participant_id}/attempts",
+      "policy": "list_homework_attempts",
+      "permission": "homework_scoped"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/homework/submissions/{submission_id}",
+      "policy": "read_homework_submission",
+      "permission": "homework_scoped"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/homework/participants/{participant_id}/attempts",
+      "policy": "upload_homework_attempt",
+      "permission": "homework_scoped"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/homework/participants/{participant_id}/questions/{question_id}/candidate",
+      "policy": "request_homework_candidate",
+      "permission": "homework_scoped"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/homework/participants/{participant_id}/questions/{question_id}/candidate",
+      "policy": "read_homework_candidate",
+      "permission": "homework_scoped"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/homework/submissions/{submission_id}/prepare",
+      "policy": "prepare_homework_submission",
+      "permission": "homework_scoped"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/homework/admin/teaching-assignments",
+      "policy": "list_teaching_assignments",
+      "permission": "homework_scoped"
     }
   ]
 }

@@ -26,6 +26,26 @@ from huipi_cloud.modules.papers.web_policies import PREFIX as PAPER_WEB_PREFIX
 bearer = HTTPBearer(auto_error=False)
 verifier = TokenVerifier(settings)
 
+HOMEWORK_POLICIES = {
+    "list_my_teaching_assignments": ("GET", "/homework/teaching-assignments"),
+    "create_teaching_assignment": ("POST", "/homework/admin/teaching-assignments"),
+    "list_teaching_assignments": ("GET", "/homework/admin/teaching-assignments"),
+    "revoke_teaching_assignment": ("DELETE", "/homework/admin/teaching-assignments/{teaching_id}"),
+    "assign_homework": ("POST", "/assignments/{assignment_id}/homework"),
+    "create_homework_question": ("POST", "/assignments/{assignment_id}/homework-questions"),
+    "read_homework": ("GET", "/assignments/{assignment_id}/homework"),
+    "list_homework_attempts": ("GET", "/homework/participants/{participant_id}/attempts"),
+    "read_homework_submission": ("GET", "/homework/submissions/{submission_id}"),
+    "prepare_homework_submission": ("POST", "/homework/submissions/{submission_id}/prepare"),
+    "upload_homework_attempt": ("POST", "/homework/participants/{participant_id}/attempts"),
+    "request_homework_candidate": (
+        "POST", "/homework/participants/{participant_id}/questions/{question_id}/candidate"
+    ),
+    "read_homework_candidate": (
+        "GET", "/homework/participants/{participant_id}/questions/{question_id}/candidate"
+    ),
+}
+
 # Exact route names + allowed methods: a new route has no implicit permission.
 
 ADMIN_POLICIES = {
@@ -214,6 +234,7 @@ SCAN_POLICIES = {
 }
 
 POLICIES = {
+    **{name: {policy[0]} for name, policy in HOMEWORK_POLICIES.items()},
     **{name: {rule[0]} for name, rule in OMR_POLICIES.items()},
     **{name: {rule[0]} for name, rule in TASK_POLICIES.items()},
     **{name: {rule[0]} for name, rule in RECOVERY_POLICIES.items()},
@@ -284,6 +305,7 @@ GRADE_REVIEW_PATH = (
 )
 
 POLICY_PATHS = {
+    **{name: policy[1] for name, policy in HOMEWORK_POLICIES.items()},
     **{name: rule[1] for name, rule in OMR_POLICIES.items()},
     **{name: rule[1] for name, rule in TASK_POLICIES.items()},
     **{name: rule[1] for name, rule in RECOVERY_POLICIES.items()},
@@ -399,6 +421,9 @@ async def authorize_request(
         async with asyncio.timeout(5), session.begin():
             await session.execute(text("SET LOCAL statement_timeout = '3000ms'"))
             current = await service.refresh_principal(session, principal)
+            if name in HOMEWORK_POLICIES:
+                # The homework services enforce exact administrator or class scope.
+                return current
             if name in {
                 *ADMIN_POLICIES,
                 "grant_assignment_membership",
@@ -577,6 +602,13 @@ async def authorize_request(
                 scopes[0],
                 write=request.method != "GET",
             )
+            submission_id = request.path_params.get("submission_id")
+            if submission_id is not None:
+                from huipi_cloud.modules.homework.access import submission_access
+
+                await submission_access(
+                    session, current, UUID(str(submission_id)), write=request.method != "GET"
+                )
             return current
     except (SQLAlchemyError, OSError, TimeoutError):
         raise AccessError("authorization_unavailable", 503) from None

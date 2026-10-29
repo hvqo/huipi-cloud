@@ -3,6 +3,7 @@
 import hashlib
 import io
 import json
+import re
 import time
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
@@ -282,35 +283,30 @@ async def test_invalid_or_unmapped_tokens_cannot_reach_business(auth_api, claims
 @pytest.mark.anyio
 async def test_all_old_http_routes_require_token_including_every_private_download(auth_api):
     ctx = auth_api
-    count = 0
+    checked = set()
+    expected = {
+        (method, path)
+        for path, operations in app.openapi()["paths"].items()
+        if not path.endswith("/health")
+        for method in operations
+        if method in {"get", "post", "put", "patch", "delete"}
+    }
     for path, operations in app.openapi()["paths"].items():
         if path.endswith("/health"):
             continue
         for method in operations:
             if method not in {"get", "post", "put", "patch", "delete"}:
                 continue
-            url = path
-            for name in (
-                "assignment_id",
-                "question_id",
-                "submission_id",
-                "user_id",
-                "proposal_id",
-                "exam_session_id",
-                "batch_id",
-                "file_id",
-                "page_id",
-                "script_id",
-            ):
-                url = url.replace("{" + name + "}", str(uuid4()))
+            url = re.sub(r"\{[a-z_]+_id\}", lambda _: str(uuid4()), path)
             url = url.replace("{page_number}", "1")
             response = await ctx.client.request(method, url, json={})
             assert response.status_code == 401, (method, path, response.text)
             assert response.headers["www-authenticate"] == "Bearer"
             assert "security" in operations[method]
-            count += 1
-    # 33 legacy + 11 organization + 10 scan + 8 script operations; none are anonymous.
-    assert count == 62
+            checked.add((method, path))
+    # Every registered operation, including newly added paths, must be exercised.
+    assert checked == expected
+    assert ("get", "/api/v1/homework/participants/{participant_id}/attempts") in checked
     assert (await ctx.client.get("/api/v1/health")).json() == {"status": "ok"}
 
 
