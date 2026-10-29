@@ -102,7 +102,7 @@ def styles():
     return xml(root)
 
 
-def export(preview):
+def export(preview, *, formal=False, version_no=None):
     columns = {}
     for student in preview.students:
         for q in student.questions:
@@ -131,6 +131,7 @@ def export(preview):
         "identity_pending": "身份待确认",
         "source_stale": "来源失效",
         "variant_unverified": "卷别待核验",
+        "absent": "缺考（无成绩）",
     }
     provenance = [
         [
@@ -160,8 +161,10 @@ def export(preview):
                 student.required_count,
                 student.subtotal,
                 student.total,
-                labels[student.status],
-                "尚未确认到考/缺考",
+                "已发布" if formal and student.status == "complete" else labels[student.status],
+                {"present": "到考", "absent": "缺考", "unverified": "待核验"}.get(
+                    student.attendance_status, "尚未确认到考/缺考"
+                ),
             ]
         )
         for q in student.questions:
@@ -180,7 +183,7 @@ def export(preview):
     numeric = set(range(8, 8 + len(columns))) | set(range(8 + len(columns), 12 + len(columns)))
     metadata = [
         ["项目", "内容"],
-        ["性质", "内部教师预览，不是正式发布成绩"],
+        ["性质", f"正式成绩版本 {version_no}" if formal else "内部教师预览，不是正式发布成绩"],
         ["生成时间UTC", preview.generated_at.isoformat()],
         ["一致性摘要", preview.snapshot_sha256],
         ["名单版本", preview.roster_revision_id],
@@ -222,7 +225,7 @@ def export(preview):
             **{"xmlns:r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships"},
         )
         sheets = SubElement(root, "sheets")
-        for i, name in enumerate(["成绩预览", "来源版本", "导出说明"], 1):
+        for i, name in enumerate(["正式成绩" if formal else "成绩预览", "来源版本", "导出说明"], 1):
             SubElement(sheets, "sheet", name=name, sheetId=str(i), **{"r:id": f"rId{i}"})
         z.writestr("xl/workbook.xml", xml(root))
         rels = Element(

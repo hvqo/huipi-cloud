@@ -1252,6 +1252,93 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/exam-sessions/{exam_session_id}/final-results/attendance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Final Attendance */
+        get: operations["list_final_attendance_api_v1_exam_sessions__exam_session_id__final_results_attendance_get"];
+        put?: never;
+        /** Record Final Attendance */
+        post: operations["record_final_attendance_api_v1_exam_sessions__exam_session_id__final_results_attendance_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-sessions/{exam_session_id}/final-results/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Final Versions */
+        get: operations["list_final_versions_api_v1_exam_sessions__exam_session_id__final_results_versions_get"];
+        put?: never;
+        /** Prepare Final Version */
+        post: operations["prepare_final_version_api_v1_exam_sessions__exam_session_id__final_results_versions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-sessions/{exam_session_id}/final-results/versions/{version_id}/transition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Transition Final Version */
+        post: operations["transition_final_version_api_v1_exam_sessions__exam_session_id__final_results_versions__version_id__transition_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-sessions/{exam_session_id}/final-results/versions/{version_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Final Version */
+        get: operations["read_final_version_api_v1_exam_sessions__exam_session_id__final_results_versions__version_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exam-sessions/{exam_session_id}/final-results/versions/{version_id}/export.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Final Version */
+        get: operations["export_final_version_api_v1_exam_sessions__exam_session_id__final_results_versions__version_id__export_xlsx_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/exam-configuration/options": {
         parameters: {
             query?: never;
@@ -2728,6 +2815,28 @@ export interface components {
             has_next: boolean;
             /** Next Offset */
             next_offset: number | null;
+        };
+        /** AttendanceInput */
+        AttendanceInput: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /**
+             * Participation Id
+             * Format: uuid
+             */
+            participation_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "present" | "absent" | "unverified";
+            /** Reason */
+            reason: string;
         };
         /** BatchCreate */
         BatchCreate: {
@@ -5166,6 +5275,18 @@ export interface components {
             /** Last Error Message */
             last_error_message: string | null;
         };
+        /** PrepareInput */
+        PrepareInput: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Previous Version Id */
+            previous_version_id?: string | null;
+            /** Reason */
+            reason: string;
+        };
         /** Preview */
         Preview: {
             /**
@@ -6578,13 +6699,13 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "complete" | "incomplete" | "identity_pending" | "source_stale" | "variant_unverified";
+            status: "complete" | "incomplete" | "identity_pending" | "source_stale" | "variant_unverified" | "absent";
             /**
              * Attendance Status
              * @default not_determined
-             * @constant
+             * @enum {string}
              */
-            attendance_status: "not_determined";
+            attendance_status: "not_determined" | "present" | "absent" | "unverified";
             /** Reasons */
             reasons?: string[];
             /** Questions */
@@ -6802,6 +6923,23 @@ export interface components {
              * Reason
              * @default 人工操作
              */
+            reason: string;
+        };
+        /** TransitionInput */
+        TransitionInput: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "approve" | "publish" | "cancel";
+            /** Reason */
             reason: string;
         };
         /** ValidationError */
@@ -13013,6 +13151,256 @@ export interface operations {
             header?: never;
             path: {
                 exam_session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_final_attendance_api_v1_exam_sessions__exam_session_id__final_results_attendance_get: {
+        parameters: {
+            query?: {
+                class_id?: string | null;
+            };
+            header?: never;
+            path: {
+                exam_session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_final_attendance_api_v1_exam_sessions__exam_session_id__final_results_attendance_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                exam_session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttendanceInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_final_versions_api_v1_exam_sessions__exam_session_id__final_results_versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                exam_session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    prepare_final_version_api_v1_exam_sessions__exam_session_id__final_results_versions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                exam_session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PrepareInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transition_final_version_api_v1_exam_sessions__exam_session_id__final_results_versions__version_id__transition_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                exam_session_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransitionInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_final_version_api_v1_exam_sessions__exam_session_id__final_results_versions__version_id__get: {
+        parameters: {
+            query?: {
+                class_id?: string | null;
+            };
+            header?: never;
+            path: {
+                exam_session_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_final_version_api_v1_exam_sessions__exam_session_id__final_results_versions__version_id__export_xlsx_get: {
+        parameters: {
+            query?: {
+                class_id?: string | null;
+            };
+            header?: never;
+            path: {
+                exam_session_id: string;
+                version_id: string;
             };
             cookie?: never;
         };

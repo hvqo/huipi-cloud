@@ -65,6 +65,41 @@ RESULT_POLICIES = {
     "list_exam_result_sessions": ("GET", "/exam-result-sessions", False),
     "read_exam_results": ("GET", "/exam-sessions/{exam_session_id}/results-preview", False),
     "export_exam_results": ("GET", "/exam-sessions/{exam_session_id}/results-preview.xlsx", True),
+    "list_final_attendance": (
+        "GET",
+        "/exam-sessions/{exam_session_id}/final-results/attendance",
+        False,
+    ),
+    "record_final_attendance": (
+        "POST",
+        "/exam-sessions/{exam_session_id}/final-results/attendance",
+        False,
+    ),
+    "list_final_versions": (
+        "GET",
+        "/exam-sessions/{exam_session_id}/final-results/versions",
+        False,
+    ),
+    "prepare_final_version": (
+        "POST",
+        "/exam-sessions/{exam_session_id}/final-results/versions",
+        False,
+    ),
+    "transition_final_version": (
+        "POST",
+        "/exam-sessions/{exam_session_id}/final-results/versions/{version_id}/transition",
+        False,
+    ),
+    "read_final_version": (
+        "GET",
+        "/exam-sessions/{exam_session_id}/final-results/versions/{version_id}",
+        False,
+    ),
+    "export_final_version": (
+        "GET",
+        "/exam-sessions/{exam_session_id}/final-results/versions/{version_id}/export.xlsx",
+        True,
+    ),
 }
 
 EXAM_MARK_POLICIES = {

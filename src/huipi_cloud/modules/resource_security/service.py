@@ -16,6 +16,7 @@ from huipi_cloud.modules.assignments.models import Assignment
 from huipi_cloud.modules.assignments.schemas import AssignmentCreate
 from huipi_cloud.modules.exam_grading.permissions import MARK_ACTIONS
 from huipi_cloud.modules.exam_parsing.permissions import PARSE_ACTIONS
+from huipi_cloud.modules.exam_results.permissions import RESULT_ACTIONS
 from huipi_cloud.modules.exam_rosters.permissions import ROSTER_ACTIONS
 from huipi_cloud.modules.exams.permissions import EXAM_ACTIONS
 from huipi_cloud.modules.identity import service as identity
@@ -52,6 +53,7 @@ STUDENT_IMPORTER_ROLE = UUID("11111111-b11b-4000-8000-000000000003")
 # by merely inserting a row/setting enabled in the database.
 CATALOG = {
     **TASK_ACTIONS,
+    **RESULT_ACTIONS,
     **PAPER_ACTIONS,
     **EXAM_ACTIONS,
     **ROSTER_ACTIONS,
