@@ -8,6 +8,7 @@ type Candidate = { proposal_id: string; grading_status: string; criterion_scores
 const link = ref<{participant_id: string; is_current: boolean}>(), candidate = ref<Candidate>(), revision = ref(0), reviewStatus = ref<string | null>()
 const error = ref(''), notice = ref(''), comment = ref(''), busy = ref(false), points = ref<Record<string, string>>({})
 const pendingScore = ref<string>(), pendingReview = ref<string>()
+const reviewLabels: Record<string, string> = { accepted: '已接受', revised: '已修订', rejected: '已拒绝', regrading_required: '需要重新评分' }
 async function load() {
   try {
     const linked = await request<{participant_id: string; is_current: boolean}>(`/api/v1/homework/submissions/${id(props.submissionId)}`)
@@ -53,7 +54,7 @@ onMounted(load)
     <p v-if="error" role="alert" class="error">{{ error }}</p><p v-if="notice" role="status">{{ notice }}</p>
     <button v-if="link.is_current" :disabled="busy || !!pendingReview" @click="grade">{{ pendingScore ? '重试原评分请求' : '请求 AI 评分建议' }}</button>
     <template v-if="candidate"><p v-if="candidate.grading_status === 'grading_abstained'">模型弃权：{{ candidate.abstention_reason }}</p>
-      <template v-else><p>建议总分 {{ candidate.total_score }}；当前复核：{{ reviewStatus || '未复核' }}</p>
+      <template v-else><p>建议总分 {{ candidate.total_score }}；当前复核：{{ reviewLabels[reviewStatus || ''] || '未复核' }}</p>
         <table><thead><tr><th>建议 / 满分</th><th>理由与原文证据</th><th>教师分</th></tr></thead><tbody><tr v-for="s in candidate.criterion_scores" :key="s.criterion_id"><td>{{ s.awarded_points }} / {{ s.max_points }}</td><td>{{ s.rationale }}<blockquote v-for="(e, i) in s.evidence_references" :key="i">{{ e.quote || '无可引用证据' }}</blockquote></td><td><input v-model="points[s.criterion_id]" :aria-label="`教师分 ${s.criterion_id}`" inputmode="decimal" /></td></tr></tbody></table>
         <label>教师说明 <input v-model="comment" /></label>
         <div v-if="pendingReview"><button :disabled="busy" @click="review('accepted')">重试原复核请求</button></div>

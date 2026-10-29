@@ -1360,6 +1360,7 @@ test('日常作业：两班布置、同名学生代收重交与教师批改', as
   await page.getByLabel(/^教师分 /).fill('10.00')
   await page.getByRole('button', { name: '接受建议' }).click()
   await expect(page.getByText('教师复核已保存，不代表正式成绩发布。')).toBeVisible()
+  await expect(page.getByText(/当前复核：已接受/)).toBeVisible()
   await page.screenshot({ path: 'test-results/homework-review.png', fullPage: true })
   await page.getByRole('link', { name: '← 返回学生提交' }).click()
   await page.getByRole('link', { name: '← 返回作业' }).click()
