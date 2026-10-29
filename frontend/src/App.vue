@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { request } from './api/client'
 import { schoolAccess, resetSchoolAccess, loadSchoolAccess } from './api/school'
 import { ElConfigProvider } from 'element-plus'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
@@ -7,6 +8,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { identity, logout } from './auth'
 const route = useRoute(),
   router = useRouter()
+const isAdmin = ref(false)
 const title = computed(() =>
   route.path.startsWith('/final-results')
     ? '正式成绩管理'
@@ -40,7 +42,12 @@ watch(
   () => identity.actor,
   async (actor) => {
     resetSchoolAccess()
+    isAdmin.value = false
     if (!actor) return
+    try {
+      const user = await request<{role: string}>('/api/v1/me')
+      if (identity.actor === actor) isAdmin.value = user.role === 'admin'
+    } catch { /* Missing current role never grants access. */ }
     try {
       const value = await loadSchoolAccess()
       if (identity.actor === actor) Object.assign(schoolAccess, value)
@@ -102,6 +109,7 @@ async function signOut() {
           class="nav-link"
           >▦ <span>学校基础数据</span></RouterLink
         >
+        <RouterLink v-if="isAdmin" to="/school/teaching" class="nav-link">▦ <span>教师任教关系</span></RouterLink>
         <RouterLink to="/marking/manage" class="nav-link" aria-label="阅卷管理"
           >▤ <span>阅卷管理</span></RouterLink
         >

@@ -1,5 +1,5 @@
 {
-  "version": "exam-final-results-1",
+  "version": "homework-workflow-1",
   "operations": [
     {
       "method": "POST",
@@ -1232,6 +1232,150 @@
       "permission": "exam.score.review+explicit_class_export",
       "classification_boundary": "真实当前Grant和显式班级授权；写入另要求同Grant成绩管理动作及全部名单班级",
       "entrypoint": "huipi_cloud.modules.exam_results.final_service"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/homework/teaching-assignments",
+      "policy": "list_my_teaching_assignments",
+      "permission": "homework_scoped",
+      "classification_boundary": "可信任教关系与作业成员权限，历史版本禁止写入",
+      "entrypoint": "huipi_cloud.modules.homework.service"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/homework/admin/teaching-assignments",
+      "policy": "create_teaching_assignment",
+      "permission": "homework_scoped",
+      "classification_boundary": "可信任教关系与作业成员权限，历史版本禁止写入",
+      "entrypoint": "huipi_cloud.modules.homework.service"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/homework/admin/teaching-assignments/{teaching_id}",
+      "policy": "revoke_teaching_assignment",
+      "permission": "homework_scoped",
+      "classification_boundary": "可信任教关系与作业成员权限，历史版本禁止写入",
+      "entrypoint": "huipi_cloud.modules.homework.service"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assignments/{assignment_id}/homework",
+      "policy": "assign_homework",
+      "permission": "homework_scoped",
+      "classification_boundary": "可信任教关系与作业成员权限，历史版本禁止写入",
+      "entrypoint": "huipi_cloud.modules.homework.service"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assignments/{assignment_id}/homework-questions",
+      "policy": "create_homework_question",
+      "permission": "homework_scoped",
+      "classification_boundary": "可信任教关系与作业成员权限，历史版本禁止写入",
+      "entrypoint": "huipi_cloud.modules.homework.service"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/assignments/{assignment_id}/homework",
+      "policy": "read_homework",
+      "permission": "homework_scoped",
+      "classification_boundary": "可信任教关系与作业成员权限，历史版本禁止写入",
+      "entrypoint": "huipi_cloud.modules.homework.service"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/homework/participants/{participant_id}/attempts",
+      "policy": "list_homework_attempts",
+      "permission": "homework_scoped",
+      "classification_boundary": "可信任教关系与作业成员权限，历史版本禁止写入",
+      "entrypoint": "huipi_cloud.modules.homework.service"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/homework/submissions/{submission_id}",
+      "policy": "read_homework_submission",
+      "permission": "homework_scoped",
+      "classification_boundary": "可信任教关系与作业成员权限，历史版本禁止写入",
+      "entrypoint": "huipi_cloud.modules.homework.service"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/homework/participants/{participant_id}/attempts",
+      "policy": "upload_homework_attempt",
+      "permission": "homework_scoped",
+      "classification_boundary": "可信任教关系与作业成员权限，历史版本禁止写入",
+      "entrypoint": "huipi_cloud.modules.homework.service"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/homework/participants/{participant_id}/questions/{question_id}/candidate",
+      "policy": "request_homework_candidate",
+      "permission": "homework_scoped",
+      "classification_boundary": "可信任教关系与作业成员权限，历史版本禁止写入",
+      "entrypoint": "huipi_cloud.modules.homework.service"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/homework/participants/{participant_id}/questions/{question_id}/candidate",
+      "policy": "read_homework_candidate",
+      "permission": "homework_scoped",
+      "classification_boundary": "可信任教关系与作业成员权限，历史版本禁止写入",
+      "entrypoint": "huipi_cloud.modules.homework.service"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/homework/submissions/{submission_id}/prepare",
+      "policy": "prepare_homework_submission",
+      "permission": "homework_scoped",
+      "entrypoint": "huipi_cloud.modules.homework.service",
+      "classification_boundary": "可信任教关系与作业成员权限，历史版本禁止写入"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/homework/admin/teaching-assignments",
+      "policy": "list_teaching_assignments",
+      "permission": "homework_scoped",
+      "classification_boundary": "仅当前数据库管理员可管理真实任教关系",
+      "entrypoint": "huipi_cloud.modules.homework.service"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/homework/submissions/{submission_id}/visual-pages/{page_index}",
+      "policy": "preview_homework_visual_page",
+      "permission": "homework_scoped",
+      "classification_boundary": "可信任教关系、当前作业提交及独立图片来源校验",
+      "entrypoint": "huipi_cloud.modules.homework.visual_service"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/homework/submissions/{submission_id}/questions/{question_id}/visual",
+      "policy": "read_homework_visual",
+      "permission": "homework_scoped",
+      "classification_boundary": "可信任教关系、当前作业提交及独立图片来源校验",
+      "entrypoint": "huipi_cloud.modules.homework.visual_service"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/homework/submissions/{submission_id}/questions/{question_id}/visual/selection",
+      "policy": "select_homework_visual",
+      "permission": "homework_scoped",
+      "classification_boundary": "可信任教关系、当前作业提交及独立图片来源校验",
+      "entrypoint": "huipi_cloud.modules.homework.visual_service"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/homework/submissions/{submission_id}/questions/{question_id}/visual/score",
+      "policy": "score_homework_visual",
+      "permission": "homework_scoped",
+      "classification_boundary": "可信任教关系、当前作业提交及独立图片来源校验",
+      "entrypoint": "huipi_cloud.modules.homework.visual_service"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/homework/submissions/{submission_id}/questions/{question_id}/visual/review",
+      "policy": "review_homework_visual",
+      "permission": "homework_scoped",
+      "classification_boundary": "可信任教关系、当前作业提交及独立图片来源校验",
+      "entrypoint": "huipi_cloud.modules.homework.visual_service"
     }
   ]
 }

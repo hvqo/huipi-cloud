@@ -38,8 +38,9 @@ from huipi_cloud.workers.parsing import ParsingWorker
 class SyntheticExecutor:
     """No OCR/model: emits explicitly synthetic, protocol-valid page text to real S3."""
 
-    def __init__(self, storage):
+    def __init__(self, storage, *, text=None):
         self.storage = storage
+        self.text = text
         self.entered, self.release = asyncio.Event(), asyncio.Event()
         self.release.set()
         self.cancelled = False
@@ -70,7 +71,8 @@ class SyntheticExecutor:
                         dict(
                             type="text",
                             index=0,
-                            content=f"Synthetic executor page {i + 1}: student response 2+2=4",
+                            content=self.text
+                            or f"Synthetic executor page {i + 1}: student response 2+2=4",
                         )
                     ],
                 )

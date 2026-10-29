@@ -17,6 +17,7 @@ from huipi_cloud.modules.assignments import repository as assignment_repository
 from huipi_cloud.modules.assignments.models import AnswerKey, Assignment, Question, RubricCriterion
 from huipi_cloud.modules.canonical_documents.models import CanonicalArtifact
 from huipi_cloud.modules.copilot.protocol import CopilotError, StrictModel
+from huipi_cloud.modules.homework.models import HomeworkAttempt
 from huipi_cloud.modules.knowledge.retriever import LexicalRetriever
 from huipi_cloud.modules.knowledge.schemas import KnowledgeError
 from huipi_cloud.modules.submissions.models import ParsingTask, Submission
@@ -191,7 +192,12 @@ class BusinessTools:
                 "submission_count": await session.scalar(
                     select(func.count())
                     .select_from(Submission)
-                    .where(Submission.assignment_id == aid)
+                    .where(
+                        Submission.assignment_id == aid,
+                        ~select(HomeworkAttempt.__table__.c.id)
+                        .where(HomeworkAttempt.__table__.c.submission_id == Submission.id)
+                        .exists(),
+                    )
                 ),
                 "published_grades": "not_implemented",
             }
@@ -272,7 +278,13 @@ class BusinessTools:
             }
         sid = args.submission_id
         found = await session.scalar(
-            select(Submission.id).where(Submission.id == sid, Submission.assignment_id == aid)
+            select(Submission.id).where(
+                Submission.id == sid,
+                Submission.assignment_id == aid,
+                ~select(HomeworkAttempt.__table__.c.id)
+                .where(HomeworkAttempt.__table__.c.submission_id == Submission.id)
+                .exists(),
+            )
         )
         if found is None:
             raise CopilotError("resource_not_found_in_scope")

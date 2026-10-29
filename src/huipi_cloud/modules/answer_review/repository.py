@@ -76,6 +76,9 @@ async def append_decision(
             # Short commit guard only: no permission locks during S3 reads or user think time.
             # User + membership SHARE locks serialize this append with disable/revoke.
             await require_assignment(session, principal, assignment_id, write=True, lock=True)
+            from huipi_cloud.modules.homework.access import submission_access
+
+            await submission_access(session, principal, submission_id, write=True, lock=True)
 
         replay = await session.scalar(
             select(AnswerReviewDecision).where(

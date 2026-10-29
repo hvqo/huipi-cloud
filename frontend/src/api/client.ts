@@ -58,6 +58,7 @@ export async function request<T>(
   path: string,
   options: {
     body?: string | FormData
+    method?: 'GET' | 'POST' | 'DELETE'
     signal?: AbortSignal
     blob?: boolean
     timeoutMs?: number
@@ -80,7 +81,7 @@ export async function request<T>(
   let accepted = false
   try {
     const response = await fetch(path, {
-      method: options.body ? 'POST' : 'GET',
+      method: options.method || (options.body ? 'POST' : 'GET'),
       signal: controller.signal,
       headers: {
         Authorization: `Bearer ${token}`,

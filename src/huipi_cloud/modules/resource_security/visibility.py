@@ -27,6 +27,17 @@ def rules():
     from huipi_cloud.modules.canonical_documents.models import CanonicalArtifact
     from huipi_cloud.modules.grading.grade_review_models import GradeReviewRevision
     from huipi_cloud.modules.grading.models import GradeInputArtifact, GradeProposalArtifact
+    from huipi_cloud.modules.homework.models import (
+        HomeworkAttempt,
+        HomeworkClass,
+        HomeworkOffering,
+        HomeworkParticipant,
+        TeachingAssignment,
+    )
+    from huipi_cloud.modules.homework.visual_models import (
+        HomeworkVisualJob,
+        HomeworkVisualSelection,
+    )
     from huipi_cloud.modules.identity.models import AdminOperation, AssignmentMembership
     from huipi_cloud.modules.knowledge.models import KnowledgeChunk, KnowledgeDocument
     from huipi_cloud.modules.parsing.models import ParsedArtifact
@@ -88,6 +99,13 @@ def rules():
     )
 
     result = [
+        (HomeworkVisualSelection, false()),
+        (HomeworkVisualJob, false()),
+        (TeachingAssignment, false()),
+        (HomeworkOffering, false()),
+        (HomeworkClass, false()),
+        (HomeworkParticipant, false()),
+        (HomeworkAttempt, false()),
         (ExamResultClassAccess, false()),
         (ExamAttendanceDecision, false()),
         (ExamFinalVersion, false()),
