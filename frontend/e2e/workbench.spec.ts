@@ -10,6 +10,32 @@ async function signIn(page: Page, target = '/assignments') {
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
 }
 
+async function captureLayout(page: Page, name: string, anchor?: string) {
+  const directory = process.env.LAYOUT_CAPTURE_DIR
+  if (!directory) return
+  const { mkdir } = await import('node:fs/promises')
+  await mkdir(directory, { recursive: true })
+  const previous = page.viewportSize(),
+    scroll = await page.evaluate(() => window.scrollY)
+  for (const [width, height] of [
+    [1366, 768],
+    [1440, 900],
+    [1920, 1080],
+  ]) {
+    await page.setViewportSize({ width: width!, height: height! })
+    await page.evaluate((selector) => {
+      const element = selector ? document.querySelector(selector) : null
+      window.scrollTo(0, element ? window.scrollY + element.getBoundingClientRect().top - 76 : 0)
+    }, anchor || '')
+    await page.screenshot({ path: `${directory}/${name}-${width}.png`, animations: 'disabled' })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(
+      true,
+    )
+  }
+  if (previous) await page.setViewportSize(previous)
+  await page.evaluate((value) => window.scrollTo(0, value), scroll)
+}
+
 test('产品工作台：真实数据、导航折叠与作业视图适配', async ({ page, request }) => {
   test.skip(process.env.RUN_UI_PRODUCT_BROWSER !== '1', 'product workspace opt-in')
   await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/a`, { ignoreHTTPSErrors: true })
@@ -18,6 +44,7 @@ test('产品工作台：真实数据、导航折叠与作业视图适配', async
   await expect(page.getByText('正在检查异常…')).not.toBeVisible()
   await expect(page.getByText('正在读取场次…')).not.toBeVisible()
   await expect(page.locator(`a[href="/assignments/${aid}/homework"]`).first()).toBeVisible()
+  await captureLayout(page, 'dashboard')
   for (const [width, height] of [
     [1366, 768],
     [1440, 900],
@@ -336,6 +363,9 @@ test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原�
   expect((await preview).headers().authorization).toMatch(/^Bearer /)
   await expect(page.getByAltText('第2页扫描预览')).toHaveAttribute('src', /^blob:/)
   await expect(page.getByAltText('第2页扫描预览')).toBeVisible()
+  await page.getByRole('button', { name: '放大扫描页', exact: true }).click()
+  await expect(page.getByAltText('第2页扫描预览')).toHaveAttribute('style', /120%/)
+  await page.getByRole('button', { name: '缩小扫描页', exact: true }).click()
   expect(
     await page
       .getByAltText('第2页扫描预览')
@@ -352,6 +382,7 @@ test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原�
   await expect(page.getByRole('link', { name: '放大查看' })).toHaveAttribute('href', /^blob:/)
   expect(errors).toEqual([])
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  await captureLayout(page, 'scan-intake', '.scan-workspace')
   await page.screenshot({ path: 'test-results/scan-intake.png', fullPage: true })
 
   await page.getByRole('link', { name: '人工分卷与身份确认 →' }).click()
@@ -396,6 +427,20 @@ test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原�
     fullPage: true,
     animations: 'disabled',
   })
+  if (process.env.LAYOUT_CAPTURE_DIR) {
+    await page.getByRole('button', { name: '预览扫描页 2', exact: true }).click()
+    await expect(page.getByRole('button', { name: '预览扫描页 2', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    await expect(page.getByAltText('人工分卷页面预览')).toBeVisible()
+    await captureLayout(page, 'answer-scripts', '.script-columns')
+    await page.getByRole('button', { name: '放大原卷', exact: true }).click()
+    await expect(page.getByAltText('人工分卷页面预览')).toHaveCSS('width', /\d+px/)
+    await expect(page.getByAltText('人工分卷页面预览')).toHaveAttribute('style', /120%/)
+    const oldDialog = page.getByRole('dialog', { name: '核对原始扫描页' })
+    if (await oldDialog.isVisible()) await page.keyboard.press('Escape')
+  }
   // Real API intent -> dedicated worker -> private PG/S3 Canonical result. No timed fake success.
   await page.getByRole('button', { name: '开始解析', exact: true }).click()
   await expect(page.locator('.parse-state')).toHaveText('解析完成', { timeout: 90000 })
@@ -559,11 +604,19 @@ async function manageFinalResults(page: Page) {
   await expect(published).toContainText('缺考')
   await expect(published).toContainText('平均')
   await page.evaluate(() => window.scrollTo(0, 0))
+  await captureLayout(page, 'final-results', 'section:has(.page-heading)')
   await page.screenshot({ path: 'test-results/final-published-v1.png', fullPage: true })
   const download = page.waitForEvent('download')
   await page.getByRole('button', { name: '导出正式成绩 Excel' }).click()
   await (await download).saveAs('test-results/final-published-v1.xlsx')
   const student = published.locator('tr').filter({ hasText: 'N001' })
+  await student.getByRole('button', { name: '查看详情' }).click()
+  const studentDetails = page.getByRole('dialog', { name: '学生成绩详情' })
+  await expect(studentDetails).toContainText('18.00')
+  await expect(studentDetails).toContainText('第1题')
+  await captureLayout(page, 'student-detail')
+  await page.keyboard.press('Escape')
+  await expect(studentDetails).not.toBeVisible()
   // The formal snapshot is unchanged while the teacher corrects the source review.
   await student.getByRole('link', { name: '进入批改' }).click()
   const panel = page.getByRole('region', { name: 'AI 批改与复核', exact: true })
@@ -677,6 +730,13 @@ async function markExamAnswer(page: Page, revise: boolean, question = 1) {
     await panel.getByRole('button', { name: '提交完整修订', exact: true }).click()
     await expect(panel.getByText(/修订2 · 教师修订/)).toBeVisible()
     await expect(panel.getByText(/修订1 · 接受候选/)).toBeVisible()
+    if (process.env.LAYOUT_CAPTURE_DIR) {
+      await panel.locator('.mark-thumbs button').first().click()
+      await expect(panel.getByAltText('当前答卷扫描原页')).toBeVisible()
+      await captureLayout(page, 'exam-grading', '.exam-marking')
+      await panel.getByRole('button', { name: '放大批改原卷' }).click()
+      await expect(panel.getByAltText('当前答卷扫描原页')).toHaveAttribute('style', /120%/)
+    }
     await panel.screenshot({ path: 'test-results/exam-grading-teacher-revision.png' })
   }
 }
@@ -687,7 +747,8 @@ test('网页考试配置：创建场次、共享A/B卷、混班名单与版本�
   await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/a`, { ignoreHTTPSErrors: true })
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
-  page.on('dialog', (dialog) => dialog.accept())
+  let discardChanges = true
+  page.on('dialog', (dialog) => (discardChanges ? dialog.accept() : dialog.dismiss()))
   let paperA = process.env.WORKBENCH_CONFIG_PAPER_A!
   let paperB = process.env.WORKBENCH_CONFIG_PAPER_B!
   if (process.env.RUN_PAPER_WORKBENCH_BROWSER === '1') {
@@ -701,6 +762,14 @@ test('网页考试配置：创建场次、共享A/B卷、混班名单与版本�
     await expect(page).toHaveURL(/\/papers\//)
     paperA = new URL(page.url()).pathname.split('/').pop()!
     const editor = page.getByRole('main', { name: '试卷编辑工作区' })
+    await editor.getByLabel('题目正文', { exact: true }).fill('临时未保存内容')
+    discardChanges = false
+    await page
+      .getByRole('navigation', { name: '题目导航' })
+      .getByRole('button', { name: '切换至2' })
+      .click()
+    await expect(editor.getByLabel('题目正文', { exact: true })).toHaveValue('临时未保存内容')
+    discardChanges = true
     await editor.getByLabel('题目正文', { exact: true }).fill('合成题1：计算3+3，并写出过程。')
     await editor.getByLabel('教师标准答案', { exact: true }).fill('3+3=6')
     await editor.getByLabel('评分要求').first().fill('正确列出计算过程')
@@ -710,6 +779,7 @@ test('网页考试配置：创建场次、共享A/B卷、混班名单与版本�
     await order.getByRole('button', { name: '下移', exact: true }).first().click()
     await order.getByRole('button', { name: '保存题序与题号', exact: true }).click()
     await expect(editor.getByRole('button', { name: '检查并锁定试卷' })).toBeEnabled()
+    await captureLayout(page, 'paper-workbench', '.paper-workspace')
     await page.screenshot({
       path: 'test-results/paper-workbench-draft.png',
       fullPage: true,
@@ -1160,9 +1230,12 @@ test('协同阅卷：负责人跨班分配、两名教师提交与成绩预览',
     tab.on('dialog', (d) => d.accept())
     tab.on('pageerror', (e) => errors.push(e.message))
     await signIn(tab, '/marking/my')
-    await expect(tab.getByRole('region', { name: '个人任务列表' }).locator('tbody tr')).toHaveCount(
-      count,
-    )
+    const taskList = tab.getByRole('region', { name: '个人任务列表' })
+    await expect(taskList.locator('tbody tr')).toHaveCount(count)
+    await taskList.getByRole('button', { name: '已完成', exact: true }).click()
+    await expect(taskList.getByText('本页没有此状态的任务，可切换筛选或查看其他页。')).toBeVisible()
+    await taskList.getByRole('button', { name: '全部', exact: true }).click()
+    await expect(taskList.locator('tbody tr')).toHaveCount(count)
     for (let index = 0; index < count; index++) {
       if (index === 0) await tab.getByRole('link', { name: '进入任务 →' }).first().click()
       await tab.getByRole('button', { name: '领取并开始', exact: true }).click()
@@ -1173,6 +1246,18 @@ test('协同阅卷：负责人跨班分配、两名教师提交与成绩预览',
       if (index === 0) {
         await panel.locator('.mark-thumbs button').first().click()
         await expect(panel.getByAltText('当前答卷扫描原页')).toBeVisible()
+        if (actor === 'marker_a') {
+          await tab.evaluate(() => {
+            const panel = document.querySelector('.exam-marking')!
+            window.scrollTo(0, window.scrollY + panel.getBoundingClientRect().top - 76)
+          })
+          const taskBar = tab.getByRole('region', { name: '当前阅卷任务' })
+          await expect(taskBar.getByRole('button', { name: '提交当前任务' })).toBeInViewport()
+          const taskBox = await taskBar.boundingBox()
+          const previewBox = await panel.locator('.grading-preview').boundingBox()
+          expect(taskBox && previewBox && previewBox.y >= taskBox.y + taskBox.height - 1).toBe(true)
+          await captureLayout(tab, 'marking-task', '.exam-marking')
+        }
         await tab.evaluate(() => window.scrollTo(0, 0))
         await tab.screenshot({ path: `test-results/marking-${actor}-review.png`, fullPage: true })
       }
@@ -1409,9 +1494,17 @@ test('日常作业：两班布置、同名学生代收重交与教师批改', as
   await page.getByRole('button', { name: '确认代收' }).click()
   const student = page.locator('tbody tr').filter({ hasText: firstCode })
   await expect(student).toContainText('第 2 次')
+  await page.getByLabel('筛选本页提交状态').selectOption('not_submitted')
+  await expect(page.locator('tbody tr')).toHaveCount(3)
+  await expect(page.locator('tbody')).not.toContainText(firstCode)
+  await page.getByLabel('筛选本页提交状态').selectOption('submitted')
+  await expect(page.locator('tbody tr')).toHaveCount(1)
+  await expect(page.locator('tbody')).toContainText(firstCode)
+  await page.getByLabel('筛选本页提交状态').selectOption('all')
   await student.getByRole('button', { name: '提交历史' }).click()
   await expect(page.getByText('第 1 次 · 历史版本')).toBeVisible()
   await page.evaluate(() => window.scrollTo(0, 0))
+  await captureLayout(page, 'homework', '.page-heading')
   await page.screenshot({ path: 'test-results/homework-dashboard.png', fullPage: true })
   await expect
     .poll(

@@ -414,59 +414,93 @@ watch(
             </option>
           </select></label
         >
-        <fieldset :disabled="locked || !canEdit || dirtyOrder" class="paper-form">
-          <div class="paper-actions">
-            <label
-              >题型<select v-model="question.question.question_type">
-                <option v-for="(label, key) in typeNames" :key="key" :value="key">
-                  {{ label }}
-                </option>
-              </select></label
-            ><label
-              >题目满分<input
-                v-model="question.question.max_score"
-                inputmode="decimal"
-                maxlength="12"
-            /></label>
-          </div>
-          <div class="paper-content-grid">
-            <label
-              >题目正文<textarea v-model="question.question.stem" rows="5" maxlength="20000" />
-            </label>
-            <label
-              >教师标准答案<textarea v-model="question.answer_content" rows="5" maxlength="50000" />
-            </label>
-          </div>
-          <h3>评分项</h3>
-          <div v-for="(criterion, i) in question.rubric.criteria" :key="i" class="paper-criterion">
-            <label
-              >评分要求<textarea v-model="criterion.description" rows="2" maxlength="2000" /></label
-            ><label
-              >分值<input v-model="criterion.points" inputmode="decimal" maxlength="12" /></label
-            ><button :disabled="question.rubric.criteria.length === 1" @click="removeCriterion(i)">
-              移除
-            </button>
-          </div>
+        <nav class="paper-question-nav" aria-label="题目导航">
           <button
-            :disabled="question.rubric.criteria.length >= 100"
-            @click="
-              question.rubric.criteria.push({
-                description: '',
-                points: '1.00',
-                sort_order: question.rubric.criteria.length + 1,
-              })
-            "
+            v-for="(q, i) in detail.questions"
+            :key="q.question_key"
+            type="button"
+            :class="{ active: index === i }"
+            :aria-current="index === i ? 'true' : undefined"
+            :aria-label="`切换至${q.printed_label}`"
+            :disabled="locked || dirtyOrder"
+            @click="choose(i)"
           >
-            添加评分项
+            {{ q.printed_label }}
           </button>
-          <p :class="{ error: !pointsValid }" role="status">
-            {{
-              pointsValid
-                ? '分值合计与题目满分一致。'
-                : '请检查分值：各项须为正数，合计须与题目满分严格一致。'
-            }}
-          </p>
+        </nav>
+        <fieldset :disabled="locked || !canEdit || dirtyOrder" class="paper-form">
+          <div class="paper-question-edit">
+            <div class="paper-actions">
+              <label
+                >题型<select v-model="question.question.question_type">
+                  <option v-for="(label, key) in typeNames" :key="key" :value="key">
+                    {{ label }}
+                  </option>
+                </select></label
+              ><label
+                >题目满分<input
+                  v-model="question.question.max_score"
+                  inputmode="decimal"
+                  maxlength="12"
+              /></label>
+            </div>
+            <div class="paper-content-grid">
+              <label
+                >题目正文<textarea v-model="question.question.stem" rows="5" maxlength="20000" />
+              </label>
+              <label
+                >教师标准答案<textarea
+                  v-model="question.answer_content"
+                  rows="5"
+                  maxlength="50000"
+                />
+              </label>
+            </div>
+          </div>
+          <div class="paper-rubric-edit">
+            <h3>评分项</h3>
+            <div
+              v-for="(criterion, i) in question.rubric.criteria"
+              :key="i"
+              class="paper-criterion"
+            >
+              <label
+                >评分要求<textarea
+                  v-model="criterion.description"
+                  rows="2"
+                  maxlength="2000"
+                /></label
+              ><label
+                >分值<input v-model="criterion.points" inputmode="decimal" maxlength="12" /></label
+              ><button
+                :disabled="question.rubric.criteria.length === 1"
+                @click="removeCriterion(i)"
+              >
+                移除
+              </button>
+            </div>
+            <button
+              :disabled="question.rubric.criteria.length >= 100"
+              @click="
+                question.rubric.criteria.push({
+                  description: '',
+                  points: '1.00',
+                  sort_order: question.rubric.criteria.length + 1,
+                })
+              "
+            >
+              添加评分项
+            </button>
+            <p :class="{ error: !pointsValid }" role="status">
+              {{
+                pointsValid
+                  ? '分值合计与题目满分一致。'
+                  : '请检查分值：各项须为正数，合计须与题目满分严格一致。'
+              }}
+            </p>
+          </div>
           <el-button
+            class="paper-save"
             type="primary"
             :disabled="locked || !canEdit || !dirtyQuestion || !pointsValid"
             @click="run(saveQuestion)"
@@ -653,8 +687,49 @@ watch(
 }
 .paper-form {
   display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(270px, 1fr);
   gap: 18px;
   margin-top: 20px;
+}
+.paper-question-nav {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 14px 0;
+}
+.paper-question-nav button {
+  min-width: 38px;
+  padding: 6px 10px;
+  border: 1px solid #d5deea;
+  border-radius: 6px;
+  background: #fff;
+  color: #52677f;
+  cursor: pointer;
+}
+#main-content .paper-question-nav button.active:not(:disabled) {
+  color: #2056ae;
+  background: #edf4ff;
+  border-color: #a9c3ec;
+}
+.paper-question-edit,
+.paper-rubric-edit {
+  min-width: 0;
+}
+.paper-question-edit .paper-content-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+.paper-rubric-edit {
+  border-left: 1px solid #e4eaf1;
+  padding-left: 18px;
+}
+.paper-rubric-edit h3 {
+  margin-top: 0;
+}
+.paper-save {
+  grid-column: 1 / -1;
+  justify-self: start;
 }
 .paper-form label,
 .paper-order label {
@@ -736,6 +811,14 @@ fieldset {
   }
 }
 @media (max-width: 700px) {
+  .paper-form {
+    grid-template-columns: 1fr;
+  }
+  .paper-rubric-edit {
+    border-left: 0;
+    border-top: 1px solid #e4eaf1;
+    padding: 16px 0 0;
+  }
   .paper-criterion {
     grid-template-columns: 1fr;
   }

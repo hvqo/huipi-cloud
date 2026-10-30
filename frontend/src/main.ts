@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
-import { ElButton, ElDialog, ElInput, ElSelect, ElOption } from 'element-plus'
+import { ElButton, ElDialog, ElDrawer, ElInput, ElSelect, ElOption } from 'element-plus'
 import 'element-plus/dist/index.css'
 import './style.css'
 import './design.css'
@@ -75,6 +75,6 @@ router.beforeEach(async (to) => {
     return { path: '/login', query: { returnTo: to.fullPath } }
 })
 const app = createApp(App).use(router)
-for (const component of [ElButton, ElDialog, ElInput, ElSelect, ElOption])
+for (const component of [ElButton, ElDialog, ElDrawer, ElInput, ElSelect, ElOption])
   app.component(component.name!, component)
 app.mount('#app')

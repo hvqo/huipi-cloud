@@ -36,6 +36,9 @@ const complete = ref(false),
 const showIdentity = ref(false),
   preview = ref(''),
   previewPage = ref<Schema['SourcePage']>()
+const showLargePreview = ref(false),
+  previewZoom = ref(100)
+const gradingAnchor = ref<HTMLElement>()
 const historyOffset = ref(0),
   historyTotal = ref(0)
 const pending = ref<{ aid?: string; body: Schema['ScriptCreate'] | Schema['ScriptChange'] }>()
@@ -230,8 +233,12 @@ async function view(page: Schema['SourcePage']) {
   await run(async () => {
     clearPreview()
     previewPage.value = page
+    previewZoom.value = 100
     preview.value = URL.createObjectURL(await scans.preview(page.scan_page_id))
   })
+}
+function focusGrading() {
+  gradingAnchor.value?.scrollIntoView({ block: 'start', behavior: 'smooth' })
 }
 async function loadCandidates() {
   identities.value = await scripts.candidates(sid, query.value, candidateOffset.value)
@@ -388,11 +395,15 @@ onUnmounted(() => {
             v-for="p in pages"
             :key="p.scan_page_id"
             class="script-page"
-            :class="{ taken: p.allocated_script_id }"
+            :class="{
+              taken: p.allocated_script_id,
+              previewing: preview && previewPage?.scan_page_id === p.scan_page_id,
+            }"
           >
             <button
               class="page-symbol"
               :aria-label="`预览扫描页 ${p.source_page_index + 1}`"
+              :aria-pressed="!!preview && previewPage?.scan_page_id === p.scan_page_id"
               :disabled="busy"
               @click="view(p)"
             >
@@ -423,196 +434,231 @@ onUnmounted(() => {
           ><button :disabled="busy || offset + 20 >= total" @click="pageBy(20)">下一页</button>
         </nav>
       </section>
-      <section class="script-editor">
-        <header>
-          <h2>{{ title }}</h2>
-          <span v-if="current" class="script-status"
-            >v{{ current.revision }} · {{ status[current.readiness] }}</span
-          >
-        </header>
-        <p v-if="current?.current.identity" class="script-identity">
-          {{ current.current.identity.student_name }} · {{ current.current.identity.class_name }} ·
-          考号 {{ current.current.identity.exam_number || '未登记' }}
-        </p>
-        <p v-if="current?.readiness === 'roster_changed'" class="script-alert">
-          名单已更正。旧身份仅供历史核查，请重新选择当前名单后确认。
-        </p>
-        <ol class="script-order">
-          <li v-for="(p, i) in selected" :key="p.scan_page_id">
-            <button :disabled="busy" @click="view(p)">
-              {{ i + 1 }}. {{ p.original_filename }} · 原第 {{ p.source_page_index + 1 }} 页
+      <section class="script-preview-pane" aria-label="原卷预览">
+        <div class="script-preview-toolbar">
+          <h2>原卷预览</h2>
+          <div v-if="preview" class="script-zoom">
+            <button aria-label="缩小原卷" :disabled="previewZoom <= 60" @click="previewZoom -= 20">
+              −
             </button>
-            <div>
-              <button
-                :disabled="!canEdit || i === 0"
-                :aria-label="`上移第${i + 1}项`"
-                @click="move(i, -1)"
-              >
-                ↑</button
-              ><button
-                :disabled="!canEdit || i === selected.length - 1"
-                :aria-label="`下移第${i + 1}项`"
-                @click="move(i, 1)"
-              >
-                ↓</button
-              ><button
-                :disabled="!canEdit"
-                :aria-label="`移除第${i + 1}项`"
-                @click="selected.splice(i, 1)"
-              >
-                移除
-              </button>
-            </div>
-          </li>
-        </ol>
-        <p v-if="!selected.length" class="script-placeholder">
-          从左侧选择一页或多页，组成一份学生答卷。
-        </p>
-        <label class="script-field"
-          ><input
-            v-model="complete"
-            type="checkbox"
-            :disabled="!canEdit"
-          />已核对页数，答卷完整</label
-        >
-        <p v-if="!complete" class="script-hint">缺页可以保存或确认身份，但不能进入后续解析桥接。</p>
-        <label class="script-field"
-          >操作说明<textarea
-            v-model="reason"
-            :disabled="!canEdit"
-            maxlength="300"
-            rows="2"
-            placeholder="说明分卷依据、漏页或更正原因"
-          />
-        </label>
-        <div class="script-actions">
-          <button
-            class="primary"
-            :disabled="!canEdit || !selected.length || !reason.trim()"
-            @click="save('save_draft')"
-          >
-            {{ current ? '保存为新版本草稿' : '保存答卷草稿' }}</button
-          ><button
-            :disabled="!canEdit || !current || !selected.length || !reason.trim()"
-            @click="openConfirm"
-          >
-            核对学生并确认</button
-          ><button
-            :disabled="!canEdit || !current || current.readiness === 'revoked' || !reason.trim()"
-            @click="save('revoke')"
-          >
-            撤销答卷
-          </button>
+            <span>{{ previewZoom }}%</span>
+            <button aria-label="放大原卷" :disabled="previewZoom >= 200" @click="previewZoom += 20">
+              ＋
+            </button>
+            <button @click="showLargePreview = true">打开大图</button>
+          </div>
         </div>
-        <p class="script-hint">
-          已确认答卷的任何修改都保留历史；保存草稿会解除当前身份确认，必须重新核对。
+        <p v-if="previewPage && preview" class="script-hint">
+          {{ previewPage.original_filename }} · 原第 {{ previewPage.source_page_index + 1 }} 页 ·
+          预览不会自动加入答卷
         </p>
-        <section v-if="current" class="script-parse" aria-label="答卷解析">
-          <h2>答卷解析</h2>
-          <p role="status" class="parse-state">
-            {{ parseLabels[parseState?.status || 'not_started'] }}
-          </p>
-          <p v-if="parseNotice" class="script-hint">{{ parseNotice }}</p>
-          <p v-if="parseState?.failure_code" class="script-alert">
-            {{
-              parseState.status === 'invalidated'
-                ? '名单、答卷、卷版或授权已变化，旧结果不能继续使用。'
-                : '解析暂未完成。请核对来源，保存并确认新版本后重新发起，或联系维护人员。'
-            }}
-          </p>
-          <button
-            class="primary"
-            :disabled="
-              !canEdit ||
-              !parseAccess ||
-              current.readiness !== 'identity_confirmed' ||
-              ['pending', 'running', 'retry_wait', 'succeeded', 'failed', 'invalidated'].includes(
-                parseState?.status || '',
-              )
-            "
-            @click="startParsing"
-          >
-            {{ parseRequestId ? '重试原解析请求' : '开始解析' }}
-          </button>
-          <button :disabled="busy" @click="fetchParsing">刷新解析状态</button>
-          <p v-if="parseState?.answer_script_version_id" class="script-hint">
-            来源版本 {{ parseState.answer_script_version_id.slice(0, 8) }} ·
-            {{ parseState.page_count ?? '—' }} 页
-          </p>
-          <template v-if="parseState?.status === 'succeeded'">
-            <p>已生成标准化结果 · {{ parseState.block_count }} 个内容块。尚未评分或发布成绩。</p>
-            <button :disabled="busy" @click="viewParsedPage()">查看解析内容</button>
-            <section v-if="parsedPage" aria-label="解析页面内容">
-              <p>
-                解析第 {{ parsedPageNumber + 1 }} 页 · 原扫描第
-                {{ parsedPage.source.source_page_index + 1 }} 页
-              </p>
-              <pre class="parsed-content">{{ parsedText }}</pre>
-              <button :disabled="busy || parsedPageNumber === 0" @click="viewParsedPage(-1)">
-                上一解析页
-              </button>
-              <button
-                :disabled="busy || parsedPageNumber + 1 >= (parseState.page_count || 0)"
-                @click="viewParsedPage(1)"
-              >
-                下一解析页
-              </button>
-            </section>
-          </template>
-          <p class="script-hint">完整性和身份须人工确认；解析结果仍需教师核对。</p>
-        </section>
+        <div v-if="preview" class="script-preview-scroll">
+          <img :src="preview" alt="人工分卷页面预览" :style="{ width: previewZoom + '%' }" />
+        </div>
+        <p v-else class="script-preview-empty">选择左侧扫描页，在这里核对原卷。</p>
       </section>
-      <aside class="script-saved">
-        <h2>
-          场次答卷 <span>{{ scriptTotal }}</span>
-        </h2>
-        <button
-          v-for="s in items"
-          :key="s.script_id"
-          class="script-saved-item"
-          :class="{ active: current?.script_id === s.script_id }"
-          :disabled="!canEdit"
-          @click="choose(s)"
-        >
-          <strong>{{ s.current.identity?.student_name || '未确认学生' }}</strong
-          ><span>{{ s.current.identity?.class_name || '答卷草稿' }}</span
-          ><small
-            >{{ s.current.pages.length }} 页 · v{{ s.revision }} · {{ status[s.readiness] }}</small
+      <div class="script-side">
+        <section class="script-editor">
+          <header>
+            <h2>{{ title }}</h2>
+            <span v-if="current" class="script-status"
+              >v{{ current.revision }} · {{ status[current.readiness] }}</span
+            >
+          </header>
+          <p v-if="current?.current.identity" class="script-identity">
+            {{ current.current.identity.student_name }} ·
+            {{ current.current.identity.class_name }} · 考号
+            {{ current.current.identity.exam_number || '未登记' }}
+          </p>
+          <p v-if="current?.readiness === 'roster_changed'" class="script-alert">
+            名单已更正。旧身份仅供历史核查，请重新选择当前名单后确认。
+          </p>
+          <ol class="script-order">
+            <li v-for="(p, i) in selected" :key="p.scan_page_id">
+              <button :disabled="busy" @click="view(p)">
+                {{ i + 1 }}. {{ p.original_filename }} · 原第 {{ p.source_page_index + 1 }} 页
+              </button>
+              <div>
+                <button
+                  :disabled="!canEdit || i === 0"
+                  :aria-label="`上移第${i + 1}项`"
+                  @click="move(i, -1)"
+                >
+                  ↑</button
+                ><button
+                  :disabled="!canEdit || i === selected.length - 1"
+                  :aria-label="`下移第${i + 1}项`"
+                  @click="move(i, 1)"
+                >
+                  ↓</button
+                ><button
+                  :disabled="!canEdit"
+                  :aria-label="`移除第${i + 1}项`"
+                  @click="selected.splice(i, 1)"
+                >
+                  移除
+                </button>
+              </div>
+            </li>
+          </ol>
+          <p v-if="!selected.length" class="script-placeholder">
+            从左侧选择一页或多页，组成一份学生答卷。
+          </p>
+          <label class="script-field"
+            ><input
+              v-model="complete"
+              type="checkbox"
+              :disabled="!canEdit"
+            />已核对页数，答卷完整</label
           >
-        </button>
-        <nav class="script-pagination">
-          <button :disabled="busy || scriptOffset === 0" @click="scriptBy(-10)">上一页</button
-          ><button :disabled="busy || scriptOffset + 10 >= scriptTotal" @click="scriptBy(10)">
-            下一页
+          <p v-if="!complete" class="script-hint">
+            缺页可以保存或确认身份，但不能进入后续解析桥接。
+          </p>
+          <label class="script-field"
+            >操作说明<textarea
+              v-model="reason"
+              :disabled="!canEdit"
+              maxlength="300"
+              rows="2"
+              placeholder="说明分卷依据、漏页或更正原因"
+            />
+          </label>
+          <div class="script-actions">
+            <button
+              class="primary"
+              :disabled="!canEdit || !selected.length || !reason.trim()"
+              @click="save('save_draft')"
+            >
+              {{ current ? '保存为新版本草稿' : '保存答卷草稿' }}</button
+            ><button
+              :disabled="!canEdit || !current || !selected.length || !reason.trim()"
+              @click="openConfirm"
+            >
+              核对学生并确认</button
+            ><button
+              :disabled="!canEdit || !current || current.readiness === 'revoked' || !reason.trim()"
+              @click="save('revoke')"
+            >
+              撤销答卷
+            </button>
+          </div>
+          <p class="script-hint">
+            已确认答卷的任何修改都保留历史；保存草稿会解除当前身份确认，必须重新核对。
+          </p>
+          <section v-if="current" class="script-parse" aria-label="答卷解析">
+            <h2>答卷解析</h2>
+            <p role="status" class="parse-state">
+              {{ parseLabels[parseState?.status || 'not_started'] }}
+            </p>
+            <p v-if="parseNotice" class="script-hint">{{ parseNotice }}</p>
+            <p v-if="parseState?.failure_code" class="script-alert">
+              {{
+                parseState.status === 'invalidated'
+                  ? '名单、答卷、卷版或授权已变化，旧结果不能继续使用。'
+                  : '解析暂未完成。请核对来源，保存并确认新版本后重新发起，或联系维护人员。'
+              }}
+            </p>
+            <button
+              class="primary"
+              :disabled="
+                !canEdit ||
+                !parseAccess ||
+                current.readiness !== 'identity_confirmed' ||
+                ['pending', 'running', 'retry_wait', 'succeeded', 'failed', 'invalidated'].includes(
+                  parseState?.status || '',
+                )
+              "
+              @click="startParsing"
+            >
+              {{ parseRequestId ? '重试原解析请求' : '开始解析' }}
+            </button>
+            <button :disabled="busy" @click="fetchParsing">刷新解析状态</button>
+            <p v-if="parseState?.answer_script_version_id" class="script-hint">
+              来源版本 {{ parseState.answer_script_version_id.slice(0, 8) }} ·
+              {{ parseState.page_count ?? '—' }} 页
+            </p>
+            <template v-if="parseState?.status === 'succeeded'">
+              <p>已生成标准化结果 · {{ parseState.block_count }} 个内容块。尚未评分或发布成绩。</p>
+              <button class="primary" @click="focusGrading">进入 AI 批改与复核</button>
+              <button :disabled="busy" @click="viewParsedPage()">查看解析内容</button>
+              <section v-if="parsedPage" aria-label="解析页面内容">
+                <p>
+                  解析第 {{ parsedPageNumber + 1 }} 页 · 原扫描第
+                  {{ parsedPage.source.source_page_index + 1 }} 页
+                </p>
+                <pre class="parsed-content">{{ parsedText }}</pre>
+                <button :disabled="busy || parsedPageNumber === 0" @click="viewParsedPage(-1)">
+                  上一解析页
+                </button>
+                <button
+                  :disabled="busy || parsedPageNumber + 1 >= (parseState.page_count || 0)"
+                  @click="viewParsedPage(1)"
+                >
+                  下一解析页
+                </button>
+              </section>
+            </template>
+            <p class="script-hint">完整性和身份须人工确认；解析结果仍需教师核对。</p>
+          </section>
+        </section>
+        <aside class="script-saved">
+          <h2>
+            场次答卷 <span>{{ scriptTotal }}</span>
+          </h2>
+          <button
+            v-for="s in items"
+            :key="s.script_id"
+            class="script-saved-item"
+            :class="{ active: current?.script_id === s.script_id }"
+            :disabled="!canEdit"
+            @click="choose(s)"
+          >
+            <strong>{{ s.current.identity?.student_name || '未确认学生' }}</strong
+            ><span>{{ s.current.identity?.class_name || '答卷草稿' }}</span
+            ><small
+              >{{ s.current.pages.length }} 页 · v{{ s.revision }} ·
+              {{ status[s.readiness] }}</small
+            >
           </button>
-        </nav>
-        <button :disabled="busy || !current" @click="loadHistory()">查看历史版本</button>
-        <ol v-if="history.length" class="script-history">
-          <li v-for="v in history" :key="v.id">
-            v{{ v.version_no }} ·
-            {{ v.status === 'confirmed' ? '已确认' : v.status === 'revoked' ? '撤销' : '草稿'
-            }}<br />{{ v.identity?.student_name || '未确认' }} · {{ v.pages.length }} 页
-            <p>{{ v.reason }}</p>
-          </li>
-        </ol>
-        <nav v-if="history.length" class="script-pagination">
-          <button :disabled="busy || historyOffset === 0" @click="loadHistory(-10)">较新</button
-          ><button :disabled="busy || historyOffset + 10 >= historyTotal" @click="loadHistory(10)">
-            较早
-          </button>
-        </nav>
-      </aside>
+          <nav class="script-pagination">
+            <button :disabled="busy || scriptOffset === 0" @click="scriptBy(-10)">上一页</button
+            ><button :disabled="busy || scriptOffset + 10 >= scriptTotal" @click="scriptBy(10)">
+              下一页
+            </button>
+          </nav>
+          <button :disabled="busy || !current" @click="loadHistory()">查看历史版本</button>
+          <ol v-if="history.length" class="script-history">
+            <li v-for="v in history" :key="v.id">
+              v{{ v.version_no }} ·
+              {{ v.status === 'confirmed' ? '已确认' : v.status === 'revoked' ? '撤销' : '草稿'
+              }}<br />{{ v.identity?.student_name || '未确认' }} · {{ v.pages.length }} 页
+              <p>{{ v.reason }}</p>
+            </li>
+          </ol>
+          <nav v-if="history.length" class="script-pagination">
+            <button :disabled="busy || historyOffset === 0" @click="loadHistory(-10)">较新</button
+            ><button
+              :disabled="busy || historyOffset + 10 >= historyTotal"
+              @click="loadHistory(10)"
+            >
+              较早
+            </button>
+          </nav>
+        </aside>
+      </div>
     </div>
-    <ExamGrading
-      v-if="parseState?.status === 'succeeded' && parseState.job_id"
-      :key="parseState.job_id"
-      :job-id="parseState.job_id"
-      :student-label="
-        current?.current.identity
-          ? `${current.current.identity.student_name} · ${current.current.identity.class_name} · 考号 ${current.current.identity.exam_number || '未登记'}`
-          : '当前答卷'
-      "
-    />
+    <div ref="gradingAnchor" class="grading-anchor">
+      <ExamGrading
+        v-if="parseState?.status === 'succeeded' && parseState.job_id"
+        :key="parseState.job_id"
+        :job-id="parseState.job_id"
+        :student-label="
+          current?.current.identity
+            ? `${current.current.identity.student_name} · ${current.current.identity.class_name} · 考号 ${current.current.identity.exam_number || '未登记'}`
+            : '当前答卷'
+        "
+      />
+    </div>
     <el-dialog v-model="showIdentity" title="核对学生身份与实际卷别" width="min(720px, 94vw)">
       <p>仅从本场次当前冻结名单中选择。请对照原卷核验姓名、学号、考号和班级。</p>
       <form class="script-search" @submit.prevent="findCandidates">
@@ -681,16 +727,12 @@ onUnmounted(() => {
         </button></template
       >
     </el-dialog>
-    <el-dialog
-      :model-value="!!preview"
-      title="核对原始扫描页"
-      width="min(800px, 96vw)"
-      @close="clearPreview"
+    <el-dialog v-model="showLargePreview" title="核对原始扫描页" width="min(800px, 96vw)"
       ><p>
         {{ previewPage?.original_filename }} · 原第
         {{ (previewPage?.source_page_index || 0) + 1 }} 页
       </p>
-      <img v-if="preview" :src="preview" alt="人工分卷页面预览" class="script-preview"
+      <img v-if="preview" :src="preview" alt="原始扫描页大图" class="script-preview"
     /></el-dialog>
   </section>
 </template>
@@ -738,18 +780,75 @@ onUnmounted(() => {
 }
 .script-columns {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) minmax(360px, 1.25fr) 240px;
-  gap: 20px;
+  grid-template-columns: minmax(170px, 215px) minmax(0, 1.25fr) minmax(280px, 0.9fr);
+  gap: 14px;
   align-items: start;
 }
 .script-source,
 .script-editor,
-.script-saved {
+.script-saved,
+.script-preview-pane {
   background: #fff;
   border: 1px solid #dce3ec;
   border-radius: 10px;
   padding: 20px;
   min-width: 0;
+}
+.script-side {
+  min-width: 0;
+  display: grid;
+  gap: 14px;
+}
+.script-source,
+.script-preview-pane {
+  position: sticky;
+  top: 78px;
+  max-height: calc(100vh - 96px);
+  overflow: auto;
+}
+.script-preview-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.script-preview-toolbar h2 {
+  margin-bottom: 0;
+}
+.script-zoom {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+}
+.script-zoom button {
+  padding: 5px 8px;
+}
+.script-preview-scroll {
+  overflow: auto;
+  max-height: calc(100vh - 180px);
+  background: #eef2f7;
+  border-radius: 6px;
+  text-align: center;
+}
+.script-preview-scroll img {
+  display: block;
+  max-width: none;
+  height: auto;
+  margin: auto;
+}
+.script-preview-empty {
+  min-height: 300px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: #667a92;
+  background: #f5f7fa;
+  border-radius: 6px;
+}
+.grading-anchor {
+  scroll-margin-top: 80px;
 }
 .script-columns h2 {
   font-size: 18px;
@@ -768,7 +867,7 @@ onUnmounted(() => {
 }
 .script-page-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 12px;
 }
 .script-page {
@@ -782,6 +881,10 @@ onUnmounted(() => {
 }
 .script-page.taken {
   background: #f0f3f7;
+}
+.script-page.previewing {
+  border-color: #77a4e5;
+  background: #f0f6ff;
 }
 .page-symbol {
   min-height: 88px;
@@ -845,7 +948,7 @@ onUnmounted(() => {
 .script-order {
   padding: 0;
   list-style: none;
-  min-height: 200px;
+  min-height: 50px;
 }
 .script-order li {
   border-bottom: 1px solid #e4eaf1;
@@ -864,9 +967,11 @@ onUnmounted(() => {
 .script-order li > div {
   display: flex;
   gap: 4px;
+  flex-shrink: 0;
 }
 .script-order li > div button {
   padding: 6px 8px;
+  white-space: nowrap;
 }
 .script-placeholder {
   padding: 46px 16px;
@@ -931,6 +1036,13 @@ onUnmounted(() => {
   margin-top: 16px;
   font-size: 13px;
 }
+#main-content .script-pagination button:not(.el-button):not(.text-button) {
+  padding: 6px 7px;
+  white-space: nowrap;
+}
+.script-pagination span {
+  white-space: nowrap;
+}
 .script-search {
   display: flex;
   gap: 12px;
@@ -957,22 +1069,18 @@ onUnmounted(() => {
   max-height: 70vh;
   object-fit: contain;
 }
-@media (min-width: 1800px) {
-  .script-page-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
 @media (max-width: 1150px) {
   .script-columns {
-    grid-template-columns: minmax(250px, 1fr) minmax(340px, 1.2fr);
+    grid-template-columns: minmax(180px, 0.65fr) minmax(0, 1.35fr);
   }
-  .script-saved {
-    grid-column: 1/-1;
+  .script-side {
+    grid-column: 1 / -1;
+    grid-template-columns: 1fr 1fr;
   }
-  .script-saved-item {
-    display: inline-flex;
-    width: 220px;
-    margin-right: 12px;
+  .script-source,
+  .script-preview-pane {
+    position: static;
+    max-height: none;
   }
 }
 @media (max-width: 720px) {
@@ -982,6 +1090,10 @@ onUnmounted(() => {
   .script-heading {
     align-items: start;
   }
+  .script-side {
+    grid-column: auto;
+    grid-template-columns: 1fr;
+  }
   .script-source,
   .script-editor,
   .script-saved {
@@ -989,9 +1101,6 @@ onUnmounted(() => {
   }
   .script-order li {
     flex-wrap: wrap;
-  }
-  .script-saved {
-    grid-column: auto;
   }
 }
 </style>

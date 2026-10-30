@@ -14,6 +14,12 @@ const route = useRoute(),
   error = ref(''),
   notice = ref('')
 const personalCounts = ref<{ status: string; count: number }[]>([])
+const pageFilter = ref('all')
+const visibleTasks = computed(() =>
+  pageFilter.value === 'all'
+    ? tasks.value
+    : tasks.value.filter((t) => t.status === pageFilter.value),
+)
 const pending = ref<{ path: string; body: string }>(),
   locked = computed(() => busy.value || !!pending.value)
 async function load() {
@@ -87,9 +93,7 @@ onMounted(() => run(load))
     ><button :disabled="locked" @click="run(load)">刷新个人任务</button
     ><span
       >共 {{ personalCounts.reduce((n, c) => n + c.count, 0) }} 项 · 已完成
-      {{
-        personalCounts.filter((c) => c.status === 'completed').reduce((n, c) => n + c.count, 0)
-      }}
+      {{ personalCounts.filter((c) => c.status === 'completed').reduce((n, c) => n + c.count, 0) }}
       项</span
     >
   </div>
@@ -132,27 +136,47 @@ onMounted(() => run(load))
     />
   </template>
   <section v-else aria-label="个人任务列表" class="marking-task-list">
+    <div class="task-filters" aria-label="筛选本页任务">
+      <span>筛选本页</span>
+      <button
+        v-for="filter in [
+          { id: 'all', label: '全部' },
+          { id: 'assigned', label: '待领取' },
+          { id: 'in_progress', label: '批改中' },
+          { id: 'completed', label: '已完成' },
+        ]"
+        :key="filter.id"
+        :aria-pressed="pageFilter === filter.id"
+        :class="{ active: pageFilter === filter.id }"
+        @click="pageFilter = filter.id"
+      >
+        {{ filter.label }}
+      </button>
+    </div>
     <p v-if="!tasks.length && !busy">当前没有已授权的阅卷任务。</p>
-    <div v-else class="table-scroll"><table>
-      <thead>
-        <tr>
-          <th>学生</th>
-          <th>班级</th>
-          <th>题目</th>
-          <th>状态</th>
-          <th>操作</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="t in tasks" :key="t.task_id">
-          <td>{{ t.student_name }} · {{ t.student_code }}</td>
-          <td>{{ t.class_name }}</td>
-          <td>第{{ t.question_number }}题</td>
-          <td>{{ taskStatus[t.status] }}</td>
-          <td><RouterLink :to="`/marking/my/${t.task_id}`">进入任务 →</RouterLink></td>
-        </tr>
-      </tbody>
-    </table></div>
+    <p v-else-if="!visibleTasks.length && !busy">本页没有此状态的任务，可切换筛选或查看其他页。</p>
+    <div v-else class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>学生</th>
+            <th>班级</th>
+            <th>题目</th>
+            <th>状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="t in visibleTasks" :key="t.task_id">
+            <td>{{ t.student_name }} · {{ t.student_code }}</td>
+            <td>{{ t.class_name }}</td>
+            <td>第{{ t.question_number }}题</td>
+            <td>{{ taskStatus[t.status] }}</td>
+            <td><RouterLink :to="`/marking/my/${t.task_id}`">进入任务 →</RouterLink></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </section>
   <div class="task-toolbar">
     <button
@@ -186,6 +210,24 @@ onMounted(() => run(load))
   align-items: center;
   margin: 24px 0;
 }
+.task-filters {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  color: #687b90;
+  font-size: 14px;
+}
+.task-filters button {
+  margin: 0;
+  border-color: transparent;
+  padding: 7px 12px;
+}
+#main-content .task-filters button.active:not(:disabled) {
+  color: #2458ab;
+  background: #edf4ff;
+  border-color: #c7d8f2;
+}
 table {
   width: 100%;
   border-collapse: collapse;
@@ -211,13 +253,40 @@ button:disabled {
   cursor: default;
 }
 .current-task {
-  padding: 20px;
-  background: #eaf3f5;
+  position: sticky;
+  top: 64px;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  padding: 10px 14px;
+  background: #fff;
+  border: 1px solid #dce5f0;
   border-left: 3px solid #287c86;
-  margin-bottom: 24px;
+  border-radius: 8px;
+  margin-bottom: 16px;
 }
 .current-task h2 {
+  flex: 1 1 220px;
+  min-width: 0;
+  font-size: 15px;
   margin: 0;
+}
+.current-task p {
+  margin: 0;
+  font-size: 13px;
+}
+.current-task [role='alert'] {
+  flex: 1 0 100%;
+}
+.current-task button {
+  margin: 0;
+}
+@media (max-width: 700px) {
+  .current-task {
+    position: static;
+  }
 }
 small {
   font-weight: normal;

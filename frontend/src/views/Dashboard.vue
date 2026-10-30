@@ -145,7 +145,7 @@ onMounted(refresh)
     </section>
     <div class="dashboard-layout">
       <div class="dashboard-main">
-        <section class="dashboard-section" aria-labelledby="pending-title">
+        <section class="dashboard-section dashboard-tasks" aria-labelledby="pending-title">
           <div class="section-heading">
             <div>
               <p class="dashboard-kicker">待处理</p>
@@ -188,7 +188,7 @@ onMounted(refresh)
             </RouterLink>
           </div>
         </section>
-        <section class="dashboard-section" aria-labelledby="assignment-title">
+        <section class="dashboard-section dashboard-assignments" aria-labelledby="assignment-title">
           <div class="section-heading">
             <div>
               <p class="dashboard-kicker">教学作业</p>
@@ -238,7 +238,7 @@ onMounted(refresh)
             ><RouterLink v-if="nav.myMarking" to="/marking/my"><Reading />我的阅卷</RouterLink>
           </div>
         </section>
-        <section class="dashboard-section">
+        <section class="dashboard-section dashboard-sessions">
           <div class="section-heading">
             <div>
               <p class="dashboard-kicker">考试阅卷</p>
@@ -268,7 +268,7 @@ onMounted(refresh)
             >
           </div>
         </section>
-        <section class="dashboard-section">
+        <section class="dashboard-section dashboard-exceptions">
           <div class="section-heading">
             <div>
               <p class="dashboard-kicker">需要关注</p>
