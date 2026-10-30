@@ -10,6 +10,42 @@ async function signIn(page: Page, target = '/assignments') {
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
 }
 
+test('产品工作台：真实数据、导航折叠与作业视图适配', async ({ page, request }) => {
+  test.skip(process.env.RUN_UI_PRODUCT_BROWSER !== '1', 'product workspace opt-in')
+  await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/a`, { ignoreHTTPSErrors: true })
+  await signIn(page, '/dashboard')
+  await expect(page.getByRole('heading', { name: '最近作业' })).toBeVisible()
+  await expect(page.getByText('正在检查异常…')).not.toBeVisible()
+  await expect(page.getByText('正在读取场次…')).not.toBeVisible()
+  await expect(page.locator(`a[href="/assignments/${aid}/homework"]`).first()).toBeVisible()
+  for (const [width, height] of [
+    [1366, 768],
+    [1440, 900],
+    [1920, 1080],
+  ]) {
+    await page.setViewportSize({ width: width!, height: height! })
+    await expect(page.getByRole('heading', { name: '我的阅卷任务' })).toBeVisible()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(
+      true,
+    )
+    await page.screenshot({ path: `test-results/dashboard-${width}.png`, fullPage: true })
+  }
+  await page.getByRole('button', { name: '收起导航' }).click()
+  await expect(page.getByRole('button', { name: '展开导航' })).toBeVisible()
+  await page.getByRole('button', { name: '展开导航' }).click()
+  await page
+    .getByRole('navigation', { name: '功能导航' })
+    .getByRole('link', { name: '我的作业', exact: true })
+    .click()
+  await page.getByRole('button', { name: '列表', exact: true }).click()
+  await expect(page.locator('.assignment-list')).toBeVisible()
+  await page.getByLabel('本页搜索作业').fill('不存在的作业名称')
+  await expect(page.getByText('本页没有匹配的作业')).toBeVisible()
+  await page.getByLabel('本页搜索作业').clear()
+  await page.getByRole('button', { name: '卡片', exact: true }).click()
+  await page.screenshot({ path: 'test-results/assignments-redesign.png', fullPage: true })
+})
+
 test('答题卡：打印、扫描、人工分卷、真实识别、教师确认与成绩预览', async ({
   page,
   request,
@@ -484,21 +520,27 @@ async function manageFinalResults(page: Page) {
   await page.getByRole('link', { name: '成绩管理', exact: true }).click()
   await expect(page.getByRole('heading', { name: '成绩管理', exact: true })).toBeVisible()
   await page.getByLabel('考试场次').selectOption(process.env.WORKBENCH_SCAN_SESSION!)
-  const attendance = page.locator('section').filter({ has: page.getByRole('heading', { name: '到考核对与批改进度' }) })
+  const attendance = page
+    .locator('section')
+    .filter({ has: page.getByRole('heading', { name: '到考核对与批改进度' }) })
   for (const [number, status, label] of [
-    ['N001', 'present', '到考'], ['N002', 'present', '到考'],
-    ['N003', 'absent', '缺考'], ['N004', 'absent', '缺考'],
+    ['N001', 'present', '到考'],
+    ['N002', 'present', '到考'],
+    ['N003', 'absent', '缺考'],
+    ['N004', 'absent', '缺考'],
   ]) {
     const row = attendance.locator('tr').filter({ hasText: number })
     await expect(row).toBeVisible()
     await row.locator('select').selectOption(status!)
-    const submitted = page.waitForRequest((request) =>
-      request.method() === 'POST' && request.url().endsWith('/final-results/attendance'),
+    const submitted = page.waitForRequest(
+      (request) =>
+        request.method() === 'POST' && request.url().endsWith('/final-results/attendance'),
     )
     await row.getByRole('button', { name: '确认' }).click()
     expect((await submitted).postDataJSON().status).toBe(status)
     await expect(row).toContainText(`已保存：${label}`)
   }
+  await page.evaluate(() => window.scrollTo(0, 0))
   await page.screenshot({ path: 'test-results/final-attendance.png', fullPage: true })
   await page.getByRole('button', { name: '生成待审批版本' }).click()
   const first = page.locator('tr').filter({ hasText: '第 1 版' })
@@ -510,10 +552,13 @@ async function manageFinalResults(page: Page) {
   await first.getByRole('button', { name: '发布', exact: true }).click()
   await expect(first).toContainText('已发布')
   await first.getByRole('button', { name: '查看正式成绩' }).click()
-  const published = page.locator('section').filter({ has: page.getByRole('heading', { name: '已发布 · 第 1 版' }) })
+  const published = page
+    .locator('section')
+    .filter({ has: page.getByRole('heading', { name: '已发布 · 第 1 版' }) })
   await expect(published).toContainText('18.00')
   await expect(published).toContainText('缺考')
   await expect(published).toContainText('平均')
+  await page.evaluate(() => window.scrollTo(0, 0))
   await page.screenshot({ path: 'test-results/final-published-v1.png', fullPage: true })
   const download = page.waitForEvent('download')
   await page.getByRole('button', { name: '导出正式成绩 Excel' }).click()
@@ -525,7 +570,10 @@ async function manageFinalResults(page: Page) {
   await expect(panel).toBeVisible()
   await expect(panel.getByRole('heading', { name: '第1题', exact: true })).toBeVisible()
   await panel.getByRole('button', { name: '载入完整分数快照', exact: true }).click()
-  await panel.getByLabel(/^教师分 /).first().fill('2.00')
+  await panel
+    .getByLabel(/^教师分 /)
+    .first()
+    .fill('2.00')
   await panel.getByLabel('审核说明').fill('合成成绩更正：再次核对步骤')
   await panel.getByRole('button', { name: '提交完整修订', exact: true }).click()
   await expect(panel.getByText(/修订3 · 教师修订/)).toBeVisible()
@@ -540,11 +588,20 @@ async function manageFinalResults(page: Page) {
   await expect(second).toContainText('已发布')
   await second.getByRole('button', { name: '查看正式成绩' }).click()
   await expect(page.getByRole('heading', { name: '已发布 · 第 2 版' })).toBeVisible()
-  await expect(page.locator('section').filter({ has: page.getByRole('heading', { name: '已发布 · 第 2 版' }) })).toContainText('17.00')
+  await expect(
+    page
+      .locator('section')
+      .filter({ has: page.getByRole('heading', { name: '已发布 · 第 2 版' }) }),
+  ).toContainText('17.00')
+  await page.evaluate(() => window.scrollTo(0, 0))
   await page.screenshot({ path: 'test-results/final-published-v2.png', fullPage: true })
   await first.getByRole('button', { name: '查看正式成绩' }).click()
   await expect(page.getByRole('heading', { name: '已发布 · 第 1 版' })).toBeVisible()
-  await expect(page.locator('section').filter({ has: page.getByRole('heading', { name: '已发布 · 第 1 版' }) })).toContainText('18.00')
+  await expect(
+    page
+      .locator('section')
+      .filter({ has: page.getByRole('heading', { name: '已发布 · 第 1 版' }) }),
+  ).toContainText('18.00')
 }
 
 async function markVisualAnswer(page: Page) {
@@ -801,7 +858,12 @@ test('网页考试配置：创建场次、共享A/B卷、混班名单与版本�
   await page.getByRole('link', { name: '人工分卷与身份确认 →' }).click()
   await expect(page).toHaveURL(new RegExp(`/scans/sessions/${sid}/scripts$`))
   await expect(page.getByRole('heading', { name: '人工分卷与身份确认' })).toBeVisible()
-  await page.getByRole('link', { name: '成绩预览', exact: true }).click()
+  await expect(
+    page
+      .getByRole('navigation', { name: '功能导航' })
+      .getByRole('link', { name: '成绩预览', exact: true }),
+  ).toHaveCount(0)
+  await signIn(page, '/exam-results')
   await expect(page.getByRole('heading', { name: '整卷成绩预览' })).toBeVisible()
   await expect(page.getByText('暂无已授权班级的考试场次，请联系考务负责人。')).toBeVisible()
   expect(errors).toEqual([])
@@ -1084,6 +1146,7 @@ test('协同阅卷：负责人跨班分配、两名教师提交与成绩预览',
   await page.getByLabel('阅卷教师').selectOption(process.env.WORKBENCH_MARKER_B!)
   await page.getByRole('button', { name: '分配选中题目（1）', exact: true }).click()
   await expect(page.getByText('操作已保存。')).toBeVisible()
+  await page.evaluate(() => window.scrollTo(0, 0))
   await page.screenshot({ path: 'test-results/marking-management.png', fullPage: true })
   async function teacher(actor: string, count: number) {
     await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/${actor}`, {
@@ -1110,6 +1173,7 @@ test('协同阅卷：负责人跨班分配、两名教师提交与成绩预览',
       if (index === 0) {
         await panel.locator('.mark-thumbs button').first().click()
         await expect(panel.getByAltText('当前答卷扫描原页')).toBeVisible()
+        await tab.evaluate(() => window.scrollTo(0, 0))
         await tab.screenshot({ path: `test-results/marking-${actor}-review.png`, fullPage: true })
       }
       await tab.getByRole('button', { name: '提交当前任务', exact: true }).click()
@@ -1135,6 +1199,7 @@ test('协同阅卷：负责人跨班分配、两名教师提交与成绩预览',
   await expect(progress.locator('tbody tr')).toHaveCount(3)
   for (const row of await progress.locator('tbody tr').all())
     await expect(row).toContainText('已完成')
+  await page.evaluate(() => window.scrollTo(0, 0))
   await page.screenshot({ path: 'test-results/marking-progress.png', fullPage: true })
   await page.getByRole('link', { name: '整卷成绩预览（需独立班级授权） →', exact: true }).click()
   await expect(firstResult).toContainText('全部复核完成')
@@ -1143,6 +1208,7 @@ test('协同阅卷：负责人跨班分配、两名教师提交与成绩预览',
   await expect(secondResult).toContainText('未完成')
   await expect(secondResult.locator('td').nth(5)).toContainText('未完成')
   await expect(secondResult).toContainText('10.00')
+  await page.evaluate(() => window.scrollTo(0, 0))
   await page.screenshot({ path: 'test-results/marking-results-preview.png', fullPage: true })
   expect(errors).toEqual([])
 })
@@ -1335,17 +1401,27 @@ test('日常作业：两班布置、同名学生代收重交与教师批改', as
   await sameName.first().locator('input[type=file]').setInputFiles(process.env.WORKBENCH_SCAN_PDF!)
   await page.getByRole('button', { name: '确认代收' }).click()
   await expect(page.locator('tbody tr').filter({ hasText: firstCode })).toContainText('第 1 次')
-  await page.locator('tbody tr').filter({ hasText: firstCode }).locator('input[type=file]').setInputFiles(process.env.WORKBENCH_SCAN_PDF!)
+  await page
+    .locator('tbody tr')
+    .filter({ hasText: firstCode })
+    .locator('input[type=file]')
+    .setInputFiles(process.env.WORKBENCH_SCAN_PDF!)
   await page.getByRole('button', { name: '确认代收' }).click()
   const student = page.locator('tbody tr').filter({ hasText: firstCode })
   await expect(student).toContainText('第 2 次')
   await student.getByRole('button', { name: '提交历史' }).click()
   await expect(page.getByText('第 1 次 · 历史版本')).toBeVisible()
+  await page.evaluate(() => window.scrollTo(0, 0))
   await page.screenshot({ path: 'test-results/homework-dashboard.png', fullPage: true })
-  await expect.poll(async () => {
-    await page.getByRole('button', { name: '刷新', exact: true }).click()
-    return await page.locator('tbody tr').filter({ hasText: firstCode }).innerText()
-  }, { timeout: 30000, intervals: [500, 1000] }).toContain('完成')
+  await expect
+    .poll(
+      async () => {
+        await page.getByRole('button', { name: '刷新', exact: true }).click()
+        return await page.locator('tbody tr').filter({ hasText: firstCode }).innerText()
+      },
+      { timeout: 30000, intervals: [500, 1000] },
+    )
+    .toContain('完成')
   await student.getByRole('link', { name: '进入批改' }).click()
   await page.getByRole('button', { name: '准备作答核对' }).click()
   await page.getByRole('link', { name: '核对作答 →' }).click()
@@ -1361,6 +1437,7 @@ test('日常作业：两班布置、同名学生代收重交与教师批改', as
   await page.getByRole('button', { name: '接受建议' }).click()
   await expect(page.getByText('教师复核已保存，不代表正式成绩发布。')).toBeVisible()
   await expect(page.getByText(/当前复核：已接受/)).toBeVisible()
+  await page.evaluate(() => window.scrollTo(0, 0))
   await page.screenshot({ path: 'test-results/homework-review.png', fullPage: true })
   await page.getByRole('link', { name: '← 返回学生提交' }).click()
   await page.getByRole('link', { name: '← 返回作业' }).click()
@@ -1370,7 +1447,9 @@ test('日常作业：两班布置、同名学生代收重交与教师批改', as
 
 test('学校管理员登记和撤销真实任教关系', async ({ page, request }) => {
   test.skip(process.env.RUN_HOMEWORK_BROWSER !== '1', 'real homework workflow opt-in')
-  await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/admin`, { ignoreHTTPSErrors: true })
+  await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/admin`, {
+    ignoreHTTPSErrors: true,
+  })
   await signIn(page, '/school/teaching')
   const teacher = process.env.WORKBENCH_HOMEWORK_TEACHER_B!
   await page.getByLabel('教师账号').selectOption(teacher)
@@ -1382,7 +1461,7 @@ test('学校管理员登记和撤销真实任教关系', async ({ page, request 
   const row = page.locator('tbody tr').filter({ hasText: teacher })
   await expect(row).toContainText('合成1班')
   await page.screenshot({ path: 'test-results/homework-teaching.png', fullPage: true })
-  page.once('dialog', dialog => dialog.accept())
+  page.once('dialog', (dialog) => dialog.accept())
   await row.getByRole('button', { name: '撤销' }).click()
   await expect(row).toHaveCount(0)
 })
@@ -1411,7 +1490,9 @@ test('日常作业：图片区域评分复核及重交失效', async ({ page, re
   await page.getByLabel('合成1班').check()
   await page.getByLabel('合成2班').check()
   const due = new Date(Date.now() + 86400000 * 3)
-  await page.getByLabel('截止时间').fill(new Date(due.getTime() - due.getTimezoneOffset() * 60000).toISOString().slice(0, 16))
+  await page
+    .getByLabel('截止时间')
+    .fill(new Date(due.getTime() - due.getTimezoneOffset() * 60000).toISOString().slice(0, 16))
   await page.getByRole('button', { name: '布置作业', exact: true }).click()
   const same = page.locator('tbody tr').filter({ hasText: '合成同名' })
   await expect(same).toHaveCount(2)
@@ -1445,7 +1526,11 @@ test('日常作业：图片区域评分复核及重交失效', async ({ page, re
     await page.getByRole('link', { name: '← 返回作业' }).click()
     await page.getByRole('link', { name: '布置班级作业与查看完成情况 →' }).click()
     await expect(page.locator('tbody tr').filter({ hasText: code })).toContainText('1 / 1')
-    await page.locator('tbody tr').filter({ hasText: code }).locator('input[type=file]').setInputFiles(process.env.WORKBENCH_HOMEWORK_IMAGE!)
+    await page
+      .locator('tbody tr')
+      .filter({ hasText: code })
+      .locator('input[type=file]')
+      .setInputFiles(process.env.WORKBENCH_HOMEWORK_IMAGE!)
     await page.getByRole('button', { name: '确认代收' }).click()
     await expect(page.locator('tbody tr').filter({ hasText: code })).toContainText('第 2 次')
     await expect(page.locator('tbody tr').filter({ hasText: code })).toContainText('0 / 1')

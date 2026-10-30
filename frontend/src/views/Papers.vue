@@ -429,11 +429,14 @@ watch(
                 maxlength="12"
             /></label>
           </div>
-          <label
-            >题目正文<textarea v-model="question.question.stem" rows="5" maxlength="20000" /></label
-          ><label
-            >教师标准答案<textarea v-model="question.answer_content" rows="4" maxlength="50000" />
-          </label>
+          <div class="paper-content-grid">
+            <label
+              >题目正文<textarea v-model="question.question.stem" rows="5" maxlength="20000" />
+            </label>
+            <label
+              >教师标准答案<textarea v-model="question.answer_content" rows="5" maxlength="50000" />
+            </label>
+          </div>
           <h3>评分项</h3>
           <div v-for="(criterion, i) in question.rubric.criteria" :key="i" class="paper-criterion">
             <label
@@ -473,7 +476,7 @@ watch(
       </section>
       <section class="paper-section" aria-label="题序与显示题号">
         <h2>题序与显示题号</h2>
-        <p class="muted">题目键保持稳定。调整展示顺序不会新增、删除或复制试题。</p>
+        <p class="muted">调整题目顺序和显示题号，不会改变试题内容。</p>
         <fieldset :disabled="locked || !canEdit || dirtyQuestion">
           <div v-for="(q, i) in order" :key="q.question_key" class="paper-order">
             <label>显示题号<input v-model="q.printed_label" maxlength="80" /></label

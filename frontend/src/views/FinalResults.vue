@@ -141,7 +141,7 @@ onUnmounted(() => { loadGeneration++; attendance.value = []; preview.value = [];
       <tbody><tr v-for="row in attendance" :key="row.participation_id"><td>{{ row.class_name }}</td><td>{{ row.student_name }}</td><td>{{ row.student_code }} / {{ row.exam_number || '未设置' }}</td><td><span>已保存：{{ statusText[row.status] }}</span> <select v-model="attendanceDraft[row.participation_id]" :disabled="busy || !!pending"><option value="unverified">待核验</option><option value="present">到考</option><option value="absent">缺考</option></select></td><td>{{ statusText[detail(row.participation_id)?.status || ''] || '未加载' }} · {{ detail(row.participation_id)?.reviewed_count ?? 0 }} / {{ detail(row.participation_id)?.required_count ?? '—' }}</td><td><button :disabled="busy || !!pending || !reason.trim()" @click="attendanceAction(row)">确认</button></td></tr></tbody>
     </table></div>
     <p v-if="!attendance.length && !busy">暂无可查看的参试名单。</p>
-    <button :disabled="busy || !!pending || !sid || !reason.trim()" @click="prepare">{{ latest ? '生成更正版本' : '生成待审批版本' }}</button>
+    <button class="primary" :disabled="busy || !!pending || !sid || !reason.trim()" @click="prepare">{{ latest ? '生成更正版本' : '生成待审批版本' }}</button>
   </section>
   <section><h2>成绩版本</h2><p>审批与发布由有权的考务负责人完成。变更来源后需作废旧待审批版本并重新生成。</p>
     <div class="table-wrap"><table class="result-table"><thead><tr><th>版本</th><th>状态</th><th>说明</th><th>操作</th></tr></thead><tbody>

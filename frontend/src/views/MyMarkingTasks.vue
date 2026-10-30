@@ -102,12 +102,14 @@ onMounted(() => run(load))
       <p>{{ taskStatus[current.status] }} · 第{{ current.generation }}次分配</p>
       <button
         v-if="current.status === 'assigned'"
+        class="primary"
         :disabled="locked"
         @click="run(() => act(current!, 'claim'))"
       >
         领取并开始</button
       ><button
         v-if="current.status === 'in_progress'"
+        class="primary"
         :disabled="locked"
         @click="run(() => act(current!, 'complete'))"
       >
@@ -129,9 +131,9 @@ onMounted(() => run(load))
       "
     />
   </template>
-  <section v-else aria-label="个人任务列表">
+  <section v-else aria-label="个人任务列表" class="marking-task-list">
     <p v-if="!tasks.length && !busy">当前没有已授权的阅卷任务。</p>
-    <table v-else>
+    <div v-else class="table-scroll"><table>
       <thead>
         <tr>
           <th>学生</th>
@@ -150,7 +152,7 @@ onMounted(() => run(load))
           <td><RouterLink :to="`/marking/my/${t.task_id}`">进入任务 →</RouterLink></td>
         </tr>
       </tbody>
-    </table>
+    </table></div>
   </section>
   <div class="task-toolbar">
     <button

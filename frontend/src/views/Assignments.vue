@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { api, type Schema } from '../api/client'
 import PageState from '../components/PageState.vue'
@@ -12,6 +12,21 @@ const router = useRouter(),
   saving = ref(false),
   saveError = ref('')
 const form = ref({ title: '', subject: '', grade_level: '', description: '' })
+const search = ref(''),
+  statusFilter = ref('all'),
+  viewMode = ref<'grid' | 'list'>('grid')
+const visibleRows = computed(() =>
+  rows.value.filter((row) => {
+    const term = search.value.trim().toLocaleLowerCase()
+    return (
+      (!term ||
+        [row.title, row.subject, row.grade_level].some((value) =>
+          value.toLocaleLowerCase().includes(term),
+        )) &&
+      (statusFilter.value === 'all' || row.status === statusFilter.value)
+    )
+  }),
+)
 function load() {
   return state.run(async (signal) => {
     rows.value = await api.assignments(offset.value, signal)
@@ -45,14 +60,44 @@ onMounted(load)
     </div>
     <el-button type="primary" size="large" @click="dialog = true">＋ 新建作业</el-button>
   </div>
+  <div class="assignment-toolbar" aria-label="作业筛选">
+    <div class="assignment-filters">
+      <label class="filter-field"
+        ><span>本页筛选</span
+        ><el-input
+          v-model="search"
+          clearable
+          placeholder="搜索作业、学科或年级"
+          aria-label="本页搜索作业"
+      /></label>
+      <label class="filter-field"
+        ><span>作业状态</span
+        ><select v-model="statusFilter" aria-label="作业状态">
+          <option value="all">全部状态</option>
+          <option value="draft">草稿</option>
+          <option value="published">已发布</option>
+        </select></label
+      >
+    </div>
+    <div class="view-switch" aria-label="作业显示方式">
+      <button type="button" :aria-pressed="viewMode === 'grid'" @click="viewMode = 'grid'">
+        卡片</button
+      ><button type="button" :aria-pressed="viewMode === 'list'" @click="viewMode = 'list'">
+        列表
+      </button>
+    </div>
+  </div>
   <PageState
     :loading="state.loading.value"
     :error="state.error.value"
     :empty="!rows.length"
     @retry="load"
-    ><div class="assignment-grid">
+    ><div
+      v-if="visibleRows.length"
+      :class="viewMode === 'grid' ? 'assignment-grid' : 'assignment-list'"
+    >
       <RouterLink
-        v-for="row in rows"
+        v-for="row in visibleRows"
         :key="row.id"
         :to="`/assignments/${row.id}`"
         class="assignment-card"
@@ -68,6 +113,10 @@ onMounted(load)
           ><strong>查看作业 ↗</strong>
         </div></RouterLink
       >
+    </div>
+    <div v-else class="state-card">
+      <h3>本页没有匹配的作业</h3>
+      <p>试试其他筛选条件，或翻页查看。</p>
     </div></PageState
   >
   <div class="pager">

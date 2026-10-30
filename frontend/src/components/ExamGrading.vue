@@ -371,7 +371,7 @@ onUnmounted(() => {
             />我已核对原页，人工指定所选内容属于本题</label
           >
           <div class="mark-actions">
-            <button :disabled="locked || !regions.length" @click="confirm('response_present')">
+            <button class="primary" :disabled="locked || !regions.length" @click="confirm('response_present')">
               确认学生作答</button
             ><button :disabled="locked" @click="confirm('uncertain')">标记需要人工核验</button>
           </div>

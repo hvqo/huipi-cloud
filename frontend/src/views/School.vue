@@ -380,7 +380,7 @@ onMounted(() =>
 <template>
   <div class="school-heading">
     <div>
-      <p class="eyebrow">学校管理 · 可信基础资料</p>
+      <p class="eyebrow">学校管理 · 基础资料</p>
       <h1>学校基础数据</h1>
       <p class="muted">维护教学日历、班级和学生，为考试准备一致的名册。</p>
     </div>

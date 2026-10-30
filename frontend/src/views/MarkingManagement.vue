@@ -197,7 +197,7 @@ onMounted(() => run(loadSessions))
     <section aria-label="任务分配" class="mark-allocation">
       <h2>分配单评任务</h2>
       <p class="muted">
-        教师账号按服务端授权列出；当前未登记姓名，使用账号编号区分。题组通过多选题目组成。
+        选择教师与题目，即可组成阅卷任务。账号未登记姓名时显示账号编号。
       </p>
       <div class="mark-toolbar">
         <label
