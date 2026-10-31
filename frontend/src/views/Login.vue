@@ -8,7 +8,7 @@ const route = useRoute(),
 async function signIn() {
   busy.value = true
   try {
-    await login(String(route.query.returnTo || '/assignments'))
+    await login(String(route.query.returnTo || '/dashboard'))
   } catch (e) {
     error.value = e instanceof Error ? e.message : '登录未完成。'
     busy.value = false

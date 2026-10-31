@@ -33,11 +33,17 @@ const visualInput = computed(() => props.details.visual_grade_input)
 const unsavedAreas = computed(() => JSON.stringify(draft.value) !== savedAreas.value)
 const pageAreas = computed(() => draft.value.filter((r) => r.scan_page_id === page.value))
 const stateLabels: Record<string, string> = {
-  not_started: '尚未评分', pending: '等待评分', running: '正在评分',
-  succeeded: '建议已生成', failed: '评分失败，需人工处理', invalidated: '来源已变化',
+  not_started: '尚未评分',
+  pending: '等待评分',
+  running: '正在评分',
+  succeeded: '建议已生成',
+  failed: '评分失败，需人工处理',
+  invalidated: '来源已变化',
 }
 const reviewLabels: Record<string, string> = {
-  accepted: '接受建议', revised: '教师修订', rejected: '拒绝建议',
+  accepted: '接受建议',
+  revised: '教师修订',
+  rejected: '拒绝建议',
   regrading_required: '需要人工判读',
 }
 const pageLabel = (pageId: string) => {
@@ -136,9 +142,12 @@ async function sendPending() {
     emit('changed')
   } catch (e) {
     if (e instanceof ApiError && !e.uncertain) pending.value = undefined
-    error.value = e instanceof ApiError && e.code === 'exam_visual_grading_disabled'
-      ? '图文评分尚未启用，请联系管理员。'
-      : e instanceof Error ? e.message : '操作失败，请重新核对。'
+    error.value =
+      e instanceof ApiError && e.code === 'exam_visual_grading_disabled'
+        ? '图文评分尚未启用，请联系管理员。'
+        : e instanceof Error
+          ? e.message
+          : '操作失败，请重新核对。'
   } finally {
     busy.value = false
   }
@@ -303,7 +312,9 @@ onUnmounted(() => {
           !!pending ||
           !selection?.active ||
           unsavedAreas ||
-          ['pending', 'running', 'succeeded', 'failed', 'invalidated'].includes(details.scoring_status)
+          ['pending', 'running', 'succeeded', 'failed', 'invalidated'].includes(
+            details.scoring_status,
+          )
         "
         @click="score"
       >
@@ -328,7 +339,7 @@ onUnmounted(() => {
         }}
       </p>
       <p v-if="proposal.abstention_reason">{{ proposal.abstention_reason }}</p>
-      <table v-if="proposal.grading_status === 'completed_candidate'">
+      <table v-if="proposal.grading_status === 'completed_candidate'" class="criterion-cards">
         <thead>
           <tr>
             <th>评分项</th>
@@ -339,11 +350,14 @@ onUnmounted(() => {
         </thead>
         <tbody>
           <tr v-for="c in proposal.criterion_scores" :key="c.criterion_id">
-            <td>
+            <td class="criterion-name">
               {{ details.rubric.find((r) => r.criterion_id === c.criterion_id)?.description }}
             </td>
-            <td>{{ c.awarded_points }} / {{ c.max_points }}</td>
-            <td>
+            <td class="criterion-suggestion">
+              <small>建议分</small> {{ c.awarded_points }} / {{ c.max_points }}
+            </td>
+            <td class="criterion-evidence">
+              <small>视觉证据与理由</small><br />
               {{ c.rationale }}
               <p v-for="(e, i) in c.evidence_references" :key="i">
                 <button @click="showEvidence(e.region_index)">
@@ -352,9 +366,11 @@ onUnmounted(() => {
                 {{ e.description }}
               </p>
             </td>
-            <td>
+            <td class="criterion-review">
+              <span>教师分 </span>
               <input
                 v-model="scores[c.criterion_id]"
+                :aria-label="'教师分 ' + c.criterion_id"
                 :placeholder="String(c.awarded_points)"
                 inputmode="decimal"
                 :disabled="busy || disabled"
@@ -456,6 +472,51 @@ onUnmounted(() => {
 table {
   width: 100%;
   border-collapse: collapse;
+}
+.criterion-cards {
+  display: block;
+}
+.criterion-cards thead {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.criterion-cards tbody {
+  display: grid;
+  gap: 10px;
+}
+.criterion-cards tbody tr {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #e0e7f0;
+  border-radius: 8px;
+}
+.criterion-cards tbody td {
+  display: block;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  overflow-wrap: anywhere;
+}
+.criterion-name {
+  font-weight: 600;
+}
+.criterion-suggestion {
+  color: #2359ae;
+  white-space: nowrap;
+}
+.criterion-evidence,
+.criterion-review {
+  grid-column: 1 / -1;
+}
+.criterion-review input {
+  width: 80px;
 }
 th,
 td {

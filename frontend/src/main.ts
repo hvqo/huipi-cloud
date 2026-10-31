@@ -1,10 +1,12 @@
 import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
-import { ElButton, ElDialog, ElInput, ElSelect, ElOption } from 'element-plus'
+import { ElButton, ElDialog, ElDrawer, ElInput, ElSelect, ElOption } from 'element-plus'
 import 'element-plus/dist/index.css'
 import './style.css'
+import './design.css'
 import App from './App.vue'
 import Login from './views/Login.vue'
+import Dashboard from './views/Dashboard.vue'
 import Assignments from './views/Assignments.vue'
 import Assignment from './views/Assignment.vue'
 import Submission from './views/Submission.vue'
@@ -40,7 +42,8 @@ export const router = createRouter({
         }
       },
     },
-    { path: '/', redirect: '/assignments' },
+    { path: '/', redirect: '/dashboard' },
+    { path: '/dashboard', component: Dashboard },
     { path: '/assignments', component: Assignments },
     { path: '/assignments/:aid/homework', component: Homework },
     { path: '/scans', component: ScanIntake },
@@ -63,7 +66,7 @@ export const router = createRouter({
     { path: '/assignments/:aid', component: Assignment },
     { path: '/assignments/:aid/submissions/:sid', component: Submission },
     { path: '/assignments/:aid/submissions/:sid/questions/:qid/review', component: Review },
-    { path: '/:pathMatch(.*)*', redirect: '/assignments' },
+    { path: '/:pathMatch(.*)*', redirect: '/dashboard' },
   ],
 })
 router.beforeEach(async (to) => {
@@ -72,6 +75,6 @@ router.beforeEach(async (to) => {
     return { path: '/login', query: { returnTo: to.fullPath } }
 })
 const app = createApp(App).use(router)
-for (const component of [ElButton, ElDialog, ElInput, ElSelect, ElOption])
+for (const component of [ElButton, ElDialog, ElDrawer, ElInput, ElSelect, ElOption])
   app.component(component.name!, component)
 app.mount('#app')

@@ -62,12 +62,12 @@ export function accessToken(): string | null {
 }
 export function safeReturn(value: unknown) {
   return typeof value === 'string' &&
-    /^\/(assignments|submissions|scans|exams|exam-results|final-results|papers|omr|exceptions|school|marking)(\/|\?|$)/.test(
+    /^\/(dashboard|assignments|submissions|scans|exams|exam-results|final-results|papers|omr|exceptions|school|marking)(\/|\?|$)/.test(
       value,
     ) &&
     !value.includes('\\')
     ? value
-    : '/assignments'
+    : '/dashboard'
 }
 export async function login(path: string) {
   if (!manager) throw new Error('尚未配置身份提供者，请联系部署管理员。')
