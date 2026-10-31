@@ -56,6 +56,11 @@ const error = ref(''),
   classId = ref(''),
   offset = ref(0)
 const pageStatus = ref('all')
+const shownStudentCodes = ref(new Set<string>())
+function toggleStudentCode(participantId: string) {
+  if (shownStudentCodes.value.has(participantId)) shownStudentCodes.value.delete(participantId)
+  else shownStudentCodes.value.add(participantId)
+}
 const visibleStudents = computed(() => {
   const statusOrder: Record<string, number> = { not_submitted: 0, submitted: 1, late: 2 }
   return (homework.value?.students || [])
@@ -63,6 +68,12 @@ const visibleStudents = computed(() => {
     .slice()
     .sort((a, b) => (statusOrder[a.status] ?? 3) - (statusOrder[b.status] ?? 3))
 })
+const classProgress = computed(() =>
+  (homework.value?.classes || []).map((item) => ({
+    ...item,
+    count: homework.value?.counts.find((count) => count.class_id === item.class_id),
+  })),
+)
 const group = ref(''),
   selected = ref<string[]>([]),
   deadline = ref('')
@@ -294,37 +305,58 @@ onUnmounted(() => {
       <h2>班级完成情况</h2>
       <p>截止 {{ new Date(homework.due_at).toLocaleString('zh-CN') }}；未交不计零分。</p>
       <div class="homework-class-grid">
-        <div v-for="c in homework.classes" :key="c.class_id" class="homework-class">
-          <template v-if="homework.counts.find((x) => x.class_id === c.class_id)"
-            ><strong>{{ c.class_name }}</strong
-            >：应交 {{ homework.counts.find((x) => x.class_id === c.class_id)?.expected }}，已交
-            {{ homework.counts.find((x) => x.class_id === c.class_id)?.submitted }}，未交
-            {{
-              (homework.counts.find((x) => x.class_id === c.class_id)?.expected ?? 0) -
-              (homework.counts.find((x) => x.class_id === c.class_id)?.submitted ?? 0)
-            }}，迟交
-            {{ homework.counts.find((x) => x.class_id === c.class_id)?.late }}；教师复核记录
-            {{ homework.counts.find((x) => x.class_id === c.class_id)?.reviewed_records }} /
-            {{
-              homework.counts.find((x) => x.class_id === c.class_id)?.submitted_question_count
-            }}</template
-          >
-          <template v-else
-            ><strong>{{ c.class_name }}</strong
-            >：统计暂不可用，请刷新。</template
-          >
-        </div>
+        <article v-for="c in classProgress" :key="c.class_id" class="homework-class">
+          <header>
+            <strong>{{ c.class_name }}</strong
+            ><span v-if="c.count">已交 {{ c.count.submitted }} / 应交 {{ c.count.expected }}</span>
+          </header>
+          <template v-if="c.count">
+            <progress
+              v-if="
+                c.count.expected > 0 &&
+                c.count.submitted >= 0 &&
+                c.count.submitted <= c.count.expected
+              "
+              :value="c.count.submitted"
+              :max="c.count.expected"
+              :aria-label="`${c.class_name}提交进度`"
+            />
+            <p v-else class="homework-progress-note">
+              {{
+                c.count.expected === 0 && c.count.submitted === 0
+                  ? '暂无应交学生'
+                  : '进度暂不可用，请刷新。'
+              }}
+            </p>
+            <p class="homework-class-meta">
+              <span
+                >未交
+                {{
+                  c.count.submitted <= c.count.expected ? c.count.expected - c.count.submitted : '—'
+                }}</span
+              >
+              <span>迟交 {{ c.count.late }}</span>
+              <span
+                >教师复核记录 {{ c.count.reviewed_records }} /
+                {{ c.count.submitted_question_count }}</span
+              >
+            </p>
+          </template>
+          <p v-else class="homework-progress-note">统计暂不可用，请刷新。</p>
+        </article>
       </div>
-      <label
-        >筛选班级
-        <select v-model="classId" :disabled="busy || !!pending" @change="filter">
-          <option value="">全部任教班级</option>
-          <option v-for="c in homework.classes" :key="c.class_id" :value="c.class_id">
-            {{ c.class_name }}
-          </option>
-        </select></label
-      >
-      <button :disabled="busy || !!pending" @click="refresh">刷新</button>
+      <div class="homework-class-controls">
+        <label
+          >筛选班级
+          <select v-model="classId" :disabled="busy || !!pending" @change="filter">
+            <option value="">全部任教班级</option>
+            <option v-for="c in homework.classes" :key="c.class_id" :value="c.class_id">
+              {{ c.class_name }}
+            </option>
+          </select></label
+        >
+        <button :disabled="busy || !!pending" @click="refresh">刷新</button>
+      </div>
     </section>
     <section class="panel">
       <h2>学生作业</h2>
@@ -353,7 +385,22 @@ onUnmounted(() => {
           <tbody>
             <tr v-for="s in visibleStudents" :key="s.participant_id">
               <td>{{ s.student_name }}</td>
-              <td>{{ s.student_code }}</td>
+              <td class="student-code-cell">
+                <button
+                  type="button"
+                  class="student-code-toggle"
+                  :title="s.student_code"
+                  :aria-label="`查看${s.student_name}的完整学号`"
+                  :aria-expanded="shownStudentCodes.has(s.participant_id)"
+                  @click="toggleStudentCode(s.participant_id)"
+                >
+                  <span class="student-code-short">{{ s.student_code }}</span
+                  ><span class="student-code-hint">查看</span>
+                </button>
+                <span v-if="shownStudentCodes.has(s.participant_id)" class="student-code-full">{{
+                  s.student_code
+                }}</span>
+              </td>
               <td>
                 {{ text[s.status] }} <span v-if="s.version">· 第 {{ s.version }} 次</span>
               </td>
@@ -410,7 +457,7 @@ onUnmounted(() => {
 <style scoped>
 .homework-class-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
   gap: 12px;
   margin: 16px 0;
 }
@@ -418,12 +465,96 @@ onUnmounted(() => {
   background: #fff;
   border: 1px solid #e0e7f0;
   border-radius: 8px;
-  padding: 16px;
-  line-height: 1.7;
+  padding: 14px 16px;
+  line-height: 1.5;
   color: #52667c;
+}
+.homework-class header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 .homework-class strong {
   color: #203a5d;
+}
+.homework-class header span,
+.homework-class-meta,
+.homework-progress-note {
+  font-size: 13px;
+}
+.homework-class-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.homework-class-controls label,
+.homework-class-controls button {
+  margin: 0;
+}
+.homework-class progress {
+  display: block;
+  width: 100%;
+  height: 6px;
+  margin: 10px 0;
+  border: 0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.homework-class progress::-webkit-progress-bar {
+  background: #e8eef7;
+}
+.homework-class progress::-webkit-progress-value {
+  background: #3a71cc;
+}
+.homework-class progress::-moz-progress-bar {
+  background: #3a71cc;
+}
+.homework-class-meta {
+  display: flex;
+  gap: 8px 14px;
+  flex-wrap: wrap;
+  margin: 0;
+}
+.homework-progress-note {
+  color: #657990;
+  margin: 10px 0;
+}
+.student-code-cell {
+  min-width: 165px;
+}
+#main-content .student-code-toggle:not(.el-button):not(.text-button) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 2px 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+.student-code-short {
+  display: inline-block;
+  max-width: 14ch;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+.student-code-hint {
+  color: #3768ac;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.student-code-full {
+  display: block;
+  max-width: 240px;
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+  color: #334d6b;
 }
 label {
   display: block;

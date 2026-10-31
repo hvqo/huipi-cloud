@@ -342,6 +342,14 @@ test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原�
   await page.getByRole('button', { name: '新建扫描批次' }).click()
   await expect(page.getByRole('heading', { name: '浏览器合成混班扫描' })).toBeVisible()
   await page.getByLabel('扫描 PDF', { exact: true }).setInputFiles(process.env.WORKBENCH_SCAN_PDF!)
+  await page.getByRole('button', { name: '收起上传与文件' }).click()
+  await expect(page.locator('#scan-file-panel')).toBeHidden()
+  await page.getByRole('button', { name: '展开上传与文件' }).click()
+  expect(
+    await page
+      .getByLabel('扫描 PDF', { exact: true })
+      .evaluate((el) => (el as HTMLInputElement).files?.length),
+  ).toBe(1)
   // Consume the no-store response immediately at the response event, before later UI work.
   const received = page
     .waitForResponse(
@@ -380,6 +388,30 @@ test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原�
   expect(actual.equals(expected)).toBe(true)
   await expect(page.getByText(/第 2 页 · 待身份核验/)).toBeVisible()
   await expect(page.getByRole('link', { name: '放大查看' })).toHaveAttribute('href', /^blob:/)
+  for (const [width, height] of [
+    [1366, 768],
+    [1440, 900],
+    [1920, 1080],
+  ]) {
+    await page.setViewportSize({ width: width!, height: height! })
+    const expanded = await page.locator('.scan-preview-column').boundingBox()
+    await page.getByRole('button', { name: '收起上传与文件' }).click()
+    await expect(page.locator('#scan-file-panel')).toBeHidden()
+    const collapsed = await page.locator('.scan-preview-column').boundingBox()
+    expect(collapsed!.width).toBeGreaterThan(expanded!.width + 80)
+    await expect(page.getByAltText('第2页扫描预览')).toBeVisible()
+    await page.getByRole('button', { name: '第 1 页', exact: true }).click()
+    await expect(page.getByAltText('第1页扫描预览')).toBeVisible()
+    await page.getByRole('button', { name: '第 2 页', exact: true }).click()
+    await expect(page.getByAltText('第2页扫描预览')).toBeVisible()
+    if (width === 1440) await captureLayout(page, 'scan-collapsed', '.scan-workspace')
+    await page.getByRole('button', { name: '展开上传与文件' }).click()
+    await expect(page.locator('#scan-file-panel')).toBeVisible()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(
+      true,
+    )
+  }
+  await page.setViewportSize({ width: 1440, height: 900 })
   expect(errors).toEqual([])
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   await captureLayout(page, 'scan-intake', '.scan-workspace')
@@ -387,8 +419,53 @@ test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原�
 
   await page.getByRole('link', { name: '人工分卷与身份确认 →' }).click()
   await expect(page.getByRole('heading', { name: '人工分卷与身份确认' })).toBeVisible()
+  await page.getByRole('button', { name: '预览扫描页 1', exact: true }).click()
+  for (const [width, height] of [
+    [1366, 768],
+    [1440, 900],
+    [1920, 1080],
+  ]) {
+    await page.setViewportSize({ width: width!, height: height! })
+    await page.getByRole('button', { name: '适应整页', exact: true }).click()
+    await expect(page.getByRole('button', { name: '适应整页', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    const size = await page.locator('.script-preview-scroll').evaluate((element) => {
+      const img = element.querySelector('img')!.getBoundingClientRect()
+      return {
+        width: element.clientWidth,
+        height: element.clientHeight,
+        imageWidth: img.width,
+        imageHeight: img.height,
+      }
+    })
+    expect(size.imageWidth).toBeLessThanOrEqual(size.width + 1)
+    expect(size.imageHeight).toBeLessThanOrEqual(size.height + 1)
+    const expanded = await page.locator('.script-preview-pane').boundingBox()
+    await page.getByRole('button', { name: '收起扫描页' }).click()
+    await expect(page.locator('#script-page-navigation')).toBeHidden()
+    const collapsed = await page.locator('.script-preview-pane').boundingBox()
+    expect(collapsed!.width).toBeGreaterThan(expanded!.width + 80)
+    await expect(page.getByAltText('人工分卷页面预览')).toBeVisible()
+    if (width === 1440) await captureLayout(page, 'answer-script-fit', '.script-columns')
+    await page.getByRole('button', { name: '放大原卷', exact: true }).click()
+    await expect(page.getByAltText('人工分卷页面预览')).toHaveAttribute('style', /120%/)
+    await page.getByRole('button', { name: '适应宽度', exact: true }).click()
+    await expect(page.getByAltText('人工分卷页面预览')).toHaveAttribute('style', /width: 100%/)
+    await page.getByRole('button', { name: '展开扫描页' }).click()
+    await expect(page.locator('#script-page-navigation')).toBeVisible()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(
+      true,
+    )
+  }
+  await page.setViewportSize({ width: 1440, height: 900 })
   await page.getByRole('button', { name: '加入扫描页 1', exact: true }).click()
   await page.getByRole('button', { name: '加入扫描页 3', exact: true }).click()
+  await page.getByRole('button', { name: '收起扫描页' }).click()
+  await expect(page.locator('.script-order li')).toHaveCount(2)
+  await page.getByRole('button', { name: '展开扫描页' }).click()
+  await expect(page.locator('.script-order li')).toHaveCount(2)
   await page.getByRole('button', { name: '上移第2项' }).click()
   await page.getByLabel('已核对页数，答卷完整').check()
   await page.getByLabel('操作说明').fill('合成原卷，页序3、1，核对第一位同名学生')
@@ -1478,14 +1555,44 @@ test('日常作业：两班布置、同名学生代收重交与教师批改', as
   await page.getByLabel('截止时间').fill(local)
   await page.getByRole('button', { name: '布置作业', exact: true }).click()
   await expect(page.getByRole('heading', { name: '班级完成情况' })).toBeVisible()
-  await expect(page.getByText(/合成1班.*应交 2，已交 0，未交 2/)).toBeVisible()
-  await expect(page.getByText(/合成2班.*应交 2，已交 0，未交 2/)).toBeVisible()
+  for (const name of ['合成1班', '合成2班']) {
+    const card = page.locator('.homework-class').filter({ hasText: name })
+    await expect(card).toContainText('已交 0 / 应交 2')
+    await expect(card).toContainText('未交 2')
+    await expect(card.getByRole('progressbar')).toHaveAttribute('value', '0')
+  }
   const sameName = page.locator('tbody tr').filter({ hasText: '合成同名' })
   await expect(sameName).toHaveCount(2)
-  const firstCode = (await sameName.first().locator('td').nth(1).textContent())!.trim()
+  const firstCode = (await sameName.first().locator('.student-code-short').textContent())!.trim()
+  for (const [width, height] of [
+    [1366, 768],
+    [1440, 900],
+    [1920, 1080],
+  ]) {
+    await page.setViewportSize({ width: width!, height: height! })
+    const short = sameName.first().locator('.student-code-short')
+    expect(await short.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true)
+    const codeButton = sameName.first().getByRole('button', { name: /查看.*的完整学号/ })
+    await codeButton.focus()
+    await page.keyboard.press('Enter')
+    await expect(codeButton).toHaveAttribute('aria-expanded', 'true')
+    await expect(sameName.first().locator('.student-code-full')).toHaveText(firstCode)
+    await expect(sameName.first().locator('.student-code-full')).toBeVisible()
+    if (width === 1440) await captureLayout(page, 'homework-id-expanded', '.table-wrap')
+    await page.keyboard.press('Space')
+    await expect(codeButton).toHaveAttribute('aria-expanded', 'false')
+    await expect(sameName.first().locator('.student-code-full')).toBeHidden()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(
+      true,
+    )
+  }
+  await page.setViewportSize({ width: 1440, height: 900 })
   await sameName.first().locator('input[type=file]').setInputFiles(process.env.WORKBENCH_SCAN_PDF!)
   await page.getByRole('button', { name: '确认代收' }).click()
   await expect(page.locator('tbody tr').filter({ hasText: firstCode })).toContainText('第 1 次')
+  const submittedClass = page.locator('.homework-class').filter({ hasText: '已交 1 / 应交 2' })
+  await expect(submittedClass).toHaveCount(1)
+  await expect(submittedClass.getByRole('progressbar')).toHaveAttribute('value', '1')
   await page
     .locator('tbody tr')
     .filter({ hasText: firstCode })

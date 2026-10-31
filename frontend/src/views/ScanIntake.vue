@@ -32,6 +32,7 @@ const sessions = ref<Schema['ScanSession'][]>([]),
   error = ref(''),
   notice = ref('')
 const previewZoom = ref(100)
+const showFilePanel = ref(true)
 let generation = 0
 function clearImage() {
   if (image.value) URL.revokeObjectURL(image.value)
@@ -95,6 +96,7 @@ async function loadBatches() {
 }
 async function chooseBatch(value: Schema['BatchRead']) {
   const current = ++generation
+  showFilePanel.value = true
   clearImage()
   batch.value = value
   pages.value = []
@@ -329,8 +331,8 @@ onUnmounted(() => {
           >
         </div>
       </aside>
-      <section v-if="batch" class="scan-content">
-        <div class="scan-file-panel">
+      <section v-if="batch" class="scan-content" :class="{ 'files-collapsed': !showFilePanel }">
+        <div id="scan-file-panel" v-show="showFilePanel" class="scan-file-panel">
           <h2>{{ batch.title }}</h2>
           <p class="muted">
             PDF 上限 {{ limits.max_file_bytes / 1024 / 1024 }} MiB、{{ limits.max_pages }}
@@ -362,66 +364,78 @@ onUnmounted(() => {
             </li>
           </ul>
         </div>
-        <div v-if="activeFile" class="scan-preview">
-          <div class="scan-actions">
-            <h3>{{ activeFile.original_filename }}</h3>
-            <el-button :disabled="busy || activeFile.status !== 'stored'" @click="original"
-              >下载原始 PDF</el-button
-            >
-          </div>
-          <details class="scan-fingerprint">
-            <summary>查看文件校验信息</summary>
-            SHA-256：{{ activeFile.sha256 }}
-          </details>
-          <p v-if="activeFile.status !== 'stored'" class="muted">
-            仅成功接收的文件可以预览。处理中断后，原请求在租约到期后可重试。
-          </p>
-          <nav class="scan-page-buttons" aria-label="扫描页选择">
+        <div class="scan-preview-column">
+          <div class="scan-preview-heading">
+            <h3>{{ activeFile?.original_filename || '原卷预览' }}</h3>
             <button
-              v-for="p in pages"
-              :key="p.id"
-              :class="{ chosen: activePage?.id === p.id }"
-              @click="showPage(p)"
+              type="button"
+              aria-controls="scan-file-panel"
+              :aria-expanded="showFilePanel"
+              @click="showFilePanel = !showFilePanel"
             >
-              第 {{ p.page_index + 1 }} 页
-            </button>
-          </nav>
-          <div v-if="pages.length" class="scan-actions">
-            <el-button :disabled="pageOffset === 0" @click="paginatePages(-20)"
-              >上一组页面</el-button
-            ><el-button :disabled="!morePages" @click="paginatePages(20)">下一组页面</el-button>
-          </div>
-          <p v-if="activePage" class="scan-notice">
-            第 {{ activePage.page_index + 1 }} 页 · 待身份核验
-            <a v-if="image" :href="image" target="_blank" rel="noopener noreferrer">放大查看</a>
-          </p>
-          <div v-if="image && activePage" class="scan-zoom">
-            <button
-              aria-label="缩小扫描页"
-              :disabled="previewZoom <= 60"
-              @click="previewZoom -= 20"
-            >
-              −
-            </button>
-            <span>{{ previewZoom }}%</span>
-            <button
-              aria-label="放大扫描页"
-              :disabled="previewZoom >= 200"
-              @click="previewZoom += 20"
-            >
-              ＋
+              {{ showFilePanel ? '收起上传与文件' : '展开上传与文件' }}
             </button>
           </div>
-          <div v-if="image && activePage" class="scan-image-scroll">
-            <img
-              :src="image"
-              :alt="`第${activePage.page_index + 1}页扫描预览`"
-              :style="{ width: previewZoom + '%' }"
-            />
+          <div v-if="activeFile" class="scan-preview">
+            <div class="scan-actions">
+              <el-button :disabled="busy || activeFile.status !== 'stored'" @click="original"
+                >下载原始 PDF</el-button
+              >
+            </div>
+            <details class="scan-fingerprint">
+              <summary>查看文件校验信息</summary>
+              SHA-256：{{ activeFile.sha256 }}
+            </details>
+            <p v-if="activeFile.status !== 'stored'" class="muted">
+              仅成功接收的文件可以预览。处理中断后，原请求在租约到期后可重试。
+            </p>
+            <nav class="scan-page-buttons" aria-label="扫描页选择">
+              <button
+                v-for="p in pages"
+                :key="p.id"
+                :class="{ chosen: activePage?.id === p.id }"
+                @click="showPage(p)"
+              >
+                第 {{ p.page_index + 1 }} 页
+              </button>
+            </nav>
+            <div v-if="pages.length" class="scan-actions">
+              <el-button :disabled="pageOffset === 0" @click="paginatePages(-20)"
+                >上一组页面</el-button
+              ><el-button :disabled="!morePages" @click="paginatePages(20)">下一组页面</el-button>
+            </div>
+            <p v-if="activePage" class="scan-notice">
+              第 {{ activePage.page_index + 1 }} 页 · 待身份核验
+              <a v-if="image" :href="image" target="_blank" rel="noopener noreferrer">放大查看</a>
+            </p>
+            <div v-if="image && activePage" class="scan-zoom">
+              <button
+                aria-label="缩小扫描页"
+                :disabled="previewZoom <= 60"
+                @click="previewZoom -= 20"
+              >
+                −
+              </button>
+              <span>{{ previewZoom }}%</span>
+              <button
+                aria-label="放大扫描页"
+                :disabled="previewZoom >= 200"
+                @click="previewZoom += 20"
+              >
+                ＋
+              </button>
+            </div>
+            <div v-if="image && activePage" class="scan-image-scroll">
+              <img
+                :src="image"
+                :alt="`第${activePage.page_index + 1}页扫描预览`"
+                :style="{ width: previewZoom + '%' }"
+              />
+            </div>
           </div>
-        </div>
-        <div v-else class="scan-preview scan-preview-empty">
-          选择已接收的文件，在这里查看扫描页面。
+          <div v-else class="scan-preview scan-preview-empty">
+            选择已接收的文件，在这里查看扫描页面。
+          </div>
         </div>
       </section>
       <section v-else class="scan-content muted">选择已有批次，或新建批次开始接收。</section>
@@ -484,9 +498,25 @@ onUnmounted(() => {
   width: 100%;
   max-width: 100%;
 }
-.scan-preview {
+.scan-content.files-collapsed {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: 'preview';
+}
+.scan-preview-column {
   grid-area: preview;
   min-width: 0;
+}
+.scan-preview-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.scan-preview-heading h3 {
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 .scan-batches h2,
 .scan-content h2 {
@@ -599,6 +629,9 @@ small {
   .scan-content:has(.scan-file-panel) {
     grid-template-columns: 1fr;
     grid-template-areas: 'files' 'preview';
+  }
+  .scan-content.files-collapsed {
+    grid-template-areas: 'preview';
   }
 }
 </style>

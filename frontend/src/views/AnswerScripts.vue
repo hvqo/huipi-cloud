@@ -38,6 +38,17 @@ const showIdentity = ref(false),
   previewPage = ref<Schema['SourcePage']>()
 const showLargePreview = ref(false),
   previewZoom = ref(100)
+const showPageNavigation = ref(true)
+const previewMode = ref<'width' | 'page'>('width')
+const previewImageStyle = computed(() =>
+  previewMode.value === 'width'
+    ? { width: `${previewZoom.value}%` }
+    : { width: 'auto', maxWidth: `${previewZoom.value}%`, maxHeight: `${previewZoom.value}%` },
+)
+function setPreviewMode(mode: 'width' | 'page') {
+  previewMode.value = mode
+  previewZoom.value = 100
+}
 const gradingAnchor = ref<HTMLElement>()
 const historyOffset = ref(0),
   historyTotal = ref(0)
@@ -365,8 +376,8 @@ onUnmounted(() => {
       ><button :disabled="busy" @click="run(sendPending)">重试原请求</button
       ><button :disabled="busy" @click="abandonPending">解除编辑锁定</button>
     </div>
-    <div class="script-columns">
-      <section class="script-source">
+    <div class="script-columns" :class="{ 'navigation-collapsed': !showPageNavigation }">
+      <section id="script-page-navigation" v-show="showPageNavigation" class="script-source">
         <h2>
           扫描页面 <span>{{ total }} 页</span>
         </h2>
@@ -437,6 +448,30 @@ onUnmounted(() => {
       <section class="script-preview-pane" aria-label="原卷预览">
         <div class="script-preview-toolbar">
           <h2>原卷预览</h2>
+          <button
+            type="button"
+            aria-controls="script-page-navigation"
+            :aria-expanded="showPageNavigation"
+            @click="showPageNavigation = !showPageNavigation"
+          >
+            {{ showPageNavigation ? '收起扫描页' : '展开扫描页' }}
+          </button>
+          <div v-if="preview" class="script-reading-modes" role="group" aria-label="原卷阅读模式">
+            <button
+              type="button"
+              :aria-pressed="previewMode === 'width'"
+              @click="setPreviewMode('width')"
+            >
+              适应宽度
+            </button>
+            <button
+              type="button"
+              :aria-pressed="previewMode === 'page'"
+              @click="setPreviewMode('page')"
+            >
+              适应整页
+            </button>
+          </div>
           <div v-if="preview" class="script-zoom">
             <button aria-label="缩小原卷" :disabled="previewZoom <= 60" @click="previewZoom -= 20">
               −
@@ -453,7 +488,7 @@ onUnmounted(() => {
           预览不会自动加入答卷
         </p>
         <div v-if="preview" class="script-preview-scroll">
-          <img :src="preview" alt="人工分卷页面预览" :style="{ width: previewZoom + '%' }" />
+          <img :src="preview" alt="人工分卷页面预览" :style="previewImageStyle" />
         </div>
         <p v-else class="script-preview-empty">选择左侧扫描页，在这里核对原卷。</p>
       </section>
@@ -502,7 +537,11 @@ onUnmounted(() => {
             </li>
           </ol>
           <p v-if="!selected.length" class="script-placeholder">
-            从左侧选择一页或多页，组成一份学生答卷。
+            {{
+              showPageNavigation
+                ? '从左侧选择一页或多页，组成一份学生答卷。'
+                : '展开扫描页，选择页面组成一份学生答卷。'
+            }}
           </p>
           <label class="script-field"
             ><input
@@ -784,6 +823,9 @@ onUnmounted(() => {
   gap: 14px;
   align-items: start;
 }
+.script-columns.navigation-collapsed {
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.9fr);
+}
 .script-source,
 .script-editor,
 .script-saved,
@@ -822,12 +864,23 @@ onUnmounted(() => {
   gap: 5px;
   font-size: 13px;
 }
+.script-reading-modes {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+#main-content .script-reading-modes button[aria-pressed='true']:not(:disabled) {
+  background: #edf4ff;
+  border-color: #9cbced;
+  color: #2056ae;
+}
 .script-zoom button {
   padding: 5px 8px;
 }
 .script-preview-scroll {
   overflow: auto;
-  max-height: calc(100vh - 180px);
+  height: max(260px, calc(100vh - 260px));
+  max-height: 800px;
   background: #eef2f7;
   border-radius: 6px;
   text-align: center;
@@ -1076,6 +1129,9 @@ onUnmounted(() => {
   .script-side {
     grid-column: 1 / -1;
     grid-template-columns: 1fr 1fr;
+  }
+  .script-columns.navigation-collapsed {
+    grid-template-columns: minmax(0, 1fr);
   }
   .script-source,
   .script-preview-pane {
