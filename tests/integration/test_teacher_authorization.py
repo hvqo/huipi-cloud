@@ -287,12 +287,12 @@ async def test_all_old_http_routes_require_token_including_every_private_downloa
     expected = {
         (method, path)
         for path, operations in app.openapi()["paths"].items()
-        if not path.endswith("/health")
+        if not path.endswith("/health") and not path.startswith("/api/v1/auth/")
         for method in operations
         if method in {"get", "post", "put", "patch", "delete"}
     }
     for path, operations in app.openapi()["paths"].items():
-        if path.endswith("/health"):
+        if path.endswith("/health") or path.startswith("/api/v1/auth/"):
             continue
         for method in operations:
             if method not in {"get", "post", "put", "patch", "delete"}:

@@ -5,18 +5,19 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import Depends, Request
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.security import APIKeyCookie, HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from huipi_cloud.core.config import settings
-from huipi_cloud.infrastructure.auth.jwt import TokenVerifier, VerifiedIdentity
+from huipi_cloud.infrastructure.auth.jwt import VerifiedIdentity
 from huipi_cloud.infrastructure.database import session as database
 from huipi_cloud.modules.exam_configuration.policies import POLICIES as CONFIG_POLICIES
 from huipi_cloud.modules.exam_configuration.policies import PREFIX as CONFIG_PREFIX
 from huipi_cloud.modules.exam_recovery.policies import POLICIES as RECOVERY_POLICIES
 from huipi_cloud.modules.identity import service
+from huipi_cloud.modules.identity.local_auth import SESSION_COOKIE, LocalSessionVerifier
 from huipi_cloud.modules.identity.protocol import AccessError, Principal
 from huipi_cloud.modules.marking_tasks.policies import TASK_POLICIES
 from huipi_cloud.modules.omr.policies import POLICIES as OMR_POLICIES
@@ -24,7 +25,8 @@ from huipi_cloud.modules.papers.web_policies import POLICIES as PAPER_WEB_POLICI
 from huipi_cloud.modules.papers.web_policies import PREFIX as PAPER_WEB_PREFIX
 
 bearer = HTTPBearer(auto_error=False)
-verifier = TokenVerifier(settings)
+session_cookie = APIKeyCookie(name=SESSION_COOKIE, auto_error=False)
+verifier = LocalSessionVerifier(settings)
 
 HOMEWORK_POLICIES = {
     "list_my_teaching_assignments": ("GET", "/homework/teaching-assignments"),
@@ -39,25 +41,32 @@ HOMEWORK_POLICIES = {
     "prepare_homework_submission": ("POST", "/homework/submissions/{submission_id}/prepare"),
     "upload_homework_attempt": ("POST", "/homework/participants/{participant_id}/attempts"),
     "request_homework_candidate": (
-        "POST", "/homework/participants/{participant_id}/questions/{question_id}/candidate"
+        "POST",
+        "/homework/participants/{participant_id}/questions/{question_id}/candidate",
     ),
     "read_homework_candidate": (
-        "GET", "/homework/participants/{participant_id}/questions/{question_id}/candidate"
+        "GET",
+        "/homework/participants/{participant_id}/questions/{question_id}/candidate",
     ),
     "preview_homework_visual_page": (
-        "GET", "/homework/submissions/{submission_id}/visual-pages/{page_index}"
+        "GET",
+        "/homework/submissions/{submission_id}/visual-pages/{page_index}",
     ),
     "read_homework_visual": (
-        "GET", "/homework/submissions/{submission_id}/questions/{question_id}/visual"
+        "GET",
+        "/homework/submissions/{submission_id}/questions/{question_id}/visual",
     ),
     "select_homework_visual": (
-        "POST", "/homework/submissions/{submission_id}/questions/{question_id}/visual/selection"
+        "POST",
+        "/homework/submissions/{submission_id}/questions/{question_id}/visual/selection",
     ),
     "score_homework_visual": (
-        "POST", "/homework/submissions/{submission_id}/questions/{question_id}/visual/score"
+        "POST",
+        "/homework/submissions/{submission_id}/questions/{question_id}/visual/score",
     ),
     "review_homework_visual": (
-        "POST", "/homework/submissions/{submission_id}/questions/{question_id}/visual/review"
+        "POST",
+        "/homework/submissions/{submission_id}/questions/{question_id}/visual/review",
     ),
 }
 
@@ -69,6 +78,11 @@ ADMIN_POLICIES = {
     "set_teacher_active": "/admin/teachers/{user_id}",
     "list_teacher_memberships": "/admin/teachers/{user_id}/memberships",
     "list_admin_audit_events": "/admin/audit-events",
+    "list_local_accounts": "/admin/local-accounts",
+    "list_local_account_audit": "/admin/local-accounts/audit",
+    "create_local_account": "/admin/local-accounts",
+    "bind_local_account": "/admin/local-accounts/{user_id}/bind",
+    "reset_local_account": "/admin/local-accounts/{user_id}/reset-password",
 }
 
 # Organization routes use the fixed installation-scoped permission catalog; they never
@@ -286,6 +300,11 @@ POLICIES = {
     "set_teacher_active": {"PATCH"},
     "list_teacher_memberships": {"GET"},
     "list_admin_audit_events": {"GET"},
+    "list_local_accounts": {"GET"},
+    "list_local_account_audit": {"GET"},
+    "create_local_account": {"POST"},
+    "bind_local_account": {"POST"},
+    "reset_local_account": {"POST"},
     "get_assignment_workbench": {"GET"},
     "inspect_grade_review": {"GET"},
     "list_grade_reviews": {"GET"},
@@ -400,11 +419,27 @@ AuthSession = Annotated[AsyncSession, Depends(get_auth_session)]
 
 
 async def get_verified_identity(
+    request: Request,
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)],
+    cookie: Annotated[str | None, Depends(session_cookie)],
 ) -> VerifiedIdentity:
-    if credentials is None:
-        raise AccessError("authentication_required", 401)
-    return await verifier.verify(credentials.credentials)
+    if credentials is not None:
+        identity = await verifier.verify(credentials.credentials)
+    else:
+        token = cookie
+        if not token:
+            raise AccessError("authentication_required", 401)
+        unsafe = request.method not in {"GET", "HEAD", "OPTIONS"}
+        if unsafe:
+            from huipi_cloud.modules.identity.local_http import check_origin
+
+            check_origin(request, required=False)
+        identity = await verifier.verify(
+            token, csrf=request.headers.get("X-Huipi-CSRF"), require_csrf=unsafe
+        )
+    if identity.must_change_password:
+        raise AccessError("password_change_required", 403)
+    return identity
 
 
 async def get_current_principal(

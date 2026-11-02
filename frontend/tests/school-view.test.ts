@@ -158,7 +158,7 @@ it('普通建卷身份不能读取组织数据或出现管理操作', async () =
     can_confirm: false,
   })
   await setup()
-  expect(w.text()).toContain('当前没有学校组织读取权限')
+  expect(w.text()).toContain('暂无学校信息查看权限')
   expect(mocks.api.years).not.toHaveBeenCalled()
   expect(w.find('input[type=file]').exists()).toBe(false)
 })

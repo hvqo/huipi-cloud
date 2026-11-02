@@ -1,95 +1,131 @@
 import { reactive } from 'vue'
-import { InMemoryWebStorage, UserManager, WebStorageStateStore, type User } from 'oidc-client-ts'
 
-const authority = import.meta.env.VITE_OIDC_AUTHORITY?.trim()
-const clientId = import.meta.env.VITE_OIDC_CLIENT_ID?.trim()
+type Session = {
+  user_id: string
+  display_name: string | null
+  must_change_password: boolean
+  recovery_email?: string | null
+}
+
 export const identity = reactive({
   ready: false,
   authenticated: false,
+  mustChangePassword: false,
+  recoveryEmail: '',
   name: '',
   error: '',
   actor: '',
 })
-let user: User | null = null
-const validAuthority =
-  authority &&
-  (authority.startsWith('https://') ||
-    (import.meta.env.DEV && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(authority)))
-export const manager =
-  validAuthority && clientId
-    ? new UserManager({
-        authority,
-        client_id: clientId,
-        response_type: 'code',
-        disablePKCE: false,
-        redirect_uri: `${location.origin}/auth/callback`,
-        post_logout_redirect_uri: `${location.origin}/login`,
-        scope: import.meta.env.VITE_OIDC_SCOPE || 'openid profile',
-        userStore: new WebStorageStateStore({ store: new InMemoryWebStorage() }),
-        // Only the short-lived PKCE verifier/state goes in sessionStorage, never tokens.
-        stateStore: new WebStorageStateStore({ store: sessionStorage }),
-        automaticSilentRenew: false,
-        loadUserInfo: false,
-        filterProtocolClaims: true,
-        extraQueryParams: import.meta.env.VITE_OIDC_AUDIENCE
-          ? { audience: import.meta.env.VITE_OIDC_AUDIENCE }
-          : {},
-        resource: import.meta.env.VITE_OIDC_RESOURCE || undefined,
-      })
-    : null
 
-function apply(next: User | null) {
-  user = next
-  if (next) identity.error = ''
-  identity.authenticated = !!next && !next.expired
-  identity.name = identity.authenticated ? String(next!.profile.name || '已登录教师') : ''
-  identity.actor = identity.authenticated ? `${next!.profile.iss}|${next!.profile.sub}` : ''
+function apply(session: Session | null) {
+  identity.authenticated = !!session
+  identity.mustChangePassword = !!session?.must_change_password
+  identity.recoveryEmail = session?.recovery_email || ''
+  identity.name = session?.display_name || (session ? '教师' : '')
+  identity.actor = session?.user_id || ''
   identity.ready = true
 }
-export async function initializeAuth() {
-  apply(manager ? await manager.getUser() : null)
+
+export function csrfToken(): string {
+  const entry = document.cookie
+    .split('; ')
+    .find((part) => part.startsWith('huipi_csrf=') || part.startsWith('__Host-huipi_csrf='))
+  return entry ? decodeURIComponent(entry.slice(entry.indexOf('=') + 1)) : ''
 }
+
+async function send(path: string, body?: object): Promise<Response> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 30000)
+  try {
+    return await fetch('/api/v1/auth/' + path, {
+      method: body ? 'POST' : 'GET',
+      credentials: 'same-origin',
+      cache: 'no-store',
+      redirect: 'error',
+      signal: controller.signal,
+      headers: body
+        ? { 'Content-Type': 'application/json', 'X-Huipi-Client': '1', 'X-Huipi-CSRF': csrfToken() }
+        : {},
+      ...(body ? { body: JSON.stringify(body) } : {}),
+    })
+  } catch {
+    throw new Error('无法连接登录服务，请检查网络后重试。')
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+export async function initializeAuth() {
+  try {
+    const response = await send('session')
+    if (response.status === 401) return apply(null)
+    if (!response.ok) throw new Error('服务暂时不可用，请稍后重试。')
+    apply((await response.json()) as Session)
+  } catch {
+    apply(null)
+    identity.error = '无法连接登录服务，请检查后端是否启动。'
+  }
+}
+
 export async function expireAuth() {
   apply(null)
-  await manager?.removeUser()
 }
-export function accessToken(): string | null {
-  if (!user || user.expired) {
-    void expireAuth()
-    return null
-  }
-  return user.access_token
-}
+
 export function safeReturn(value: unknown) {
   return typeof value === 'string' &&
-    /^\/(dashboard|assignments|submissions|scans|exams|exam-results|final-results|papers|omr|exceptions|school|marking)(\/|\?|$)/.test(
+    /^\/(dashboard|assignments|submissions|scans|exams|exam-results|final-results|papers|omr|exceptions|school|marking|admin)(\/|\?|$)/.test(
       value,
     ) &&
     !value.includes('\\')
     ? value
     : '/dashboard'
 }
-export async function login(path: string) {
-  if (!manager) throw new Error('尚未配置身份提供者，请联系部署管理员。')
-  await manager.signinRedirect({
-    nonce: crypto.randomUUID(),
-    state: { returnTo: safeReturn(path) },
-  })
+
+export async function login(account: string, password: string) {
+  const response = await send('login', { account, password })
+  if (response.status === 401) throw new Error('账号或密码不正确。')
+  if (response.status === 429) throw new Error('尝试次数过多，请稍后再试。')
+  if (!response.ok) throw new Error('登录暂时不可用，请稍后重试。')
+  identity.error = ''
+  apply((await response.json()) as Session)
 }
-export async function callback() {
-  if (!manager) throw new Error('尚未配置身份提供者。')
-  const result = await manager.signinRedirectCallback()
-  apply(result)
-  return safeReturn((result.state as { returnTo?: string } | undefined)?.returnTo)
-}
+
 export async function logout() {
-  const hint = user?.id_token
-  await expireAuth()
-  // Clear local evidence drafts on explicit sign-out, never retain a teacher's workspace.
+  const response = await send('logout', {})
+  if (!response.ok && response.status !== 401) throw new Error('退出未完成，请重试。')
+  apply(null)
   for (const key of Object.keys(sessionStorage))
     if (key.startsWith('huipi.review.')) sessionStorage.removeItem(key)
-  if (manager && hint) await manager.signoutRedirect({ id_token_hint: hint })
 }
-manager?.events.addAccessTokenExpired(() => {
-  void expireAuth()
-})
+
+export async function changePassword(current_password: string, new_password: string) {
+  const response = await send('change-password', { current_password, new_password })
+  if (response.status === 401) throw new Error('当前密码不正确，或登录已失效。')
+  if (response.status === 422) throw new Error('新密码须为 6 至 128 个字符。')
+  if (!response.ok) throw new Error('密码修改未完成，请稍后重试。')
+  apply(null)
+}
+
+export async function requestRecoveryEmail(email: string) {
+  const response = await send('recovery-email/request', { email })
+  if (response.status === 429) throw new Error('操作过于频繁，请稍后再试。')
+  if (response.status === 503) throw new Error('邮件服务尚不可用，请联系管理员。')
+  if (!response.ok) throw new Error('发送验证邮件失败，请检查邮箱后重试。')
+}
+
+export async function confirmRecoveryEmail(token: string) {
+  const response = await send('recovery-email/confirm', { token })
+  if (!response.ok) throw new Error('验证链接无效、已过期，或邮箱已被使用。')
+  await initializeAuth()
+}
+
+export async function requestPasswordReset(account: string) {
+  const response = await send('reset/request', { account })
+  if (!response.ok) throw new Error('请求暂未完成，请稍后重试。')
+}
+
+export async function confirmPasswordReset(token: string, password: string) {
+  const response = await send('reset/confirm', { token, password })
+  if (!response.ok) throw new Error('重置链接无效或已过期，请重新申请。')
+  apply(null)
+}

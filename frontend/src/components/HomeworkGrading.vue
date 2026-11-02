@@ -42,7 +42,7 @@ async function review(status: 'accepted' | 'revised' | 'rejected' | 'regrading_r
     pendingReview.value ||= JSON.stringify({ request_id: crypto.randomUUID(), expected_revision: revision.value, review_status: status, review_reason_codes: status === 'rejected' || status === 'regrading_required' ? ['candidate_not_reliable'] : [], review_comment: comment.value || null, criterion_reviews: criteria })
     await request(`/api/v1/submissions/${id(props.submissionId)}/questions/${id(props.questionId)}/grade-proposals/${id(candidate.value.proposal_id)}/reviews`, { body: pendingReview.value, errorCode: true })
     pendingReview.value = undefined
-    notice.value = '教师复核已保存，不代表正式成绩发布。'; await load()
+    notice.value = '教师复核已保存，成绩尚未发布。'; await load()
   } catch(e) { if (e instanceof ApiError && !e.uncertain) pendingReview.value = undefined; error.value = pendingReview.value ? '复核结果尚未确认，请重试原请求。' : e instanceof Error ? e.message : '复核未保存。' } finally { busy.value = false }
 }
 onMounted(load)

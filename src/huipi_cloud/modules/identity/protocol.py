@@ -13,6 +13,7 @@ class Principal(BaseModel):
     subject: str
     expires_at: datetime
     is_admin: bool = False  # Loaded only from the local User record.
+    session_hash: str | None = None  # Internal opaque-session binding, never client-provided.
 
 
 class AccessError(Exception):

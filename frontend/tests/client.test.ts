@@ -1,33 +1,29 @@
 import { afterEach, expect, it, vi } from 'vitest'
 const auth = vi.hoisted(() => ({
-  accessToken: vi.fn((): string | null => 'ephemeral-test-token'),
+  csrfToken: vi.fn(() => 'csrf-test-token'),
   expireAuth: vi.fn(),
 }))
 vi.mock('../src/auth', () => auth)
 import { ApiError, readBounded, request } from '../src/api/client'
 afterEach(() => {
   vi.unstubAllGlobals()
-  auth.accessToken.mockReturnValue('ephemeral-test-token')
   vi.clearAllMocks()
 })
-it('sends Bearer only in the header and forbids arbitrary endpoints', async () => {
+it('uses same-origin cookies and forbids arbitrary endpoints', async () => {
   const fetch = vi
     .fn()
     .mockResolvedValue(new Response('{}', { headers: { 'content-type': 'application/json' } }))
   vi.stubGlobal('fetch', fetch)
   await request('/api/v1/assignments')
   expect(fetch.mock.calls[0]![0]).toBe('/api/v1/assignments')
-  expect(fetch.mock.calls[0]![1].headers.Authorization).toBe('Bearer ephemeral-test-token')
+  expect(fetch.mock.calls[0]![1].headers.Authorization).toBeUndefined()
+  expect(fetch.mock.calls[0]![1].credentials).toBe('same-origin')
   await expect(request('https://evil.invalid/api/v1/assignments')).rejects.toBeInstanceOf(ApiError)
   expect(fetch).toHaveBeenCalledTimes(1)
 })
-it('does not make anonymous requests and clears expired credentials on 401', async () => {
+it('clears expired session state on 401', async () => {
   const fetch = vi.fn().mockResolvedValue(new Response('{}', { status: 401 }))
   vi.stubGlobal('fetch', fetch)
-  auth.accessToken.mockReturnValue(null)
-  await expect(request('/api/v1/assignments')).rejects.toMatchObject({ status: 401 })
-  expect(fetch).not.toHaveBeenCalled()
-  auth.accessToken.mockReturnValue('test')
   await expect(request('/api/v1/assignments')).rejects.toMatchObject({ status: 401 })
   expect(auth.expireAuth).toHaveBeenCalledOnce()
 })
@@ -84,7 +80,8 @@ it('scan multipart lets the browser set its boundary and sends no JSON header', 
   expect(options.body.get('request_id')).toBe('request')
   expect(options.body.get('file')).toBe(file)
   expect(options.headers).not.toHaveProperty('Content-Type')
-  expect(options.credentials).toBe('omit')
+  expect(options.credentials).toBe('same-origin')
+  expect(options.headers['X-Huipi-CSRF']).toBe('csrf-test-token')
   expect(options.redirect).toBe('error')
 })
 

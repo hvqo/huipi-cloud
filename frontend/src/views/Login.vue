@@ -1,16 +1,26 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRoute } from 'vue-router'
-import { identity, login, manager } from '../auth'
+import { useRoute, useRouter } from 'vue-router'
+import { identity, login, safeReturn } from '../auth'
 const route = useRoute(),
+  router = useRouter(),
   error = ref(''),
-  busy = ref(false)
+  busy = ref(false),
+  account = ref(''),
+  password = ref('')
 async function signIn() {
+  if (busy.value) return
   busy.value = true
+  error.value = ''
   try {
-    await login(String(route.query.returnTo || '/dashboard'))
+    await login(account.value, password.value)
+    password.value = ''
+    await router.replace(
+      identity.mustChangePassword ? '/change-password' : safeReturn(route.query.returnTo),
+    )
   } catch (e) {
     error.value = e instanceof Error ? e.message : '登录未完成。'
+  } finally {
     busy.value = false
   }
 }
@@ -27,15 +37,34 @@ async function signIn() {
     <section class="login-panel">
       <p class="eyebrow">教师工作空间</p>
       <h2>登录慧批云端</h2>
-      <p class="muted">使用部署管理员配置的统一身份服务继续。</p>
-      <div v-if="!manager" class="notice">
-        身份服务尚未配置，业务页面已锁定。请联系部署管理员完成连接。
-      </div>
-      <p v-if="error || identity.error" role="alert" class="error">{{ error || identity.error }}</p>
-      <el-button type="primary" size="large" :disabled="!manager" :loading="busy" @click="signIn"
-        >通过统一身份登录</el-button
-      >
-      <p class="fine">此工作台不收集密码。登录身份与作业访问权限由服务端分别校验。</p>
+      <p class="muted">请输入学校管理员为你开通的账号。</p>
+      <form class="local-login-form" @submit.prevent="signIn">
+        <label for="login-account">邮箱或手机号</label>
+        <el-input
+          id="login-account"
+          v-model="account"
+          autocomplete="username"
+          maxlength="254"
+          required
+        />
+        <label for="login-password">密码</label>
+        <el-input
+          id="login-password"
+          v-model="password"
+          type="password"
+          show-password
+          autocomplete="current-password"
+          maxlength="128"
+          required
+        />
+        <p v-if="error || identity.error" role="alert" class="error">
+          {{ error || identity.error }}
+        </p>
+        <el-button native-type="submit" type="primary" size="large" :loading="busy"
+          >登 录</el-button
+        >
+      </form>
+      <p class="fine"><RouterLink to="/forgot-password">忘记密码？</RouterLink></p>
     </section>
   </main>
 </template>

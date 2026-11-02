@@ -275,7 +275,7 @@ onBeforeUnmount(disposeImage)
 <template>
   <section class="panel homework-visual" aria-label="图片作答批改">
     <h2>图片作答批改</h2>
-    <p>在原图上框选本题作答，可跨页选择多个区域。图片评分建议需要教师复核，不会自动记分。</p>
+    <p>在原图上框选本题作答，可跨页选择多个区域。评分建议需由教师复核后确认。</p>
     <p v-if="error" class="error" role="alert">{{ error }}</p>
     <p v-if="notice" role="status">{{ notice }}</p>
     <div class="page-tools">

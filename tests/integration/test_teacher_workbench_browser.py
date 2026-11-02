@@ -1,31 +1,25 @@
-"""Opt-in real browser + TLS Mock OIDC + actual isolated PG/S3. No model calls."""
+"""Opt-in real browser + local accounts + isolated PostgreSQL/S3. No model calls."""
 
 import asyncio
-import base64
 import hashlib
 import ipaddress
 import json
 import os
 import socket
 import sys
-import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from urllib.parse import urlencode
 from uuid import UUID, uuid4
 
 import httpx
-import jwt
 import pytest
 import uvicorn
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
-from sqlalchemy import select, text, update
+from fastapi import FastAPI, HTTPException
+from sqlalchemy import delete, select, text, update
 from test_answer_review import _prepare_review
 from test_answer_scripts import script_mixed_scan_pdf as mixed_scan_pdf
 from test_scan_intake import (  # noqa: F401
@@ -37,7 +31,6 @@ from test_scan_intake import (  # noqa: F401
 )
 
 from huipi_cloud.core.config import Settings
-from huipi_cloud.infrastructure.auth.jwt import TokenVerifier
 from huipi_cloud.main import app
 from huipi_cloud.modules.answer_review.models import AnswerReviewDecision
 from huipi_cloud.modules.answer_scripts import service as scripts
@@ -46,7 +39,13 @@ from huipi_cloud.modules.exam_parsing import service as exam_parsing_service
 from huipi_cloud.modules.exam_parsing.permissions import PARSE_OPERATOR_ROLE
 from huipi_cloud.modules.exam_parsing.runtime import ExamBackend, ProtectedExecutor
 from huipi_cloud.modules.identity import dependencies as security
-from huipi_cloud.modules.identity.models import AssignmentMembership, User
+from huipi_cloud.modules.identity.models import (
+    AssignmentMembership,
+    LocalAuthAudit,
+    LocalCredential,
+    LocalSession,
+    User,
+)
 from huipi_cloud.modules.resource_security import service as grants
 from huipi_cloud.modules.resource_security.models import SecurityScope
 from huipi_cloud.modules.scans.models import ScanFile, ScanPage
@@ -103,8 +102,7 @@ async def test_teacher_workbench_browser_end_to_end(
             assert app_settings.grading_provider == "openai_compatible"
             assert app_settings.grading_model == "deepseek-flash"
             assert (
-                app_settings.grading_allow_remote
-                and app_settings.grading_external_data_authorized
+                app_settings.grading_allow_remote and app_settings.grading_external_data_authorized
             )
             assert app_settings.grading_api_key and app_settings.grading_api_key.get_secret_value()
             assert app_settings.grading_base_url.rstrip("/") == "https://api.deepseek.com"
@@ -134,9 +132,7 @@ async def test_teacher_workbench_browser_end_to_end(
                         (kwargs["system_prompt"] + kwargs["user_prompt"]).encode("utf-8")
                     )
                     # Conservative peak-hour bound: $0.30/M input, $1.20/M output.
-                    maximum_usd = (
-                        (text_bytes + 256 + 1024) * 0.30 + 1200 * 1.20
-                    ) / 1_000_000
+                    maximum_usd = ((text_bytes + 256 + 1024) * 0.30 + 1200 * 1.20) / 1_000_000
                     assert maximum_usd <= 0.05
                     response = await actual.complete_visual(**kwargs)
                     output = Path(os.environ["HOMEWORK_VISUAL_ACCEPTANCE_DIR"])
@@ -579,132 +575,45 @@ async def test_teacher_workbench_browser_end_to_end(
         ]
         frontend_socket.close()
         origin = f"http://127.0.0.1:{frontend_port}"
-        issuer = f"https://127.0.0.1:{oidc_port}"
-        key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-        public = {
-            **json.loads(jwt.algorithms.RSAAlgorithm.to_jwk(key.public_key())),
-            "kid": "browser-runtime",
-            "alg": "RS256",
-        }
+        control_url = f"https://127.0.0.1:{oidc_port}"
+        from huipi_cloud.core.config import settings as app_settings
+        from huipi_cloud.infrastructure.database import session as database
+        from huipi_cloud.modules.identity import local_auth
+
+        monkeypatch.setattr(app_settings, "auth_allowed_origins", origin)
+        monkeypatch.setattr(database, "session_factory", ctx.factory)
+        monkeypatch.setattr(security, "verifier", local_auth.LocalSessionVerifier())
+        password = "synthetic-workbench-password-2026!"
+        encoded = await local_auth.hash_password(password)
+        accounts = {}
         async with ctx.factory() as session, session.begin():
-            await session.execute(
-                update(User)
-                .where(User.id.in_([u.id for u in ctx.users.values()]))
-                .values(issuer=issuer)
-            )
-        verifier = TokenVerifier(
-            Settings(
-                _env_file=None,
-                auth_issuer=issuer,
-                auth_audience="huipi-api",
-                auth_jwks_url=f"{issuer}/jwks",
-            ),
-            transport=httpx.MockTransport(
-                lambda request: httpx.Response(200, json={"keys": [public]})
-            ),
-        )
-        monkeypatch.setattr(security, "verifier", verifier)
-        oidc = FastAPI()
-        oidc.add_middleware(
-            CORSMiddleware,
-            allow_origins=[origin],
-            allow_methods=["GET", "POST"],
-            allow_headers=["Content-Type", "Authorization"],
-        )
-        codes, selection = {}, {"actor": "a", "pkce_verified": 0, "token_calls": 0}
-
-        @oidc.get("/.well-known/openid-configuration")
-        async def discovery():
-            return dict(
-                issuer=issuer,
-                authorization_endpoint=f"{issuer}/authorize",
-                token_endpoint=f"{issuer}/token",
-                jwks_uri=f"{issuer}/jwks",
-                end_session_endpoint=f"{issuer}/logout",
-                response_types_supported=["code"],
-                subject_types_supported=["public"],
-                id_token_signing_alg_values_supported=["RS256"],
-                token_endpoint_auth_methods_supported=["none"],
-                code_challenge_methods_supported=["S256"],
-            )
-
-        @oidc.get("/jwks")
-        async def jwks():
-            return {"keys": [public]}
-
-        @oidc.get("/authorize")
-        async def authorize(request: Request):
-            values = dict(request.query_params)
-            if (
-                values.get("client_id") != "teacher-workbench-test"
-                or values.get("redirect_uri") != origin + "/auth/callback"
-                or values.get("code_challenge_method") != "S256"
-                or values.get("response_type") != "code"
-            ):
-                raise HTTPException(400)
-            code = uuid4().hex
-            codes[code] = {**values, "actor": selection["actor"]}
-            return RedirectResponse(
-                origin + "/auth/callback?" + urlencode({"code": code, "state": values["state"]})
-            )
-
-        @oidc.post("/token")
-        async def token(request: Request):
-            form = await request.form()
-            saved = codes.pop(str(form.get("code")), None)
-            challenge = (
-                base64.urlsafe_b64encode(
-                    hashlib.sha256(str(form.get("code_verifier")).encode()).digest()
+            for name, user in ctx.users.items():
+                account = f"{name}-{uuid4().hex}@example.invalid"
+                accounts[name] = account
+                session.add(
+                    LocalCredential(
+                        user_id=user.id,
+                        login_name=account,
+                        display_name="合成教师",
+                        password_hash=encoded,
+                        must_change_password=False,
+                    )
                 )
-                .rstrip(b"=")
-                .decode()
-            )
-            if (
-                saved is None
-                or saved["code_challenge"] != challenge
-                or form.get("redirect_uri") != origin + "/auth/callback"
-            ):
-                raise HTTPException(400)
-            selection["pkce_verified"] += 1
-            selection["token_calls"] += 1
-            now = int(time.time())
-            claims = {
-                "iss": issuer,
-                "sub": ctx.users[saved["actor"]].subject,
-                "iat": now - 1,
-                "exp": now + 600,
-            }
-            access = jwt.encode(
-                {**claims, "aud": "huipi-api"},
-                key,
-                algorithm="RS256",
-                headers={"kid": "browser-runtime"},
-            )
-            id_token = jwt.encode(
-                {
-                    **claims,
-                    "aud": "teacher-workbench-test",
-                    "nonce": saved["nonce"],
-                    "name": "合成教师",
-                },
-                key,
-                algorithm="RS256",
-                headers={"kid": "browser-runtime"},
-            )
-            return dict(access_token=access, id_token=id_token, token_type="Bearer", expires_in=600)
+        control = FastAPI()
+        selection = {"actor": "a"}
 
-        @oidc.get("/logout")
-        async def end_session(request: Request):
-            return RedirectResponse(origin + "/login")
+        @control.get("/__test__/actor")
+        async def selected_actor():
+            return {"actor": selection["actor"]}
 
-        @oidc.post("/__test__/actor/{name}")
+        @control.post("/__test__/actor/{name}")
         async def actor(name: str):
             if name not in ctx.users:
                 raise HTTPException(400)
             selection["actor"] = name
             return {"ok": True}
 
-        @oidc.post("/__test__/revoke/{name}")
+        @control.post("/__test__/revoke/{name}")
         async def revoke(name: str):
             if name not in ctx.users:
                 raise HTTPException(400)
@@ -744,14 +653,9 @@ async def test_teacher_workbench_browser_end_to_end(
                 serialization.NoEncryption(),
             )
         )
-        import ssl
-
-        verifier.transport = httpx.AsyncHTTPTransport(
-            verify=ssl.create_default_context(cafile=str(certfile)),
-        )
         for target, sock, options in [
             (app, api_socket, {}),
-            (oidc, oidc_socket, dict(ssl_certfile=str(certfile), ssl_keyfile=str(keyfile))),
+            (control, oidc_socket, dict(ssl_certfile=str(certfile), ssl_keyfile=str(keyfile))),
         ]:
             server = uvicorn.Server(
                 uvicorn.Config(
@@ -769,9 +673,6 @@ async def test_teacher_workbench_browser_end_to_end(
             os.environ,
             WORKBENCH_PORT=str(frontend_port),
             WORKBENCH_API_TARGET=f"http://127.0.0.1:{api_port}",
-            VITE_OIDC_AUTHORITY=issuer,
-            VITE_OIDC_CLIENT_ID="teacher-workbench-test",
-            VITE_OIDC_SCOPE="openid profile",
         )
         vite_log = (tmp_path / "vite.log").open("wb")
         vite = await asyncio.create_subprocess_exec(
@@ -819,7 +720,9 @@ async def test_teacher_workbench_browser_end_to_end(
         browser_env = dict(
             os.environ,
             WORKBENCH_URL=origin,
-            WORKBENCH_OIDC=issuer,
+            WORKBENCH_AUTH_CONTROL=control_url,
+            WORKBENCH_TEST_ACCOUNTS=json.dumps(accounts),
+            WORKBENCH_TEST_PASSWORD=password,
             WORKBENCH_AID=str(aid),
             WORKBENCH_SID=str(sid),
             WORKBENCH_QID=str(question.id),
@@ -1015,7 +918,17 @@ async def test_teacher_workbench_browser_end_to_end(
         output, _ = await asyncio.wait_for(browser.communicate(), timeout=300)
         (frontend / "test-results" / "browser-summary.txt").write_text(output.decode())
         assert browser.returncode == 0, output.decode()[-12000:]
-        assert selection["pkce_verified"] >= 3
+        async with ctx.factory() as db:
+            from sqlalchemy import func
+
+            assert (
+                await db.scalar(
+                    select(func.count())
+                    .select_from(LocalAuthAudit)
+                    .where(LocalAuthAudit.action == "login")
+                )
+                >= 3
+            )
         if os.getenv("RUN_MARKING_TASKS_BROWSER") == "1":
             from sqlalchemy import func
 
@@ -1251,6 +1164,11 @@ async def test_teacher_workbench_browser_end_to_end(
             await asyncio.wait_for(asyncio.gather(*tasks), timeout=10)
         for sock in sockets:
             sock.close()
+        async with ctx.factory() as db, db.begin():
+            ids = [user.id for user in ctx.users.values()]
+            await db.execute(delete(LocalSession).where(LocalSession.user_id.in_(ids)))
+            await db.execute(delete(LocalCredential).where(LocalCredential.user_id.in_(ids)))
+            await db.execute(text("TRUNCATE TABLE local_auth_audit, local_auth_throttles"))
         ctx.client.headers.clear()
         ctx.client.headers.update(previous_headers)
         async with ctx.factory() as session, session.begin():

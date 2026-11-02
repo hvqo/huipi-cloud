@@ -4,6 +4,8 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import DBAPIError, IntegrityError, OperationalError
 
@@ -64,6 +66,20 @@ app.add_middleware(
     student_import_max_bytes=STUDENT_IMPORT_MAX_BYTES,
 )
 logger = logging.getLogger(__name__)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(request: Request, error: RequestValidationError):
+    # Pydantic's default error payload can echo plaintext passwords and reset tokens.
+    if request.url.path.startswith(
+        (f"{settings.api_v1_prefix}/auth/", f"{settings.api_v1_prefix}/admin/local-accounts")
+    ):
+        return JSONResponse(
+            status_code=422,
+            content={"detail": "invalid_input"},
+            headers={"Cache-Control": "no-store"},
+        )
+    return await request_validation_exception_handler(request, error)
 
 
 @app.exception_handler(AnswerAlignmentNotFoundError)
@@ -292,10 +308,12 @@ def _constraint_name(error: IntegrityError) -> str | None:
 @app.exception_handler(AccessError)
 async def access_error_handler(_: Request, error: AccessError) -> JSONResponse:
     return JSONResponse(
-        status_code=error.status_code, content={"detail": error.code},
-        headers={"Cache-Control": "no-store", **(
-            {"WWW-Authenticate": "Bearer"} if error.status_code == 401 else {}
-        )},
+        status_code=error.status_code,
+        content={"detail": error.code},
+        headers={
+            "Cache-Control": "no-store",
+            **({"WWW-Authenticate": "Bearer"} if error.status_code == 401 else {}),
+        },
     )
 
 
@@ -316,8 +334,9 @@ _REVIEW_ERRORS = {
 
 async def review_error_handler(_: Request, error: Exception) -> JSONResponse:
     response_status, code = _REVIEW_ERRORS[type(error)]
-    return JSONResponse(status_code=response_status, content={"detail": code},
-                        headers={"Cache-Control": "no-store"})
+    return JSONResponse(
+        status_code=response_status, content={"detail": code}, headers={"Cache-Control": "no-store"}
+    )
 
 
 for _error_class in _REVIEW_ERRORS:
@@ -341,8 +360,9 @@ _GRADE_REVIEW_ERRORS = {
 
 async def grade_review_error_handler(_: Request, error: Exception) -> JSONResponse:
     response_status, code = _GRADE_REVIEW_ERRORS[type(error)]
-    return JSONResponse(status_code=response_status, content={"detail": code},
-                        headers={"Cache-Control": "no-store"})
+    return JSONResponse(
+        status_code=response_status, content={"detail": code}, headers={"Cache-Control": "no-store"}
+    )
 
 
 for _error_class in _GRADE_REVIEW_ERRORS:

@@ -307,7 +307,7 @@ onMounted(load)
         <section class="panel source-panel">
           <div class="section-heading">
             <div>
-              <p class="eyebrow">CANONICAL · 可追溯原文</p>
+              <p class="eyebrow">作答来源 · 原文核对</p>
               <h2>核对来源</h2>
             </div>
             <div class="page-controls">
@@ -323,8 +323,7 @@ onMounted(load)
             </div>
           </div>
           <p class="fine">
-            原文按节点显示，不执行 HTML、Markdown
-            或外部资源。浅绿色边框表示已关联来源，不代表已确认作答。
+            浅绿色边框标记了与本题关联的内容，请逐项核对学生作答。
           </p>
           <div v-if="page" class="paper" data-testid="canonical-paper">
             <div
@@ -411,7 +410,7 @@ onMounted(load)
             <span class="pill">{{ regions.length }} 个区域</span>
           </div>
           <p v-if="!regions.length" class="muted">
-            请在左侧原文选择范围，然后加入证据。未选择不等于学生没有作答。
+            请在左侧原文中选择学生的作答内容，并加入证据。
           </p>
           <ol class="selection-list">
             <li v-for="(r, i) in regions" :key="i">
@@ -431,7 +430,7 @@ onMounted(load)
             >预览并保存复核</el-button
           >
           <p class="fine">
-            保存后生成不可变 revision，不可直接编辑或删除历史。此操作不会产生分数。
+            保存后可查看复核记录；完成作答核对后，再进行评分。
           </p>
         </aside>
       </div>

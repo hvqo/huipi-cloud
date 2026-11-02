@@ -9,36 +9,39 @@ from sqlalchemy.exc import IntegrityError, OperationalError
 from test_teacher_authorization import auth_api, create, question  # noqa: F401
 
 from huipi_cloud.modules.assignments.models import Question
-from huipi_cloud.modules.identity import admin_service, service
+from huipi_cloud.modules.identity import admin_service, local_admin, service
 from huipi_cloud.modules.identity.http_schemas import TeacherActivation
-from huipi_cloud.modules.identity.models import AdminOperation, AssignmentMembership, User
+from huipi_cloud.modules.identity.models import (
+    AdminOperation,
+    AssignmentMembership,
+    LocalAuthAudit,
+    LocalCredential,
+    LocalSession,
+    User,
+)
 from huipi_cloud.modules.identity.protocol import AccessError
 
 
 @pytest.fixture
 async def admin_api(auth_api, monkeypatch):  # noqa: F811
     ctx = auth_api
-    from huipi_cloud.core.config import Settings
-
-    monkeypatch.setattr(
-        admin_service,
-        "settings",
-        Settings(
-            _env_file=None,
-            auth_issuer="https://identity.invalid",
-        ),
-    )
     ctx.registered = []
     yield ctx
     async with ctx.factory() as session, session.begin():
+        await session.execute(delete(LocalSession).where(LocalSession.user_id.in_(ctx.registered)))
+        await session.execute(
+            delete(LocalCredential).where(LocalCredential.user_id.in_(ctx.registered))
+        )
+        await session.execute(text("TRUNCATE TABLE local_auth_audit"))
         await session.execute(delete(User).where(User.id.in_(ctx.registered)))
 
 
 def registration(**extra):
     return {
         "request_id": str(uuid4()),
-        "issuer": "https://identity.invalid",
-        "subject": "synthetic-" + uuid4().hex,
+        "account": "synthetic-" + uuid4().hex + "@example.invalid",
+        "display_name": "合成教师",
+        "password": "synthetic-secure-password-2026!",
         **extra,
     }
 
@@ -46,10 +49,10 @@ def registration(**extra):
 async def register(ctx, payload=None):
     body = payload or registration()
     response = await ctx.client.post(
-        "/api/v1/admin/teachers", headers=ctx.headers("admin"), json=body
+        "/api/v1/admin/local-accounts", headers=ctx.headers("admin"), json=body
     )
     assert response.status_code == 201, response.text
-    uid = UUID(response.json()["target_user_id"])
+    uid = UUID(response.json()["user_id"])
     if uid not in ctx.registered:
         ctx.registered.append(uid)
     return response.json(), body
@@ -85,7 +88,7 @@ async def test_teacher_cannot_admin_even_with_signed_role_or_actor_claim(admin_a
     uid = ctx.users["b"].id
     requests = [
         ("GET", "/admin/teachers", None),
-        ("POST", "/admin/teachers", registration()),
+        ("POST", "/admin/local-accounts", registration()),
         ("PATCH", f"/admin/teachers/{uid}", {"request_id": str(uuid4()), "is_active": False}),
         ("GET", f"/admin/teachers/{uid}/memberships", None),
         ("GET", "/admin/audit-events", None),
@@ -110,13 +113,13 @@ async def test_register_replay_and_safe_paginated_teacher_list(admin_api):
     same, _ = await register(ctx, body)
     assert same == result
     conflict = await ctx.client.post(
-        "/api/v1/admin/teachers",
+        "/api/v1/admin/local-accounts",
         headers=ctx.headers("admin"),
-        json={**body, "subject": "other-synthetic"},
+        json={**body, "account": "other-synthetic@example.invalid"},
     )
-    assert conflict.status_code == 409 and conflict.json()["detail"] == "admin_request_conflict"
+    assert conflict.status_code == 409 and conflict.json()["detail"] == "account_request_conflict"
     duplicate = await ctx.client.post(
-        "/api/v1/admin/teachers",
+        "/api/v1/admin/local-accounts",
         headers=ctx.headers("admin"),
         json={**body, "request_id": str(uuid4())},
     )
@@ -129,14 +132,12 @@ async def test_register_replay_and_safe_paginated_teacher_list(admin_api):
     assert all(
         set(r) == {"user_id", "role", "is_active", "created_at"} for r in all_rows["records"]
     )
-    assert body["subject"] not in str(all_rows)
-    audit = await ctx.client.get(
-        "/api/v1/admin/audit-events?request_id=" + body["request_id"], headers=ctx.headers("admin")
-    )
+    assert body["account"] not in str(all_rows)
+    audit = await ctx.client.get("/api/v1/admin/local-accounts/audit", headers=ctx.headers("admin"))
     rows = audit.json()["records"]
-    assert len(rows) == 1 and rows[0]["actor_user_id"] == str(ctx.users["admin"].id)
-    assert rows[0]["state"] == {"is_active": True, "is_admin": False}
-    assert "subject" not in audit.text and "payload_sha256" not in audit.text
+    row = next(r for r in rows if r["request_id"] == body["request_id"])
+    assert row["actor_user_id"] == str(ctx.users["admin"].id)
+    assert body["account"] not in audit.text and "payload_sha256" not in audit.text
 
 
 @pytest.mark.anyio
@@ -152,7 +153,7 @@ async def test_register_replay_and_safe_paginated_teacher_list(admin_api):
 async def test_registration_never_accepts_role_or_actor_input(admin_api, extra):
     ctx = admin_api
     response = await ctx.client.post(
-        "/api/v1/admin/teachers", headers=ctx.headers("admin"), json=registration(**extra)
+        "/api/v1/admin/local-accounts", headers=ctx.headers("admin"), json=registration(**extra)
     )
     assert response.status_code == 422
     async with ctx.factory() as session:
@@ -160,16 +161,16 @@ async def test_registration_never_accepts_role_or_actor_input(admin_api, extra):
 
 
 @pytest.mark.anyio
-async def test_only_configured_exact_issuer_and_valid_identity_can_register(admin_api):
+async def test_only_valid_local_account_and_password_can_register(admin_api):
     ctx = admin_api
     for extra in (
-        {"issuer": "https://other.invalid"},
-        {"subject": " padded "},
-        {"subject": "\n"},
-        {"subject": ""},
+        {"account": "not-a-valid-account"},
+        {"account": ""},
+        {"password": "short"},
+        {"display_name": ""},
     ):
         response = await ctx.client.post(
-            "/api/v1/admin/teachers", headers=ctx.headers("admin"), json=registration(**extra)
+            "/api/v1/admin/local-accounts", headers=ctx.headers("admin"), json=registration(**extra)
         )
         assert response.status_code == 422
     async with ctx.factory() as session:
@@ -296,23 +297,44 @@ async def test_identity_mapping_cannot_substitute_another_database_user(admin_ap
 @pytest.mark.anyio
 async def test_audit_append_only_and_teachers_cannot_read_or_change_it(admin_api):
     ctx = admin_api
-    value, _ = await register(ctx)
-    for statement in (
-        "UPDATE admin_operations SET state = '{}'::jsonb WHERE id = :id",
-        "DELETE FROM admin_operations WHERE id = :id",
+    value, body = await register(ctx)
+    action = await ctx.client.patch(
+        f"/api/v1/admin/teachers/{ctx.users['b'].id}",
+        headers=ctx.headers("admin"),
+        json={"request_id": str(uuid4()), "is_active": False},
+    )
+    assert action.status_code == 200
+    async with ctx.factory() as session:
+        local_event = await session.scalar(
+            select(LocalAuthAudit).where(LocalAuthAudit.request_id == UUID(body["request_id"]))
+        )
+        local_event_id = local_event.id
+    for statement, event_id in (
+        (
+            "UPDATE admin_operations SET state = '{}'::jsonb WHERE id = :id",
+            UUID(action.json()["operation_id"]),
+        ),
+        ("DELETE FROM admin_operations WHERE id = :id", UUID(action.json()["operation_id"])),
+        ("UPDATE local_auth_audit SET action = 'tampered' WHERE id = :id", local_event_id),
+        ("DELETE FROM local_auth_audit WHERE id = :id", local_event_id),
     ):
         with pytest.raises(IntegrityError):
             async with ctx.factory() as session, session.begin():
-                await session.execute(text(statement), {"id": UUID(value["operation_id"])})
+                await session.execute(text(statement), {"id": event_id})
     assert (
         await ctx.client.get("/api/v1/admin/audit-events", headers=ctx.headers())
     ).status_code == 403
     assert (
         await ctx.client.delete("/api/v1/admin/audit-events", headers=ctx.headers())
     ).status_code == 405
+    assert (
+        await ctx.client.get("/api/v1/admin/local-accounts/audit", headers=ctx.headers())
+    ).status_code == 403
     async with ctx.factory() as session:
-        event = await session.get(AdminOperation, UUID(value["operation_id"]))
-        assert event.state == {"is_active": True, "is_admin": False}
+        event = await session.get(LocalAuthAudit, local_event_id)
+        assert event.action == "local_account_created" and event.target_user_id == UUID(
+            value["user_id"]
+        )
 
 
 @pytest.mark.anyio
@@ -323,15 +345,20 @@ async def test_audit_failure_rolls_back_user_and_safe_database_error(admin_api, 
     async def fail(*args, **kwargs):
         raise OperationalError("secret-db-path", {}, Exception("private-config"))
 
-    monkeypatch.setattr(admin_service, "append", fail)
+    monkeypatch.setattr(local_admin, "_append_audit", fail)
     response = await ctx.client.post(
-        "/api/v1/admin/teachers", headers=ctx.headers("admin"), json=body
+        "/api/v1/admin/local-accounts", headers=ctx.headers("admin"), json=body
     )
     assert response.status_code == 503 and response.json() == {
         "detail": "identity_operation_unavailable"
     }
     async with ctx.factory() as session:
-        assert await session.scalar(select(User.id).where(User.subject == body["subject"])) is None
+        assert (
+            await session.scalar(
+                select(LocalCredential.user_id).where(LocalCredential.login_name == body["account"])
+            )
+            is None
+        )
         assert await session.scalar(select(func.count()).select_from(AdminOperation)) == 0
 
 

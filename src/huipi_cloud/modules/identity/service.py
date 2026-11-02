@@ -8,7 +8,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from huipi_cloud.infrastructure.auth.jwt import VerifiedIdentity
 from huipi_cloud.modules.assignments.models import Assignment, Question
-from huipi_cloud.modules.identity.models import AssignmentMembership, User
+from huipi_cloud.modules.identity.models import (
+    AssignmentMembership,
+    LocalCredential,
+    LocalSession,
+    User,
+)
 from huipi_cloud.modules.identity.protocol import AccessError, Principal
 from huipi_cloud.modules.submissions.models import Submission
 
@@ -29,6 +34,8 @@ async def resolve_principal(
     *,
     lock: bool = False,
 ) -> Principal:
+    if identity.must_change_password:
+        raise AccessError("password_change_required", 403)
     # A reused Session may retain a User with stale administrator flags. Refresh from
     # this query's database snapshot, including when a SHARE lock is requested.
     query = (
@@ -49,6 +56,7 @@ async def resolve_principal(
         subject=user.subject,
         expires_at=identity.expires_at,
         is_admin=user.is_admin,
+        session_hash=identity.session_hash,
     )
 
 
@@ -66,6 +74,7 @@ async def refresh_principal(
             principal.issuer,
             principal.subject,
             principal.expires_at,
+            session_hash=principal.session_hash,
         ),
         lock=lock,
     )
@@ -73,6 +82,25 @@ async def refresh_principal(
         raise AccessError("invalid_token", 401)
     if current.user_id != principal.user_id:
         raise AccessError("teacher_not_provisioned")
+    if principal.session_hash is not None:
+        query = (
+            select(LocalSession.token_hash)
+            .join(LocalCredential, LocalCredential.user_id == LocalSession.user_id)
+            .where(
+                LocalSession.token_hash == principal.session_hash,
+                LocalSession.user_id == principal.user_id,
+                LocalSession.revoked_at.is_(None),
+                LocalSession.expires_at > datetime.now(UTC),
+                LocalCredential.must_change_password.is_(False),
+            )
+        )
+        if (
+            await session.scalar(
+                query.with_for_update(read=True, of=LocalSession) if lock else query
+            )
+            is None
+        ):
+            raise AccessError("invalid_session", 401)
     return current
 
 

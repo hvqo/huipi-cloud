@@ -327,7 +327,7 @@ onUnmounted(() => {
       }}。评分状态：{{ stateLabels[details.scoring_status] || '尚未评分' }}
     </p>
     <p v-if="['failed', 'invalidated'].includes(details.scoring_status)" role="alert">
-      本次评分未生成有效建议。请核对来源并重新确认图像区域，再按需发起新请求；系统不会自动重试。
+      本次评分未生成有效建议，请核对来源并重新确认图像区域，再按需重新发起评分。
     </p>
     <template v-if="proposal">
       <p>

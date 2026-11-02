@@ -11,7 +11,6 @@ from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 
 from huipi_cloud.core.config import settings
-from huipi_cloud.infrastructure.auth.jwt import TokenVerifier
 from huipi_cloud.infrastructure.database.session import dispose_database_engine, session_factory
 from huipi_cloud.modules.exams import service
 from huipi_cloud.modules.exams.schemas import (
@@ -24,6 +23,7 @@ from huipi_cloud.modules.exams.schemas import (
     SessionEdit,
     SessionState,
 )
+from huipi_cloud.modules.identity.local_auth import LocalSessionVerifier as TokenVerifier
 from huipi_cloud.modules.identity.protocol import AccessError
 from huipi_cloud.modules.identity.service import resolve_principal
 

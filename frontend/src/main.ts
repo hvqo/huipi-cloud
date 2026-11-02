@@ -6,6 +6,9 @@ import './style.css'
 import './design.css'
 import App from './App.vue'
 import Login from './views/Login.vue'
+import ChangePassword from './views/ChangePassword.vue'
+import LocalAccounts from './views/LocalAccounts.vue'
+import PasswordRecovery from './views/PasswordRecovery.vue'
 import Dashboard from './views/Dashboard.vue'
 import Assignments from './views/Assignments.vue'
 import Assignment from './views/Assignment.vue'
@@ -24,24 +27,17 @@ import ExamRecovery from './views/ExamRecovery.vue'
 import MarkingManagement from './views/MarkingManagement.vue'
 import MyMarkingTasks from './views/MyMarkingTasks.vue'
 import OmrWorkbench from './views/OmrWorkbench.vue'
-import { initializeAuth, identity, callback } from './auth'
+import { initializeAuth, identity } from './auth'
 
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/login', component: Login },
-    {
-      path: '/auth/callback',
-      component: Login,
-      beforeEnter: async () => {
-        try {
-          return await callback()
-        } catch {
-          identity.error = '登录确认未完成，请重新登录。'
-          return '/login'
-        }
-      },
-    },
+    { path: '/change-password', component: ChangePassword },
+    { path: '/forgot-password', component: PasswordRecovery },
+    { path: '/reset-password', component: PasswordRecovery },
+    { path: '/verify-email', component: PasswordRecovery },
+    { path: '/admin/accounts', component: LocalAccounts },
     { path: '/', redirect: '/dashboard' },
     { path: '/dashboard', component: Dashboard },
     { path: '/assignments', component: Assignments },
@@ -71,8 +67,13 @@ export const router = createRouter({
 })
 router.beforeEach(async (to) => {
   if (!identity.ready) await initializeAuth()
-  if (!['/login', '/auth/callback'].includes(to.path) && !identity.authenticated)
+  if (
+    !['/login', '/forgot-password', '/reset-password', '/verify-email'].includes(to.path) &&
+    !identity.authenticated
+  )
     return { path: '/login', query: { returnTo: to.fullPath } }
+  if (identity.authenticated && identity.mustChangePassword && to.path !== '/change-password')
+    return '/change-password'
 })
 const app = createApp(App).use(router)
 for (const component of [ElButton, ElDialog, ElDrawer, ElInput, ElSelect, ElOption])

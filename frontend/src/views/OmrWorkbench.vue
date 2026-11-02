@@ -339,7 +339,7 @@ onUnmounted(clearCards)
     <section class="omr-panel">
       <h2>2. 选择已确认答卷并识别</h2>
       <p>
-        先在扫描工作区完成人工分卷和身份确认，再选择其中的答题卡页面。系统不会根据文件名或顺序猜学生。
+        请先在扫描工作区完成人工分卷和学生身份确认，再选择答题卡页面。
       </p>
       <div class="omr-controls">
         <label

@@ -102,13 +102,20 @@ async def list_teachers(
         )
 
 
-@router.post("/admin/teachers", response_model=AdminOperationResult, status_code=201)
+@router.post(
+    "/admin/teachers",
+    response_model=AdminOperationResult,
+    status_code=201,
+    deprecated=True,
+    description="旧外部身份登记入口已停用；请使用本地账号管理。",
+)
 async def register_teacher(
     payload: TeacherRegistration,
     session: DbSession,
     principal: AuthorizedPrincipal,
 ):
-    return await service.register_teacher(session, principal, payload)
+    # Legacy external-identity registration cannot create a usable local login.
+    raise AccessError("external_identity_registration_retired", 410)
 
 
 @router.patch("/admin/teachers/{user_id}", response_model=AdminOperationResult)

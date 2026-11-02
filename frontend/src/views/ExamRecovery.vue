@@ -124,7 +124,7 @@ onUnmounted(() => {
       <p class="eyebrow">考务工作空间 · 扫描补救</p>
       <h1>异常处理</h1>
       <p class="muted">
-        定位待处理答卷，核对原页并恢复流程。缺页、身份不明或解析失败，不代表缺考和零分。
+        集中查看并处理缺页、身份待确认及解析失败等问题。
       </p>
     </div>
   </header>
@@ -214,7 +214,7 @@ onUnmounted(() => {
       ><span>{{ data.total }}项 · 每页25项</span>
     </div>
     <p v-if="!data.items.length && !busy" role="status">
-      当前筛选下没有待处理事项。不代表已经完成全部阅卷。
+      当前筛选下暂无待处理事项。
     </p>
     <div class="recovery-table" v-else>
       <table aria-label="异常列表">

@@ -1,4 +1,4 @@
-import { accessToken, expireAuth } from '../auth'
+import { csrfToken, expireAuth } from '../auth'
 import type { components } from './generated'
 export type Schema = components['schemas']
 export type Review = Schema['ReviewInspection']
@@ -58,7 +58,7 @@ export async function request<T>(
   path: string,
   options: {
     body?: string | FormData
-    method?: 'GET' | 'POST' | 'DELETE'
+    method?: 'GET' | 'POST' | 'PATCH' | 'DELETE'
     signal?: AbortSignal
     blob?: boolean
     timeoutMs?: number
@@ -68,8 +68,6 @@ export async function request<T>(
 ): Promise<T> {
   if (!/^\/api\/v1\//.test(path) || path.includes('://') || path.includes('\\'))
     throw new ApiError(400, 'invalid_api_path')
-  const token = accessToken()
-  if (!token) throw new ApiError(401, 'authentication_required')
   const controller = new AbortController()
   const cancel = () => controller.abort()
   options.signal?.addEventListener('abort', cancel, { once: true })
@@ -84,11 +82,13 @@ export async function request<T>(
       method: options.method || (options.body ? 'POST' : 'GET'),
       signal: controller.signal,
       headers: {
-        Authorization: `Bearer ${token}`,
+        ...((options.method || (options.body ? 'POST' : 'GET')) !== 'GET'
+          ? { 'X-Huipi-CSRF': csrfToken() }
+          : {}),
         ...(typeof options.body === 'string' ? { 'Content-Type': 'application/json' } : {}),
       },
       ...(options.body ? { body: options.body } : {}),
-      credentials: 'omit',
+      credentials: 'same-origin',
       cache: 'no-store',
       redirect: 'error',
     })

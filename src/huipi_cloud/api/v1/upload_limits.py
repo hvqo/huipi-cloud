@@ -178,6 +178,10 @@ class UploadRequestLimitMiddleware:
         path = scope.get("path", "")
         if scope.get("type") != "http" or scope.get("method") != "POST":
             return None
+        if path.startswith(f"{self.api_v1_prefix}/auth/") or path.startswith(
+            f"{self.api_v1_prefix}/admin/local-accounts"
+        ):
+            return 8 * 1024
         if (
             path.startswith(f"{self.api_v1_prefix}/answer-scripts/")
             and (path.endswith("/versions") or path.endswith("/parsing"))

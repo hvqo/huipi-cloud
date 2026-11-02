@@ -39,6 +39,15 @@ class Settings(BaseSettings):
     auth_jwks_cache_seconds: int = Field(default=300, ge=10, le=3600)
     auth_jwks_refresh_seconds: int = Field(default=10, ge=1, le=60)
     auth_clock_skew_seconds: int = Field(default=0, ge=0, le=30)
+    # Local password authentication uses opaque, database-backed sessions.
+    auth_allowed_origins: str = "http://127.0.0.1:5173,http://localhost:5173"
+    auth_session_hours: int = Field(default=12, ge=1, le=24)
+    auth_public_base_url: str = ""
+    auth_smtp_host: str = ""
+    auth_smtp_port: int = Field(default=587, ge=1, le=65535)
+    auth_smtp_user: str = ""
+    auth_smtp_password: SecretStr | None = None
+    auth_smtp_sender: str = ""
     database_url: str | None = None
     test_database_url: str | None = None
     scan_max_file_bytes: int = Field(default=32 * 1024 * 1024, ge=1024, le=32 * 1024 * 1024)

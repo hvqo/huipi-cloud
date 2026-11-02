@@ -99,7 +99,7 @@ async function prepareHomework() {
         <section class="panel">
           <h3>题目来源对齐</h3>
           <strong>{{ alignment ? status(alignment.status) : '尚未就绪' }}</strong>
-          <p class="muted">{{ alignment?.aligned_count || 0 }} 题已关联 · 不表示已作答</p>
+          <p class="muted">{{ alignment?.aligned_count || 0 }} 题已关联 · 请逐题核对作答</p>
         </section>
       </div>
       <section class="panel">
@@ -107,7 +107,7 @@ async function prepareHomework() {
           <h2>逐题核对作答证据</h2>
           <span class="muted">人工判断，不是自动评分</span>
         </div>
-        <p class="notice">题号关联只代表来源映射，不代表学生已作答。请进入题目核对原文。</p>
+        <p class="notice">请逐题核对学生是否作答及作答内容。</p>
         <button v-if="homework?.is_current && parsing?.status === 'succeeded' && (!alignment || canonical?.status !== 'available')" :disabled="preparing" @click="prepareHomework">{{ preparing ? '正在准备作答…' : '准备作答核对' }}</button>
         <p v-if="preparationError" role="alert" class="error">{{ preparationError }}</p>
         <p v-if="homework && !homework.is_current" class="notice">这是历史提交，请从班级作业进入当前版本进行批改。</p>
