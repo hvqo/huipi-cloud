@@ -1,12 +1,12 @@
 # 教师工作台
 
-工作台提供“查看作业 → 查看学生提交 → 对照原始文件及 Canonical → 选取作答证据 → 保存人工决定 → 查看历史”的浏览器流程。候选评分界面尚未开放；本工作台不生成或发布成绩，不调用收费模型。
+工作台提供作业、考试、扫描、阅卷和成绩等浏览器操作；可见页面及可执行操作由当前账号和服务端授权共同决定。
 
 ## 环境与启动
 
 - Node.js 24（仓库 `frontend/.nvmrc` 固定开发版本），npm；Python/uv、PostgreSQL 和私有 S3 沿用后端配置。
 - Vue 3、TypeScript、Vite、Vue Router、Element Plus；只用少量共享认证状态，没有引入 Pinia。
-- 先按[教师认证](teacher-auth.md)配置真实 OIDC 资源服务器和内部 User/Membership。数据库迁移由操作员独立执行；前端不会升级数据库。已有作业、资料、模型和用户 `.env` 不变。
+- 先按[教师认证](teacher-auth.md)建立本地管理员和内部 User/Membership。数据库迁移由操作员独立执行；前端不会升级数据库。已有作业、资料、模型和用户 `.env` 不变。
 
 后端使用已有启动方式：
 
@@ -21,24 +21,14 @@ uv run uvicorn huipi_cloud.main:app --reload
 cd frontend
 npm ci
 cp -n .env.example .env.local
-# 编辑 .env.local 中的公开 OIDC 客户端配置
 npm run dev
 ```
 
-开发地址为 `http://127.0.0.1:5173`，API 通过同源 `/api` 代理到 `http://127.0.0.1:8000`。避免把 localhost 与 127.0.0.1 的回调混用。`WORKBENCH_API_TARGET` 是开发代理目标，不会成为浏览器可传入的任意 URL。
+开发地址为 `http://127.0.0.1:5173`，API 通过同源 `/api` 代理到 `http://127.0.0.1:8000`。请使用与 `AUTH_ALLOWED_ORIGINS` 一致的地址。`WORKBENCH_API_TARGET` 是开发代理目标，不会成为浏览器可传入的任意 URL。
 
-## OIDC 登录
+## 本地账号登录
 
-使用标准 [oidc-client-ts](https://authts.github.io/oidc-client-ts/interfaces/UserManagerSettings.html) Authorization Code + PKCE（S256），显式 nonce/state。配置公共 SPA client，不使用 client secret：
-
-- `VITE_OIDC_AUTHORITY`：可信 IdP 的 HTTPS issuer；生产构建拒绝非 HTTPS authority，开发仅另允许 loopback HTTP。
-- `VITE_OIDC_CLIENT_ID`：IdP 中登记的公共客户端。
-- 回调地址：`http://127.0.0.1:5173/auth/callback`；退出回调：`http://127.0.0.1:5173/login`。部署域名变化需同时修改 IdP 登记。
-- `VITE_OIDC_SCOPE`：IdP 已授权的 scope。API 要求的是 access token audience，不是 ID token audience。`VITE_OIDC_AUDIENCE` 为支持该参数的 IdP 传 audience；`VITE_OIDC_RESOURCE` 提供标准资源指示器。两者均须按实际 IdP 合同配置，不能靠前端修改角色授权。
-
-access/ID token 只存内存；sessionStorage 仅保存短期 PKCE 状态和不含作答正文的未确认复核请求。没有 localStorage 长期 JWT、匿名业务模式、手填 Token 登录或测试身份开关。完整刷新需要重新走身份服务；过期或 401 清除本地认证状态。显式退出会清理本地令牌及复核草稿，并尝试标准 IdP 退出；若远端退出无法确认，会明确提示。
-
-`VITE_*` 会打包为公开配置，严禁填写 DeepSeek Key、数据库密码或其他秘密。当前没有真实学校 IdP 验收证据；未配置时登录页保持锁定，不会匿名请求业务接口。
+教师使用管理员开通的邮箱或手机号及密码登录。首次使用临时密码必须修改；会话通过同源 HttpOnly Cookie 保存，写请求使用 CSRF 校验。刷新页面会重新检查当前会话，退出及密码重置会撤销会话。找回邮箱需要本人登录后先完成邮件验证，邮件服务未配置时可联系管理员重置。部署细节见[教师认证](teacher-auth.md)。
 
 ## 页面与 API 合同
 
@@ -55,7 +45,7 @@ uv run python scripts/export_frontend_openapi.py
 npm run api:generate --prefix frontend
 ```
 
-生成的 `frontend/src/api/generated.ts` 纳入版本控制；CI 重生成后检查差异。客户端只请求固定同源 `/api/v1/`，设置 Authorization Header、AbortController、15 秒请求上限（文件 30 秒）、2MiB JSON / 21MiB 旧作业文件读取上限；扫描独立允许32MiB级下载与180秒上传客户端上限；离开页面取消读取。超限明确报错，不截断成假结果。401、403、404、409、422、503 区分处理，日志不打印服务内部错误正文或令牌。
+生成的 `frontend/src/api/generated.ts` 纳入版本控制；CI 重生成后检查差异。客户端只请求固定同源 `/api/v1/`，设置 CSRF 标记、AbortController、15 秒请求上限（文件 30 秒）、2MiB JSON / 21MiB 旧作业文件读取上限；扫描独立允许32MiB级下载与180秒上传客户端上限；离开页面取消读取。超限明确报错，不截断成假结果。401、403、404、409、422、503 区分处理，日志不打印服务内部错误正文或令牌。
 
 两个最小读取补齐：
 
@@ -96,12 +86,12 @@ cd frontend && npx playwright install chromium && cd ..
 RUN_WORKBENCH_E2E=1 uv run pytest -q tests/integration/test_teacher_workbench_browser.py
 ```
 
-E2E 必须配置独立 `_test` PostgreSQL 和独立私有测试桶；沿用后端 fixture 的安全检查和自有对象清理。测试生成 RSA、TLS 证书和独立 Mock OIDC，真实走浏览器 redirect、PKCE、Token 验证、数据库授权与 S3；Canonical/Alignment 是合成 fixture，不冒充真实 OCR。测试身份与控制端点只存在测试文件，不进入生产包；截图仅含合成资料，trace 关闭以免收集令牌。
+E2E 必须配置独立 `_test` PostgreSQL 和独立私有测试桶；沿用后端 fixture 的安全检查和自有对象清理。测试使用隔离 PostgreSQL、测试账号和私有 S3，验证本地登录、数据库授权与受保护文件；Canonical/Alignment 是合成 fixture，不冒充真实 OCR。合成测试账号与控制端点只存在测试文件，不进入生产包；截图仅含合成资料，trace 关闭以免收集令牌。
 
 CI 有独立 teacher-workbench job，验证锁文件、生成合同、类型、ESLint、单测、构建及真实浏览器链路，不调用收费模型或下载 Embedding/Rerank 权重。默认后端测试显式跳过该浏览器 opt-in，独立前端 job 必须执行。
 
 ## 生产与后续边界
 
-`npm run build` 的 dist 由 HTTPS 静态站点服务，`/api/` 反向代理 FastAPI 并保留 Authorization；SPA 路由回退 index.html。Vite 仅用于开发，不是生产认证服务。真实 IdP、浏览器部署策略和学校教师数据仍须独立验收。
+`npm run build` 的 dist 由 HTTPS 静态站点服务，`/api/` 反向代理 FastAPI 并保留 Cookie、Origin 与 CSRF 标记；SPA 路由回退 index.html。Vite 仅用于开发。生产 HTTPS、邮件服务、备份和学校教师授权仍须独立验收。
 
-P5-B2 需新增候选评分审核页面、完整 Rubric 快照编辑、受限理由/证据核对及审计正文读取设计；复用已有候选审核 HTTP，但不自动发布成绩。P3-D2B、学生身份、聊天端点、多学校租户体系不在本工作台范围。
+评分、正式成绩及学生数据的具体使用范围，以对应业务模块的授权和部署配置为准。学生登录、公开聊天端点及多学校租户体系不在本地账号切换范围内。

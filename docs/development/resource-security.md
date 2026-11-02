@@ -24,7 +24,7 @@ uv run python -m huipi_cloud.modules.resource_security bootstrap \
 - B-1.1b 组织管理员角色版本：`11111111-b11b-4000-8000-000000000002`（`organization.read/manage`）。
 - B-1.1b 学生名单导入员角色版本：`11111111-b11b-4000-8000-000000000003`（`organization.read` + `student.import.preview/confirm`）。
 
-非 bootstrap 命令都需要 `--token-stdin`：从标准输入安全传入真实 Bearer Token，不写进命令行参数、Git、Shell 历史或日志。用户 ID 不替代登录凭据。OIDC 签名/Issuer/Audience/有效期及数据库身份仍由现有验证器检查。
+非 bootstrap 命令都需要 `--token-stdin`：将本地账号签发的短时会话通过标准输入传入，不写进命令行参数、Git、Shell 历史或日志。用户 ID 不替代登录凭据。会话的到期、撤销和数据库身份由本地验证器检查；旧 OIDC JWT 不再用于认证。管道用法见[教师认证](teacher-auth.md)。
 
 ```text
 grant --token-stdin --user-id UUID --role-version-id UUID --scope-id UUID --request-id UUID

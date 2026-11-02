@@ -4,8 +4,15 @@ const aid = process.env.WORKBENCH_AID!,
   qid = process.env.WORKBENCH_QID!
 const reviewPath = `/assignments/${aid}/submissions/${sid}/questions/${qid}/review`
 async function signIn(page: Page, target = '/assignments') {
+  const selected = await page.request.get(`${process.env.WORKBENCH_AUTH_CONTROL}/__test__/actor`, {
+    ignoreHTTPSErrors: true,
+  })
+  const { actor } = (await selected.json()) as { actor: string }
+  const accounts = JSON.parse(process.env.WORKBENCH_TEST_ACCOUNTS!) as Record<string, string>
   await page.goto('/login?returnTo=' + encodeURIComponent(target))
-  await page.getByRole('button', { name: '通过统一身份登录' }).click()
+  await page.getByLabel('邮箱或手机号').fill(accounts[actor]!)
+  await page.getByLabel('密码', { exact: true }).fill(process.env.WORKBENCH_TEST_PASSWORD!)
+  await page.getByRole('button', { name: '登 录' }).click()
   await expect(page).toHaveURL(new RegExp(target + '$'))
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
 }
@@ -38,7 +45,7 @@ async function captureLayout(page: Page, name: string, anchor?: string) {
 
 test('产品工作台：真实数据、导航折叠与作业视图适配', async ({ page, request }) => {
   test.skip(process.env.RUN_UI_PRODUCT_BROWSER !== '1', 'product workspace opt-in')
-  await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/a`, { ignoreHTTPSErrors: true })
+  await request.post(`${process.env.WORKBENCH_AUTH_CONTROL}/__test__/actor/a`, { ignoreHTTPSErrors: true })
   await signIn(page, '/dashboard')
   await expect(page.getByRole('heading', { name: '最近作业' })).toBeVisible()
   await expect(page.getByText('正在检查异常…')).not.toBeVisible()
@@ -83,7 +90,7 @@ test('答题卡：打印、扫描、人工分卷、真实识别、教师确认�
   const { execFileSync } = await import('node:child_process')
   const sid = process.env.WORKBENCH_SCAN_SESSION!
   const paper = process.env.WORKBENCH_OMR_PAPER!
-  await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/a`, { ignoreHTTPSErrors: true })
+  await request.post(`${process.env.WORKBENCH_AUTH_CONTROL}/__test__/actor/a`, { ignoreHTTPSErrors: true })
   await signIn(page, '/omr')
   await expect(page.getByLabel('锁定试卷').locator(`option[value="${paper}"]`)).toHaveCount(1)
   await page.getByLabel('锁定试卷').selectOption(paper)
@@ -196,7 +203,8 @@ test('真实签名身份、PG/S3、Unicode证据、未知提交重放、冲突�
   const fileRequest = page.waitForRequest((req) => req.url().endsWith(`/submissions/${sid}/file`))
   await page.getByRole('button', { name: '查看原始文件' }).click()
   const fetched = await fileRequest
-  expect(fetched.headers().authorization).toMatch(/^Bearer /)
+  expect(fetched.headers().authorization).toBeUndefined()
+  expect((await page.context().cookies()).some((c) => c.name === 'huipi_session' && c.httpOnly)).toBe(true)
   expect(fetched.url()).not.toContain('token')
   await expect(page.getByTitle('受保护的原始 PDF')).toHaveAttribute('src', /^blob:/)
   await page.getByRole('button', { name: /Close this dialog|关闭此对话框/ }).click()
@@ -250,7 +258,7 @@ test('真实签名身份、PG/S3、Unicode证据、未知提交重放、冲突�
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   await page.screenshot({ path: 'test-results/workbench-review.png', fullPage: true })
   // A second independently signed teacher produces the competing revision first.
-  await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/b`, { ignoreHTTPSErrors: true })
+  await request.post(`${process.env.WORKBENCH_AUTH_CONTROL}/__test__/actor/b`, { ignoreHTTPSErrors: true })
   const secondContext = await browser.newContext({ ignoreHTTPSErrors: true })
   const second = await secondContext.newPage()
   await signIn(second, reviewPath)
@@ -273,7 +281,7 @@ test('真实签名身份、PG/S3、Unicode证据、未知提交重放、冲突�
     page.locator('.history-panel').getByRole('button', { name: /编辑|删除/ }),
   ).toHaveCount(0)
   // Reader sees real business data but no writable controls.
-  await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/reader`, {
+  await request.post(`${process.env.WORKBENCH_AUTH_CONTROL}/__test__/actor/reader`, {
     ignoreHTTPSErrors: true,
   })
   const readerContext = await browser.newContext({ ignoreHTTPSErrors: true })
@@ -286,7 +294,7 @@ test('真实签名身份、PG/S3、Unicode证据、未知提交重放、冲突�
     window.dispatchEvent(new PopStateEvent('popstate'))
   }, `/assignments/00000000-0000-4000-8000-000000000001/submissions/${sid}`)
   await expect(reader.getByRole('alert')).toContainText('资源不可用')
-  await request.post(`${process.env.WORKBENCH_OIDC}/__test__/revoke/b`, { ignoreHTTPSErrors: true })
+  await request.post(`${process.env.WORKBENCH_AUTH_CONTROL}/__test__/revoke/b`, { ignoreHTTPSErrors: true })
   await second.getByRole('button', { name: '查看原始文件' }).click()
   await expect(second.getByRole('alert').filter({ hasText: '资源不可用' })).toBeVisible()
   await expect(second.getByRole('button', { name: '预览并保存复核' })).toBeDisabled()
@@ -300,7 +308,7 @@ test('真实签名身份、PG/S3、Unicode证据、未知提交重放、冲突�
 })
 
 test('真实PNG预览与新建作业表单', async ({ page, request }) => {
-  await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/a`, { ignoreHTTPSErrors: true })
+  await request.post(`${process.env.WORKBENCH_AUTH_CONTROL}/__test__/actor/a`, { ignoreHTTPSErrors: true })
   await signIn(page)
   await page.locator(`a[href="/assignments/${aid}"]`).click()
   await page.getByRole('tab', { name: '学生提交' }).click()
@@ -331,7 +339,7 @@ test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原�
   )
   const { readFile } = await import('node:fs/promises')
   const { createHash } = await import('node:crypto')
-  await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/a`, { ignoreHTTPSErrors: true })
+  await request.post(`${process.env.WORKBENCH_AUTH_CONTROL}/__test__/actor/a`, { ignoreHTTPSErrors: true })
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
   await page.setViewportSize({ width: 1440, height: 900 })
@@ -368,7 +376,8 @@ test('真实考试扫描：冻结混班名单、PDF接收、逐页预览和原�
   await expect(page.getByRole('button', { name: '第 4 页', exact: true })).toBeVisible()
   const preview = page.waitForRequest((r) => r.url().endsWith('/preview'))
   await page.getByRole('button', { name: '第 2 页', exact: true }).click()
-  expect((await preview).headers().authorization).toMatch(/^Bearer /)
+  expect((await preview).headers().authorization).toBeUndefined()
+  expect((await page.context().cookies()).some((c) => c.name === 'huipi_session' && c.httpOnly)).toBe(true)
   await expect(page.getByAltText('第2页扫描预览')).toHaveAttribute('src', /^blob:/)
   await expect(page.getByAltText('第2页扫描预览')).toBeVisible()
   await page.getByRole('button', { name: '放大扫描页', exact: true }).click()
@@ -821,7 +830,7 @@ async function markExamAnswer(page: Page, revise: boolean, question = 1) {
 test('网页考试配置：创建场次、共享A/B卷、混班名单与版本化更正', async ({ page, request }) => {
   test.skip(process.env.RUN_EXAM_CONFIGURATION_BROWSER !== '1', 'configuration opt-in')
   test.setTimeout(120000)
-  await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/a`, { ignoreHTTPSErrors: true })
+  await request.post(`${process.env.WORKBENCH_AUTH_CONTROL}/__test__/actor/a`, { ignoreHTTPSErrors: true })
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
   let discardChanges = true
@@ -1019,7 +1028,7 @@ test('网页考试配置：创建场次、共享A/B卷、混班名单与版本�
 test('普通命题教师：最小建卷角色与新卷对象授权闭环', async ({ page, request }) => {
   test.skip(process.env.RUN_PAPER_CREATOR_BROWSER !== '1', 'paper creator opt-in')
   test.setTimeout(90000)
-  await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/creator`, {
+  await request.post(`${process.env.WORKBENCH_AUTH_CONTROL}/__test__/actor/creator`, {
     ignoreHTTPSErrors: true,
   })
   const errors: string[] = []
@@ -1073,7 +1082,7 @@ test('学校管理：真实CSV预检确认、两班同名学生与冻结名单�
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(e.message))
   page.on('dialog', (d) => d.accept())
-  await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/school_admin`, {
+  await request.post(`${process.env.WORKBENCH_AUTH_CONTROL}/__test__/actor/school_admin`, {
     ignoreHTTPSErrors: true,
   })
   await signIn(page, '/school')
@@ -1252,7 +1261,7 @@ test('学校管理：真实CSV预检确认、两班同名学生与冻结名单�
   await expect(roster.getByText('后续合成')).toHaveCount(0)
   // Different signed identities, separate browser sessions; no token role substitution.
   for (const actor of ['school_teacher', 'school_previewer']) {
-    await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/${actor}`, {
+    await request.post(`${process.env.WORKBENCH_AUTH_CONTROL}/__test__/actor/${actor}`, {
       ignoreHTTPSErrors: true,
     })
     const context = await browser.newContext({ ignoreHTTPSErrors: true })
@@ -1275,7 +1284,7 @@ test('学校管理：真实CSV预检确认、两班同名学生与冻结名单�
 test('协同阅卷：负责人跨班分配、两名教师提交与成绩预览', async ({ page, request, browser }) => {
   test.skip(process.env.RUN_MARKING_TASKS_BROWSER !== '1', 'collaborative marking opt-in')
   test.setTimeout(150000)
-  await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/a`, { ignoreHTTPSErrors: true })
+  await request.post(`${process.env.WORKBENCH_AUTH_CONTROL}/__test__/actor/a`, { ignoreHTTPSErrors: true })
   page.on('dialog', (d) => d.accept())
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(e.message))
@@ -1296,7 +1305,7 @@ test('协同阅卷：负责人跨班分配、两名教师提交与成绩预览',
   await page.evaluate(() => window.scrollTo(0, 0))
   await page.screenshot({ path: 'test-results/marking-management.png', fullPage: true })
   async function teacher(actor: string, count: number) {
-    await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/${actor}`, {
+    await request.post(`${process.env.WORKBENCH_AUTH_CONTROL}/__test__/actor/${actor}`, {
       ignoreHTTPSErrors: true,
     })
     const context = await browser.newContext({
@@ -1381,7 +1390,7 @@ test('异常补救：缺页身份待定、失败文件原请求恢复、跨批�
 }) => {
   test.skip(process.env.RUN_RECOVERY_BROWSER !== '1', 'recovery real business opt-in')
   test.setTimeout(160000)
-  await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/a`, { ignoreHTTPSErrors: true })
+  await request.post(`${process.env.WORKBENCH_AUTH_CONTROL}/__test__/actor/a`, { ignoreHTTPSErrors: true })
   const sid = process.env.WORKBENCH_SCAN_SESSION!
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(e.message))
@@ -1481,7 +1490,7 @@ test('异常补救：缺页身份待定、失败文件原请求恢复、跨批�
   await page.getByRole('button', { name: /分配选中题目/ }).click()
   await expect(page.getByText('操作已保存。', { exact: true })).toBeVisible()
   await page.screenshot({ path: 'test-results/recovery-return-to-marking.png', fullPage: true })
-  await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/marker_a`, {
+  await request.post(`${process.env.WORKBENCH_AUTH_CONTROL}/__test__/actor/marker_a`, {
     ignoreHTTPSErrors: true,
   })
   const teacherContext = await page
@@ -1529,7 +1538,7 @@ test('日常作业：两班布置、同名学生代收重交与教师批改', as
   test.skip(process.env.RUN_HOMEWORK_BROWSER !== '1', 'real homework workflow opt-in')
   test.setTimeout(120000)
   page.setDefaultTimeout(10000)
-  await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/a`, { ignoreHTTPSErrors: true })
+  await request.post(`${process.env.WORKBENCH_AUTH_CONTROL}/__test__/actor/a`, { ignoreHTTPSErrors: true })
   await signIn(page, '/assignments')
   await page.getByRole('button', { name: /新建作业/ }).click()
   const create = page.getByRole('dialog', { name: '新建作业' })
@@ -1647,12 +1656,12 @@ test('日常作业：两班布置、同名学生代收重交与教师批改', as
 
 test('学校管理员登记和撤销真实任教关系', async ({ page, request }) => {
   test.skip(process.env.RUN_HOMEWORK_BROWSER !== '1', 'real homework workflow opt-in')
-  await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/admin`, {
+  await request.post(`${process.env.WORKBENCH_AUTH_CONTROL}/__test__/actor/admin`, {
     ignoreHTTPSErrors: true,
   })
   await signIn(page, '/school/teaching')
   const teacher = process.env.WORKBENCH_HOMEWORK_TEACHER_B!
-  await page.getByLabel('教师账号').selectOption(teacher)
+  await page.getByRole('combobox', { name: '教师账号' }).selectOption(teacher)
   await page.getByLabel('学期').selectOption({ label: 'fall' })
   await page.getByLabel('学科').selectOption({ label: '合成数学' })
   await page.getByLabel('行政班').selectOption({ label: '合成1班' })
@@ -1670,7 +1679,7 @@ test('日常作业：图片区域评分复核及重交失效', async ({ page, re
   test.skip(process.env.RUN_HOMEWORK_VISUAL_BROWSER !== '1', 'real homework visual opt-in')
   test.setTimeout(180000)
   page.setDefaultTimeout(15000)
-  await request.post(`${process.env.WORKBENCH_OIDC}/__test__/actor/a`, { ignoreHTTPSErrors: true })
+  await request.post(`${process.env.WORKBENCH_AUTH_CONTROL}/__test__/actor/a`, { ignoreHTTPSErrors: true })
   await signIn(page, '/assignments')
   await page.getByRole('button', { name: /新建作业/ }).click()
   const create = page.getByRole('dialog', { name: '新建作业' })

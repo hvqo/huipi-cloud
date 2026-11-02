@@ -4,10 +4,10 @@ import asyncio
 
 from sqlalchemy.exc import SQLAlchemyError
 
-from huipi_cloud.infrastructure.auth.jwt import TokenVerifier
 from huipi_cloud.modules.copilot.protocol import CopilotError
 from huipi_cloud.modules.copilot.tools import BusinessTools
 from huipi_cloud.modules.identity import service
+from huipi_cloud.modules.identity.local_auth import LocalSessionVerifier as TokenVerifier
 from huipi_cloud.modules.identity.protocol import AccessError
 
 

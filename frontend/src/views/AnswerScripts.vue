@@ -364,7 +364,7 @@ onUnmounted(() => {
         <RouterLink to="/scans">← 考试扫描</RouterLink>
         <h1>人工分卷与身份确认</h1>
         <RouterLink :to="{ path: '/omr', query: { session: sid } }">答题卡识别与确认 →</RouterLink>
-        <p>先整理答卷页面，再核对名单。原始扫描页始终保留。</p>
+        <p>选择扫描页组成答卷，并核对学生身份。</p>
       </div>
       <button :disabled="!canEdit" class="primary" @click="reset">新建答卷</button>
     </header>
@@ -485,7 +485,7 @@ onUnmounted(() => {
         </div>
         <p v-if="previewPage && preview" class="script-hint">
           {{ previewPage.original_filename }} · 原第 {{ previewPage.source_page_index + 1 }} 页 ·
-          预览不会自动加入答卷
+          可从左侧选择页面加入答卷
         </p>
         <div v-if="preview" class="script-preview-scroll">
           <img :src="preview" alt="人工分卷页面预览" :style="previewImageStyle" />
@@ -551,7 +551,7 @@ onUnmounted(() => {
             />已核对页数，答卷完整</label
           >
           <p v-if="!complete" class="script-hint">
-            缺页可以保存或确认身份，但不能进入后续解析桥接。
+            答卷不完整时可以先保存并确认身份，补齐页面后再进行解析。
           </p>
           <label class="script-field"
             >操作说明<textarea
@@ -750,10 +750,10 @@ onUnmounted(() => {
         </select></label
       >
       <p v-if="chosenIdentity && !chosenIdentity.session_paper_id" class="script-alert">
-        名单卷别尚未确认。请按原卷证据明确选择，不会自动分配 A 卷。
+        名单中的卷别待核验，请对照原卷选择实际卷别。
       </p>
       <p class="script-hint">
-        若实际卷别与已知名单卷别不符，须先更正名单。本操作不会创建学生提交或成绩。
+        若实际卷别与名单不符，请先更正名单后再确认身份。
       </p>
       <template #footer
         ><button :disabled="busy" @click="showIdentity = false">返回核对</button

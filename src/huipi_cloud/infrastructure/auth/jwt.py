@@ -18,6 +18,8 @@ class VerifiedIdentity:
     issuer: str
     subject: str
     expires_at: datetime
+    must_change_password: bool = False
+    session_hash: str | None = None
 
 
 class TokenVerifier:

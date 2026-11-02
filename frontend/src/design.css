@@ -993,3 +993,55 @@ main#main-content .school-dictionaries button {
 .identity-detail small {
   color: #6c7d92;
 }
+
+/* Local account authentication and administration. */
+.local-login-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 22px;
+}
+.local-login-form label,
+.local-account-form label {
+  color: #334155;
+  font-size: 14px;
+  font-weight: 600;
+}
+.local-login-form .el-button {
+  margin-top: 8px;
+}
+.password-card {
+  max-width: 520px;
+  margin: 24px auto;
+}
+.local-account-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: 16px;
+  align-items: end;
+  margin: 20px 0 12px;
+}
+.local-account-form label {
+  display: grid;
+  gap: 8px;
+}
+.local-account-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.local-account-table th,
+.local-account-table td {
+  padding: 12px;
+  border-bottom: 1px solid #e7ecf3;
+}
+.local-account-pager {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+@media (max-width: 900px) {
+  .local-account-form {
+    grid-template-columns: 1fr 1fr;
+  }
+}

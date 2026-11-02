@@ -247,7 +247,8 @@ onUnmounted(() => {
         生成于
         {{
           new Date(result.generated_at).toLocaleString('zh-CN')
-        }}。名单与来源变更后请刷新；无答卷不代表缺考。最多导出100人、2000个题目单元。
+        }}。名单或评分来源变更后请刷新页面。缺少答卷时请另行核对到考情况。每次最多导出 100
+        人、2000 个题目单元。
       </p>
     </template>
   </PageState>

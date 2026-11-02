@@ -87,7 +87,7 @@ function clearSensitive() {
   clearImport()
 }
 const messages: Record<string, string> = {
-  student_import_preview_stale: '预检后的资料已变化，请重新上传并预检，不会自动修改本次名单。',
+  student_import_preview_stale: '资料已变化，请重新上传并预检后再确认导入。',
   student_import_has_blocking_errors: '文件仍有阻塞错误，请修正CSV后重新预检。',
   student_import_file_encoding_unsupported: '请将文件另存为UTF-8 CSV，不支持GBK或UTF-16。',
   student_import_file_encoding_invalid: '文件不是有效的UTF-8文本，请检查编码。',
@@ -390,7 +390,7 @@ onMounted(() =>
   <p v-if="notice" role="status">{{ notice }}</p>
   <p v-if="!ready || busy" role="status">正在处理，请稍候…</p>
   <p v-if="ready && !access.can_read" class="notice">
-    当前没有学校组织读取权限。请联系授权人员；普通建卷权限不能查看全校学生。
+    暂无学校信息查看权限，请联系管理员。
   </p>
   <aside v-if="pending" class="school-warning" role="alert">
     保存结果尚未核实，请勿重复提交。<button
@@ -436,7 +436,7 @@ onMounted(() =>
       <label
         >名册日期<input v-model="asOf" type="date" :disabled="locked" @change="run(refreshDate)"
       /></label>
-      <p class="muted">人数按该日期的有效归属计算，历史名册不会随转班改写。</p>
+      <p class="muted">人数按所选日期的学生班级归属统计。</p>
     </section>
     <section v-if="tab === 'basic'" aria-label="基础组织" class="school-basic">
       <div class="school-create" v-if="access.can_manage">
@@ -593,7 +593,7 @@ onMounted(() =>
           </tbody>
         </table>
       </div>
-      <p v-if="!students?.records.length" class="muted">没有符合条件的学生。未扫描不表示缺考。</p>
+      <p v-if="!students?.records.length" class="muted">没有符合条件的学生。</p>
       <Pagination
         v-if="students"
         label="学生"
@@ -652,7 +652,7 @@ onMounted(() =>
       <p v-if="!access.can_preview" class="notice">
         当前没有预检权限。已有批次可在导入记录中查看。
       </p>
-      <p class="muted">模板仅含表头，请填写本校授权名单。同名学生按学号区分，不能仅凭姓名合并。</p>
+      <p class="muted">模板含表头，请填写学生信息；同名学生请核对学号。</p>
     </section>
     <section v-if="tab === 'history'" aria-label="导入记录">
       <h2>导入记录</h2>

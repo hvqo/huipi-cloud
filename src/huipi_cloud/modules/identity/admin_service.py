@@ -9,7 +9,6 @@ from sqlalchemy import func, select, text, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from huipi_cloud.core.config import settings
 from huipi_cloud.infrastructure.database.base import utc_now
 from huipi_cloud.modules.assignments.models import Assignment
 from huipi_cloud.modules.identity import service
@@ -20,9 +19,15 @@ from huipi_cloud.modules.identity.http_schemas import (
     CurrentUser,
     Role,
     TeacherActivation,
-    TeacherRegistration,
 )
-from huipi_cloud.modules.identity.models import AdminOperation, AssignmentMembership, User
+from huipi_cloud.modules.identity.models import (
+    AdminOperation,
+    AssignmentMembership,
+    LocalCredential,
+    LocalPasswordReset,
+    LocalSession,
+    User,
+)
 from huipi_cloud.modules.identity.protocol import AccessError, Principal
 
 
@@ -54,6 +59,11 @@ async def current_user(session: AsyncSession, principal: Principal) -> CurrentUs
             ]
         return CurrentUser(
             user_id=current.user_id,
+            display_name=await session.scalar(
+                select(LocalCredential.display_name).where(
+                    LocalCredential.user_id == current.user_id
+                )
+            ),
             role=Role.ADMIN if current.is_admin else Role.TEACHER,
             capabilities=capabilities,
             is_active=True,
@@ -138,43 +148,6 @@ async def teacher(session: AsyncSession, user_id: UUID, *, lock=False) -> User:
     return row
 
 
-async def register_teacher(session, principal, payload: TeacherRegistration):
-    async with administrator_transaction(session, principal) as current:
-        old, digest = await replay(
-            session,
-            current,
-            payload.request_id,
-            AdminAction.REGISTER_TEACHER,
-            {"issuer": payload.issuer, "subject": payload.subject},
-        )
-        if old:
-            return operation_result(old)
-        if not settings.auth_issuer or payload.issuer != settings.auth_issuer:
-            raise AccessError("identity_issuer_not_configured", 422)
-        user_id = await session.scalar(
-            insert(User)
-            .values(
-                issuer=payload.issuer,
-                subject=payload.subject,
-                is_admin=False,
-                is_active=True,
-            )
-            .on_conflict_do_nothing(constraint="uq_users_issuer_subject")
-            .returning(User.id)
-        )
-        if user_id is None:
-            raise AccessError("identity_already_registered", 409)
-        return await append(
-            session,
-            current,
-            payload.request_id,
-            digest,
-            AdminAction.REGISTER_TEACHER,
-            user_id,
-            {"is_active": True, "is_admin": False},
-        )
-
-
 async def activate_teacher(session, principal, user_id: UUID, payload: TeacherActivation):
     async with administrator_transaction(session, principal) as current:
         old, digest = await replay(
@@ -188,6 +161,17 @@ async def activate_teacher(session, principal, user_id: UUID, payload: TeacherAc
             return operation_result(old)
         row = await teacher(session, user_id, lock=True)
         row.is_active = payload.is_active
+        if not payload.is_active:
+            await session.execute(
+                update(LocalSession)
+                .where(LocalSession.user_id == user_id, LocalSession.revoked_at.is_(None))
+                .values(revoked_at=func.now())
+            )
+            await session.execute(
+                update(LocalPasswordReset)
+                .where(LocalPasswordReset.user_id == user_id, LocalPasswordReset.used_at.is_(None))
+                .values(used_at=func.now())
+            )
         return await append(
             session,
             current,

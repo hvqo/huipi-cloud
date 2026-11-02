@@ -1,5 +1,5 @@
 {
-  "version": "homework-workflow-1",
+  "version": "local-auth-1",
   "operations": [
     {
       "method": "POST",
@@ -1032,6 +1032,84 @@
       "path": "/api/v1/homework/submissions/{submission_id}/questions/{question_id}/visual/review",
       "policy": "review_homework_visual",
       "permission": "homework_scoped"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "policy": "local_login",
+      "permission": "public"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/session",
+      "policy": "local_session",
+      "permission": "local_session"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/logout",
+      "policy": "local_logout",
+      "permission": "local_session"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/change-password",
+      "policy": "local_change_password",
+      "permission": "local_session"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/recovery-email/request",
+      "policy": "request_recovery_email",
+      "permission": "local_session"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/recovery-email/confirm",
+      "policy": "confirm_recovery_email",
+      "permission": "local_session"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/reset/request",
+      "policy": "request_password_reset",
+      "permission": "public"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/reset/confirm",
+      "policy": "confirm_password_reset",
+      "permission": "public"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/local-accounts",
+      "policy": "list_local_accounts",
+      "permission": "administrator"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/local-accounts",
+      "policy": "create_local_account",
+      "permission": "administrator"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/local-accounts/{user_id}/reset-password",
+      "policy": "reset_local_account",
+      "permission": "administrator"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/local-accounts/{user_id}/bind",
+      "policy": "bind_local_account",
+      "permission": "administrator"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/local-accounts/audit",
+      "policy": "list_local_account_audit",
+      "permission": "administrator"
     }
   ]
 }

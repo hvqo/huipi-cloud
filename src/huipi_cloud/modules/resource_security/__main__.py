@@ -12,9 +12,9 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 
 from huipi_cloud.core.config import settings
-from huipi_cloud.infrastructure.auth.jwt import TokenVerifier
 from huipi_cloud.infrastructure.database.session import dispose_database_engine, session_factory
 from huipi_cloud.modules.assignments.schemas import AssignmentCreate
+from huipi_cloud.modules.identity.local_auth import LocalSessionVerifier as TokenVerifier
 from huipi_cloud.modules.identity.protocol import AccessError
 from huipi_cloud.modules.identity.service import resolve_principal
 from huipi_cloud.modules.resource_security import service

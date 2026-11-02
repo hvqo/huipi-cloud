@@ -21,6 +21,8 @@ from huipi_cloud.modules.grading.grade_review_router import router as grade_revi
 from huipi_cloud.modules.homework.router import router as homework_router
 from huipi_cloud.modules.identity.admin_router import router as admin_router
 from huipi_cloud.modules.identity.dependencies import authorize_request
+from huipi_cloud.modules.identity.local_admin import router as local_admin_router
+from huipi_cloud.modules.identity.local_http import router as local_auth_router
 from huipi_cloud.modules.identity.router import router as identity_router
 from huipi_cloud.modules.marking_tasks.router import router as marking_tasks_router
 from huipi_cloud.modules.omr.router import router as omr_router
@@ -44,6 +46,7 @@ protected_router = APIRouter(
     },
 )
 api_router.include_router(health_router)
+api_router.include_router(local_auth_router)
 protected_router.include_router(assignment_router)
 protected_router.include_router(question_router)
 protected_router.include_router(assignment_submission_router)
@@ -54,6 +57,7 @@ protected_router.include_router(answer_alignment_router)
 
 protected_router.include_router(identity_router)
 protected_router.include_router(admin_router)
+protected_router.include_router(local_admin_router)
 protected_router.include_router(answer_review_router)
 protected_router.include_router(grade_review_router)
 protected_router.include_router(workbench_router)

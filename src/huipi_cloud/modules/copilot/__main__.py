@@ -102,7 +102,7 @@ def main():
     parser.add_argument(
         "--token-stdin",
         action="store_true",
-        help="从标准输入读取OIDC access token，禁止通过命令行参数传Token",
+        help="从标准输入读取本地短时会话，禁止通过命令行参数传凭据",
     )
     parser.add_argument("--assignment-id", required=True, type=UUID)
     parser.add_argument("--question", required=True)

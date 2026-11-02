@@ -120,7 +120,7 @@ onMounted(() => run(load))
         提交当前任务</button
       ><button :disabled="locked" @click="run(next)">下一道待批题目</button>
       <p v-if="current.status === 'invalidated'" role="alert">
-        答卷来源或授权已变化，请联系负责人核对，不会自动记零分。
+        答卷或任务权限已发生变化，请联系负责人核对后继续阅卷。
       </p>
     </section>
     <ExamGrading

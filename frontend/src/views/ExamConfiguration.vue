@@ -354,7 +354,7 @@ async function freezeRoster() {
   if (dirty.value) throw new Error('名单修改尚未保存，请先保存草稿。')
   if (
     !window.confirm(
-      '确认冻结本版名单？冻结后只能通过新版本更正。未知卷别仍需后续核验，不代表已到考。',
+      '确认冻结本版名单？冻结后如需调整，请创建更正版本；待核验的卷别仍需确认。',
     )
   )
     return
@@ -437,7 +437,7 @@ watch(
     当前身份未获组织资料读取权限，可查看已授权场次。新建和班级选择需由考务负责人授权。
   </p>
   <p v-if="options?.truncated" role="alert">
-    组织选项超过网页1000项读取上限，请联系考务负责人；这里不代表已加载全部选项。
+    组织选项较多，当前最多显示 1000 项，可能未显示全部，请联系考务负责人。
   </p>
   <fieldset :disabled="locked" class="config-toolbar">
     <label
@@ -539,7 +539,7 @@ watch(
       <h2>1 · 选择已锁定试卷</h2>
       <RouterLink to="/papers">管理试卷、标准答案与评分标准 →</RouterLink>
       <p class="muted">
-        共享用卷不复制题目。锁定内容不能在这里修改；可在试卷管理中创建草稿、核对并锁定。
+        选择已锁定的试卷；如需调整内容，请在试卷管理中创建新版本。
       </p>
       <div class="config-overflow">
         <table>
@@ -634,7 +634,7 @@ watch(
         >标记用卷准备就绪</el-button
       >
       <p v-if="current.lifecycle === 'ready'" class="config-positive">
-        用卷已就绪。仍需单独核对并冻结参试名单，不代表已到考或已批改。
+        用卷已就绪，请继续核对并冻结参试名单。
       </p>
     </section>
     <section class="config-section" aria-label="参试名单配置">
@@ -656,7 +656,7 @@ watch(
           ><span v-if="businessDate">考试业务日期：{{ businessDate }}</span>
         </fieldset>
         <p v-if="frozen" class="config-positive">
-          本版已冻结，只读保留；更正必须建立新版本，旧版不会被覆盖。
+          名单已冻结。如需调整，请创建更正草稿。
         </p>
         <p v-if="roster?.previous_revision_id && !frozen" class="config-warning">
           当前是更正草稿；冻结前仍以原冻结版为当前名单。
@@ -758,7 +758,7 @@ watch(
         </div>
         <p v-if="dirty && !frozen" class="config-warning">名单修改尚未保存，请先保存草稿再冻结。</p>
         <p class="muted">
-          同名学生以学号与考号区分。未知卷别不会自动选A卷，可保留待核验；冻结名单不表示到考、缺考或零分。
+          同名学生请核对学号和考号；卷别不明确时可选择“待核验”。
         </p>
         <fieldset :disabled="locked" class="config-toolbar">
           <label>名单操作说明<input v-model="reason" maxlength="300" /></label
@@ -791,14 +791,14 @@ watch(
     <section class="config-section" aria-label="后续处理入口">
       <h2>3 · 进入扫描与教师复核</h2>
       <p class="muted">
-        以下入口继续独立校验授权和当前来源。配置权限不会自动授予扫描、批改或班级成绩权限。
+        根据账号权限，前往扫描、阅卷或成绩预览。
       </p>
       <div class="config-next">
         <RouterLink :to="`/scans?session=${current.id}`">扫描接收与页面预览 →</RouterLink
         ><RouterLink :to="`/scans/sessions/${current.id}/scripts`"
           >人工分卷、身份确认与批改 →</RouterLink
         ><RouterLink :to="`/scans/sessions/${current.id}/results`"
-          >整卷预览与Excel导出（需班级授权） →</RouterLink
+          >整卷成绩预览与 Excel 导出 →</RouterLink
         >
       </div>
     </section>

@@ -1,5 +1,5 @@
 {
-  "version": "homework-workflow-1",
+  "version": "local-auth-1",
   "operations": [
     {
       "method": "POST",
@@ -1376,6 +1376,110 @@
       "permission": "homework_scoped",
       "classification_boundary": "可信任教关系、当前作业提交及独立图片来源校验",
       "entrypoint": "huipi_cloud.modules.homework.visual_service"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "policy": "local_login",
+      "permission": "public",
+      "classification_boundary": "本地登录或当前会话验证，不读取考试、作业或学生资源",
+      "entrypoint": "huipi_cloud.modules.identity.local_http"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/session",
+      "policy": "local_session",
+      "permission": "local_session",
+      "classification_boundary": "本地登录或当前会话验证，不读取考试、作业或学生资源",
+      "entrypoint": "huipi_cloud.modules.identity.local_http"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/logout",
+      "policy": "local_logout",
+      "permission": "local_session",
+      "classification_boundary": "本地登录或当前会话验证，不读取考试、作业或学生资源",
+      "entrypoint": "huipi_cloud.modules.identity.local_http"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/change-password",
+      "policy": "local_change_password",
+      "permission": "local_session",
+      "classification_boundary": "本地登录或当前会话验证，不读取考试、作业或学生资源",
+      "entrypoint": "huipi_cloud.modules.identity.local_http"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/recovery-email/request",
+      "policy": "request_recovery_email",
+      "permission": "local_session",
+      "classification_boundary": "本地登录或当前会话验证，不读取考试、作业或学生资源",
+      "entrypoint": "huipi_cloud.modules.identity.local_http"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/recovery-email/confirm",
+      "policy": "confirm_recovery_email",
+      "permission": "local_session",
+      "classification_boundary": "本地登录或当前会话验证，不读取考试、作业或学生资源",
+      "entrypoint": "huipi_cloud.modules.identity.local_http"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/reset/request",
+      "policy": "request_password_reset",
+      "permission": "public",
+      "classification_boundary": "本地登录或当前会话验证，不读取考试、作业或学生资源",
+      "entrypoint": "huipi_cloud.modules.identity.local_http"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/reset/confirm",
+      "policy": "confirm_password_reset",
+      "permission": "public",
+      "classification_boundary": "本地登录或当前会话验证，不读取考试、作业或学生资源",
+      "entrypoint": "huipi_cloud.modules.identity.local_http"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/local-accounts",
+      "policy": "list_local_accounts",
+      "permission": "administrator",
+      "classification_boundary": "数据库管理员重新校验；仅账号及认证审计，不授予考试资源权限",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/local-accounts",
+      "policy": "create_local_account",
+      "permission": "administrator",
+      "classification_boundary": "数据库管理员重新校验；仅账号及认证审计，不授予考试资源权限",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/local-accounts/{user_id}/reset-password",
+      "policy": "reset_local_account",
+      "permission": "administrator",
+      "classification_boundary": "数据库管理员重新校验；仅账号及认证审计，不授予考试资源权限",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/local-accounts/{user_id}/bind",
+      "policy": "bind_local_account",
+      "permission": "administrator",
+      "classification_boundary": "数据库管理员重新校验；仅账号及认证审计，不授予考试资源权限",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/local-accounts/audit",
+      "policy": "list_local_account_audit",
+      "permission": "administrator",
+      "classification_boundary": "数据库管理员重新校验；仅账号及认证审计，不授予考试资源权限",
+      "entrypoint": "huipi_cloud.modules.identity.dependencies.authorize_request"
     }
   ]
 }

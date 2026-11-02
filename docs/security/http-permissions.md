@@ -1,10 +1,12 @@
 # HTTP 权限矩阵
 
-范围：所有 FastAPI HTTP 路由。本矩阵中的整份作业权限只适用于 `legacy_homework`；`exam_protected` 和 `unclassified` 一律先拒绝，旧 admin/Membership 不授权新考试资源。机器清单见 [http-permissions.json](http-permissions.json)，测试与 OpenAPI 的方法/路径逐项比对。JWT 的角色字段不授权；下列「管理员」仅指本地 User.is_admin。「成员」必须未撤销且 User 启用。
+范围：所有 FastAPI HTTP 路由。本矩阵中的整份作业权限只适用于 `legacy_homework`；`exam_protected` 和 `unclassified` 一律先拒绝，旧 admin/Membership 不授权新考试资源。机器清单见 [http-permissions.json](http-permissions.json)，测试与 OpenAPI 的方法/路径逐项比对。登录使用服务端签发、可撤销的本地会话；旧 OIDC JWT 不再认证。下列「管理员」仅指数据库 User.is_admin。「成员」必须未撤销且 User 启用。
 
 ## 公开，无业务数据
 
 - `GET /api/v1/health`：存活检查，不查询依赖或业务数据。
+- `/api/v1/auth/login` 和 `/api/v1/auth/reset/*`：本地登录及有限次密码找回；写请求验证来源，找回响应不枚举账号。
+- `/api/v1/auth/session`、`logout`、`change-password` 和找回邮箱验证：只针对当前本地会话；写入同时校验 CSRF。
 - `GET/HEAD /openapi.json`、`/docs`、`/docs/oauth2-redirect`、`/redoc`：静态接口描述与文档；不会在文档中提供 Token。
 
 ## 教师身份，列表与新建
@@ -41,9 +43,9 @@
 
 ## 拒绝与未开放
 
-缺 Token/无效 Token 为 401；未建立/停用用户、非管理员管理成员为 403；不存在或无资源授权统一 404；认证配置、JWKS、授权数据库故障为 503；无精确方法/路径策略为 403。未绑定历史作业不自动分配给教师。除上述公开端点外，没有保留匿名敏感 HTTP 访问。
+缺会话或无效会话为 401；非管理员管理成员为 403；不存在或无资源授权统一 404；认证和授权数据库故障为 503；无精确方法/路径策略为 403。未绑定历史作业不自动分配给教师。除上述公开端点外，没有保留匿名敏感 HTTP 访问。
 
-没有用户自助注册、管理员提权、学生身份认证、Copilot 聊天或正式成绩发布 HTTP 接口。Worker、知识导入、评分和复核 CLI 仍是拥有数据库凭据的受控操作员功能，不向互联网暴露。文件流开始前授权，运行中的流与已通过检查的事务不承诺撤销后立即终止。
+没有用户自助注册、管理员提权、学生身份认证或 Copilot 聊天 HTTP 接口。Worker、知识导入和受控 CLI 不向互联网暴露。文件流开始前授权，运行中的流与已通过检查的事务不承诺撤销后立即终止。
 
 ## 教师作答证据复核 HTTP
 
@@ -67,12 +69,12 @@
 - `GET /api/v1/assignments/{assignment_id}/workbench`：Assignment 读权限，最多 25 题；可选 question_id 同时按 Assignment 过滤，不允许跨作业查询。每题仅前 5 个 Rubric 摘要，带真实总数/截断标记，完全不读 AnswerKey。can_write 来自数据库权限，不信任前端角色。
 - 原作答 inspect 的 confirmed_regions 只返回与当前来源版本相符的最新人工坐标，按角色有界分页，最多 50 条/48KiB；不返回素材 URI、S3 Key 或全文。该字段不会改变写协议或授权要求。
 
-Vue 客户端没有可信授权能力；只允许标准 PKCE 登录并向固定同源 API 发送 Bearer Header。Mock OIDC、测试签名私钥及控制端点只存在测试 fixture，不包含于静态构建。完整刷新需要重新认证，不长期保存 JWT。原始文件 Blob URL 在离开预览或组件销毁时释放。
+Vue 客户端没有可信授权能力；通过同源 HttpOnly 会话 Cookie 和写请求 CSRF 标记访问 API，不在 localStorage 保存凭据。原始文件 Blob URL 在离开预览或组件销毁时释放。
 
 
 ## 当前用户与管理员管理
 
-`GET /api/v1/me` 需要启用的可信用户，只投影其数据库角色与范围型能力；不返回 OIDC subject。`/admin/teachers`（GET/POST）、`/admin/teachers/{user_id}`（PATCH）、`/admin/teachers/{user_id}/memberships`（GET）、`/admin/audit-events`（GET）均需当前数据库管理员。旧成员 PUT/DELETE 继续为管理员专用，现已接入事务内权限复核与审计。未列入固定策略的新路由默认拒绝。
+`GET /api/v1/me` 需要启用的可信用户，只投影其数据库角色与范围型能力；不返回历史 identity subject。`/admin/local-accounts` 提供管理员建号、历史身份绑定、密码重置和审计；旧外部身份登记 POST 已停用。`/admin/teachers` 的读取和启停、旧成员 PUT/DELETE 仍由数据库管理员控制。未列入固定策略的新路由默认拒绝。
 
 [产品能力矩阵与前端合同](../product/teacher-admin-contract.md)逐项区分教师、只读成员及全局管理员。管理员仍能读取全部 legacy 作业及其敏感文件，未变成仅系统管理角色；后续拆分计划在该文档说明。普通教师无提权、账号停用或管理审计读取/改写接口。管理写入的 request_id 重放仍复核当前管理员；账号停用或降权后拒绝。部署 CLI 与数据库所有者不属于教师 HTTP 权限体系。
 

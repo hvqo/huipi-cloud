@@ -221,7 +221,7 @@ onUnmounted(() => {
     <div>
       <p class="eyebrow">考试管理 · 教师确认</p>
       <h1>成绩管理</h1>
-      <p class="muted">人工确认到考情况，审批后发布；未完成批改不会成为正式成绩。</p>
+      <p class="muted">核对到考情况和批改进度，审批后发布正式成绩。</p>
     </div>
   </div>
   <p v-if="error" role="alert">{{ error }}</p>
@@ -264,7 +264,7 @@ onUnmounted(() => {
   </div>
   <section>
     <h2>到考核对与批改进度</h2>
-    <p>没有答卷不代表缺考。考务负责人应逐人核验；生成版本时会检查全部班级与题目。</p>
+    <p>请逐一核对到考情况；没有答卷的学生需要确认是否缺考。</p>
     <label>本次操作说明 <input v-model="reason" maxlength="300" /></label>
     <div class="table-wrap">
       <table class="result-table">
@@ -375,7 +375,7 @@ onUnmounted(() => {
           {{ selected.result.published ? '已发布' : '待审批快照' }} · 第
           {{ selected.version.version_no }} 版
         </h2>
-        <p>该版本为确认时快照；历史版本不会被后续更正覆盖。</p>
+        <p>此处展示生成该版本时的成绩记录，历史版本也可查看。</p>
       </div>
       <button v-if="selected.result.published" @click="download">导出正式成绩 Excel</button>
     </div>

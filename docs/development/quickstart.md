@@ -14,7 +14,7 @@
 在仓库根目录执行：
 
 ```bash
-cp .env.example .env
+cp -n .env.example .env
 uv sync --locked
 docker compose up -d postgres minio
 uv run python scripts/init_minio_bucket.py
@@ -40,15 +40,16 @@ docker compose stop postgres minio
 
 ## 教师访问
 
-业务 HTTP 请求需要配置外部 OIDC access token 验证并建立本地 User 与成员授权；缺失配置不会退回匿名访问，见[教师认证与作业授权](teacher-auth.md)。已有作业不会自动授予新教师。
+业务 HTTP 请求需要本地账号会话及相应服务端授权。首次管理员初始化、历史用户绑定与密码找回见[教师认证与作业授权](teacher-auth.md)；已有作业不会自动授予新教师。
 
 ## 开发验证
 
 ```bash
 uv sync --locked
 uv run ruff check .
-uv run pytest -q
+uv run pytest -q tests/unit
+uv run pytest -q tests/integration
 docker compose config --quiet
 ```
 
-完整 PostgreSQL/S3 集成测试需要本地测试数据库和对象存储。真实 MinerU/Ollama 测试需要额外显式启用，默认 pytest 不会下载模型或访问模型服务。
+两组测试分开执行，因为当前测试目录存在同名模块。PostgreSQL/S3 集成测试需要隔离的本地测试数据库和对象存储。真实 MinerU/Ollama 测试需要额外显式启用，默认 pytest 不会下载模型或访问模型服务。

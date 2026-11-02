@@ -79,6 +79,7 @@ const groups = computed<NavGroup[]>(() => {
       label: '学校管理',
       items: [
         { to: '/school', label: '学校管理', icon: House, visible: hasSchoolAccess.value },
+        { to: '/admin/accounts', label: '教师账号', icon: User, visible: isAdmin.value },
         { to: '/school/teaching', label: '教师任教关系', icon: User, visible: isAdmin.value },
       ],
     },
@@ -113,7 +114,7 @@ watch(
     resetSchoolAccess()
     clearNavigation()
     serverRole.value = null
-    if (!actor) return
+    if (!actor || identity.mustChangePassword) return
     const [user, school] = await Promise.allSettled([
       request<{ role: string }>('/api/v1/me'),
       loadSchoolAccess(),
@@ -135,23 +136,22 @@ watch(
 watch(
   () => identity.authenticated,
   (signed) => {
-    if (!signed && route.path !== '/auth/callback')
+    if (!signed && route.path !== '/login')
       void router.replace({ path: '/login', query: { returnTo: route.fullPath } })
   },
 )
 async function signOut() {
   try {
     await logout()
-  } catch {
-    identity.error = '已退出本地会话，统一身份服务的退出尚未确认。'
-  } finally {
     await router.replace('/login')
+  } catch {
+    identity.error = '退出未完成，请检查连接后重试。'
   }
 }
 </script>
 <template>
   <ElConfigProvider :locale="zhCn">
-    <RouterView v-if="!identity.authenticated" />
+    <RouterView v-if="!identity.authenticated || identity.mustChangePassword" />
     <div v-else class="shell" :class="{ 'shell-collapsed': collapsed }">
       <aside class="sidebar" aria-label="主导航">
         <RouterLink class="brand" to="/dashboard" aria-label="慧批云端首页">
@@ -203,6 +203,7 @@ async function signOut() {
                 serverRole === 'admin' ? '管理员' : serverRole === 'teacher' ? '教师' : '角色待确认'
               }}</small>
             </div>
+            <RouterLink to="/change-password">修改密码</RouterLink>
             <el-button text @click="signOut">退出</el-button>
           </div>
         </header>

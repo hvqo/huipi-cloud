@@ -220,8 +220,18 @@ def test_http_permission_inventory_matches_openapi_and_exact_fixed_policy():
     }
     assert actual == documented
     assert set(POLICIES) == set(POLICY_PATHS)
+    self_service = {
+        ("GET", "/api/v1/auth/session"),
+        ("POST", "/api/v1/auth/logout"),
+        ("POST", "/api/v1/auth/change-password"),
+        ("POST", "/api/v1/auth/recovery-email/request"),
+        ("POST", "/api/v1/auth/recovery-email/confirm"),
+    }
+    assert {
+        (r["method"], r["path"]) for r in rows if r["permission"] == "local_session"
+    } == self_service
     for row in rows:
-        if row["permission"] == "public":
+        if row["permission"] in {"public", "local_session"}:
             continue
         assert row["method"] in POLICIES[row["policy"]]
         assert row["path"] == "/api/v1" + POLICY_PATHS[row["policy"]]

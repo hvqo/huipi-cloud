@@ -7,7 +7,7 @@
 ## 功能特性
 
 - **教师工作台**：通过浏览器查看作业、提交与受保护来源，选择作答证据并保存人工决定及修订历史。
-- **教师身份与作业授权**：验证外部 OIDC access token，按服务端成员授权控制作业、题目、提交和文件访问。
+- **教师身份与作业授权**：邮箱或手机号加密码登录；本地会话和服务端成员授权控制作业、题目、提交和文件访问。
 - **作业与题目管理**：创建作业、维护题目、人工录入标准答案和评分细则，并校验后发布。
 - **作业提交与文件存储**：提交 PDF、JPG 或 PNG，使用私有 S3 兼容存储保存原文件。
 - **文档解析**：通过独立配置的 MinerU 4.x Basic/ONNX 运行时生成 Markdown 和结构化解析产物。
@@ -28,8 +28,7 @@
 
 ```mermaid
 flowchart LR
-    Client[Vue 教师工作台] -->|access token| API[FastAPI]
-    Client -->|Code + PKCE| IdP[OIDC 身份服务]
+    Client[Vue 教师工作台] -->|本地登录会话| API[FastAPI]
     CopilotCLI[本地教师 Copilot CLI] --> Graph[受控 LangGraph]
     Graph --> CopilotModel[经授权的云端对话模型]
     Graph --> ReadTools[固定只读业务工具]
@@ -81,7 +80,7 @@ flowchart LR
 需要 Python 3.12、uv 和 Docker Compose。下面命令启动仅绑定本机端口的 PostgreSQL 与对象存储：
 
 ```bash
-cp .env.example .env
+cp -n .env.example .env
 uv sync --locked
 docker compose up -d postgres minio
 uv run python scripts/init_minio_bucket.py
@@ -89,21 +88,20 @@ uv run alembic upgrade head
 uv run uvicorn huipi_cloud.main:app --reload
 ```
 
-API 文档位于 <http://127.0.0.1:8000/docs>，存活检查为 `GET /api/v1/health`。数据库表由 Alembic 管理，应用启动时不会自动创建表。业务 API 还需配置可信 OIDC 发行方并建立本地教师映射，见[教师认证与授权指南](docs/development/teacher-auth.md)；缺省只开放存活检查和 API 文档。
+API 文档位于 <http://127.0.0.1:8000/docs>，存活检查为 `GET /api/v1/health`。数据库表由 Alembic 管理，应用启动时不会自动创建表。首次部署需按[教师认证与授权指南](docs/development/teacher-auth.md)初始化本地管理员；既有用户须经管理员核对后关联本地账号。
 
 ### 教师工作台
 
-需要 Node.js 24 与已配置的 OIDC 公共客户端：
+需要 Node.js 24：
 
 ```bash
 cd frontend
 npm ci
 cp -n .env.example .env.local
-# 配置公开的 OIDC authority/client ID，不能填写秘密或 API Key
 npm run dev
 ```
 
-访问 `http://127.0.0.1:5173`。未配置身份服务时业务入口保持锁定；真实学校 IdP 仍需独立验收。部署、选区与测试说明见[工作台指南](docs/development/teacher-workbench.md)。
+访问 `http://127.0.0.1:5173`，使用已开通的邮箱或手机号及密码登录。部署、选区与测试说明见[工作台指南](docs/development/teacher-workbench.md)。
 
 ## 基本使用
 
@@ -127,7 +125,7 @@ npm run dev
 
 ## 当前边界
 
-- HTTP 业务接口已要求可信教师身份与作业授权；浏览器已接入标准 OIDC 登录流程，真实外部 IdP 仍需验收；仍缺少学生认证、完整组织 RBAC 和租户隔离。`student_ref` 是模拟标识，上传为教师代录；本地操作员 CLI 和部署凭据仍需受控管理。
+- HTTP 业务接口要求本地教师身份和服务端授权；首次管理员需由受控部署人员建立。仍缺少学生本人登录；本地操作员 CLI 和部署凭据需受控管理。
 - `aligned` 只表示来源区域与作业题目的映射证据足够，不表示学生已作答、OCR 完整或可以评分。
 - `ready_text` 只表示文本评分输入通过来源门禁，不表示已产生分数、图像/表格/公式均可评分或人工标签绝对正确。
 - 视觉和文本模型都只生成候选建议；候选分数不是最终成绩，尚无经充分验证的真实教学作业评分质量，没有自动发布成绩；教师 Copilot 只提供本地只读 CLI，可显式传入可信教师身份；没有公开聊天服务。

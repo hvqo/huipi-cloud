@@ -253,13 +253,13 @@ onUnmounted(() => {
     <div>
       <p class="eyebrow">考务工作空间</p>
       <h1>考试扫描</h1>
-      <RouterLink v-if="sessionId" :to="`/scans/sessions/${sessionId}/scripts`"
-        >人工分卷与身份确认 →</RouterLink
-      >
-      <RouterLink v-if="sessionId" :to="`/scans/sessions/${sessionId}/results`"
-        >整卷成绩预览 →</RouterLink
-      >
-      <p class="muted">接收混班扫描 PDF，逐页核对原件。此步骤不确认学生身份，也不生成成绩。</p>
+      <p class="muted">上传考试扫描 PDF，预览页面后进行分卷和学生身份确认。</p>
+      <nav v-if="sessionId" class="scan-heading-links" aria-label="相关操作">
+        <RouterLink :to="`/scans/sessions/${sessionId}/scripts`"
+          >人工分卷与身份确认 →</RouterLink
+        >
+        <RouterLink :to="`/scans/sessions/${sessionId}/results`">整卷成绩预览 →</RouterLink>
+      </nav>
     </div>
   </div>
   <ExceptionBadge :session-id="sessionId" />
@@ -282,8 +282,8 @@ onUnmounted(() => {
       <p class="muted">
         {{
           sessions.find((s) => s.id === sessionId)?.roster_frozen
-            ? '已具备冻结名单；页面身份仍须后续人工确认。'
-            : '该场次尚无冻结名单；不得据此确定学生身份。'
+            ? '名单已冻结，可在分卷时核对学生身份。'
+            : '名单尚未冻结，请先在考试配置中冻结名单，再确认学生身份。'
         }}
       </p>
       <div class="scan-actions">
@@ -335,8 +335,8 @@ onUnmounted(() => {
         <div id="scan-file-panel" v-show="showFilePanel" class="scan-file-panel">
           <h2>{{ batch.title }}</h2>
           <p class="muted">
-            PDF 上限 {{ limits.max_file_bytes / 1024 / 1024 }} MiB、{{ limits.max_pages }}
-            页。每批最多 20 个文件，不支持断点续传。
+            单个 PDF 最大 {{ limits.max_file_bytes / 1024 / 1024 }} MiB、{{ limits.max_pages }}
+            页，每批最多 20 个文件。上传中断后请重试。
           </p>
           <div class="scan-actions">
             <label
@@ -387,7 +387,7 @@ onUnmounted(() => {
               SHA-256：{{ activeFile.sha256 }}
             </details>
             <p v-if="activeFile.status !== 'stored'" class="muted">
-              仅成功接收的文件可以预览。处理中断后，原请求在租约到期后可重试。
+              文件接收完成后可预览；如处理中断，请稍后重试。
             </p>
             <nav class="scan-page-buttons" aria-label="扫描页选择">
               <button
@@ -443,6 +443,11 @@ onUnmounted(() => {
   </PageState>
 </template>
 <style scoped>
+.scan-heading-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
 .scan-controls,
 .scan-content {
   background: white;
